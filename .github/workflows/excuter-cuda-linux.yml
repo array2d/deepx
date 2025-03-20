@@ -57,7 +57,7 @@ jobs:
             cd /workspace && \
             
             # 构建 common 库
-            cd excuter/common && \
+            cd excuter/cpp-common && \
             mkdir -p build && cd build && \
             cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja .. && \
             ninja && \
