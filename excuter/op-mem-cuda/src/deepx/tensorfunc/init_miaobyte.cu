@@ -50,7 +50,7 @@ namespace deepx::tensorfunc
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size)
         {
-            data[idx] = start + step * static_cast<T>(idx);
+            data[idx] = start + step * static_cast<T>(static_cast<float>(idx));
         }
     }
     template __global__ void kernel_arange<double>(double *data, const int size, const double start, const double step);
