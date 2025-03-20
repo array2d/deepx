@@ -2,6 +2,8 @@
 #define DEEPX_DTYPE_HPP
 
 #include <string>
+#include <cstdint>
+
 namespace deepx
 {
 
