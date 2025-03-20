@@ -114,7 +114,7 @@ namespace deepx::tf
                                                              {
                                                                  Param("c", DataCategory::Tensor, Precision::Any),
                                                              })));
-        tffactory.add_tf(std::make_shared<Addscalar<miaobyte>>(vector<Param>(
+        tffactory.add_tf(std::make_shared<AddScalar<miaobyte>>(vector<Param>(
                                                                    {
                                                                        Param("A", DataCategory::Tensor, Precision::Any),
                                                                        Param("b", DataCategory::Var, Precision::Any),
@@ -133,7 +133,16 @@ namespace deepx::tf
                                                                    {
                                                                        Param("C", DataCategory::Tensor, Precision::Any),
                                                                    })));
-        
+        tffactory.add_tf(std::make_shared<SubScalar<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("A", DataCategory::Tensor, Precision::Any),
+                                                                       Param("b", DataCategory::Var, Precision::Any),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("C", DataCategory::Tensor, Precision::Any),
+                                                                   })));
+
         //     opfactory.add_op(Sub_cblas<float>());
         //     opfactory.add_op(Sub_cblas<double>());
 

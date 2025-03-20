@@ -103,7 +103,38 @@ namespace deepx::tensorfunc
 
     template <> 
     void launch_sub<int8_t>(int numBlocks, int blockSize, const int8_t* a, const int8_t* b, int8_t* c,const int size);
-    
+
+    // subscalar
+    template <typename T>
+    __global__ void subscalar_kernel(const T* A, const T scalar, T* C,const int size);
+
+    template <typename T>
+    void launch_subscalar(const int numBlocks, const int blockSize, const T* a, const T scalar, T* c,const int size);
+
+    template <>
+    void launch_subscalar<double>(const int numBlocks, const int blockSize, const double* a, const double scalar, double* c,const int size);
+
+    template <>
+    void launch_subscalar<float>(const int numBlocks, const int blockSize, const float* a, const float scalar, float* c,const int size);
+
+    template <>
+    void launch_subscalar<nv_bfloat16>(const int numBlocks, const int blockSize, const nv_bfloat16* a, const nv_bfloat16 scalar, nv_bfloat16* c,const int size);
+
+    template <>
+    void launch_subscalar<__half>(const int numBlocks, const int blockSize, const __half* a, const __half scalar, __half* c,const int size);
+
+    template <>
+    void launch_subscalar<int64_t>(const int numBlocks, const int blockSize, const int64_t* a, const int64_t scalar, int64_t* c,const int size);
+
+    template <>
+    void launch_subscalar<int32_t>(const int numBlocks, const int blockSize, const int32_t* a, const int32_t scalar, int32_t* c,const int size);
+
+    template <>
+    void launch_subscalar<int16_t>(const int numBlocks, const int blockSize, const int16_t* a, const int16_t scalar, int16_t* c,const int size);
+
+    template <>
+    void launch_subscalar<int8_t>(const int numBlocks, const int blockSize, const int8_t* a, const int8_t scalar, int8_t* c,const int size);    
+ 
 }
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_BASIC_CUH

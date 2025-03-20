@@ -24,7 +24,9 @@ namespace deepx::tensorfunc
     template <typename Author, typename T>
     struct addscalarDispatcher
     {
-        static void addscalar(const Tensor<T> &input, const T value, Tensor<T> &output) = delete;
+        static void addscalar(const Tensor<T> &input, const T value, Tensor<T> &output){
+            throw NotImplementError("addscalar");
+        }
     };
 
     template <typename Author, typename T>
@@ -36,7 +38,9 @@ namespace deepx::tensorfunc
     template <typename Author, typename T>
     struct subDispatcher
     {
-        static void sub(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C) = delete;
+        static void sub(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C){
+            throw NotImplementError("sub");
+        }
     };
 
     template <typename Author, typename T>
@@ -48,7 +52,9 @@ namespace deepx::tensorfunc
     template <typename Author, typename T>
     struct subscalarDispatcher
     {
-        static void subscalar(const Tensor<T> &input, const T value, Tensor<T> &output) = delete;
+        static void subscalar(const Tensor<T> &input, const T value, Tensor<T> &output){
+            throw NotImplementError("subscalar");
+        }
     };
 
     template <typename Author, typename T>
