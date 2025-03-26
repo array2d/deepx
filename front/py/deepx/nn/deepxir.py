@@ -1,14 +1,36 @@
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional,Union
 import time
 from datetime import datetime  # 添加datetime模块
+
+class Param:
+    def __init__(self, value:Optional[Union[str,int,float,list,tuple]], category:str=None,precision:str=None):
+        if isinstance(value,str):
+            self._textvalue=value
+        elif isinstance(value,int) or isinstance(value,float):
+            self._textvalue=str(value)
+        elif isinstance(value,list) or isinstance(value,tuple):
+            self._textvalue='['+' '.join(str(v) for v in value)+']'
+        else:
+            raise ValueError(f"Invalid value type: {type(value)}")
+
+        self._category=category
+        self._precision=precision
+
+    def __str__(self):
+        if self._category is not None:
+            if self._precision is not None:
+                return f"{self._category}<{self._precision}> {self._textvalue}"
+            else:
+                return f"{self._category} {self._textvalue}"
+        else:
+            return self._textvalue
 
 class DeepxIR:
     def __init__(self, 
                 name:str,
-                dtype:str,
-                args: List[str], 
-                returns: List[str],
-                author:str):
+                args: List[Param], 
+                returns: List[Param],
+                author:str=''):
         """
         初始化操作节点
         Args:
@@ -17,8 +39,7 @@ class DeepxIR:
             author: tensorfunc的作者名称,如"miaobyte"
         """
  
-        self._name = name  
-        self._dtype = dtype
+        self._name = name
         self._args = args
         self._returns = returns
         self._author = author
@@ -28,10 +49,7 @@ class DeepxIR:
 
     def __str__(self):
         # 函数名部分
-        if self._dtype == None or self._dtype == '':
-            parts = [self._name]
-        else:
-            parts = [f"{self._name}@{self._dtype}"]
+        parts = [self._name]
         
         # 处理输入参数部分 - 使用括号和逗号分隔
         args_parts = []
