@@ -1,5 +1,5 @@
-#ifndef DEEPX_TENSORFUNC_MATMUL_HPP
-#define DEEPX_TENSORFUNC_MATMUL_HPP
+#ifndef DEEPX_TENSORFUNC_MATMUL_CBLAS_HPP
+#define DEEPX_TENSORFUNC_MATMUL_CBLAS_HPP
 
 #include <cblas.h> // 如果使用 OpenBLAS
 #include "deepx/tensor.hpp"
@@ -64,7 +64,7 @@ namespace deepx::tensorfunc
   {
     static void matmul(const Tensor<double> &a, const Tensor<double> &b, Tensor<double> &c)
     {
-      if (!check_shape(a.shape, b.shape))
+      if (!check_matmul_shape(a.shape, b.shape))
       {
         throw std::invalid_argument("a.shape could matmul with b.shape");
       }
@@ -150,7 +150,7 @@ namespace deepx::tensorfunc
   {
     static void matmuladd(const Tensor<float> &a, const Tensor<float> &b, const float &alpha, const float &beta, Tensor<float> &c)
     {
-      if (!check_shape(a.shape, b.shape))
+      if (!check_matmul_shape(a.shape, b.shape))
       {
         throw std::invalid_argument("a.shape could matmul with b.shape");
       }
@@ -208,7 +208,7 @@ namespace deepx::tensorfunc
   {
     static void matmuladd(const Tensor<double> &a, const Tensor<double> &b, const double &alpha, const double &beta, Tensor<double> &c)
     {
-      if (!check_shape(a.shape, b.shape))
+      if (!check_matmul_shape(a.shape, b.shape))
       {
         throw std::invalid_argument("a.shape could matmul with b.shape");
       }
@@ -261,4 +261,4 @@ namespace deepx::tensorfunc
     }
   };
 }
-#endif // DEEPX_TENSORFUNC_MATMUL_HPP
+#endif // DEEPX_TENSORFUNC_MATMUL_CBLAS_HPP

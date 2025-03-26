@@ -4,6 +4,7 @@
 #include "deepx/tf/print.hpp"
 #include "deepx/tf/init.hpp"
 #include "deepx/tf/elementwise_basic.hpp"
+#include "deepx/tf/matmul.hpp"
 #include "deepx/dtype.hpp"
 #include "deepx/tf/tffactory.hpp"
 #include "deepx/tensorfunc/authors.hpp"
@@ -173,12 +174,19 @@ namespace deepx::tf
         //     opfactory.add_op(Powscalar_miaobyte<float>());
         //     opfactory.add_op(Powscalar_miaobyte<double>());
     }
-    // // matmul
-    // void register_matmul(OpFactory &opfactory)
-    // {
-    //     opfactory.add_op(MatMul<float>());
-    //     opfactory.add_op(MatMul<double>());
-    // }
+    // matmul
+    void register_matmul(TfFactory &tffactory)
+    {
+        tffactory.add_tf(std::make_shared<MatMul<cublas>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Any),
+                                                                 Param("B", DataCategory::Tensor, Precision::Any),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Any),
+                                                             })));
+    }
     // // changeshape
     void register_changeshape(TfFactory &tffactory)
     {
@@ -207,7 +215,7 @@ namespace deepx::tf
         register_init(tffactory);
         register_util(tffactory);
         register_elementwise(tffactory);
-        // register_matmul(opfactory);
+        register_matmul(tffactory);
         register_changeshape(tffactory);
         // register_reduce(opfactory);
         return 0;

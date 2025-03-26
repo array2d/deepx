@@ -3,7 +3,7 @@
 
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/authors.hpp"
-
+#include "stdutil/error.hpp"
 namespace deepx::tensorfunc
 {
     bool check_matmul_shape(const Shape &a, const Shape &b)
@@ -29,7 +29,10 @@ namespace deepx::tensorfunc
     template <typename Author, typename T>
     struct matmulDispatcher
     {
-        static void matmul(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C) = delete;
+        static void matmul(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
+        {
+            throw NotImplementError("matmul");
+        }
     };
 
     template <typename Author, typename T>
