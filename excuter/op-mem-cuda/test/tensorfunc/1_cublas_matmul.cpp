@@ -4,10 +4,11 @@
 #include "deepx/tensorfunc/print_miaobyte.hpp"
 #include "deepx/tensorfunc/matmul.hpp"
 #include "deepx/tensorfunc/matmul_cublas.hpp"
-
+#include "deepx/tensorfunc/matmul_qwang.hpp"
 using namespace deepx::tensorfunc;
 using namespace deepx;
 
+template <typename Author>
 void test_matmul()
 {
     // 创建矩阵 A (2x3)
@@ -30,7 +31,7 @@ void test_matmul()
     print<miaobyte>(b, "%.2f");
 
     // 执行矩阵乘法 C = A × B
-    matmul<deepx::tensorfunc::cublas,float>(a, b, c);
+    matmul<Author,float>(a, b, c);
 
     // 打印结果
     print<miaobyte>(c, "%.2f");
@@ -69,7 +70,11 @@ int main(int argc, char **argv)
     }
     switch (casei) {
         case 0:
-            test_matmul();
+
+            printf("test qwang matmul\n");
+            test_matmul<deepx::tensorfunc::qwang>();
+        printf("test cublas matmul\n");
+        test_matmul<deepx::tensorfunc::cublas>();
             break;
         case 1:
             test_matmul_batch();

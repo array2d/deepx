@@ -24,6 +24,11 @@ namespace deepx::tensorfunc{
     public:
         static std::string name() { return "cublas"; }
     };
+
+    class qwang{
+    public:
+        static std::string name() { return "wqing"; }
+    };
 }
 
 #endif
