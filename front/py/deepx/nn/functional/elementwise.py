@@ -1,13 +1,13 @@
 from typing import Optional, Union
 from deepx import Tensor
 from deepx.autograd import Graph,DataNode,OpNode
-from deepx.nn import DeepxIR
+from deepx.nn import DeepxIR,Param
 from deepx.scheduler import send
 from .changeshape import broadcast_shape
 def _A_elementwiseop_C(
         a:Tensor,
         op:str=None,
-        out:Union[Tensor,str]="")->Tensor:
+        out:Union[Tensor,str]="",author='miaobyte')->Tensor:
     g=a.graph
  
     opnode = g.add_op(op)
@@ -20,7 +20,7 @@ def _A_elementwiseop_C(
         outtensor=out   
     outtensor.node.add_input(opnode)
     if g.eager:
-        ir=DeepxIR(op, a.dtype, [a.node.name], [outtensor.node.name])
+        ir=DeepxIR(op, [a.node.name], [outtensor.node.name],author)
         send(ir)
     return outtensor
 
@@ -28,7 +28,7 @@ def _A_B_elementwiseop_C(
         a:Tensor,
         b: Tensor, 
         op:str=None,
-        out:Union[Tensor,str]="")->Tensor:
+        out:Union[Tensor,str]="",author='miaobyte')->Tensor:
     g=a.graph
     if g is None:
        g=b.graph
@@ -53,14 +53,14 @@ def _A_B_elementwiseop_C(
         outtensor=out   
     outtensor.node.add_input(opnode)
     if g.eager:
-        ir=DeepxIR(op, A.dtype, [A.node.name, B.node.name], [outtensor.node.name])
+        ir=DeepxIR(op, [A.node.name, B.node.name], [outtensor.node.name],author)
         send(ir)
     return outtensor
 def _A_b_elementwiseop_C(
         a:Tensor,
         b: Union[ float, int] ,
         op:str=None,
-        out:Union[Tensor,str]="")->Tensor:
+        out:Union[Tensor,str]="",author='miaobyte')->Tensor:
     g=a.graph
     opnode = g.add_op(op)
     opnode.add_input(a.node)
@@ -74,14 +74,14 @@ def _A_b_elementwiseop_C(
         outtensor=out
     outtensor.node.add_input(opnode)
     if g.eager:
-        ir=DeepxIR(op, a.dtype, [a.node.name,b], [outtensor.node.name])
+        ir=DeepxIR(op, [a.node.name,b], [outtensor.node.name],author)
         send(ir)
     return outtensor
 def _a_B_elementwiseop_C(
         a: Union[ float, int] ,
         b: Tensor,
         op:str=None,
-        out:Union[Tensor,str]="")->Tensor:
+        out:Union[Tensor,str]="",author='miaobyte')->Tensor:
     g=b.graph
     opnode = g.add_op(op)
     opnode.add_input(g.add_var("",a))
@@ -95,7 +95,7 @@ def _a_B_elementwiseop_C(
         outtensor=out
     outtensor.node.add_input(opnode)
     if g.eager:
-        ir=DeepxIR(op, b.dtype, [a,b.node.name], [outtensor.node.name])
+        ir=DeepxIR(op, [a,b.node.name], [outtensor.node.name],author)
         send(ir)
     return outtensor
 
@@ -106,7 +106,7 @@ OpNode.register("addscalar")
 def add(
         a:Tensor,
         b: Optional[Union[Tensor, float, int]] = None, 
-        out:Union[Tensor,str]='')->Tensor:
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
     if isinstance(b,Tensor):
         return _A_B_elementwiseop_C(a,b,"add",out)
     else:
@@ -120,7 +120,7 @@ OpNode.register("subscalar")
 def sub(
         a:Tensor,
         b: Optional[Union[Tensor, float, int]] = None, 
-        out:Union[Tensor,str]='')->Tensor:  
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:  
     if isinstance(b,Tensor):
         return _A_B_elementwiseop_C(a,b,"sub",out)
     else:
@@ -133,7 +133,7 @@ OpNode.register("mulscalar")
 def mul(
         a:Tensor,
         b: Optional[Union[Tensor, float, int]] = None, 
-        out:Union[Tensor,str]='')->Tensor:
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
     if isinstance(b,Tensor):
         return _A_B_elementwiseop_C(a,b,"mul",out)
     else:
@@ -147,7 +147,7 @@ OpNode.register("rdivscalar")
 def div(
         a: Optional[Union[Tensor, float, int]] = None,
         b: Optional[Union[Tensor, float, int]] = None, 
-        out:Union[Tensor,str]='')->Tensor:
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
     if isinstance(b,Tensor) and isinstance(a,Tensor):
         return _A_B_elementwiseop_C(a,b,"div",out)
     else:

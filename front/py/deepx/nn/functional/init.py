@@ -3,19 +3,19 @@ import math
 
 from deepx import Tensor
 from deepx.autograd.graph import OpNode
-from deepx.nn.deepxir import DeepxIR
+from deepx.nn.deepxir import DeepxIR,Param
 from deepx.scheduler import send
 
 OpNode.register("constant")
 
 def constant(t:Tensor, value:Optional[Union[
-    float,int]]=None) -> Tensor:
+    float,int]]=None,author='miaobyte') -> Tensor:
     opnode = t.graph.add_op("constant")
     argnode=t.graph.add_var('',value)   
     opnode.add_input(argnode)
     t.node.add_input(opnode)
     if t.graph.eager:
-        ir=DeepxIR("constant", t.dtype, [value], [t.node.name])
+        ir=DeepxIR("constant",  [Param(t.node.name, 'tensor', t.dtype),Param(value)], [],author)
         send(ir)
     return t
 
@@ -39,7 +39,7 @@ def ones(*size, dtype=None, device=None,
          name:Union[str]='')->Tensor:
     return full(*size, value=1, dtype=dtype, device=device,name=name)
 
-def arange(start=0, end=None, step=1,dtype=None, device=None,name:Union[Tensor,str]='')->Tensor:
+def arange(start=0, end=None, step=1,dtype=None, device=None,name:Union[Tensor,str]='',author='miaobyte')->Tensor:
     outtensor=None
     if isinstance(name,str):
         shape=[end-start]
@@ -49,12 +49,12 @@ def arange(start=0, end=None, step=1,dtype=None, device=None,name:Union[Tensor,s
         outtensor=name
     g=outtensor.graph
     if g.eager:
-        ir=DeepxIR("arange", outtensor.dtype, [start,step], [outtensor.node.name])
+        ir=DeepxIR("arange",  [outtensor.node.name,start,step], [],author)
         send(ir)
     return outtensor
 
 OpNode.register("uniform")
-def uniform(t:Tensor,low=0, high=1,seed:int=0)->Tensor:
+def uniform(t:Tensor,low=0, high=1,seed:int=0,author='miaobyte')->Tensor:
     if low >= high:
         raise ValueError(f"low({low})必须小于high({high})")
     if t is None:
@@ -68,7 +68,7 @@ def uniform(t:Tensor,low=0, high=1,seed:int=0)->Tensor:
         opnode.add_input(g.add_var('',seed))
     t.node.add_input(opnode)
     if t.graph.eager:
-        ir=DeepxIR("uniform", t.dtype, [low, high,seed], [t.node.name])
+        ir=DeepxIR("uniform",  [t.node.name,low, high,seed], [],author)
         send(ir)
     return t
 
