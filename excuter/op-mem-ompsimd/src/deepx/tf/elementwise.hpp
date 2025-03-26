@@ -235,7 +235,7 @@ namespace deepx::tf
             return 0;
         }
     };
-
+ 
     template <typename Author>
     class Mul : public TF
     {
@@ -348,6 +348,7 @@ namespace deepx::tf
             return 0;
         }       
     };              
+ 
 }
 
 #endif
