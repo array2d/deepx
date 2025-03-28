@@ -349,6 +349,175 @@ namespace deepx::tf
         }       
     };              
  
+    template <typename Author>
+    class Div : public TF
+    {
+    public:
+        Div(vector<Param> args, vector<Param> returns)
+        {   
+            this->name = "div";
+            this->author = Author::name();
+            this->args = args;
+            this->returns = returns;
+        }   
+        string math_formula() const override
+        {
+            return "T3=T1/T2";
+        }
+        shared_ptr<TF> clone() const override   
+        {
+            return make_shared<Div<Author>>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;  
+            Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (a_type != b_type || a_type != c_type)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(b_type) + " != " + precision_str(c_type);
+                return 1;
+            }
+            switch (a_type)
+            {
+            case Precision::Float64:
+                tensorfunc::div<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<double>(this->args[1].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:
+                tensorfunc::div<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->args[1].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                tensorfunc::div<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int32:
+                tensorfunc::div<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                tensorfunc::div<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->args[1].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int8:
+                tensorfunc::div<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported dtype: " + precision_str(a_type);
+                return 1;
+            }
+            return 0;
+        }
+    };  
+
+    template <typename Author>
+    class DivScalar : public TF
+    {
+    public:
+        DivScalar(vector<Param> args, vector<Param> returns)
+        {
+            this->name = "divscalar";
+            this->author = Author::name();
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override
+        {
+            return "T3=T1/scalar";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<DivScalar<Author>>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (a_type != c_type)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(c_type);
+                return 1;
+            }   
+            switch (a_type)
+            {
+            case Precision::Float64:
+                tensorfunc::divscalar<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), this->getvar<double>(1, mem), *mem->gettensor<double>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:
+                tensorfunc::divscalar<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), this->getvar<float>(1, mem), *mem->gettensor<float>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                tensorfunc::divscalar<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), this->getvar<int32_t>(1, mem), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int32:
+                tensorfunc::divscalar<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), this->getvar<int32_t>(1, mem), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                tensorfunc::divscalar<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), this->getvar<int16_t>(1, mem), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                break;  
+            case Precision::Int8:
+                tensorfunc::divscalar<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), this->getvar<int8_t>(1, mem), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported dtype: " + precision_str(a_type);
+                return 1;   
+            }   
+            return 0;
+        }
+    };
+
+    template <typename Author>
+    class RDivScalar : public TF
+    {
+    public: 
+        RDivScalar(vector<Param> args, vector<Param> returns)
+        {
+            this->name = "rdivscalar";
+            this->author = Author::name();
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override
+        {
+            return "T3=scalar/T1";
+        }
+        shared_ptr<TF> clone() const override   
+        {
+            return make_shared<RDivScalar<Author>>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision a_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (a_type != c_type)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(c_type);
+                return 1;
+            }   
+            switch (a_type)
+            {
+            case Precision::Float64:
+                tensorfunc::rdivscalar<Author, double>( this->getvar<double>(0, mem),*mem->gettensor<double>(this->args[1].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:
+                tensorfunc::rdivscalar<Author, float>(this->getvar<float>(0, mem),*mem->gettensor<float>(this->args[1].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                tensorfunc::rdivscalar<Author, int32_t>(this->getvar<int32_t>(0, mem),*mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int32:
+                tensorfunc::rdivscalar<Author, int32_t>(this->getvar<int32_t>(0, mem),*mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                tensorfunc::rdivscalar<Author, int16_t>(this->getvar<int16_t>(0, mem),*mem->gettensor<int16_t>(this->args[1].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int8:
+                tensorfunc::rdivscalar<Author, int8_t>(this->getvar<int8_t>(0, mem),*mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported dtype: " + precision_str(a_type);
+                return 1;
+            }
+            return 0;
+        }
+    };
+ 
 }
 
 #endif

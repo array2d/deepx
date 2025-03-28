@@ -150,13 +150,13 @@ namespace deepx::tensorfunc
     template <typename Author, typename T>
     struct rdivscalarDispatcher
     {
-        static void rdivscalar(const Tensor<T> &input, const T value, Tensor<T> &output) = delete;
+        static void rdivscalar(const T value, const Tensor<T> &input, Tensor<T> &output) = delete;
     };
 
     template <typename Author, typename T>
-    void rdivscalar(const Tensor<T> &input, const T value, Tensor<T> &output)
+    void rdivscalar(const T value, const Tensor<T> &input, Tensor<T> &output)
     {
-        rdivscalarDispatcher<Author, T>::rdivscalar(input, value, output);
+        rdivscalarDispatcher<Author, T>::rdivscalar(value, input, output);
     }
 
     template <typename Author, typename T>

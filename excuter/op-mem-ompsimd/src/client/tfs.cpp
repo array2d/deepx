@@ -150,29 +150,56 @@ namespace deepx::tf
                                                                  {
                                                                      Param("c", DataCategory::Tensor, Precision::Any),
                                                                  }))); 
-        //     opfactory.add_op(Addscalar_miaobyte<float>());
-        //     opfactory.add_op(Addscalar_miaobyte<double>());
 
-        //     opfactory.add_op(Sub_miaobyte<float>());
-        //     opfactory.add_op(Sub_miaobyte<double>());
+        tffactory.add_tf(std::make_shared<Mul<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Any),
+                                                                 Param("B", DataCategory::Tensor, Precision::Any),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Any),
+                                                                 })));
+        tffactory.add_tf(std::make_shared<MulScalar<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("A", DataCategory::Tensor, Precision::Any),
+                                                                       Param("b", DataCategory::Var, Precision::Any),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("C", DataCategory::Tensor, Precision::Any),
+                                                                   })));
+        
+        tffactory.add_tf(std::make_shared<Div<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Any),
+                                                                 Param("B", DataCategory::Tensor, Precision::Any),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Any),
+                                                             })));
+        tffactory.add_tf(std::make_shared<DivScalar<miaobyte>>(vector<Param>(   
+                                                                 {
+                                                                     Param("A", DataCategory::Tensor, Precision::Any),
+                                                                     Param("scalar", DataCategory::Var, Precision::Any),
+                                                                 }),
+                                                             vector<Param>(
+                                                                 {
+                                                                     Param("C", DataCategory::Tensor, Precision::Any),
+                                                                 })));
 
-        //     opfactory.add_op(Sub_cblas<float>());
-        //     opfactory.add_op(Sub_cblas<double>());
 
-        //     opfactory.add_op(Mul_miaobyte<float>());
-        //     opfactory.add_op(Mul_miaobyte<double>());
 
-        //     opfactory.add_op(Mulscalar_miaobyte<float>());
-        //     opfactory.add_op(Mulscalar_miaobyte<double>());
-
-        //     opfactory.add_op(Div_miaobyte<float>());
-        //     opfactory.add_op(Div_miaobyte<double>());
-
-        //     opfactory.add_op(Divscalar_miaobyte<float>());
-        //     opfactory.add_op(Divscalar_miaobyte<double>());
-
-        //     opfactory.add_op(RDivscalar_miaobyte<float>());
-        //     opfactory.add_op(RDivscalar_miaobyte<double>());
+        tffactory.add_tf(std::make_shared<RDivScalar<miaobyte>>(vector<Param>(
+                                                                 {
+                                                                     Param("scalar", DataCategory::Var, Precision::Any),
+                                                                     Param("A", DataCategory::Tensor, Precision::Any),
+                                                                 }),
+                                                             vector<Param>(
+                                                                 {
+                                                                     Param("C", DataCategory::Tensor, Precision::Any),
+                                                                 })));
 
         //     opfactory.add_op(Sqrt_miaobyte<float>());
         //     opfactory.add_op(Sqrt_miaobyte<double>());
