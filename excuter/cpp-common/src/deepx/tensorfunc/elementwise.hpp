@@ -195,7 +195,7 @@ namespace deepx::tensorfunc
         divaddbetaDispatcher<Author, T>::divaddbeta(A, B, alpha, C, beta, D);
     }
 
-    template <typename Author, typename T>
+    template <typename Author, typename T,typename = void>
     struct sqrtDispatcher
     {
         static void sqrt(const Tensor<T> &input, Tensor<T> &output) = delete;

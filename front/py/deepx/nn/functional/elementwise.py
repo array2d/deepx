@@ -208,14 +208,14 @@ def clamp(
         varir=DeepxIR("clamp", a.dtype, [a.node.name,min,max], [outtensor.node.name])
         send(str(varir))
     return outtensor
-#exp
-OpNode.register("exp")
-def exp(
-        a:Tensor,
+
+#sqrt
+OpNode.register("sqrt")
+def sqrt(
+        input:Tensor,
         out:Union[Tensor,str]='')->Tensor:
-    return _A_elementwiseop_C(a,"exp",out)  
-#pow
-# todo
+    return _A_elementwiseop_C(input,"sqrt",out)
+
 OpNode.register("pow")
 OpNode.register("powscalar")
 def pow(
@@ -226,12 +226,20 @@ def pow(
         return _A_b_elementwiseop_C(a,b,"powscalar",out)
     else:
         return _A_B_elementwiseop_C(a,b,"pow",out)
-#sqrt
-OpNode.register("sqrt")
-def sqrt(
+
+#exp
+OpNode.register("exp")
+def exp(
+        a:Tensor,
+        out:Union[Tensor,str]='')->Tensor:
+    return _A_elementwiseop_C(a,"exp",out)  
+#log
+OpNode.register("log")
+def log(
         input:Tensor,
         out:Union[Tensor,str]='')->Tensor:
-    return _A_elementwiseop_C(input,"sqrt",out)
+    return _A_elementwiseop_C(input,"log",out)
+
 
 def rsqrt(
         input:Tensor,
