@@ -4,15 +4,13 @@
 #include "deepx/tensorfunc/elementwise.hpp"
 #include "deepx/tensorfunc/cuda.hpp"
 #include "deepx/tensorfunc/authors.hpp"
-#include "deepx/tensorfunc/elementwise_miaobyte_basic.cuh"
+#include "deepx/tensorfunc/elementwise_miaobyte_sin.cuh"
 
 #include "stdutil/error.hpp"
 
 namespace deepx::tensorfunc
 {
-    // CUDA kernel函数声明
-   
-
+ 
     template <typename T>
     struct sinDispatcher<miaobyte, T>
     {

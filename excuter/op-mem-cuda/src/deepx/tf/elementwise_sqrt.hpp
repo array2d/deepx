@@ -55,23 +55,11 @@ namespace deepx::tf
             case Precision::Float32:
                 tensorfunc::sqrt<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
-            // case Precision::Float16:
-            //     tensorfunc::sqrt<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            // case Precision::Float16:
-            //     tensorfunc::sqrt<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            case Precision::Int64:
-                tensorfunc::sqrt<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+            case Precision::Float16:
+                tensorfunc::sqrt<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
                 break;
-            case Precision::Int32:
-                tensorfunc::sqrt<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int16:
-                tensorfunc::sqrt<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int8:
-                tensorfunc::sqrt<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+            case Precision::BFloat16:
+                tensorfunc::sqrt<Author, nv_bfloat16>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(a_type);
@@ -129,24 +117,7 @@ namespace deepx::tf
             case Precision::Float32:
                 tensorfunc::pow<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->args[1].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
-            // case Precision::BFloat16:
-            //     tensorfunc::pow<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->args[1].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            // case Precision::Float16:
-            //     tensorfunc::pow<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->args[1].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            case Precision::Int64:
-                tensorfunc::pow<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int32:
-                tensorfunc::pow<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int16:
-                tensorfunc::pow<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->args[1].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int8:
-                tensorfunc::pow<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
-                break;
+            
             default:
                 error = "Unsupported type: " + precision_str(a_type);
                 return 1;
@@ -203,24 +174,7 @@ namespace deepx::tf
             case Precision::Float32:
                 tensorfunc::powscalar<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), this->getvar<float>(1, mem), *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
-            // case Precision::BFloat16:
-            //     tensorfunc::powscalar<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), this->getvar<half>(1, mem), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            // case Precision::Float16:
-            //     tensorfunc::powscalar<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), this->getvar<half>(1, mem), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            case Precision::Int64:
-                tensorfunc::powscalar<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), this->getvar<int64_t>(1, mem), *mem->gettensor<int64_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int32:
-                tensorfunc::powscalar<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), this->getvar<int32_t>(1, mem), *mem->gettensor<int32_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int16:
-                tensorfunc::powscalar<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), this->getvar<int16_t>(1, mem), *mem->gettensor<int16_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int8:
-                tensorfunc::powscalar<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), this->getvar<int8_t>(1, mem), *mem->gettensor<int8_t>(this->returns[0].textvalue));
-                break;
+            
             default:
                 error = "Unsupported type: " + precision_str(a_type);
                 return 1;
@@ -276,23 +230,11 @@ namespace deepx::tf
             case Precision::Float32:
                 tensorfunc::log<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
-            // case Precision::Float16:
-            //     tensorfunc::log<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            // case Precision::BFloat16:
-            //     tensorfunc::log<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            case Precision::Int64:
-                tensorfunc::log<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+            case Precision::Float16:
+                tensorfunc::log<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
                 break;
-            case Precision::Int32:
-                tensorfunc::log<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int16:
-                tensorfunc::log<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int8:
-                tensorfunc::log<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+            case Precision::BFloat16:
+                tensorfunc::log<Author, nv_bfloat16>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(a_type);
@@ -349,23 +291,11 @@ namespace deepx::tf
             case Precision::Float32:
                 tensorfunc::exp<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
-            // case Precision::Float16:
-            //     tensorfunc::exp<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            // case Precision::BFloat16:
-            //     tensorfunc::exp<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
-            //     break;
-            case Precision::Int64:
-                tensorfunc::exp<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+            case Precision::Float16:
+                tensorfunc::exp<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
                 break;
-            case Precision::Int32:
-                tensorfunc::exp<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int16:
-                tensorfunc::exp<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
-                break;
-            case Precision::Int8:
-                tensorfunc::exp<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+            case Precision::BFloat16:
+                tensorfunc::exp<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(a_type);

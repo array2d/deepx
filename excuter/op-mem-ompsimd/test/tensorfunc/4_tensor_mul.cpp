@@ -44,21 +44,7 @@ void test_mul_1(){
     mul<tensorfunc::miaobyte,float>(a, b,a);  
     print<miaobyte>(a);
 }
-void test_muladd(){
-    // std::vector<int> shape=randomshape(1,4,1,8);
-    std::vector<int> shape={3,7};
-    Tensor<float> a=New<float>(shape);
-    Tensor<float> b=New<float>(shape);
-    Tensor<float> c=New<float>(shape);
-    arange<miaobyte,float>(a,1.0f,1);
-    arange<miaobyte,float>(b,101.0f,1);
-    print<miaobyte>(a);
-    print<miaobyte>(b);
-    mulscalaradd<tensorfunc::miaobyte,float>(a, 2.0f, b, -1.0f,c);
-    print<miaobyte>(c);
-    mulscalaradd<tensorfunc::miaobyte,float>(a, 2.0f, b, -1.0f,a);
-    print<miaobyte>(a);
-}
+ 
 void test_mul_scalar(){
     std::vector<int> shape=randomshape(1,1,1,100);
     Tensor<float> a=New<float>(shape);
@@ -83,10 +69,6 @@ int main(int argc, char** argv){
             test_mul_1();
             break;
         case 3:
-            std::cout<<"test_muladd"<<std::endl;
-            test_muladd();
-            break;
-        case 4:
             std::cout<<"test_mul_scalar"<<std::endl;
             test_mul_scalar();
             break;

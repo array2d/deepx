@@ -1,6 +1,6 @@
 from typing import Optional, Union
 from deepx import Tensor
-from deepx.autograd import Graph,DataNode,OpNode
+from deepx.autograd import Graph,DataNode,OpNode,Function,Context
 from deepx.nn import DeepxIR,Param
 from deepx.scheduler import send
 from .changeshape import broadcast_shape
@@ -101,62 +101,147 @@ def _a_B_elementwiseop_C(
 
 #add
 OpNode.register("add")
+class Add(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        return _A_B_elementwiseop_C(a, b, "add", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context,out_grad):
+        return out_grad, out_grad
 OpNode.register("addscalar")
-
+class AddScalar(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        return _A_b_elementwiseop_C(a, b, "addscalar", out,author)
+ 
+    @staticmethod
+    def backward(ctx:Context, grad_output):
+        return grad_output, None
 def add(
         a:Tensor,
         b: Optional[Union[Tensor, float, int]] = None, 
-        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
+        out:Union[Tensor,str]='',
+        author='miaobyte')->Tensor:
     if isinstance(b,Tensor):
-        return _A_B_elementwiseop_C(a,b,"add",out)
+        return Add.apply(a,b,out,author)
     else:
-        return _A_b_elementwiseop_C(a,b,"addscalar",out)
+        return AddScalar.apply(a,b,out,author)
 
 
 #sub
 OpNode.register("sub")
+class Sub(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        return _A_B_elementwiseop_C(a, b, "sub", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, grad_output):
+        return grad_output, -grad_output
+    
 OpNode.register("subscalar")
-
+class SubScalar(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        return _A_b_elementwiseop_C(a, b, "subscalar", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, grad_output):
+        return grad_output, None
 def sub(
         a:Tensor,
         b: Optional[Union[Tensor, float, int]] = None, 
         out:Union[Tensor,str]='',author='miaobyte')->Tensor:  
     if isinstance(b,Tensor):
-        return _A_B_elementwiseop_C(a,b,"sub",out)
+        return Sub.apply(a,b,out,author)
     else:
-        return _A_b_elementwiseop_C(a,b*-1,"addscalar",out)
+        return SubScalar.apply(a,b,out,author)
 
 #mul
 OpNode.register("mul")
+class Mul(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        ctx.save_tensors(a,b)
+        return _A_B_elementwiseop_C(a, b, "mul", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        a,b=ctx.get_tensor
+        return out_grad * b, out_grad * a
+    
 OpNode.register("mulscalar")
-
+class MulScalar(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        ctx.save_data('b',b)
+        return _A_b_elementwiseop_C(a, b, "mulscalar", out,author)
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        b=ctx.get_data('b')
+        return out_grad * b, None
 def mul(
         a:Tensor,
         b: Optional[Union[Tensor, float, int]] = None, 
         out:Union[Tensor,str]='',author='miaobyte')->Tensor:
     if isinstance(b,Tensor):
-        return _A_B_elementwiseop_C(a,b,"mul",out)
+        return Mul.apply(a,b,out,author)
     else:
-        return _A_b_elementwiseop_C(a,b,"mulscalar",out)
+        return MulScalar.apply(a,b,out,author)
  
 
 #div
 OpNode.register("div")
+class Div(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        ctx.save_tensors(a,b)
+        return _A_B_elementwiseop_C(a, b, "div", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        a,b=ctx.get_tensor
+        return out_grad / b, -out_grad * a / b / b
+    
 OpNode.register("divscalar")
+class DivScalar(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        ctx.save_data('b',b)
+        return _A_b_elementwiseop_C(a, b, "divscalar", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        b=ctx.get_data('b')
+        return out_grad / b, None
+    
+OpNode.register("rdivscalar")
+class RDivScalar(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        ctx.save_data('b',b)
+        return _A_b_elementwiseop_C(a, b, "rdivscalar", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        b=ctx.get_data('b')
+        return out_grad * b, None
+    
 OpNode.register("rdivscalar")
 def div(
         a: Optional[Union[Tensor, float, int]] = None,
         b: Optional[Union[Tensor, float, int]] = None, 
         out:Union[Tensor,str]='',author='miaobyte')->Tensor:
     if isinstance(b,Tensor) and isinstance(a,Tensor):
-        return _A_B_elementwiseop_C(a,b,"div",out)
+        return Div.apply(a,b,out,author)
     else:
         if isinstance(a,Tensor):
             #C=A/b
-            return _A_b_elementwiseop_C(a,b,"divscalar",out)
+            return DivScalar.apply(a,b,"divscalar",out,author)
         else:
             #C=a/B
-            return _a_B_elementwiseop_C(a,b,"rdivscalar",out)
+            return RDivScalar.apply(a,b,"rdivscalar",out,author)
 
 
 OpNode.register("max")
@@ -211,47 +296,107 @@ def clamp(
 
 #sqrt
 OpNode.register("sqrt")
+class Sqrt(Function):
+    @staticmethod
+    def forward(ctx:Context, a,out,author='miaobyte'):
+        ctx.save_tensor(a)
+        return _A_elementwiseop_C(a,"sqrt",out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        a=ctx.get_tensor
+        return out_grad / (2 * sqrt(a)), None
+    
 def sqrt(
         input:Tensor,
-        out:Union[Tensor,str]='')->Tensor:
-    return _A_elementwiseop_C(input,"sqrt",out)
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
+    return Sqrt.apply(input,out,author)
 
 OpNode.register("pow")
+class Pow(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        ctx.save_tensors(a,b)
+        return _A_B_elementwiseop_C(a, b, "pow", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        a,b=ctx.get_tensor
+        return out_grad * b * pow(a,b-1), out_grad * pow(a,b) * log(a)
+
 OpNode.register("powscalar")
+class PowScalar(Function):
+    @staticmethod
+    def forward(ctx:Context, a, b,out,author='miaobyte'):
+        ctx.save_data('b',b)
+        return _A_b_elementwiseop_C(a, b, "powscalar", out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        b=ctx.get_data('b')
+        return out_grad * b * pow(a,b-1), out_grad * pow(a,b) * log(a)
+    
 def pow(
         a:Tensor,
         b:Union[int,float,Tensor,]=0,
-        out:Union[Tensor,str]='')->Tensor:
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
     if  isinstance(b,int) or isinstance(b,float):
-        return _A_b_elementwiseop_C(a,b,"powscalar",out)
+        return PowScalar.apply(a,b,"powscalar",out,author)
     else:
-        return _A_B_elementwiseop_C(a,b,"pow",out)
+        return Pow.apply(a,b,"pow",out,author)
 
 #exp
 OpNode.register("exp")
+class Exp(Function):
+    @staticmethod
+    def forward(ctx:Context, a,out,author='miaobyte'):
+        ctx.save_tensor(a)
+        return _A_elementwiseop_C(a,"exp",out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        a=ctx.get_tensor
+        return out_grad * exp(a), None
+    
 def exp(
         a:Tensor,
-        out:Union[Tensor,str]='')->Tensor:
-    return _A_elementwiseop_C(a,"exp",out)  
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
+    return Exp.apply(a,out,author)  
 #log
 OpNode.register("log")
+class Log(Function):
+    @staticmethod
+    def forward(ctx:Context, a,out,author='miaobyte'):
+        ctx.save_tensor(a)
+        return _A_elementwiseop_C(a,"log",out,author)
+    
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        a=ctx.get_tensor
+        return out_grad / a, None
+    
 def log(
-        input:Tensor,
-        out:Union[Tensor,str]='')->Tensor:
-    return _A_elementwiseop_C(input,"log",out)
+        a:Tensor,
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
+    return Log.apply(a,out,author)
 
+OpNode.register("rsqrt")
+class Rsqrt(Function):
+    @staticmethod
+    def forward(ctx:Context, a,out,author='miaobyte'):
+        ctx.save_tensor(a)
+        return _A_elementwiseop_C(a,"rsqrt",out,author)
 
+    @staticmethod
+    def backward(ctx:Context, out_grad):
+        a=ctx.get_tensor
+        return -out_grad / (2 * a * sqrt(a)), None
+    
 def rsqrt(
         input:Tensor,
-        out:Union[Tensor,str]='')->Tensor:
-    outtensor=None
-    if isinstance(out,str):
-        outtensor=Tensor(shape=input.shape, dtype=input.dtype, device=input.device)
-        outtensor.addtograph(out)
-    else:
-        outtensor=out
-    outtensor=1/sqrt(input,outtensor)
-    return outtensor
+        out:Union[Tensor,str]='',author='miaobyte')->Tensor:
+    return Rsqrt.apply(input,out,author)
+
  
 
 
