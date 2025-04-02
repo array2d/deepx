@@ -7,6 +7,7 @@
 #include "deepx/tensorfunc/authors.hpp"
 namespace deepx::tensorfunc
 {
+    //max
     template <typename T>
     __global__ void max_kernel(const T* A, const T* B, T* C, const int size);
 
@@ -37,6 +38,7 @@ namespace deepx::tensorfunc
     template <>
     void launch_max<int8_t>(int numBlocks, int blockSize, const int8_t* A, const int8_t* B, int8_t* C, const int size);
 
+    //maxscalar
     template <typename T>
     __global__ void maxscalar_kernel(const T* A, const T scalar, T* C, const int size);
 
@@ -70,6 +72,7 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void min_kernel(const T* A, const T* B, T* C, const int size);
 
+    //min
     template <typename T>
     void launch_min(int numBlocks, int blockSize, const T* A, const T* B, T* C, const int size);
 
@@ -97,6 +100,7 @@ namespace deepx::tensorfunc
     template <>
     void launch_min<int8_t>(int numBlocks, int blockSize, const int8_t* A, const int8_t* B, int8_t* C, const int size);
 
+    //minscalar
     template <typename T>
     __global__ void minscalar_kernel(const T* A, const T scalar, T* C, const int size);
 
@@ -127,34 +131,67 @@ namespace deepx::tensorfunc
     template <>
     void launch_minscalar<int8_t>(int numBlocks, int blockSize, const int8_t* A, const int8_t scalar, int8_t* C, const int size);
 
+    //compare
     template <typename T>
-    __global__ void compare_kernel(const T* A, const T* B, int8_t* mask, const int size);
+    __global__ void compare_kernel(const T* A, const T* B, float* mask, const int size);
 
     template <typename T>
-    void launch_compare(int numBlocks, int blockSize, const T* A, const T* B, int8_t* mask, const int size);
+    void launch_compare(int numBlocks, int blockSize, const T* A, const T* B, float* mask, const int size);
 
     template <>
-    void launch_compare<double>(int numBlocks, int blockSize, const double* A, const double* B, int8_t* mask, const int size);
+    void launch_compare<double>(int numBlocks, int blockSize, const double* A, const double* B, float* mask, const int size);
 
     template <>
-    void launch_compare<float>(int numBlocks, int blockSize, const float* A, const float* B, int8_t* mask, const int size);
+    void launch_compare<float>(int numBlocks, int blockSize, const float* A, const float* B, float* mask, const int size);
 
     template <>
-    void launch_compare<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* A, const nv_bfloat16* B, int8_t* mask, const int size);
+    void launch_compare<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* A, const nv_bfloat16* B, float* mask, const int size);
 
     template <>
-    void launch_compare<__half>(int numBlocks, int blockSize, const __half* A, const __half* B, int8_t* mask, const int size);
+    void launch_compare<__half>(int numBlocks, int blockSize, const __half* A, const __half* B, float* mask, const int size);
 
     template <>
-    void launch_compare<int64_t>(int numBlocks, int blockSize, const int64_t* A, const int64_t* B, int8_t* mask, const int size);
+    void launch_compare<int64_t>(int numBlocks, int blockSize, const int64_t* A, const int64_t* B, float* mask, const int size);
 
     template <>
-    void launch_compare<int32_t>(int numBlocks, int blockSize, const int32_t* A, const int32_t* B, int8_t* mask, const int size);
+    void launch_compare<int32_t>(int numBlocks, int blockSize, const int32_t* A, const int32_t* B, float* mask, const int size);
 
     template <>
-    void launch_compare<int16_t>(int numBlocks, int blockSize, const int16_t* A, const int16_t* B, int8_t* mask, const int size);
+    void launch_compare<int16_t>(int numBlocks, int blockSize, const int16_t* A, const int16_t* B, float* mask, const int size);
 
     template <>
-    void launch_compare<int8_t>(int numBlocks, int blockSize, const int8_t* A, const int8_t* B, int8_t* mask, const int size);
+    void launch_compare<int8_t>(int numBlocks, int blockSize, const int8_t* A, const int8_t* B, float* mask, const int size);
+
+    //comparescalar
+    template <typename T>
+    __global__ void comparescalar_kernel(const T* A, const T scalar, float* mask, const int size);
+
+    template <typename T>
+    void launch_comparescalar(int numBlocks, int blockSize, const T* A, const T scalar, float* mask, const int size);
+
+    template <>
+    void launch_comparescalar<double>(int numBlocks, int blockSize, const double* A, const double scalar, float* mask, const int size);
+
+    template <>
+    void launch_comparescalar<float>(int numBlocks, int blockSize, const float* A, const float scalar, float* mask, const int size);
+
+    template <>
+    void launch_comparescalar<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* A, const nv_bfloat16 scalar, float* mask, const int size);
+
+    template <>
+    void launch_comparescalar<__half>(int numBlocks, int blockSize, const __half* A, const __half scalar, float* mask, const int size);
+
+    template <>
+    void launch_comparescalar<int64_t>(int numBlocks, int blockSize, const int64_t* A, const int64_t scalar, float* mask, const int size);
+
+    template <>
+    void launch_comparescalar<int32_t>(int numBlocks, int blockSize, const int32_t* A, const int32_t scalar, float* mask, const int size);
+
+    template <>
+    void launch_comparescalar<int16_t>(int numBlocks, int blockSize, const int16_t* A, const int16_t scalar, float* mask, const int size);
+
+    template <>
+    void launch_comparescalar<int8_t>(int numBlocks, int blockSize, const int8_t* A, const int8_t scalar, float* mask, const int size); 
+ 
 }
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_COMPARE_CUH

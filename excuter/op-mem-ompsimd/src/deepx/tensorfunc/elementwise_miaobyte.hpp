@@ -223,9 +223,6 @@ namespace deepx::tensorfunc
         }
     };
 
-     
- 
-
     // 添加 div 的模板特化实现
     template <typename T>
     struct divDispatcher<miaobyte, T>
@@ -287,7 +284,6 @@ namespace deepx::tensorfunc
         }
     };
 
- 
     template <typename T>
     struct sqrtDispatcher<miaobyte, T, std::enable_if_t<std::is_floating_point_v<T>>>
     {
@@ -346,8 +342,7 @@ namespace deepx::tensorfunc
                                                {
                                                    output.data[i + j] = std::sqrt(input.data[i + j]);
                                                    ++j;
-                                               }
-                                           });
+                                               } });
             }
             else
             {
@@ -568,10 +563,10 @@ namespace deepx::tensorfunc
     struct maxDispatcher<miaobyte, T>
     {
         static void max(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
-            {
+        {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeParallel(C.shape.dim - 1, [&A, &B, &C ](int idx)
+                C.shape.rangeParallel(C.shape.dim - 1, [&A, &B, &C](int idx)
                                       {
                 int shape_last=C.shape[-1];
                 const ScalableTag<T> tag;
@@ -606,7 +601,6 @@ namespace deepx::tensorfunc
             }
         }
     };
- 
 
     template <typename T>
     struct maxscalarDispatcher<miaobyte, T>
@@ -651,8 +645,6 @@ namespace deepx::tensorfunc
         }
     };
 
-    
-
     template <typename T>
     struct minDispatcher<miaobyte, T>
     {
@@ -696,7 +688,6 @@ namespace deepx::tensorfunc
         }
     };
 
-    
     template <typename T>
     struct minscalarDispatcher<miaobyte, T>
     {
@@ -738,24 +729,23 @@ namespace deepx::tensorfunc
             }
         }
     };
-    
+
     template <typename T>
     struct compareDispatcher<miaobyte, T>
     {
-        static void compare(const Tensor<T> &A, const Tensor<T> &B,const Tensor<int8_t> &mask)
+        static void compare(const Tensor<T> &A, const Tensor<T> &B, const Tensor<float> &mask)
         {
-            if (A.shape == B.shape  && mask.shape == A.shape)
+            if (A.shape == B.shape && mask.shape == A.shape)
             {
                 A.shape.rangeParallel(A.shape.dim, [&A, &B, &mask](int idx)
                                       {
                                             if(A.data[idx]==B.data[idx]){
-                                                mask.data[idx]=2;
+                                                mask.data[idx]=0.5;
                                             }else if(A.data[idx]>B.data[idx]){
                                                 mask.data[idx]=1;
                                             }else{
                                                 mask.data[idx]=0;
-                                            }
-                                        });
+                                            } });
             }
             else
             {
@@ -763,5 +753,31 @@ namespace deepx::tensorfunc
             }
         }
     };
-}
+
+    template <typename T>
+    struct comparescalarDispatcher<miaobyte, T>
+    {
+        static void comparescalar(const Tensor<T> &A, const T scalar, Tensor<float> &mask)
+        {
+            if (A.shape == mask.shape)
+            {
+                A.shape.rangeParallel(A.shape.dim, [&A, &mask, &scalar](int idx)
+                                      {
+                if(A.data[idx]==scalar){
+                    mask.data[idx]=0.5;
+                }else if(A.data[idx]>scalar){
+                    mask.data[idx]=1;
+                }else{
+                    mask.data[idx]=0;
+                } });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        };
+    };
+
+    
+};
 #endif // DEEPX_OP_CPU_ELEMENTWISE_HPP

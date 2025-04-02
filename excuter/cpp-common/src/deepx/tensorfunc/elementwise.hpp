@@ -277,13 +277,25 @@ namespace deepx::tensorfunc
     template <typename Author, typename T>
     struct compareDispatcher
     {
-        static void compare(const Tensor<T> &A, const Tensor<T> &B, Tensor<int8_t> &mask) = delete;
+        static void compare(const Tensor<T> &A, const Tensor<T> &B, Tensor<float> &mask) = delete;
     };
 
     template <typename Author, typename T>
-    void compare(const Tensor<T> &A, const Tensor<T> &B,Tensor<int8_t> &mask)
+    void compare(const Tensor<T> &A, const Tensor<T> &B,Tensor<float> &mask)
     {
         compareDispatcher<Author, T>::compare(A, B, mask);
+    }
+
+    template <typename Author, typename T>
+    struct comparescalarDispatcher
+    {
+        static void comparescalar(const Tensor<T> &A, const T scalar, Tensor<float> &mask) = delete;
+    };
+
+    template <typename Author, typename T>
+    void comparescalar(const Tensor<T> &A, const T scalar, Tensor<float> &mask)
+    {
+        comparescalarDispatcher<Author, T>::comparescalar(A, scalar, mask);
     }
 } // namespace deepx::tensorfunc
 

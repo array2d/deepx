@@ -70,7 +70,7 @@ namespace deepx::tensorfunc
     template <typename T>
     struct compareDispatcher<miaobyte, T>
     {
-        static void compare(const Tensor<T> &A, const Tensor<T> &B, Tensor<int8_t> &mask)
+        static void compare(const Tensor<T> &A, const Tensor<T> &B, Tensor<float> &mask)
         {
             if (A.shape.size != B.shape.size || A.shape.size != mask.shape.size) { 
                 throw TensorShapeError("compare");  
@@ -78,6 +78,20 @@ namespace deepx::tensorfunc
             const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
             int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
             launch_compare(numBlocks, blockSize, A.data, B.data, mask.data, A.shape.size);
+        }
+    };
+
+    template <typename T>
+    struct comparescalarDispatcher<miaobyte, T>
+    {
+        static void comparescalar(const Tensor<T> &A, const T scalar, Tensor<float> &mask)
+        {
+            if (A.shape.size != mask.shape.size) {
+                throw TensorShapeError("comparescalar");
+            }
+            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
+            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
+            launch_comparescalar(numBlocks, blockSize, A.data, scalar, mask.data, A.shape.size);
         }
     };
 }

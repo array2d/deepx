@@ -1,6 +1,7 @@
 from deepx.autograd import Graph
 class Context:
-    def __init__(self):
+    def __init__(self,requires_grad=False):
+        self._requires_grad = requires_grad
         self._saved_tensors = []
         self._non_tensor_data = {}
 
@@ -28,7 +29,8 @@ class Function:
 
     @classmethod
     def apply(cls, *args, **kwargs):
-        ctx = Context()
+        requires_grad = kwargs.pop('requires_grad', False)
+        ctx = Context(requires_grad=requires_grad)
         result = cls.forward(ctx, *args, **kwargs)
         return result
     
