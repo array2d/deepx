@@ -1,7 +1,6 @@
 #ifndef DEEPX_TENSORFUNC_ELEMENTWISE_MIAOBYTE_SIN_CU
 #define DEEPX_TENSORFUNC_ELEMENTWISE_MIAOBYTE_SIN_CU
 
-#include <cuda_bf16.h>  
 #include <cuda_fp16.h>
 
  
@@ -28,18 +27,12 @@ namespace deepx::tensorfunc
             C[idx] = sinf(A[idx]);
         }
     }
-    template <>
-    __global__ void sin_kernel<nv_bfloat16>(const nv_bfloat16* A, nv_bfloat16* C, const int size){
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx < size) {
-            C[idx] = ::hsin(A[idx]);
-        }
-    }
+
     template <>
     __global__ void sin_kernel<__half>(const __half* A, __half* C, const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] = ::hsin(A[idx]);
+            C[idx] = ::__nv_half(hsin(A[idx]));
         }
     }   
  
@@ -55,7 +48,6 @@ namespace deepx::tensorfunc
 
     template void  launch_sin<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);
     template void  launch_sin<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
-    template void  launch_sin<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
     template void  launch_sin<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
 
     // cos
@@ -75,18 +67,12 @@ namespace deepx::tensorfunc
             C[idx] = cosf(A[idx]);
         }
     }   
-    template <>
-    __global__ void cos_kernel<nv_bfloat16>(const nv_bfloat16* A, nv_bfloat16* C, const int size){
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx < size) {
-            C[idx] = ::hcos(A[idx]);
-        }
-    }   
+ 
     template <>
     __global__ void cos_kernel<__half>(const __half* A, __half* C, const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] = ::hcos(A[idx]);
+            C[idx] = ::__nv_half(hcos(A[idx]));
         }
     }      
  
@@ -101,7 +87,6 @@ namespace deepx::tensorfunc
     }
     template void  launch_cos<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);    
     template void  launch_cos<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
-    template void  launch_cos<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
     template void  launch_cos<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
  
     // tan
