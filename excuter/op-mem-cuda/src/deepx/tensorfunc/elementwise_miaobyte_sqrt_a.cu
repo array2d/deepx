@@ -20,7 +20,7 @@ namespace deepx::tensorfunc
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size)
         {
-            C[idx] = ::__nv_bfloat16(hsqrt(A[idx]));
+            C[idx] = hsqrt(A[idx]);
         }
     }
 
@@ -47,7 +47,7 @@ namespace deepx::tensorfunc
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size)
         {
-            C[idx] = ::__nv_bfloat16(hlog(A[idx]));
+            C[idx] = hlog(A[idx]);
         }
     }
 
@@ -74,7 +74,7 @@ namespace deepx::tensorfunc
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size)
         {
-            C[idx] = ::__nv_bfloat16(hexp(A[idx]));
+            C[idx] = hexp(A[idx]);
         }
     }
 

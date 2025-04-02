@@ -18,7 +18,7 @@ namespace deepx::tensorfunc
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size)
         {
-            C[idx] = ::__nv_bfloat16(hsin(A[idx]));
+            C[idx] = hsin(A[idx]);
         }
     }
 
@@ -46,7 +46,7 @@ namespace deepx::tensorfunc
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size)
         {
-            C[idx] = ::__nv_bfloat16(hcos(A[idx]));
+            C[idx] = hcos(A[idx]);
         }
     }
     template <typename T>
