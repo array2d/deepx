@@ -1,6 +1,9 @@
 #ifndef DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_SQRT_CU
 #define DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_SQRT_CU
 
+
+#include <cuda_bf16.h>  
+#include <cuda_fp16.h>
 #include "deepx/tensorfunc/cuda.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 #include <cuda/std/cmath>
