@@ -32,14 +32,14 @@ namespace deepx::tensorfunc
     __global__ void  sqrt_kernel<nv_bfloat16>(const nv_bfloat16* A, nv_bfloat16* C,const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] = hsqrt(A[idx]);
+            C[idx] = ::hsqrt(A[idx]);
         }
     }
     template <>
     __global__ void  sqrt_kernel<__half>(const __half* A, __half* C,const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] = hsqrt(A[idx]);
+            C[idx] = ::hsqrt(A[idx]);
         }
     }
  
@@ -141,14 +141,14 @@ namespace deepx::tensorfunc
     __global__ void log_kernel<__half>(const __half* A, __half* C,const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] =  hlog(A[idx]);
+            C[idx] =  ::hlog(A[idx]);
         }
     }
      template <>
     __global__ void log_kernel<nv_bfloat16>(const nv_bfloat16* A, nv_bfloat16* C,const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] =  hlog(A[idx]);
+            C[idx] =  ::hlog(A[idx]);
         }
     }
  
@@ -187,14 +187,14 @@ namespace deepx::tensorfunc
     __global__ void exp_kernel<nv_bfloat16>(const nv_bfloat16* A, nv_bfloat16* C,const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] =  hexp(A[idx]);
+            C[idx] =  ::hexp(A[idx]);
         }
     }
     template <>
     __global__ void exp_kernel<__half>(const __half* A, __half* C,const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] =  hexp(A[idx]);
+            C[idx] =  ::hexp(A[idx]);
         }
     }
  

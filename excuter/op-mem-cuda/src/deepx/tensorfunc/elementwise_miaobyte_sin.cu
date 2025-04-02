@@ -32,14 +32,14 @@ namespace deepx::tensorfunc
     __global__ void sin_kernel<nv_bfloat16>(const nv_bfloat16* A, nv_bfloat16* C, const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] = hsin(A[idx]);
+            C[idx] = ::hsin(A[idx]);
         }
     }
     template <>
     __global__ void sin_kernel<__half>(const __half* A, __half* C, const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] = hsin(A[idx]);
+            C[idx] = ::hsin(A[idx]);
         }
     }   
  
@@ -79,14 +79,14 @@ namespace deepx::tensorfunc
     __global__ void cos_kernel<nv_bfloat16>(const nv_bfloat16* A, nv_bfloat16* C, const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] = hcos(A[idx]);
+            C[idx] = ::hcos(A[idx]);
         }
     }   
     template <>
     __global__ void cos_kernel<__half>(const __half* A, __half* C, const int size){
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx < size) {
-            C[idx] = hcos(A[idx]);
+            C[idx] = ::hcos(A[idx]);
         }
     }      
  
