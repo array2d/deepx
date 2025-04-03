@@ -40,19 +40,6 @@ namespace deepx::tensorfunc
     {
         matmulDispatcher<Author, T>::matmul(A, B, C);
     }
-
-    template <typename Author, typename T>
-    struct matmuladdDispatcher
-    {
-        static void matmuladd(const Tensor<T> &A, const Tensor<T> &B, const T &alpha, const T &beta, Tensor<T> &C) = delete;
-    };
-
-    template <typename Author, typename T>
-    void matmuladd(const Tensor<T> &A, const Tensor<T> &B, const T &alpha, const T &beta, Tensor<T> &C)
-    {
-        matmuladdDispatcher<Author, T>::matmuladd(A, B, alpha, beta, C);
-    }
-
 }
 
 #endif

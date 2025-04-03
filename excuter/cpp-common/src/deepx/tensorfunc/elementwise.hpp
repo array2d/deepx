@@ -15,6 +15,8 @@ namespace deepx::tensorfunc
         }
     };
 
+
+    // A+B=>C
     template <typename Author, typename T>
     void add(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
     {
@@ -29,6 +31,7 @@ namespace deepx::tensorfunc
         }
     };
 
+    // A+scalar=>C
     template <typename Author, typename T>
     void addscalar(const Tensor<T> &input, const T value, Tensor<T> &output)
     {
@@ -43,6 +46,7 @@ namespace deepx::tensorfunc
         }
     };
 
+    // A-B=>C
     template <typename Author, typename T>
     void sub(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
     {
@@ -57,6 +61,7 @@ namespace deepx::tensorfunc
         }
     };
 
+    // A-scalar=>C
     template <typename Author, typename T>
     void subscalar(const Tensor<T> &input, const T value, Tensor<T> &output)
     {
@@ -69,6 +74,7 @@ namespace deepx::tensorfunc
         static void mul(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C) = delete;
     };
 
+    // A*B=>C
     template <typename Author, typename T>
     void mul(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
     {
@@ -81,6 +87,7 @@ namespace deepx::tensorfunc
         static void mulscalar(const Tensor<T> &input, const T value, Tensor<T> &output) = delete;
     };
 
+    // A*scalar=>C
     template <typename Author, typename T>
     void mulscalar(const Tensor<T> &input, const T value, Tensor<T> &output)
     {
@@ -95,6 +102,7 @@ namespace deepx::tensorfunc
         static void div(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C) = delete;
     };
 
+    // A/B=>C
     template <typename Author, typename T>
     void div(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
     {
@@ -107,6 +115,7 @@ namespace deepx::tensorfunc
         static void divscalar(const Tensor<T> &input, const T value, Tensor<T> &output) = delete;
     };
 
+    // A/scalar=>C
     template <typename Author, typename T>
     void divscalar(const Tensor<T> &input, const T value, Tensor<T> &output)
     {
@@ -119,6 +128,7 @@ namespace deepx::tensorfunc
         static void rdivscalar(const T value, const Tensor<T> &input, Tensor<T> &output) = delete;
     };
 
+    // scalar/A=>C
     template <typename Author, typename T>
     void rdivscalar(const T value, const Tensor<T> &input, Tensor<T> &output)
     {
@@ -132,6 +142,7 @@ namespace deepx::tensorfunc
         static void sqrt(const Tensor<T> &input, Tensor<T> &output) = delete;
     };
 
+    // sqrt(A)=>C   
     template <typename Author, typename T>
     void sqrt(const Tensor<T> &input, Tensor<T> &output)
     {
@@ -144,6 +155,7 @@ namespace deepx::tensorfunc
         static void pow(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C) = delete;
     };
 
+    // A^B=>C
     template <typename Author, typename T>
     void pow(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
     {
@@ -156,6 +168,7 @@ namespace deepx::tensorfunc
         static void powscalar(const Tensor<T> &input, const T value, Tensor<T> &output) = delete;
     };
 
+    // A^scalar=>C
     template <typename Author, typename T>
     void powscalar(const Tensor<T> &input, const T value, Tensor<T> &output)
     {
@@ -168,6 +181,7 @@ namespace deepx::tensorfunc
         static void log(const Tensor<T> &input, Tensor<T> &output) = delete;
     };
 
+    // log(A)=>C
     template <typename Author, typename T>
     void log(const Tensor<T> &input, Tensor<T> &output)
     {
@@ -180,6 +194,7 @@ namespace deepx::tensorfunc
         static void exp(const Tensor<T> &input, Tensor<T> &output) = delete;
     };
 
+    // exp(A)=>C
     template <typename Author, typename T>
     void exp(const Tensor<T> &input, Tensor<T> &output)
     {
@@ -192,6 +207,7 @@ namespace deepx::tensorfunc
         static void sin(const Tensor<T> &input, Tensor<T> &output) = delete;
     };
 
+    // sin(A)=>C
     template <typename Author, typename T>
     void sin(const Tensor<T> &input, Tensor<T> &output)
     {
@@ -204,6 +220,7 @@ namespace deepx::tensorfunc
         static void cos(const Tensor<T> &input, Tensor<T> &output) = delete;
     };
 
+    // cos(A)=>C
     template <typename Author, typename T>
     void cos(const Tensor<T> &input, Tensor<T> &output)
     {
@@ -216,6 +233,7 @@ namespace deepx::tensorfunc
         static void tan(const Tensor<T> &input, Tensor<T> &output) = delete;
     };
 
+    // tan(A)=>C
     template <typename Author, typename T>
     void tan(const Tensor<T> &input, Tensor<T> &output)
     {
@@ -228,6 +246,7 @@ namespace deepx::tensorfunc
         static void max(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C) = delete;
     };
 
+    // max(A,B)=>C
     template <typename Author, typename T>
     void max(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
     {
@@ -242,6 +261,7 @@ namespace deepx::tensorfunc
         static void maxscalar(const Tensor<T> &A, T b, Tensor<T> &C) = delete;
     };
 
+    // max(A,scalar)=>C
     template <typename Author, typename T>
     void maxscalar(const Tensor<T> &A, T b, Tensor<T> &C)
     {
@@ -256,6 +276,7 @@ namespace deepx::tensorfunc
         static void min(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C) = delete;
     };
 
+    // min(A,B)=>C
     template <typename Author, typename T>
     void min(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
     {
@@ -268,6 +289,7 @@ namespace deepx::tensorfunc
         static void minscalar(const Tensor<T> &A, T b, Tensor<T> &C) = delete;
     };
 
+    // min(A,scalar)=>C
     template <typename Author, typename T>
     void minscalar(const Tensor<T> &A, T b, Tensor<T> &C)
     {
@@ -280,6 +302,10 @@ namespace deepx::tensorfunc
         static void compare(const Tensor<T> &A, const Tensor<T> &B, Tensor<float> &mask) = delete;
     };
 
+    // compare(A,B)=>mask
+    // if A[i]==B[i], mask[i]=0.5
+    // if A[i]>B[i], mask[i]=0
+    // if A[i]<B[i], mask[i]=1
     template <typename Author, typename T>
     void compare(const Tensor<T> &A, const Tensor<T> &B,Tensor<float> &mask)
     {

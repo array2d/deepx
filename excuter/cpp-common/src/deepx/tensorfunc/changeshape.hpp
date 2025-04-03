@@ -6,43 +6,129 @@
 
 namespace deepx::tensorfunc
 {
-
-    // 通用模板声明
+ 
     template <typename Author, typename T>
-    struct InitDispatcher
+    struct reshapeDispatcher
     {
         static void reshape(Tensor<T> &tensor, const Shape &new_shape) = delete;
     };
 
+    // reshape(A,new_shape)=>B
     template <typename Author, typename T>
     void reshape(Tensor<T> &tensor, const Shape &new_shape)
     {
-        InitDispatcher<Author, T>::reshape(tensor, new_shape);
+        reshapeDispatcher<Author, T>::reshape(tensor, new_shape);
     }
 
-    // // 作者特化示例（类型无关实现）
-    // template <typename T>
-    // struct InitDispatcher<miaobyte, T>
-    // {
-    //     static void reshape(Tensor<T> &tensor, const Shape &new_shape)
-    //     {
-    //         // 统一实现，不依赖T的类型
-    //         if (tensor.shape.size() != new_shape.size())
-    //         {
-    //             throw std::invalid_argument("Total elements must match");
-    //         }
-    //         tensor.shape = new_shape;
-    //     }
-    // };
-    // 特化作者和具体精度
-    // template <>
-    // struct InitDispatcher<miaobyte, float>
-    // {
-    //     static void reshape(Tensor<float> &tensor, const Shape &new_shape)
-    //     {
-    //         // CUDA实现
-    //     }
-    // };
+    template <typename Author, typename T>
+    struct transposeDispatcher
+    {
+        static void transpose(Tensor<T> &tensor, const std::vector<int> &dim_order) = delete;
+    };
+
+    // transpose(A,dim_order)=>B
+    template <typename Author, typename T>
+    void transpose(Tensor<T> &tensor, const std::vector<int> &dim_order)
+    {
+        transposeDispatcher<Author, T>::transpose(tensor, dim_order);
+    }
+
+    template <typename Author, typename T>
+    struct concatDispatcher
+    {
+        static void concat(const Tensor<T> *tensors, const int num_tensors, const int axis, Tensor<T> &C) = delete;
+    };
+    // concat(tensors,axis)=>C
+    template <typename Author, typename T>
+    void concat(const Tensor<T> *tensors, const int num_tensors, const int axis, Tensor<T> &C)
+    {
+        concatDispatcher<Author, T>::concat(tensors, num_tensors, axis, C);
+    }
+
+    // https://onnx.ai/onnx/operators/onnx__Split.html
+    template <typename Author, typename T>
+    struct splitDispatcher
+    {
+        static void split(const Tensor<T> &A, const int axis,const std::vector<int> &splits, Tensor<T> *&B) = delete;
+    };  
+    // split(tensor,axis,splits)=>tensors
+    template <typename Author, typename T>
+    void split(const Tensor<T> &A, const int axis,const std::vector<int> &splits, Tensor<T> *&B)
+    {
+        splitDispatcher<Author, T>::split(A, axis, splits, B);
+       
+    }   
+    template <typename Author, typename T>
+    struct splitDispatcher
+    {
+        static void split(const Tensor<T> &A, const int axis,const int num_outputs, Tensor<T> *&B) = delete;
+    };
+    // split(tensor,axis,num_outputs)=>tensors
+    template <typename Author, typename T>
+    void split(const Tensor<T> &A, const int axis,const int num_outputs, Tensor<T> *&B)
+    {
+        splitDispatcher<Author, T>::split(A, axis, num_outputs, B);
+    }
+
+    template <typename Author, typename T>
+    struct expandDispatcher
+    {
+        static void expand(const Tensor<T> &A, const Shape &new_shape, Tensor<T> &B) = delete;
+    };
+
+    template <typename Author, typename T>
+    void expand(const Tensor<T> &A, const Shape &new_shape, Tensor<T> &B)
+    {
+        expandDispatcher<Author, T>::expand(A, new_shape, B);
+    }
+    
+    template <typename Author, typename T>
+    struct squeezeDispatcher
+    {
+        static void squeeze(Tensor<T> &tensor) = delete;
+    };  
+
+    template <typename Author, typename T>
+    void squeeze(Tensor<T> &tensor)
+    {
+        squeezeDispatcher<Author, T>::squeeze(tensor);
+    }
+    
+    template <typename Author, typename T>
+    struct unsqueezeDispatcher
+    {
+        static void unsqueeze(Tensor<T> &tensor, const int axis) = delete;
+    };
+
+    template <typename Author, typename T>
+    void unsqueeze(Tensor<T> &tensor, const int axis)
+    {
+        unsqueezeDispatcher<Author, T>::unsqueeze(tensor, axis);
+    }
+    
+    template <typename Author, typename T>
+    struct flattenDispatcher
+    {
+        static void flatten(Tensor<T> &tensor) = delete;
+    };
+
+    template <typename Author, typename T>
+    void flatten(Tensor<T> &tensor)
+    {
+        flattenDispatcher<Author, T>::flatten(tensor);
+    }
+    
+    template <typename Author, typename T>
+    struct paddingDispatcher
+    {
+        static void padding(Tensor<T> &tensor, const Shape &new_shape) = delete;
+    };  
+
+    template <typename Author, typename T>
+    void padding(Tensor<T> &tensor, const Shape &new_shape)
+    {
+        paddingDispatcher<Author, T>::padding(tensor, new_shape);
+    }
 }
 
 #endif
