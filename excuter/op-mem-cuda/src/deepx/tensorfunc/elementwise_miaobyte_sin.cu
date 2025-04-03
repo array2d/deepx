@@ -2,7 +2,7 @@
 #define DEEPX_TENSORFUNC_ELEMENTWISE_MIAOBYTE_SIN_CU
 
 #include <cuda_fp16.h>
-
+#include <cuda_bf16.h>
  
 #include "deepx/tensorfunc/cuda.hpp"
 #include "deepx/tensorfunc/authors.hpp"
@@ -35,7 +35,15 @@ namespace deepx::tensorfunc
             C[idx] = hsin(A[idx]);
         }
     }   
- 
+    template <>
+    __global__ void sin_kernel<nv_bfloat16>(const nv_bfloat16 *A, nv_bfloat16 *C, const int size){
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if (idx < size)
+        {
+            C[idx] = hsin(A[idx]);
+        }
+    }
+
     template <typename T>
     void launch_sin(int numBlocks, int blockSize, const T* a, T* c, const int size){
         sin_kernel<<<numBlocks, blockSize>>>(a, c, size);
@@ -49,7 +57,7 @@ namespace deepx::tensorfunc
     template void  launch_sin<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);
     template void  launch_sin<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
     template void  launch_sin<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
-
+    template void  launch_sin<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
     // cos
     template <typename T>
     __global__ void cos_kernel(const T* A, T* C, const int size);
@@ -75,7 +83,13 @@ namespace deepx::tensorfunc
             C[idx] = hcos(A[idx]);
         }
     }      
- 
+    template <>
+    __global__ void cos_kernel<nv_bfloat16>(const nv_bfloat16 *A, nv_bfloat16 *C, const int size){
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if (idx < size) {
+            C[idx] = hcos(A[idx]);
+        }
+    }
     template <typename T>
     void launch_cos(int numBlocks, int blockSize, const T* a, T* c, const int size){
         cos_kernel<<<numBlocks, blockSize>>>(a, c, size);
@@ -88,7 +102,7 @@ namespace deepx::tensorfunc
     template void  launch_cos<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);    
     template void  launch_cos<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
     template void  launch_cos<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
- 
+    template void  launch_cos<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
     // tan
     template <typename T>
     __global__ void tan_kernel(const T* A, T* C, const int size);
