@@ -3,12 +3,12 @@
 #include <iostream>
 
 
-#include "deepx/tensorfunc/changeshape.hpp"
+#include "deepx/tensorfunc/changeshape_miaobyte.hpp"
 #include "deepx/tensor.hpp"
 #include "deepx/shape.hpp"
 #include "deepx/shape_concat.hpp"
 #include "deepx/tensorfunc/new.hpp"
-#include "deepx/tensorfunc/init.hpp"
+#include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "deepx/tensorfunc/print_miaobyte.hpp"
 #include "stdutil/vector.hpp"
 #include "deepx/mem/mem.hpp"
@@ -22,6 +22,7 @@ shared_ptr<MemBase>  makeMem(int cnt,std::vector<int> shape){
         
     for (int j=0; j<cnt; j++){
         auto ptr = New<float>(shape);
+        arange<miaobyte,float>(ptr,0.0f,1.0f);
         mem->addtensor("tensor"+std::to_string(j), ptr);
     }
     return mem;
@@ -39,7 +40,7 @@ void test_concat(){
     for (int i=0;i<tensors[0]->shape.dim;i++){
         Shape shape=concatShape(tensors,i);
         Tensor<float> result=New<float>(shape.shape);
-        concat(tensors,i,result);
+        concat<miaobyte,float>(tensors,i,result);
         print<miaobyte>(result);
     }
     std::cout<<"================"<<std::endl;

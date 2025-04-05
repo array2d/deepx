@@ -7,7 +7,7 @@
 | concat |  none  | concat()->() | Tresult = concat([T1, T2...], axis=3) | concat()->() |
 | matmul | cblas | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) | T3=T1 @ T2 | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) |
 | matmul | miaobyte | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1 @ T2 | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| compare | miaobyte | compare(tensor<any> A, tensor<any> B)->(tensor<int8> mask) | mask=compare(T1,T2) | compare(tensor<any> A, tensor<any> B)->(tensor<int8> mask) |
+| compare | miaobyte | compare(tensor<any> A, tensor<any> B)->(tensor<float32> mask) | mask=compare(T1,T2) | compare(tensor<any> A, tensor<any> B)->(tensor<float32> mask) |
 | min | miaobyte | min(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=min(T1,T2) | min(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | minscalar | miaobyte | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=min(T1,scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | exp | miaobyte | exp(tensor<any> A)->(tensor<any> C) | T3=exp(T1) | exp(tensor<any> A)->(tensor<any> C) |
@@ -32,6 +32,7 @@
 | subscalar | miaobyte | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) | T3=T1-scalar | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
 | log | miaobyte | log(tensor<any> A)->(tensor<any> C) | T3=log(T1) | log(tensor<any> A)->(tensor<any> C) |
 | uniform | miaobyte | uniform(tensor<any> t, var<any> low, var<any> high, var<int32> seed)->() | uniform(T1,low,high,seed) | uniform(tensor<any> t, var<any> low, var<any> high, var<int32> seed)->() |
+| comparescalar | miaobyte | comparescalar(tensor<any> A, var<any> scalar)->(tensor<float32> mask) | mask=compare(T1,scalar) | comparescalar(tensor<any> A, var<any> scalar)->(tensor<float32> mask) |
 | add | cblas | add(tensor<float64|float32> a, tensor<float64|float32> b)->(tensor<float64|float32> c) | T3=T1+T2 | add(tensor<float64|float32> a, tensor<float64|float32> b)->(tensor<float64|float32> c) |
 | add | miaobyte | add(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |
 | addscalar | miaobyte | addscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) | T3=T1+scalar | addscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |

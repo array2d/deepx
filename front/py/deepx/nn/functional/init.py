@@ -2,7 +2,7 @@ from typing import Optional,Union
 import math
 
 from deepx import Tensor
-from deepx.autograd.graph import OpNode,Function,Context
+from deepx.autograd import OpNode,Function,Context
 from deepx.nn.deepxir import DeepxIR,Param
 from deepx.scheduler import send
 

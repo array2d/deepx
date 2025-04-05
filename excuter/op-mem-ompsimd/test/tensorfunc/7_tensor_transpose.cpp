@@ -3,13 +3,13 @@
 #include <vector>
 
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/changeshape.hpp"
+#include "deepx/tensorfunc/changeshape_miaobyte.hpp"
 #include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/print_miaobyte.hpp"
 #include "stdutil/vector.hpp"
 #include "tensorutil.hpp"
 #include "deepx/shape_transpose.hpp"
-#include "deepx/tensorfunc/authors.hpp"
 
 using namespace deepx::tensorfunc;
 using namespace deepx;
@@ -25,7 +25,7 @@ void test_transpose()
 
     std::vector<int> resultshape = transposeShape(tensor.shape.shape, dimOrder);
     Tensor result = New<float>(resultshape);
-    transpose(tensor, result, dimOrder);
+    transpose<miaobyte,float>(tensor, dimOrder, result);
     print<miaobyte>(result);
 }
 

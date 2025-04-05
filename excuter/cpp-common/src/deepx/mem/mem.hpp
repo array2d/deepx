@@ -150,6 +150,7 @@ namespace deepx::mem
 
             return tensors;
         }
+ 
 
         void delete_tensor(const string &name)
         {

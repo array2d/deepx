@@ -5,6 +5,7 @@
 | Operation | Author | Func Def | Math Formula | IR Instruction |
 |-----------|--------|------------|--------------|----------------|
 | matmul | cublas | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1 @ T2 | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
+| comparescalar | miaobyte | comparescalar(tensor<any> A, var<any> scalar)->(tensor<int8> mask) | mask=compare(T1, scalar) | comparescalar(tensor<any> A, var<any> scalar)->(tensor<int8> mask) |
 | add | cublas | add(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |
 | add | miaobyte | add(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |
 | uniform | miaobyte | uniform(tensor<any> t, var<any> low, var<any> high, var<int32> seed)->() | uniform(T1,low,high,seed) | uniform(tensor<any> t, var<any> low, var<any> high, var<int32> seed)->() |

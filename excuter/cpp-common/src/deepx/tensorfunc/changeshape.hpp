@@ -1,21 +1,22 @@
 #ifndef DEEPX_TENSORFUNC_CHANGE_SHAPE_HPP
 #define DEEPX_TENSORFUNC_CHANGE_SHAPE_HPP
 
+#include <vector>
 #include "deepx/tensor.hpp"
 #include "stdutil/error.hpp"
 
 namespace deepx::tensorfunc
 {
- 
+    using namespace std;
     template <typename Author, typename T>
     struct reshapeDispatcher
     {
-        static void reshape(Tensor<T> &tensor, const Shape &new_shape) = delete;
+        static void reshape(Tensor<T> &tensor, const std::vector<int> &new_shape) = delete;
     };
 
     // reshape(A,new_shape)=>B
     template <typename Author, typename T>
-    void reshape(Tensor<T> &tensor, const Shape &new_shape)
+    void reshape(Tensor<T> &tensor, const std::vector<int> &new_shape)
     {
         reshapeDispatcher<Author, T>::reshape(tensor, new_shape);
     }
@@ -23,26 +24,26 @@ namespace deepx::tensorfunc
     template <typename Author, typename T>
     struct transposeDispatcher
     {
-        static void transpose(Tensor<T> &tensor, const std::vector<int> &dim_order) = delete;
+        static void transpose(const Tensor<T> &tensor, const std::vector<int> &dim_order, Tensor<T> &output) = delete;
     };
 
     // transpose(A,dim_order)=>B
     template <typename Author, typename T>
-    void transpose(Tensor<T> &tensor, const std::vector<int> &dim_order)
+    void transpose(const Tensor<T> &tensor, const std::vector<int> &dim_order, Tensor<T> &output)
     {
-        transposeDispatcher<Author, T>::transpose(tensor, dim_order);
+        transposeDispatcher<Author, T>::transpose(tensor, dim_order, output);
     }
 
     template <typename Author, typename T>
     struct concatDispatcher
     {
-        static void concat(const Tensor<T> *tensors, const int num_tensors, const int axis, Tensor<T> &C) = delete;
+        static void concat(const vector<Tensor<T>*> tensors, const int axis, Tensor<T> &C) = delete;
     };
     // concat(tensors,axis)=>C
     template <typename Author, typename T>
-    void concat(const Tensor<T> *tensors, const int num_tensors, const int axis, Tensor<T> &C)
+    void concat(const vector<Tensor<T>*> tensors, const int axis, Tensor<T> &C)
     {
-        concatDispatcher<Author, T>::concat(tensors, num_tensors, axis, C);
+        concatDispatcher<Author, T>::concat(tensors, axis, C);
     }
 
     // https://onnx.ai/onnx/operators/onnx__Split.html
@@ -50,6 +51,7 @@ namespace deepx::tensorfunc
     struct splitDispatcher
     {
         static void split(const Tensor<T> &A, const int axis,const std::vector<int> &splits, Tensor<T> *&B) = delete;
+        static void split(const Tensor<T> &A, const int axis,const int num_outputs, Tensor<T> *&B) = delete;
     };  
     // split(tensor,axis,splits)=>tensors
     template <typename Author, typename T>
@@ -58,11 +60,7 @@ namespace deepx::tensorfunc
         splitDispatcher<Author, T>::split(A, axis, splits, B);
        
     }   
-    template <typename Author, typename T>
-    struct splitDispatcher
-    {
-        static void split(const Tensor<T> &A, const int axis,const int num_outputs, Tensor<T> *&B) = delete;
-    };
+ 
     // split(tensor,axis,num_outputs)=>tensors
     template <typename Author, typename T>
     void split(const Tensor<T> &A, const int axis,const int num_outputs, Tensor<T> *&B)

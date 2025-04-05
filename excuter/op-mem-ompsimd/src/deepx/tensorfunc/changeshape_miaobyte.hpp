@@ -6,59 +6,72 @@
 
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/changeshape.hpp"
 #include "deepx/shape_broadcast.hpp"
-
+#include "deepx/tensorfunc/authors.hpp"
 namespace deepx::tensorfunc
 {
     template <typename T>
-    void reshape(Tensor<T> &tensor, Tensor<T> &output, const std::vector<int> &shape)
-    { // 参数改为单个tensor引用
+    struct reshapeDispatcher<miaobyte, T>
+    {
+        void reshape(Tensor<T> &tensor, Tensor<T> &output, const std::vector<int> &shape)
+        { // 参数改为单个tensor引用
 
-        int new_prod = 1;
-        for (int dim : shape)
-        {
-            new_prod *= dim;
-        }
+            int new_prod = 1;
+            for (int dim : shape)
+            {
+                new_prod *= dim;
+            }
 
-        if (tensor.shape.size != new_prod)
-        {
-            throw std::invalid_argument("Shape size mismatch");
+            if (tensor.shape.size != new_prod)
+            {
+                throw std::invalid_argument("Shape size mismatch");
+            }
+            if (tensor.data != output.data)
+            {
+                tensorfunc::copytensor(tensor, output);
+            }
+            output.shape = Shape(shape); // 直接修改原tensor的shape
         }
-        if (tensor.data != output.data)
-        {
-            tensorfunc::copytensor(tensor, output);
-        }
-        output.shape = Shape(shape); // 直接修改原tensor的shape
-    }
+    };
 
     template <typename T>
-    void transpose(const Tensor<T> &tensor, Tensor<T> &result, const std::vector<int> &dimOrder)
+    struct transposeDispatcher<miaobyte, T>
     {
-        if (dimOrder.size() != tensor.shape.dim)
+        static void transpose(const Tensor<T> &tensor, const std::vector<int> &dim_order, Tensor<T> &output)
         {
-            throw std::invalid_argument("dimOrder size does not match the number of dimensions in the TensorCPU.");
-        }
-        if (result.shape.size != tensor.shape.size)
-        {
-            throw std::runtime_error("transpose error!shape");
-        }
-        result.shape.rangeParallel(dimOrder.size(), [&tensor, &result, &dimOrder](int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
-                                   {
-                           
-                            for (size_t i = 0; i < dimOrder.size(); ++i) {
-                                newIndices[dimOrder[i]] = indices[i];
+
+            if (dim_order.size() != tensor.shape.dim)
+            {
+                throw std::invalid_argument("dimOrder size does not match the number of dimensions in the TensorCPU.");
+            }
+            if (output.shape.size != tensor.shape.size)
+            {
+                throw std::runtime_error("transpose error!shape");
+            }
+            output.shape.rangeParallel(dim_order.size(), [&tensor, &output, &dim_order](int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
+                                       {
+                                        
+                            for (size_t i = 0; i < dim_order.size(); ++i) {
+                                newIndices[dim_order[i]] = indices[i];
                             }
-                            result.data[idx_linear]= tensor.data[tensor.shape.linearat(newIndices)]; }, tensor.shape.dim);
-    }
+                            output.data[idx_linear]= tensor.data[tensor.shape.linearat(newIndices)]; }, tensor.shape.dim);
+        }
+    };
 
     template <typename T>
-    void concat(const std::vector<Tensor<T> *> &tensors, const int axis, Tensor<T> &result)
+    struct concatDispatcher<miaobyte, T>
     {
-        // Shape shape=concatShape(tensors,axis);
-        // result=New<T>(shape.shape);
-        int dimC = axis + 1;
-        result.shape.rangeParallel(dimC, [&](const int idx, const std::vector<int> &indices)
-                                   {
+        static void concat(const vector<Tensor<T> *> tensors, const int axis, Tensor<T> &result)
+        {
+            //checkshape
+            if (!checkShapeConcat(tensors, axis, result))
+            {
+                throw TensorShapeError("Output tensor shape size must match the sum of input tensor shape sizes for concat");
+            }   
+            int dimC = axis + 1;
+            result.shape.rangeParallel(dimC, [&](const int idx, const std::vector<int> &indices)
+                                       {
                         int concatIdxCurrentTensor=indices[axis];;
                         int tensorIdx=0;
                         while (tensorIdx < tensors.size()  ) {
@@ -76,7 +89,8 @@ namespace deepx::tensorfunc
                         int idxCurrentTensor=tensors[tensorIdx]->shape.linearat(currentTensorIndices);
                         int copylen=tensors[tensorIdx]->shape.strides[axis];
                         std::copy(tensors[tensorIdx]->data+idxCurrentTensor,tensors[tensorIdx]->data+idxCurrentTensor+copylen,result.data+idx); });
-    }
+        }
+    };
 
     template <typename T>
     void split(const Tensor<T> &tensor, const int axis, std::vector<Tensor<T> *> &results)
@@ -111,7 +125,7 @@ namespace deepx::tensorfunc
             throw std::invalid_argument("expand维度不匹配: 输入维度 " +
                                         std::to_string(input.shape.dim) +
                                         ", 目标维度 " +
-                                        std::to_string(output.shape.dim)+
+                                        std::to_string(output.shape.dim) +
                                         "请先前dim补1的方式reshape");
         }
 
@@ -162,7 +176,5 @@ namespace deepx::tensorfunc
                     output.data[idx_linear] = input.data[idx_old]; }, input.shape.dim);
         }
     }
-
-
 }
 #endif

@@ -10,7 +10,7 @@ __all__ = [
     "newtensor",
     "printtensor",
     "constant","full","zeros","ones","uniform","arange","rand","randn","eye","kaiming_uniform_","calculate_fan_in_and_fan_out",
-    "add","sub","mul","div","clamp","sqrt","pow","exp","log","rsqrt",
+    "add","sub","mul","div","sqrt","pow","exp","log","rsqrt",
     "matmul",
     "max","min","sum","prod","mean",
     "transpose","reshape","broadcast_shape","broadcast_to","unsqueeze",
