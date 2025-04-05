@@ -5,6 +5,8 @@
 #include "deepx/tf/init.hpp"
 #include "deepx/tf/elementwise_basic.hpp"
 #include "deepx/tf/elementwise_sqrt.hpp"
+#include "deepx/tf/elementwise_sin.hpp"
+#include "deepx/tf/elementwise_compare.hpp"
 #include "deepx/tf/matmul.hpp"
 #include "deepx/dtype.hpp"
 #include "deepx/tf/tffactory.hpp"
@@ -192,23 +194,81 @@ namespace deepx::tf
 
         tffactory.add_tf(std::make_shared<Sqrt<miaobyte>>(vector<Param>(
                                                               {
-                                                                  Param("A", DataCategory::Tensor, Precision::Any),
+                                                                  Param("A", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
                                                               }),
                                                           vector<Param>(
                                                               {
-                                                                  Param("C", DataCategory::Tensor, Precision::Any),
+                                                                  Param("C", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
                                                               })));
 
         tffactory.add_tf(std::make_shared<Pow<miaobyte>>(vector<Param>(
                                                              {
-                                                                 Param("A", DataCategory::Tensor, Precision::Any),
-                                                                 Param("B", DataCategory::Tensor, Precision::Any),
+                                                                 Param("A", DataCategory::Tensor, Precision::Float64|Precision::Float32 ),
+                                                                 Param("B", DataCategory::Tensor, Precision::Float64|Precision::Float32 ),
                                                              }),
                                                          vector<Param>(
                                                              {
-                                                                 Param("C", DataCategory::Tensor, Precision::Any),
+                                                                 Param("C", DataCategory::Tensor, Precision::Float64|Precision::Float32),
                                                              })));
         tffactory.add_tf(std::make_shared<PowScalar<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("A", DataCategory::Tensor, Precision::Float64|Precision::Float32),
+                                                                       Param("scalar", DataCategory::Var, Precision::Float64|Precision::Float32),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("C", DataCategory::Tensor, Precision::Float64|Precision::Float32),
+                                                                   })));
+        tffactory.add_tf(std::make_shared<Log<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
+                                                             })));
+        tffactory.add_tf(std::make_shared<Exp<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
+                                                             })));
+        tffactory.add_tf(std::make_shared<Sin<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
+                                                             })));
+        tffactory.add_tf(std::make_shared<Cos<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Float64|Precision::Float32|Precision::Float16|Precision::BFloat16),
+                                                             })));
+        tffactory.add_tf(std::make_shared<Tan<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Float64|Precision::Float32),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Float64|Precision::Float32),
+                                                             })));
+        tffactory.add_tf(std::make_shared<Max<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("A", DataCategory::Tensor, Precision::Any),
+                                                                       Param("B", DataCategory::Tensor, Precision::Any),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("C", DataCategory::Tensor, Precision::Any),
+                                                                   })));  
+        tffactory.add_tf(std::make_shared<MaxScalar<miaobyte>>(vector<Param>(
                                                                    {
                                                                        Param("A", DataCategory::Tensor, Precision::Any),
                                                                        Param("scalar", DataCategory::Var, Precision::Any),
@@ -216,24 +276,44 @@ namespace deepx::tf
                                                                vector<Param>(
                                                                    {
                                                                        Param("C", DataCategory::Tensor, Precision::Any),
-                                                                   })));
-        tffactory.add_tf(std::make_shared<Log<miaobyte>>(vector<Param>(
-                                                             {
-                                                                 Param("A", DataCategory::Tensor, Precision::Any),
-                                                             }),
-                                                         vector<Param>(
-                                                             {
-                                                                 Param("C", DataCategory::Tensor, Precision::Any),
-                                                             })));
-        tffactory.add_tf(std::make_shared<Exp<miaobyte>>(vector<Param>(
-                                                             {
-                                                                 Param("A", DataCategory::Tensor, Precision::Any),
-                                                             }),
-                                                         vector<Param>(
-                                                             {
-                                                                 Param("C", DataCategory::Tensor, Precision::Any),
-                                                             })));
-    }
+                                                                   })));   
+        tffactory.add_tf(std::make_shared<Min<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("A", DataCategory::Tensor, Precision::Any),
+                                                                       Param("B", DataCategory::Tensor, Precision::Any),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("C", DataCategory::Tensor, Precision::Any),
+                                                                   })));      
+        tffactory.add_tf(std::make_shared<MinScalar<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("A", DataCategory::Tensor, Precision::Any),
+                                                                       Param("scalar", DataCategory::Var, Precision::Any),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("C", DataCategory::Tensor, Precision::Any),
+                                                                   })));   
+        tffactory.add_tf(std::make_shared<Compare<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("A", DataCategory::Tensor, Precision::Any),
+                                                                       Param("B", DataCategory::Tensor, Precision::Any),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("mask", DataCategory::Tensor, Precision::Int8),
+                                                                   })));     
+        tffactory.add_tf(std::make_shared<CompareScalar<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("A", DataCategory::Tensor, Precision::Any),
+                                                                       Param("scalar", DataCategory::Var, Precision::Any),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("mask", DataCategory::Tensor, Precision::Int8),
+                                                                   })));   
+    }   
     // matmul
     void register_matmul(TfFactory &tffactory)
     {

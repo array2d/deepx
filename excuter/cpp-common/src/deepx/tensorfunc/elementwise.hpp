@@ -87,42 +87,8 @@ namespace deepx::tensorfunc
         mulscalarDispatcher<Author, T>::mulscalar(input, value, output);
     }
 
-    template <typename Author, typename T>
-    struct muladdDispatcher
-    {
-        static void muladd(const Tensor<T> &A, const Tensor<T> &B, const Tensor<T> &C, Tensor<T> &D) = delete;
-    };
-
-    template <typename Author, typename T>
-    void muladd(const Tensor<T> &A, const Tensor<T> &B, const Tensor<T> &C, Tensor<T> &D)
-    {
-        muladdDispatcher<Author, T>::muladd(A, B, C, D);
-    }
-
-    template <typename Author, typename T>
-    struct muladdscalarDispatcher
-    {
-        static void muladdscalar(const Tensor<T> &A, const Tensor<T> &B, const T alpha, const Tensor<T> &C, const T beta, Tensor<T> &D) = delete;
-    };
-
-    template <typename Author, typename T>
-    void muladdscalar(const Tensor<T> &A, const Tensor<T> &B, const T alpha, const Tensor<T> &C, const T beta, Tensor<T> &D)
-    {
-        muladdscalarDispatcher<Author, T>::muladdscalar(A, B, alpha, C, beta, D);
-    }
-
-    template <typename Author, typename T>
-    struct mulscalaraddDispatcher
-    {
-        static void mulscalaradd(const Tensor<T> &A, const T alpha, const Tensor<T> &B, const T beta, Tensor<T> &C) = delete;
-    };
-
-    template <typename Author, typename T>
-    void mulscalaradd(const Tensor<T> &A, const T alpha, const Tensor<T> &B, const T beta, Tensor<T> &C)
-    {
-        mulscalaraddDispatcher<Author, T>::mulscalaradd(A, alpha, B, beta, C);
-    }
-
+ 
+  
     template <typename Author, typename T>
     struct divDispatcher
     {
@@ -159,42 +125,7 @@ namespace deepx::tensorfunc
         rdivscalarDispatcher<Author, T>::rdivscalar(value, input, output);
     }
 
-    template <typename Author, typename T>
-    struct divaddDispatcher
-    {
-        static void divadd(const Tensor<T> &A, const Tensor<T> &B, const Tensor<T> &C, Tensor<T> &D) = delete;
-    };
-
-    template <typename Author, typename T>
-    void divadd(const Tensor<T> &A, const Tensor<T> &B, const Tensor<T> &C, Tensor<T> &D)
-    {
-        divaddDispatcher<Author, T>::divadd(A, B, C, D);
-    }
-
-    template <typename Author, typename T>
-    struct divscalaraddDispatcher
-    {
-        static void divscalaradd(const Tensor<T> &A, const T alpha, const Tensor<T> &B, const T beta, Tensor<T> &C) = delete;
-    };
-
-    template <typename Author, typename T>
-    void divscalaradd(const Tensor<T> &A, const T alpha, const Tensor<T> &B, const T beta, Tensor<T> &C)
-    {
-        divscalaraddDispatcher<Author, T>::divscalaradd(A, alpha, B, beta, C);
-    }
-
-    template <typename Author, typename T>
-    struct divaddbetaDispatcher
-    {
-        static void divaddbeta(const Tensor<T> &A, const Tensor<T> &B, const T alpha, const Tensor<T> &C, const T beta, Tensor<T> &D) = delete;
-    };
-
-    template <typename Author, typename T>
-    void divaddbeta(const Tensor<T> &A, const Tensor<T> &B, const T alpha, const Tensor<T> &C, const T beta, Tensor<T> &D)
-    {
-        divaddbetaDispatcher<Author, T>::divaddbeta(A, B, alpha, C, beta, D);
-    }
-
+    
     template <typename Author, typename T,typename = void>
     struct sqrtDispatcher
     {
@@ -303,17 +234,7 @@ namespace deepx::tensorfunc
         maxDispatcher<Author, T>::max(A, B, C);
     }
 
-    template <typename Author, typename T>
-    struct maxgradDispatcher
-    {
-        static void maxgrad(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &A_grad, Tensor<T> &B_grad, const Tensor<T> &output_grad) = delete;
-    };
-
-    template <typename Author, typename T>
-    void maxgrad(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &A_grad, Tensor<T> &B_grad, const Tensor<T> &output_grad)
-    {
-        maxgradDispatcher<Author, T>::maxgrad(A, B, A_grad, B_grad, output_grad);
-    }
+    
 
     template <typename Author, typename T>
     struct maxscalarDispatcher
@@ -327,17 +248,7 @@ namespace deepx::tensorfunc
         maxscalarDispatcher<Author, T>::maxscalar(A, b, C);
     }
 
-    template <typename Author, typename T>
-    struct maxscalargradDispatcher
-    {
-        static void maxscalargrad(const Tensor<T> &A, const T b, Tensor<T> &A_grad, const Tensor<T> &output_grad) = delete;
-    };
-
-    template <typename Author, typename T>
-    void maxscalargrad(const Tensor<T> &A, const T b, Tensor<T> &A_grad, const Tensor<T> &output_grad)
-    {
-        maxscalargradDispatcher<Author, T>::maxscalargrad(A, b, A_grad, output_grad);
-    }
+ 
 
     template <typename Author, typename T>
     struct minDispatcher
@@ -352,18 +263,6 @@ namespace deepx::tensorfunc
     }
 
     template <typename Author, typename T>
-    struct mingradDispatcher
-    {
-        static void mingrad(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &A_grad, Tensor<T> &B_grad, const Tensor<T> &output_grad) = delete;
-    };
-
-    template <typename Author, typename T>
-    void mingrad(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &A_grad, Tensor<T> &B_grad, const Tensor<T> &output_grad)
-    {
-        mingradDispatcher<Author, T>::mingrad(A, B, A_grad, B_grad, output_grad);
-    }
-
-    template <typename Author, typename T>
     struct minscalarDispatcher
     {
         static void minscalar(const Tensor<T> &A, T b, Tensor<T> &C) = delete;
@@ -374,17 +273,29 @@ namespace deepx::tensorfunc
     {
         minscalarDispatcher<Author, T>::minscalar(A, b, C);
     }
-
+    
     template <typename Author, typename T>
-    struct minscalargradDispatcher
+    struct compareDispatcher
     {
-        static void minscalargrad(const Tensor<T> &A, const T b, Tensor<T> &A_grad, const Tensor<T> &output_grad) = delete;
+        static void compare(const Tensor<T> &A, const Tensor<T> &B, Tensor<float> &mask) = delete;
     };
 
     template <typename Author, typename T>
-    void minscalargrad(const Tensor<T> &A, const T b, Tensor<T> &A_grad, const Tensor<T> &output_grad)
+    void compare(const Tensor<T> &A, const Tensor<T> &B,Tensor<float> &mask)
     {
-        minscalargradDispatcher<Author, T>::minscalargrad(A, b, A_grad, output_grad);
+        compareDispatcher<Author, T>::compare(A, B, mask);
+    }
+
+    template <typename Author, typename T>
+    struct comparescalarDispatcher
+    {
+        static void comparescalar(const Tensor<T> &A, const T scalar, Tensor<float> &mask) = delete;
+    };
+
+    template <typename Author, typename T>
+    void comparescalar(const Tensor<T> &A, const T scalar, Tensor<float> &mask)
+    {
+        comparescalarDispatcher<Author, T>::comparescalar(A, scalar, mask);
     }
 } // namespace deepx::tensorfunc
 

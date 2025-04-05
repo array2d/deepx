@@ -139,7 +139,7 @@ namespace deepx::tensorfunc
             launch_rdivscalar(numBlocks, blockSize, scalar, A.data, C.data, A.shape.size);
         }
     };
-     
+    
 }
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_BASIC_HPP
