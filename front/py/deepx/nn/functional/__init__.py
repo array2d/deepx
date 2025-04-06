@@ -4,7 +4,7 @@ from .print import printtensor
 from .matmul import matmul
 from .init import *
 from .reduce import reduce_max,reduce_min,sum,prod,mean
-from .changeshape import transpose,reshape,broadcast_shape,broadcast_to,unsqueeze
+from .changeshape import *
 from .activite import relu,sigmoid,swish
 __all__ = [
     "newtensor",
@@ -13,7 +13,7 @@ __all__ = [
     "add","sub","mul","div","sqrt","pow","exp","log","rsqrt",
     "matmul",
     "max","min","sum","prod","mean",
-    "transpose","reshape","broadcast_shape","broadcast_to","unsqueeze",
+    "reshape","permute","transpose",
     "relu","sigmoid","swish",
     
 ]

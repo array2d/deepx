@@ -26,13 +26,16 @@ namespace deepx::tensorfunc
             {
                 throw std::invalid_argument("Shape size mismatch");
             }
+            Shape newshape(shape);
             if (tensor.data == output.data)
             {
-                output.shape = Shape(shape);
+                output.shape.shape=newshape.shape;
+                output.shape.strides=newshape.strides;
             }
             else
             {
-                output.shape = Shape(shape);
+                output.shape.shape=newshape.shape;
+                output.shape.strides=newshape.strides;
                 output.copyer(tensor.data, output.data, tensor.shape.size);
             }
         }

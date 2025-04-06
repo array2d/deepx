@@ -40,8 +40,8 @@ class DeepxIR:
         """
  
         self._name = name
-        self._args = args
-        self._returns = returns
+        self._args = [arg if isinstance(arg, Param) else Param(arg) for arg in args]
+        self._returns = [ret if isinstance(ret, Param) else Param(ret) for ret in returns]
         self._author = author
         self._id=None
         self._created_at=time.time()

@@ -6,7 +6,7 @@
 |-----------|--------|------------|--------------|----------------|
 | concat | miaobyte | concat(listtensor<any> tensors, var<int32> axis)->(tensor<any> result) | Tresult = concat([T1, T2...], axis=3) | concat(listtensor<any> tensors, var<int32> axis)->(tensor<any> result) |
 | transpose | miaobyte | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) | T2 = T1.transpose(dimorder=[1,0]) | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) |
-| reshape | miaobyte | reshape(tensor<any> A, vector<int32> shape)->() | T2=T1.reshape(shape) | reshape(tensor<any> A, vector<int32> shape)->() |
+| reshape | miaobyte | reshape(tensor<any> A, vector<int32> shape)->(tensor<any> B) | T1.reshape(shape)->T2 | reshape(tensor<any> A, vector<int32> shape)->(tensor<any> B) |
 | matmul | cublas | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1 @ T2 | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | comparescalar | miaobyte | comparescalar(tensor<any> A, var<any> scalar)->(tensor<int8> mask) | mask=compare(T1, scalar) | comparescalar(tensor<any> A, var<any> scalar)->(tensor<int8> mask) |
 | add | cublas | add(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |

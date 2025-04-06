@@ -110,7 +110,7 @@ namespace deepx::tf
             }
             std::stringstream ss(textvalue);
             std::string item;
-            while (std::getline(ss, item, ','))
+            while (std::getline(ss, item, ' '))
             {
                 result.push_back(to<T>(item));
             }

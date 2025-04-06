@@ -3,7 +3,7 @@ from deepx import Tensor
 from deepx.autograd import Graph,DataNode,OpNode,Function,Context
 from deepx.nn import DeepxIR,Param
 from deepx.scheduler import send
-from .changeshape import broadcast_shape
+
 def _A_elementwiseop_C(
         a:Tensor,
         op:str=None,
