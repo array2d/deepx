@@ -14,13 +14,27 @@ namespace deepx::tensorfunc
     template <typename T>
     struct reshapeDispatcher<miaobyte, T>
     {
-        static void reshape(Tensor<T> &tensor, const std::vector<int> &new_shape)
+        static void reshape(const Tensor<T> &tensor, const std::vector<int> &shape, Tensor<T> &output)
         {
-            if (tensor.shape.dim != new_shape.size())
+            int new_prod = 1;
+            for (int dim : shape)
             {
-                throw std::runtime_error("Tensor shapes must match for reshape");
+                new_prod *= dim;
             }
-            tensor.shape = Shape(new_shape);
+
+            if (tensor.shape.size != new_prod)
+            {
+                throw std::invalid_argument("Shape size mismatch");
+            }
+            if (tensor.data == output.data)
+            {
+                output.shape = Shape(shape);
+            }
+            else
+            {
+                output.shape = Shape(shape);
+                output.copyer(tensor.data, output.data, tensor.shape.size);
+            }
         }
     };
 
@@ -35,46 +49,46 @@ namespace deepx::tensorfunc
             }
             auto [actual_blocks, optimal_block_size] = BestDims(tensor.shape.size);
             launch_transpose<T>(actual_blocks, optimal_block_size,
-                             tensor.data, tensor.shape.strides.data(),
-                             output.data, output.shape.strides.data(),
-                             tensor.shape.dim, tensor.shape.size, dim_order.data());
+                                tensor.data, tensor.shape.strides.data(),
+                                output.data, output.shape.strides.data(),
+                                tensor.shape.dim, tensor.shape.size, dim_order.data());
         }
     };
 
     template <typename T>
     struct concatDispatcher<miaobyte, T>
     {
-        static void concat(const vector<Tensor<T>*> tensors, const int axis, Tensor<T> &C)
-        {       
-              //checkshape
-              if (!checkShapeConcat(tensors, axis, C))
-              {
-                  throw TensorShapeError("Output tensor shape size must match the sum of input tensor shape sizes for concat");
-              }
+        static void concat(const vector<Tensor<T> *> tensors, const int axis, Tensor<T> &C)
+        {
+            // checkshape
+            if (!checkShapeConcat(tensors, axis, C))
+            {
+                throw TensorShapeError("Output tensor shape size must match the sum of input tensor shape sizes for concat");
+            }
 
-              vector<const T*> tensorsData(tensors.size());
-              for (int i = 0; i < tensors.size(); i++)
-              {
-                  tensorsData[i] = tensors[i]->data;
-              }
+            vector<const T *> tensorsData(tensors.size());
+            for (int i = 0; i < tensors.size(); i++)
+            {
+                tensorsData[i] = tensors[i]->data;
+            }
 
-              vector< int> inputStrides;
-              for (int i = 0; i < tensors.size(); i++)
-              {
-                  std::copy(tensors[i]->shape.strides.data(), tensors[i]->shape.strides.data() + tensors[i]->shape.dim, std::back_inserter(inputStrides));
-              }
-            
-              vector<int> shapeAtAxis(tensors.size());
-              for (int i = 0; i < tensors.size(); i++)
-              {
-                  shapeAtAxis[i] = tensors[i]->shape[axis];
-              }
+            vector<int> inputStrides;
+            for (int i = 0; i < tensors.size(); i++)
+            {
+                std::copy(tensors[i]->shape.strides.data(), tensors[i]->shape.strides.data() + tensors[i]->shape.dim, std::back_inserter(inputStrides));
+            }
 
-              launch_concat<T>(tensorsData.data(), inputStrides.data(), 
-              C.data, C.shape.strides.data(),
-              C.shape.dim, 
-              C.shape.size,
-              axis, tensors.size(), shapeAtAxis.data());
+            vector<int> shapeAtAxis(tensors.size());
+            for (int i = 0; i < tensors.size(); i++)
+            {
+                shapeAtAxis[i] = tensors[i]->shape[axis];
+            }
+
+            launch_concat<T>(tensorsData.data(), inputStrides.data(),
+                             C.data, C.shape.strides.data(),
+                             C.shape.dim,
+                             C.shape.size,
+                             axis, tensors.size(), shapeAtAxis.data());
         };
     };
 }

@@ -337,7 +337,10 @@ namespace deepx::tf
                                                                      Param("A", DataCategory::Tensor, Precision::Any),
                                                                      Param("shape", DataCategory::Vector, Precision::Int32),
                                                                  }),
-                                                             vector<Param>()));
+                                                             vector<Param>(
+                                                                 {
+                                                                     Param("B", DataCategory::Tensor, Precision::Any),
+                                                                 })));
 
         tffactory.add_tf(std::make_shared<Transpose<miaobyte>>(vector<Param>(
                 {
