@@ -15,9 +15,9 @@ namespace deepx::tensorfunc
     template <typename T>
     struct reshapeDispatcher<miaobyte, T>
     {
-        static void reshape(Tensor<T> &tensor, const std::vector<int> &shape)
+        static void reshape(const Tensor<T> &tensor, const std::vector<int> &shape,Tensor<T> &output)
         { // 参数改为单个tensor引用
-
+            
             int new_prod = 1;
             for (int dim : shape)
             {
@@ -28,7 +28,15 @@ namespace deepx::tensorfunc
             {
                 throw std::invalid_argument("Shape size mismatch");
             }
-            tensor.shape = Shape(shape);
+            if (tensor.data == output.data)
+            {
+                output.shape = Shape(shape);
+            }
+            else
+            {
+                output.shape = Shape(shape);
+                output.copyer(tensor.data, output.data, tensor.shape.size);
+            }
         }
     };
 

@@ -25,7 +25,7 @@ namespace deepx::tf
 
         string math_formula() const override
         {
-            return "T2=T1.reshape(shape)";
+            return "T1.reshape(shape)->T2";
         }
 
         shared_ptr<TF> clone() const override
@@ -46,22 +46,22 @@ namespace deepx::tf
             switch (input_type)
             {
             case Precision::Float64:
-                reshape<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), shape);
+                reshape<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), shape, *mem->gettensor<double>(this->returns[0].textvalue));
                 break;
             case Precision::Float32:
-                reshape<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), shape);
+                reshape<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), shape, *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
             case Precision::Int64:
-                reshape<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), shape);
+                reshape<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), shape, *mem->gettensor<int64_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int32:
-                reshape<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), shape);
+                reshape<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), shape, *mem->gettensor<int32_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int16:
-                reshape<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), shape);
+                reshape<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), shape, *mem->gettensor<int16_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int8:
-                reshape<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), shape);
+                reshape<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), shape, *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(input_type);
@@ -85,7 +85,7 @@ namespace deepx::tf
 
         string math_formula() const override
         {
-            return "T2 = T1.transpose(dimorder=[1,0])";
+            return "T1.transpose(dimorder=[1,0])->T2";
         }
 
         shared_ptr<TF> clone() const override
