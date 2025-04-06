@@ -193,7 +193,7 @@ def mul(
         requires_grad:bool=False,
         author='miaobyte')->Tensor:
     if isinstance(b,Tensor):
-        return Mul.apply(a,b,out,author,requires_grad)
+        return Mul.apply(a,b,out,author,requires_grad=requires_grad)
     else:
         return MulScalar.apply(a,b,out,author,requires_grad=requires_grad)
  
@@ -228,10 +228,10 @@ class DivScalar(Function):
 OpNode.register("rdivscalar")
 class RDivScalar(Function):
     @staticmethod
-    def forward(ctx:Context, a, b,out,author='miaobyte'):
+    def forward(ctx:Context, a,b,out,author='miaobyte'):
         if ctx.requires_grad:
             ctx.save_data('b',b)
-        return _A_b_elementwiseop_C(a, b, "rdivscalar", out,author)
+        return _a_B_elementwiseop_C(a, b, "rdivscalar", out,author)
     
     @staticmethod
     def backward(ctx:Context, out_grad):
@@ -244,14 +244,14 @@ def div(
         requires_grad:bool=False,
         author='miaobyte')->Tensor:
     if isinstance(b,Tensor) and isinstance(a,Tensor):
-        return Div.apply(a,b,out,author,requires_grad)
+        return Div.apply(a,b,out,author,requires_grad=requires_grad)
     else:
         if isinstance(a,Tensor):
             #C=A/b
-            return DivScalar.apply(a,b,"divscalar",out,author,requires_grad=requires_grad)
+            return DivScalar.apply(a,b,out,author,requires_grad=requires_grad)
         else:
             #C=a/B
-            return RDivScalar.apply(a,b,"rdivscalar",out,author,requires_grad=requires_grad)
+            return RDivScalar.apply(a,b,out,author,requires_grad=requires_grad)
 
 OpNode.register("compare")
 class Compare(Function):
@@ -299,9 +299,9 @@ def max(
         requires_grad:bool=False,
         author='miaobyte')->Tensor:
     if  isinstance(b,int) or isinstance(b,float):
-        return MaxScalar.apply(a,b,"maxscalar",out,author,requires_grad)
+        return MaxScalar.apply(a,b,out,author,requires_grad)
     else:
-        return Max.apply(a,b,"max",out,author,requires_grad=requires_grad)
+        return Max.apply(a,b,out,author,requires_grad=requires_grad)
 
 
 OpNode.register("min")
@@ -337,9 +337,9 @@ def min(
         requires_grad:bool=False,
         author='miaobyte')->Tensor:
     if  isinstance(b,int) or isinstance(b,float):
-        return MinScalar.apply(a,b,"minscalar",out,author,requires_grad=requires_grad)
+        return MinScalar.apply(a,b,out,author,requires_grad=requires_grad)
     else:
-        return Min.apply(a,b,"min",out,author,requires_grad=requires_grad)
+        return Min.apply(a,b,out,author,requires_grad=requires_grad)
 
 #clamp,TODO
 

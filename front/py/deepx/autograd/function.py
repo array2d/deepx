@@ -18,6 +18,10 @@ class Context:
     def get_data(self, key):
         return self._non_tensor_data.get(key)
 
+    @property
+    def requires_grad(self):
+        return self._requires_grad
+
 class Function:
     @staticmethod
     def forward(ctx:Context, *args, **kwargs):
