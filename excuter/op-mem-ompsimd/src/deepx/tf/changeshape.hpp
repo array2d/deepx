@@ -1,45 +1,171 @@
 #ifndef DEEPX_TF_CHANGESHAPE_HPP
 #define DEEPX_TF_CHANGESHAPE_HPP
 
+#include <vector>
 #include "deepx/tf/tf.hpp"
-#include "deepx/tensorfunc/changeshape.hpp"
+#include "deepx/tensorfunc/changeshape_miaobyte.hpp"
 #include "deepx/dtype.hpp"
 
 namespace deepx::tf
 {
+    using namespace deepx::tensorfunc;
+    using namespace std;
+
+    template <typename Author>
+    class Reshape : public TF
+    {
+    public:
+        Reshape(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "reshape";
+            this->author = Author::name();
+            this->args = args;
+            this->returns = returns;
+        }
+
+        string math_formula() const override
+        {
+            return "T2=T1.reshape(shape)";
+        }
+
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Reshape<Author>>(*this);
+        }
+
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            vector<int> shape = this->getvector<int>(1, -1);
+            Precision output_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (input_type != output_type)
+            {
+                error = "Type mismatch: " + precision_str(input_type) + " != " + precision_str(output_type);
+                return 1;
+            }
+            switch (input_type)
+            {
+            case Precision::Float64:
+                reshape<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), shape);
+                break;
+            case Precision::Float32:
+                reshape<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), shape);
+                break;
+            case Precision::Int64:
+                reshape<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), shape);
+                break;
+            case Precision::Int32:
+                reshape<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), shape);
+                break;
+            case Precision::Int16:
+                reshape<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), shape);
+                break;
+            case Precision::Int8:
+                reshape<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), shape);
+                break;
+            default:
+                error = "Unsupported type: " + precision_str(input_type);
+                return 1;
+            }
+            return 0;
+        }
+    };
+
+    template <typename Author>
+    class Transpose : public TF
+    {
+    public:
+        Transpose(const vector<Param> &args, const vector<Param> &returns)
+        {   
+            this->name = "transpose";
+            this->author = Author::name();
+            this->args = args;
+            this->returns = returns;
+        }
+
+        string math_formula() const override
+        {
+            return "T2 = T1.transpose(dimorder=[1,0])";
+        }
+
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Transpose<Author>>(*this);
+        }
+
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            vector<int> dim_order = this->getvector<int>(1, -1);
+            Precision output_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (input_type != output_type)
+            {
+                error = "Type mismatch: " + precision_str(input_type) + " != " + precision_str(output_type);
+                return 1;
+            }
+            
+            switch (input_type)
+            {
+            case Precision::Float64:
+                transpose<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dim_order, *mem->gettensor<double>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:
+                transpose<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dim_order, *mem->gettensor<float>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                transpose<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dim_order, *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int32:
+                transpose<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dim_order, *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                transpose<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dim_order, *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int8:
+                transpose<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dim_order, *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported type: " + precision_str(input_type);
+                return 1;
+            }
+            return 0;
+        }
+    };
+
+
+
+
+
+
+    
+template <typename Author>
     class Concat : public TF
     {
-        private:
-            const string _name="concat";
     public:
-        Concat()
+        Concat(const vector<Param> &args, const vector<Param> &returns)
         {
-            this->name=_name;
-
+            this->name = _name;
+            this->author = Author::name(); 
+            this->args = args;
+            this->returns = returns;
         }
-        Concat(string text)
-        {
-            this->parse(text);
-            if (this->name!=_name){
-                throw std::runtime_error("Invalid name: "+this->name);
-            }
-        }
+ 
 
         string math_formula() const override
         {
             return "Tresult = concat([T1, T2...], axis=3)";
         }
         int run(shared_ptr<MemBase> mem, string &error) override
-        {
-            //TODO，去掉T
-            // std::vector<Tensor<T> *> input;
-            // for (int i = 0; i < this->args.size() - 1; i++)
-            // {
-            //     input.push_back(mem.gettensor<T>(this->args[i].name).get());
-            // }
-            // auto output = mem.gettensor<T>(this->returns[0].name).get();
-            // int axis = this->getvar<int>(-1,mem,false);
-            // tensorfunc::concat(input, axis, *output);
+        {   
+            // TODO，去掉T
+            //  std::vector<Tensor<T> *> input;
+            //  for (int i = 0; i < this->args.size() - 1; i++)
+            //  {
+            //      input.push_back(mem.gettensor<T>(this->args[i].name).get());
+            //  }
+            //  auto output = mem.gettensor<T>(this->returns[0].name).get();
+            //  int axis = this->getvar<int>(-1,mem,false);
+            //  tensorfunc::concat(input, axis, *output);
             return 0;
         };
         shared_ptr<TF> clone() const override
@@ -65,8 +191,8 @@ namespace deepx::tf
     //     void funcdef() override
     //     {
     //         this->parse("split(float32 T1,int32 3)->(float32 T2,T3)");
-    //     }   
-    //     string math_formula() const override    
+    //     }
+    //     string math_formula() const override
     //     {
     //         return "T2,T3 = split(T1, axis=3)";
     //     }
@@ -80,49 +206,6 @@ namespace deepx::tf
     //         int axis = mem.getarg<int>(this->args.back());
     //         auto output = mem.gettensor<T>(this->returns[0]).get();
     //         tensorfunc::split(*output, axis, input);
-    //     }
-    // };
-    // template <typename T>
-    // class Reshape : public TF
-    // {
-    // public:
-    //     Reshape()
-    //     {
-    //         this->init("reshape", "any", {}, {}, false, {}, {});
-    //     }
-    //     void forward(mem::Mem &mem) override
-    //     {
-    //         auto input = mem.gettensor<T>(this->args[0]).get();
-    //         auto output = mem.gettensor<T>(this->returns[0]).get();
-    //         vector<int> shape;
-    //         if (this->args.size() == 2 && !is_integer(this->args[1]))
-    //         {
-    //             shape = mem.getvector<int32_t>(this->args[1]);
-    //         }
-    //         else
-    //         {
-    //             for (int i = 1; i < this->args.size(); i++)
-    //             {
-    //                 shape.push_back(atoi(this->args[i].c_str()));
-    //             }
-    //         }
-    //         tensorfunc::reshape(*input, *output, shape);
-    //     }
-    //     void backward(mem::Mem &mem) override
-    //     {
-    //         auto return_grad = mem.gettensor<T>(this->returns_grad[0]).get();
-    //         auto input_grad = mem.gettensor<T>(this->args_grad[0]).get();
-    //         auto input = mem.gettensor<T>(this->args[0]).get();
-    //         vector<int> shape = input->shape.shape;
-    //         tensorfunc::reshape(*return_grad, *input_grad, shape);
-    //     }
-    //     void funcdef() override
-    //     {
-    //         this->init("reshape", "float32", {"T1", "2", "3", "4"}, {"T2"}, false, {}, {});
-    //     }
-    //     string math_formula() const override
-    //     {
-    //         return "T2 = reshape(T1, [2,3,4])";
     //     }
     // };
 

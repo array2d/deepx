@@ -1,5 +1,5 @@
-#ifndef DEEPX_TENSORFUNC_CHANGE_SHAPE_HPP
-#define DEEPX_TENSORFUNC_CHANGE_SHAPE_HPP
+#ifndef DEEPX_TENSORFUNC_CHANGESHAPE_HPP
+#define DEEPX_TENSORFUNC_CHANGESHAPE_HPP
 
 #include <vector>
 #include "deepx/tensor.hpp"
@@ -14,7 +14,7 @@ namespace deepx::tensorfunc
         static void reshape(Tensor<T> &tensor, const std::vector<int> &new_shape) = delete;
     };
 
-    // reshape(A,new_shape)=>B
+    // A.reshape(new_shape)
     template <typename Author, typename T>
     void reshape(Tensor<T> &tensor, const std::vector<int> &new_shape)
     {

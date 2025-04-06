@@ -77,7 +77,7 @@ namespace deepx::tf
         }
 
         template<typename T>
-        vector<T> argvector(  int from=0, int to=0,bool arg=true){
+        vector<T> getvector( int from=0, int to=0,bool arg=true){
             vector<Param> &vars=arg?args:returns;
             if(from<0){
                 from = vars.size()+from;
