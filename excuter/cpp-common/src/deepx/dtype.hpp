@@ -3,9 +3,30 @@
 
 #include <string>
 #include <cstdint>
+#include <sstream>
 
 namespace deepx
 {
+    template <typename T>
+    T to(const std::string &textvalue)
+    {
+        if constexpr (std::is_same_v<T, std::string>)
+        {
+            return textvalue;
+        }
+        else if constexpr (std::is_arithmetic_v<T>)
+        {
+            return static_cast<T>(std::stof(textvalue));
+        }
+        else
+        {
+            // 对于其他类型，尝试从字符串转换
+            T value;
+            std::istringstream iss(textvalue);
+            iss >> value;
+            return value;
+        }
+    }
 
     enum class DataCategory : uint8_t
     {
@@ -112,7 +133,7 @@ namespace deepx
         // 布尔类型 (13位)
         Bool = 1 << 13,   // 0010 0000 0000 0000
         String = 1 << 15, // 0100 0000 0000 0000
-        // 常用组合
+                          // 常用组合
         Any = 0xFFFF, // 1111 1111 1111 1111
         Float = Float64 | Float32 | Float16 | BFloat16 | Float8E5M2 | Float8E4M3 | Float4E2M1,
         Float8 = Float8E5M2 | Float8E4M3, // 所有FP8格式
@@ -229,8 +250,6 @@ namespace deepx
     {
         return TypeDef(category, precision);
     }
-
-
 
     // 修改precision_str函数以使用标准命名格式
     inline std::string precision_str(Precision p)

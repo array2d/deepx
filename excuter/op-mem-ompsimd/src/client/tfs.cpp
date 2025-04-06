@@ -339,6 +339,16 @@ namespace deepx::tf
                 {
                     Param("C", DataCategory::Tensor, Precision::Any),
                 })));
+
+        tffactory.add_tf(std::make_shared<Concat<miaobyte>>(vector<Param>(
+                {
+                    Param("tensors", DataCategory::ListTensor, Precision::Any),
+                    Param("axis", DataCategory::Var, Precision::Int32),
+                }),
+            vector<Param>(
+                {
+                    Param("result", DataCategory::Tensor, Precision::Any),
+                })));
     }
     // // reduce
     // void register_reduce(OpFactory &opfactory)
