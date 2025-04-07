@@ -14,12 +14,7 @@ def _A_v_elementwiseop_C(
     opnode.add_input(a.node)
     opnode.add_input(g.add_vector("",b))
 
-    outtensor=None
-    if isinstance(out,str):
-        outtensor=Tensor(shape=b, dtype=a.dtype, device=a.device)
-        outtensor.addtograph(out)
-    else:
-        outtensor=out
+    outtensor=out
     outtensor.node.add_input(opnode)
     if g.eager:
         ir=DeepxIR(op, [a.node.name,b], [outtensor.node.name],author)
@@ -30,9 +25,15 @@ OpNode.register("reshape")
 class Reshape(Function):
     @staticmethod
     def forward(ctx:Context,t:Tensor,shape:list[int],out,author='miaobyte'):
-        ctx.save_data('oldshape',t.shape)
-        ctx.save_tensors('t',t)
-        return _A_v_elementwiseop_C(t,shape,"reshape",out,author)
+        if ctx.requires_grad:
+            ctx.save_data('oldshape',t.shape)
+            ctx.save_tensors('t',t)
+        outtensor=out
+        if isinstance(out,str):
+            outshape=shape
+            outtensor=Tensor(shape=outshape, dtype=t.dtype, device=t.device)
+            outtensor.addtograph(out)
+        return _A_v_elementwiseop_C(t,shape,"reshape",outtensor,author)
     
     @staticmethod
     def backward(ctx:Context,out_grad):
@@ -40,19 +41,28 @@ class Reshape(Function):
         t=ctx.get_tensor('t')
         return _A_v_elementwiseop_C(out_grad,oldshape,"reshape",t.node.name,author)
 
-def reshape(t:Tensor,shape:list[int],out:Union[Tensor,str]='')->Tensor:
+def reshape(t:Tensor,shape:list[int],out:Union[Tensor,str]='',author='miaobyte',requires_grad:bool=False)->Tensor:
     if t.shape==shape:
         return t
-    return Reshape.apply(t,shape,out)
+    return Reshape.apply(t,shape,out,author,requires_grad=requires_grad)
 
 
 OpNode.register("transpose")
 class Permute(Function):
     @staticmethod
-    def forward(ctx:Context,t:Tensor,dimorder:list[int],out:Union[Tensor,str]='',author='miaobyte')->Tensor:
-        ctx.save_data('dimorder',dimorder)
-        ctx.save_tensor('t',t)
-        return _A_v_elementwiseop_C(t,dimorder,"transpose",out,author)
+    def forward(ctx:Context,
+                t:Tensor,
+                dimorder:list[int],
+                out:Union[Tensor,str]='',
+                author='miaobyte')->Tensor:
+        if ctx.requires_grad:
+            ctx.save_data('dimorder',dimorder)
+        outtensor=out
+        if isinstance(out,str):
+            outshape = [t.shape[dim] for dim in dimorder]
+            outtensor=Tensor(shape=outshape, dtype=t.dtype, device=t.device)
+            outtensor.addtograph(out)
+        return _A_v_elementwiseop_C(t,dimorder,"transpose",outtensor,author)
     
     @staticmethod
     def backward(ctx:Context,in_grad,out_grad,author='miaobyte'):
@@ -62,16 +72,20 @@ class Permute(Function):
             inverse_dimorder[j] = i
         return _A_v_elementwiseop_C(out_grad,inverse_dimorder,"transpose",in_grad,author)
 
-def permute(t:Tensor,dimorder:list[int],out:Union[Tensor,str]='')->Tensor:
+def permute(t:Tensor,
+            dimorder:list[int],
+            out:Union[Tensor,str]='',
+            requires_grad:bool=False,
+            author='miaobyte')->Tensor:
     if t.dim!=len(dimorder):
         raise ValueError(f"shape参数不合法,当前输入维度数：{len(dimorder)}，张量维度数：{t.dim}")
     dimorder = [d % t.ndim for d in dimorder]
-    return Permute.apply(t,dimorder,out)
+    return Permute.apply(t,dimorder,out,requires_grad=requires_grad)
  
-def transpose(t: Tensor,out:Union[Tensor,str]='')->Tensor:
+def transpose(t:Tensor,out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
     dimorder = list(range(t.ndim))
     dimorder[-1],dimorder[-2]=dimorder[-2],dimorder[-1]
-    return Permute.apply(t,dimorder,out)
+    return Permute.apply(t,dimorder,out,author,requires_grad=requires_grad)
      
 
 
