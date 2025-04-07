@@ -1,0 +1,28 @@
+############-------PyTorch-------################
+
+import torch
+torch_t1 = torch.ones(3, 4,5, dtype=torch.float32)
+torch_t2 = torch.ones(3, 4,5, dtype=torch.float32)
+torch_t3 = torch.ones(3, 4,5, dtype=torch.float32)
+ 
+torch_t = torch.concat([torch_t1, torch_t2, torch_t3], dim=1)
+print(torch_t)
+ 
+
+############-------DEEPX-------################
+
+from deepx import Tensor,zeros, ones, concat
+
+print()
+
+t1 = ones([3,4,5],dtype='float32',name='t1')
+t2=ones([3,4,5],dtype='float32',name='t2')
+t3=ones([3,4,5],dtype='float32',name='t3')
+ 
+t=concat([t1,t2,t3],dim=1,out='t')
+print(t)
+ 
+import os
+script_name = os.path.splitext(os.path.basename( os.path.abspath(__file__)))[0]  # 获取不带后缀的脚本名
+str=t.graph.to_dot()
+str.render(script_name+".dot", format='svg')

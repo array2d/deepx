@@ -59,8 +59,11 @@ class Tensor:
 
     # shape
     @property
-    def shape(self):
-        return self._shape.shape
+    def shape(self,dim:int=None):
+        if dim is None:
+            return self._shape.shape
+        else:
+            return self._shape.shape[dim]
     @property
     def Shape(self):
         return self._shape

@@ -13,7 +13,7 @@ __all__ = [
     "add","sub","mul","div","sqrt","pow","exp","log","rsqrt",
     "matmul",
     "max","min","sum","prod","mean",
-    "reshape","permute","transpose",
+    "reshape","permute","transpose","concat",
     "relu","sigmoid","swish",
     
 ]

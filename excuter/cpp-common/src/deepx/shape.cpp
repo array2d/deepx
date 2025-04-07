@@ -64,7 +64,7 @@ namespace deepx
     }
     int Shape::linearat(const std::vector<int> &indices) const{
         int idx=0;
-        for(int i=0;i<dim;i++){
+        for(int i=0;i<indices.size();i++){
             idx+=indices[i]*strides[i];
         }
         return idx;

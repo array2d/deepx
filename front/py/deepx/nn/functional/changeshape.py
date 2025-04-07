@@ -86,9 +86,46 @@ def transpose(t:Tensor,out:Union[Tensor,str]='',requires_grad:bool=False,author=
     dimorder = list(range(t.ndim))
     dimorder[-1],dimorder[-2]=dimorder[-2],dimorder[-1]
     return Permute.apply(t,dimorder,out,author,requires_grad=requires_grad)
-     
 
 
+
+
+OpNode.register("concat")
+class Concat(Function):
+    @staticmethod
+    def forward(ctx:Context,
+                tensors:list[Tensor],
+                dim:int,
+                out:Union[Tensor,str]='',
+                author='miaobyte')->Tensor:
+        if ctx.requires_grad:
+            ctx.save_data('dim',dim)
+        outtensor=out
+        if isinstance(out,str):
+            outshape=list(tensors[0].shape)
+            outshape[dim]=sum(t.shape[dim] for t in tensors)
+            outtensor=Tensor(shape=outshape, dtype=tensors[0].dtype, device=tensors[0].device)
+            outtensor.addtograph(out)
+
+        g=tensors[0].graph
+        opnode = g.add_op("concat")
+        for t in tensors:
+            opnode.add_input(t.node)
+        opnode.add_input(g.add_var("",dim))
+
+        outtensor.node.add_input(opnode)
+        if g.eager:
+            ir=DeepxIR("concat", [[t.node.name for t in tensors], dim], [outtensor.node.name],author)
+            send(ir)
+        return outtensor
+    
+    @staticmethod
+    def backward(ctx:Context,out_grad,author='miaobyte'):
+        dim=ctx.get_data('dim')
+        return _A_v_elementwiseop_C(out_grad,dim,"concat",t.node.name,author)
+
+def concat(t:Tensor,dim:int,out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
+    return Concat.apply(t,dim,out,author,requires_grad=requires_grad)
 
 # def broadcast_shape(shape_a: tuple, shape_b: tuple) -> tuple:
 #     """计算两个形状的广播后形状"""

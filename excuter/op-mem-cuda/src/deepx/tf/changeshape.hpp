@@ -163,7 +163,7 @@ namespace deepx::tf
         {
             vector<string> tensor_names = this->getvector<string>(0, true);
             Precision input_type = mem->gettensor(tensor_names[0]).get()->shape.dtype;
-            int axis = this->getvar<int>(1, mem, false);
+            int axis = this->getvar<int>(1, mem, true);
             switch (input_type)
             {
             case Precision::Float64:
