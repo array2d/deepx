@@ -361,6 +361,15 @@ namespace deepx::tf
                 {
                     Param("result", DataCategory::Tensor, Precision::Any),
                 })));
+        tffactory.add_tf(std::make_shared<BroadcastTo<miaobyte>>(vector<Param>(
+                {
+                    Param("A", DataCategory::Tensor, Precision::Any),
+                    Param("new_shape", DataCategory::Vector, Precision::Int32),
+                }),
+            vector<Param>(
+                {
+                    Param("B", DataCategory::Tensor, Precision::Any),
+                })));
     }
     // // reduce
     // void register_reduce(OpFactory &opfactory)

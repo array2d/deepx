@@ -30,6 +30,15 @@ void test_concat()
     concat<miaobyte,float>({&a,&b,&c},1,d);
     print<miaobyte>(d,"%.0f");
 }
+
+void test_broadcastTo()
+{
+    Tensor<float> a=New<float>({3,2});
+    arange<miaobyte,float>(a, 1.0f, 1.0f);
+    Tensor<float> b=New<float>({4,3,2});
+    broadcastTo<miaobyte,float>(a, b.shape.shape, b);
+    print<miaobyte>(b,"%.0f");
+}
 int main(int argc, char **argv)
 {      
     int casearg=atoi(argv[1]);
@@ -40,6 +49,9 @@ int main(int argc, char **argv)
         break;
     case 1:
         test_concat();
+        break;
+    case 2:
+        test_broadcastTo();
         break;
     }
     return 0;

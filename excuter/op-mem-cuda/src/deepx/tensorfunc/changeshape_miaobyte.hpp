@@ -9,6 +9,8 @@
 #include "deepx/tensorfunc/changeshape_miaobyte.cuh"
 #include "deepx/tensorfunc/cuda.hpp"
 #include "deepx/shape_concat.hpp"
+#include "deepx/shape_broadcast.hpp"
+#include "stdutil/error.hpp"
 namespace deepx::tensorfunc
 {
     template <typename T>
@@ -93,6 +95,24 @@ namespace deepx::tensorfunc
                              C.shape.size,
                              axis, tensors.size(), shapeAtAxis.data());
         };
+    };
+
+
+    template <typename T>
+    struct broadcastToDispatcher<miaobyte, T>
+    {
+        static void broadcastTo(const Tensor<T> &A, const vector<int> &new_shape, Tensor<T> &B)
+        {   
+            auto A_broadcastShape = broadcastShape(A.shape.shape, new_shape);
+            if (A_broadcastShape.empty()||A_broadcastShape!=new_shape)
+            {
+                throw TensorShapeError("Broadcast shape mismatch");
+            }
+            auto bmap = broadcastMap(A.shape.shape, new_shape);
+            launch_broadcastTo<T>(A.data, A.shape.strides.data(), A.shape.dim,
+            bmap.data(),
+            B.data, B.shape.strides.data(), B.shape.dim, B.shape.size);
+        }
     };
 }
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_HPP

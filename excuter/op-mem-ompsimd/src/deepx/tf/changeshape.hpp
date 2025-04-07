@@ -234,6 +234,64 @@ namespace deepx::tf
         };
     };
 
+        template <typename Author>
+    class BroadcastTo : public TF
+    {
+    public:
+        BroadcastTo(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "broadcastTo";
+            this->author = Author::name();
+            this->args = args;
+            this->returns = returns;
+        }
+
+        string math_formula() const override
+        {
+            return "T2 = T1.broadcastTo(new_shape=[4,3,2])";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<BroadcastTo<Author>>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            vector<int> new_shape = this->getvector<int>(1, true);
+            Precision output_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (input_type != output_type)
+            {
+                error = "Type mismatch: " + precision_str(input_type) + " != " + precision_str(output_type);
+                return 1;
+            }
+            switch (input_type)
+            {
+            case Precision::Float64:
+                broadcastTo<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), new_shape, *mem->gettensor<double>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:
+                broadcastTo<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), new_shape, *mem->gettensor<float>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                broadcastTo<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), new_shape, *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int32:
+                broadcastTo<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), new_shape, *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                broadcastTo<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), new_shape, *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int8:
+                broadcastTo<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), new_shape, *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported type: " + precision_str(input_type);
+                return 1;
+            }
+            return 0;
+        }
+    };
+    
     // class Split : public TF
     // {
     // public:
@@ -269,67 +327,7 @@ namespace deepx::tf
     //     }
     // };
 
-    // template <typename T>
-    // class Transpose : public Op
-    // {
-    // public:
-    //     Transpose()
-    //     {
-    //         this->init("transpose", "any", {}, {}, false, {}, {});
-    //     }
-    //     Transpose(vector<string> args, vector<string> returns, bool require_grad = false, vector<string> args_grad = {}, vector<string> returns_grad = {})
-    //     {
-    //         this->init("transpose", "any", args, returns, require_grad, args_grad, returns_grad);
-    //     }
-    //     Transpose(initializer_list<string> args, initializer_list<string> returns, bool require_grad = false, initializer_list<string> args_grad = {}, initializer_list<string> returns_grad = {})
-    //     {
-    //         this->init("transpose", "any", args, returns, require_grad, args_grad, returns_grad);
-    //     }
-    //     void forward(mem::Mem &mem) override
-    //     {
-    //         auto input = mem.gettensor<T>(this->args[0]).get();
-    //         vector<int> dimOrder;
-    //         if (this->args.size() == 2 && !is_integer(this->args[1]))
-    //         {
-    //             dimOrder = mem.getvector<int32_t>(this->args[1]);
-    //         }
-    //         else if (this->args.size() > 2)
-    //         {
-    //             for (int i = 1; i < this->args.size(); i++)
-    //             {
-    //                 dimOrder.push_back(atoi(this->args[i].c_str()));
-    //             }
-    //         }
-    //         auto output = mem.gettensor<T>(this->returns[0]).get();
-    //         tensorfunc::transpose(*input, *output, dimOrder);
-    //     }
-    //     void backward(mem::Mem &mem) override
-    //     {
-    //         auto input_grad = mem.gettensor<T>(this->args_grad[0]).get();
-    //         vector<int> dimOrder;
-    //         if (this->args.size() == 2 && !is_integer(this->args[1]))
-    //         {
-    //             dimOrder = mem.getvector<int32_t>(this->args[1]);
-    //         }
-    //         else if (this->args.size() > 2)
-    //         {
-    //             for (int i = 1; i < this->args.size(); i++)
-    //             {
-    //                 dimOrder.push_back(atoi(this->args[i].c_str()));
-    //             }
-    //         }
-    //         auto output_grad = mem.gettensor<T>(this->returns_grad[0]).get();
-    //         tensorfunc::transpose(*output_grad, *input_grad, dimOrder);
-    //     }
-    //     void funcdef() override
-    //     {
-    //         this->init("transpose", "float32", {"T1", "1", "0"}, {"T2"}, false, {}, {});
-    //     }
-    //     string math_formula() const override
-    //     {
-    //         return "T2 = transpose(T1, dimorder=[1,0])";
-    //     }
-    // };
+    
 
     // template <typename T>
     // class Expand : public Op

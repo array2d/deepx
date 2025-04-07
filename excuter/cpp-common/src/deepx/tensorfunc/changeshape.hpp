@@ -69,6 +69,20 @@ namespace deepx::tensorfunc
     }
 
     template <typename Author, typename T>
+    struct broadcastToDispatcher
+    {
+        static void broadcastTo(const Tensor<T> &A, const vector<int> &new_shape, Tensor<T> &B) = delete;
+    };
+
+    template <typename Author, typename T>
+    void broadcastTo(const Tensor<T> &A, const vector<int> &new_shape, Tensor<T> &B)
+    {
+        broadcastToDispatcher<Author, T>::broadcastTo(A, new_shape, B);
+    }
+
+
+
+    template <typename Author, typename T>
     struct expandDispatcher
     {
         static void expand(const Tensor<T> &A, const Shape &new_shape, Tensor<T> &B) = delete;

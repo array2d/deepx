@@ -7,6 +7,8 @@
 #include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/tensor_cuda.cuh"
 #include "deepx/tensorfunc/vector_cuda.cuh"
+#include "deepx/shape_broadcast.hpp"
+
 namespace deepx::tensorfunc
 {
     // transpose
@@ -150,39 +152,37 @@ namespace deepx::tensorfunc
             currentTensorIndices.copyFromDevice(outputIndices.data, dim);
             currentTensorIndices[axis] = concatIdxCurrentTensor;
 
-            int idxCurrentTensor = linearAt(inputStrides+tensorIdx*dim, dim, currentTensorIndices.data);
+            int idxCurrentTensor = linearAt(inputStrides + tensorIdx * dim, dim, currentTensorIndices.data);
 
             int idx = linearAt(outputStrides, dim, outputIndices.data);
             outputData[idx] = tensorsData[tensorIdx][idxCurrentTensor];
         }
     }
 
-
     template <typename T>
     void launch_concat(
-                       const T **tensorsData,
-                       const int *inputStrides,
-                       T *outputData,
-                       const int *outputStrides,
-                       const int dim,
-                       const int outputLen,
-                       const int axis,
-                       const int numTensors,
-                       const int *shapeAtAxis)
-    {   
+        const T **tensorsData,
+        const int *inputStrides,
+        T *outputData,
+        const int *outputStrides,
+        const int dim,
+        const int outputLen,
+        const int axis,
+        const int numTensors,
+        const int *shapeAtAxis)
+    {
         auto [numBlocks, blockSize] = BestDims(outputLen);
 
-        //output
+        // output
         cudaVector<int> outputStrides_d(outputStrides, dim, cudaMemcpyHostToDevice);
 
-        //input
-        //datas
-        cudaVector<const T*> tensorsDataList(tensorsData, numTensors, cudaMemcpyHostToDevice);
-        //strides
-        cudaVector<int> inputStrides_d(inputStrides, numTensors*dim, cudaMemcpyHostToDevice);
-       
+        // input
+        // datas
+        cudaVector<const T *> tensorsDataList(tensorsData, numTensors, cudaMemcpyHostToDevice);
+        // strides
+        cudaVector<int> inputStrides_d(inputStrides, numTensors * dim, cudaMemcpyHostToDevice);
 
-        //shapeAtAxis
+        // shapeAtAxis
         cudaVector<int> shapeAtAxis_d(shapeAtAxis, numTensors, cudaMemcpyHostToDevice);
 
         int powDim = nextPowerOf2(dim);
@@ -227,5 +227,116 @@ namespace deepx::tensorfunc
     template void launch_concat<int16_t>(const int16_t **tensorsData, const int *inputStrides, int16_t *outputData, const int *outputStrides, const int dim, const int len, const int axis, const int numTensors, const int *shapeAtAxis);
     template void launch_concat<int8_t>(const int8_t **tensorsData, const int *inputStrides, int8_t *outputData, const int *outputStrides, const int dim, const int len, const int axis, const int numTensors, const int *shapeAtAxis);
 
+    // broadcastTo
+    __host__ __device__ void fromBroadcastIndices(const BroadcastMap *broadcastMap, const int *broadcastIndices, const int broadcastIndicesDim, int *indices)
+    {
+        for (int i = 0, j = 0; i < broadcastIndicesDim; ++i)
+        {
+            switch (broadcastMap[i])
+            {
+            case xTox:
+                indices[j++] = broadcastIndices[i];
+                break;
+            case nullTo1:
+                break;
+            case xTo1:
+                indices[j++] = 0;
+                break;
+            }
+        }
+    }
+
+    template <int DIM, typename T>
+    __global__ void broadcastTo_kernel(const T *input, const int *inputStrides, const int inputDim,
+                                       const BroadcastMap *broadcastMap,
+                                       T *output, const int *outputStrides, const int outputDim, const int outputlen)
+    {
+        const int grid_stride = gridDim.x * blockDim.x;
+        int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+        for (; thread_id < outputlen; thread_id += grid_stride)
+        {
+            int output_indices[DIM];
+            linearTo(outputStrides, outputDim, output_indices, thread_id);
+            int input_indices[DIM];
+            fromBroadcastIndices(broadcastMap, output_indices, outputDim, input_indices);
+            int inputIdx = linearAt(inputStrides, inputDim, input_indices);
+            int outputIdx = linearAt(outputStrides, outputDim, output_indices);
+            output[outputIdx] = input[inputIdx];
+        }
+    }
+
+    template <typename T>
+    void launch_broadcastTo(const T *input, const int *inputStrides, const int intputDim,
+                            const BroadcastMap *broadcastMap,
+                            T *output, const int *outputStrides, const int outputDim, const int outputlen){
+
+        auto [numBlocks, blockSize] = BestDims(outputlen);
+
+        // output
+        cudaVector<int> outputStrides_d(outputStrides, outputDim, cudaMemcpyHostToDevice);
+
+        // broadcastMap
+        cudaVector<BroadcastMap> broadcastMap_d(broadcastMap, outputDim, cudaMemcpyHostToDevice);
+
+        // input
+        cudaVector<int> inputStrides_d(inputStrides, intputDim, cudaMemcpyHostToDevice);
+
+     
+        int powDim = nextPowerOf2(outputDim);   
+        // 根据计算出的2的幂次选择对应的模板实例
+        switch (powDim)
+        {
+        case 1:
+            broadcastTo_kernel<1, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);    
+            break;
+        case 2:
+            broadcastTo_kernel<2, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);    
+            break;
+        case 4:
+            broadcastTo_kernel<4, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);    
+            break;
+        case 8:
+            broadcastTo_kernel<8, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);    
+            break;
+        case 16:
+            broadcastTo_kernel<16, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);       
+            break;
+        case 32:
+            broadcastTo_kernel<32, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);       
+            break;
+        case 64:
+            broadcastTo_kernel<64, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);       
+            break;
+        case 128:
+            broadcastTo_kernel<128, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);       
+            break;
+        default:
+            throw std::runtime_error("dim too large, max support 128");
+        }
+    }
+    template void launch_broadcastTo<double>(const double *input, const int *inputStrides, const int inputDim,
+                                             const BroadcastMap *broadcastMap,
+                                             double *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_broadcastTo<float>(const float *input, const int *inputStrides, const int inputDim,
+                                            const BroadcastMap *broadcastMap,
+                                            float *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_broadcastTo<nv_bfloat16>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
+                                                  const BroadcastMap *broadcastMap,
+                                                  nv_bfloat16 *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_broadcastTo<__half>(const __half *input, const int *inputStrides, const int inputDim,
+                                             const BroadcastMap *broadcastMap,
+                                             __half *output,     const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_broadcastTo<int64_t>(const int64_t *input, const int *inputStrides, const int inputDim,
+                                              const BroadcastMap *broadcastMap,
+                                              int64_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_broadcastTo<int32_t>(const int32_t *input, const int *inputStrides, const int inputDim,
+                                              const BroadcastMap *broadcastMap,
+                                              int32_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_broadcastTo<int16_t>(const int16_t *input, const int *inputStrides, const int inputDim,
+                                              const BroadcastMap *broadcastMap,
+                                              int16_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_broadcastTo<int8_t>(const int8_t *input, const int *inputStrides, const int inputDim,
+                                             const BroadcastMap *broadcastMap,
+                                             int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
 }
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_HPP
