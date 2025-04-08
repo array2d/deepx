@@ -5,14 +5,14 @@
 
 #include <omp.h>
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/reduce.hpp"
+#include "deepx/tensorfunc/reduce_miaobyte.hpp"
 #include "stdutil/vector.hpp"
 #include "deepx/vector_combination.hpp"
 #include "deepx/shape_reduce.hpp"
 #include "deepx/tensorfunc/new.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
-#include "deepx/tensorfunc/file.hpp"
+#include "deepx/tensorfunc/authors.hpp"
 
 #include <omp.h>
 
@@ -33,7 +33,7 @@ void test_sum()
         std::cout <<"sum(t,"<< comb <<")"<< std::endl;
         Shape sumshape=reduceShape(shape,comb);
         Tensor<float> r = New<float>(sumshape.shape);
-        sum(tensor, comb, r);
+        sum<miaobyte,float>(tensor, comb,r);
         print<miaobyte>(r);
     }
 /*
@@ -59,8 +59,8 @@ void benchmark_sum(int i){
     {
         Shape sShape = reduceShape(shape, comb);
         Tensor<float> r=New<float>(sShape.shape);
-        sum(tensor, comb,r);
-        save(r,"5_tensor_sum"+std::to_string(i)+"result");
+        sum<miaobyte,float>(tensor, comb,r);
+        save<miaobyte>(r,"5_tensor_sum"+std::to_string(i)+"result");
     }
     auto end=std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;

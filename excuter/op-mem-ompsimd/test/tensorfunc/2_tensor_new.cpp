@@ -5,9 +5,8 @@
 
 #include "deepx/tensorfunc/new.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
-#include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/authors.hpp"
-#include "deepx/tensorfunc/file.hpp"
+#include "deepx/tensorfunc/io_miaobyte.hpp"
 
 using namespace deepx;
 using namespace deepx::tensorfunc;
@@ -15,11 +14,11 @@ void test_tensor_new(){
     Tensor<float> tensor=New<float>({2, 3});
     constant<miaobyte,float>(tensor,1);
     print<miaobyte>(tensor);
-    save(tensor,"tensor");
+    save<miaobyte>(tensor,"tensor");
     Tensor<float> tensor2=New<float>({2, 3});
     constant<miaobyte,float>(tensor2,2);
     print<miaobyte>(tensor2);
-    save(tensor2,"tensor2");
+    save<miaobyte>(tensor2,"tensor2");
 }
 
 void test_arange() {

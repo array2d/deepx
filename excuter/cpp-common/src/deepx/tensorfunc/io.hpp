@@ -17,22 +17,22 @@ namespace deepx::tensorfunc{
 
     template <typename Author, typename T>
     struct saveDispatcher{
-        static void save(Tensor<T> &tensor,const std::string &path,int filebegin=0,int fileend=-1)=delete;
+        static void save(Tensor<T> &tensor,const std::string &path,int filebegin=0)=delete;
     };
 
     template <typename Author, typename T>
-    void save(Tensor<T> &tensor,const std::string &path,int filebegin=0,int fileend=-1){
-        saveDispatcher<Author,T>::save(tensor, path, filebegin, fileend);
+    void save(Tensor<T> &tensor,const std::string &path,int filebegin=0){
+        saveDispatcher<Author,T>::save(tensor, path, filebegin);
     }
 
     template <typename Author, typename T>
     struct loadDispatcher{
-        static Tensor<T> load(const std::string &path,int filebegin=0,int fileend=-1)=delete;
+        static Tensor<T> load(const std::string &path,int filebegin=0)=delete;
     };
 
     template <typename Author, typename T>
-    Tensor<T> load(const std::string &path,int filebegin=0,int fileend=-1){
-        return loadDispatcher<Author,T>::load(path, filebegin, fileend);
+    Tensor<T> load(const std::string &path,int filebegin=0){
+        return loadDispatcher<Author,T>::load(path, filebegin);
     }
 }
 
