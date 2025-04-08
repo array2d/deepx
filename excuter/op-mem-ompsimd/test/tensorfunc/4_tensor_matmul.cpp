@@ -3,7 +3,7 @@
 #include <numeric>
 #include <chrono>
 
-#include "deepx/tensorfunc/print_miaobyte.hpp"
+#include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/new.hpp"
     

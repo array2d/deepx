@@ -1,7 +1,7 @@
 #include "deepx/tf/arg.hpp"
 #include "deepx/tf/tf.hpp"
 #include "deepx/tf/new.hpp"
-#include "deepx/tf/print.hpp"
+#include "deepx/tf/io.hpp"
 #include "deepx/tf/init.hpp"
 #include "deepx/tf/elementwise_basic.hpp"
 #include "deepx/tf/elementwise_sqrt.hpp"

@@ -4,7 +4,7 @@
 #include "deepx/tf/arg.hpp"
 #include "deepx/tf/new.hpp"
 #include "deepx/tf/init.hpp"
-#include "deepx/tf/print.hpp"
+#include "deepx/tf/io.hpp"
 #include "deepx/tf/changeshape.hpp"
 #include "deepx/tf/elementwise.hpp"
 #include "deepx/tf/tffactory.hpp"

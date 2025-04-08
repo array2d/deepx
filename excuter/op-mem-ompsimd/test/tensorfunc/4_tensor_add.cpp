@@ -4,7 +4,7 @@
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/elementwise.hpp"
 #include "deepx/tensorfunc/elementwise_miaobyte.hpp"
-#include "deepx/tensorfunc/print_miaobyte.hpp"
+#include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/new.hpp"
 #include "deepx/tensorfunc/init.hpp"
 #include "tensorutil.hpp"

@@ -1,9 +1,9 @@
-#ifndef DEEPX_TF_PRINT_HPP
-#define DEEPX_TF_PRINT_HPP
+#ifndef DEEPX_TF_IO_HPP
+#define DEEPX_TF_IO_HPP
 
 #include "deepx/tf/tf.hpp"
-#include "deepx/tensorfunc/print.hpp"
-#include "deepx/tensorfunc/print_miaobyte.hpp"
+#include "deepx/tensorfunc/io.hpp"
+#include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 namespace deepx::tf
 {

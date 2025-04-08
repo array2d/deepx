@@ -6,7 +6,7 @@
 #include "deepx/tensorfunc/changeshape_miaobyte.hpp"
 #include "deepx/tensorfunc/new.hpp"
 #include "deepx/tensorfunc/authors.hpp"
-#include "deepx/tensorfunc/print_miaobyte.hpp"
+#include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "stdutil/vector.hpp"
 #include "tensorutil.hpp"
 #include "deepx/shape_transpose.hpp"

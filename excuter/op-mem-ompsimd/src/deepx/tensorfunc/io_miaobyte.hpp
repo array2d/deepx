@@ -1,5 +1,5 @@
-#ifndef DEEPX_TENSORFUNC_PRINT_MIAOBYTE_HPP
-#define DEEPX_TENSORFUNC_PRINT_MIAOBYTE_HPP
+#ifndef DEEPX_TENSORFUNC_IO_MIAOBYTE_HPP
+#define DEEPX_TENSORFUNC_IO_MIAOBYTE_HPP
 
 #include <iostream>
 
@@ -7,7 +7,7 @@
 #include "stdutil/vector.hpp"
 #include "stdutil/print.hpp"
 #include "deepx/tensorfunc/authors.hpp"
-#include "deepx/tensorfunc/print.hpp"
+#include "deepx/tensorfunc/io.hpp"
 
 namespace deepx::tensorfunc
 {
@@ -35,4 +35,4 @@ namespace deepx::tensorfunc
         }
     };
 }
-#endif // DEEPX_TENSORFUNC_PRINT_DEFAULT_HPP
+#endif // DEEPX_TENSORFUNC_IO_MIAOBYTE_HPP

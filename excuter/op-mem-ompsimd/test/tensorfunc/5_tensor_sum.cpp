@@ -11,7 +11,7 @@
 #include "deepx/shape_reduce.hpp"
 #include "deepx/tensorfunc/new.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
-#include "deepx/tensorfunc/print_miaobyte.hpp"
+#include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/file.hpp"
 
 #include <omp.h>

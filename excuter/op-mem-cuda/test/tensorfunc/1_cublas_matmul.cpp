@@ -1,7 +1,7 @@
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/new.hpp"
-#include "deepx/tensorfunc/print_miaobyte.hpp"
+#include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/matmul.hpp"
 #include "deepx/tensorfunc/matmul_cublas.hpp"
 

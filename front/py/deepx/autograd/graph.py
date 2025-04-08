@@ -6,6 +6,7 @@ class Graph:
     # 类属性存储默认实例
     _default_graph = None
     
+    
     @classmethod
     def get_default(cls):
         """获取或创建默认计算图（线程不安全）"""
@@ -85,6 +86,7 @@ class Graph:
 def graph_method(f):
     setattr(Graph, f.__name__, f)
     return f
+
 
 
 # 初始化默认图

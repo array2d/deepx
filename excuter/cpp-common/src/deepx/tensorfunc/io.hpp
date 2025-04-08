@@ -1,5 +1,5 @@
-#ifndef DEEPX_TENSORFUNC_PRINT_HPP
-#define DEEPX_TENSORFUNC_PRINT_HPP
+#ifndef DEEPX_TENSORFUNC_IO_HPP
+#define DEEPX_TENSORFUNC_IO_HPP
 
 #include "deepx/tensor.hpp"
 
@@ -16,4 +16,4 @@ namespace deepx::tensorfunc{
     }
 }
 
-#endif // DEEPX_TENSORFUNC_PRINT_HPP
+#endif // DEEPX_TENSORFUNC_IO_HPP
