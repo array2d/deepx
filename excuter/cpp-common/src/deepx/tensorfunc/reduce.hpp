@@ -7,28 +7,7 @@
 
 namespace deepx::tensorfunc
 {
-    template <typename Author, typename T>
-    struct reducesumDispatcher
-    {
-        static void reducesum(const Tensor<T> &A, const int axis,const bool keepdims, Tensor<T> &B) = delete;
-    };
-    template <typename Author, typename T>
-    void reducesum(const Tensor<T> &A, const int axis,const bool keepdims, Tensor<T> &B)
-    {
-        reducesumDispatcher<Author, T>::reducesum(A, axis, keepdims, B);
-    }
-    
-    template <typename Author, typename T>
-    struct reduceprodDispatcher
-    {
-        static void reduceprod(const Tensor<T> &A, const int axis,const bool keepdims, Tensor<T> &B) = delete;
-    };
-    
-    template <typename Author, typename T>
-    void reduceprod(const Tensor<T> &A, const int axis,const bool keepdims, Tensor<T> &B)
-    {
-        reduceprodDispatcher<Author, T>::reduceprod(A, axis, keepdims, B);
-    }
+
 
     template <typename Author, typename T>
     struct reducemaxDispatcher
@@ -51,6 +30,28 @@ namespace deepx::tensorfunc
     {
         reduceminDispatcher<Author, T>::reducemin(A, axis, keepdims, B);
     }
- 
+    
+    template <typename Author, typename T>
+    struct  sumDispatcher
+    {
+        static void reducesum(const Tensor<T> &A, const int axis,const bool keepdims, Tensor<T> &B) = delete;
+    };
+    template <typename Author, typename T>
+    void sum(const Tensor<T> &A, const int axis,const bool keepdims, Tensor<T> &B)
+    {
+        sumDispatcher<Author, T>::sum(A, axis, keepdims, B);
+    }
+    
+    template <typename Author, typename T>
+    struct  prodDispatcher
+    {
+        static void prod(const Tensor<T> &A, const int axis,const bool keepdims, Tensor<T> &B) = delete;
+    };
+    
+    template <typename Author, typename T>
+    void prod(const Tensor<T> &A, const int axis,const bool keepdims, Tensor<T> &B)
+    {
+        prodDispatcher<Author, T>::prod(A, axis, keepdims, B);
+    }
 }
 #endif // DEEPX_TENSORFUNC_REDUCE_HPP
