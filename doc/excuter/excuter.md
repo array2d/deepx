@@ -60,9 +60,16 @@ todo
 
 #### 4.front对接测试
 
-1.先启动excuter
+1.先启动excuter可执行文件， 位于excuter/op-mem-{cuda/ompsimd}/build，可执行文件名同excuter名
 2.然后测试front中py的对应算子脚本（front/py/examples 目录）
 
+可以按照顺序，以此测试
+
+1_tensor
+
+2_ir
+
+3_functional
 
 
 
