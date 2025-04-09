@@ -11,6 +11,7 @@
 #include "deepx/shape_reduce.hpp"
 #include "deepx/tensorfunc/new.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
+#include "deepx/tensorfunc/new.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 
@@ -22,8 +23,8 @@ void test_sum()
 {
     omp_set_num_threads(1); 
 
-    Shape shape({2, 3, 4});
-    deepx::Tensor<float> tensor= New<float>(shape.shape);
+    std::vector<int> shape={2, 3, 4};
+    Tensor<float> tensor= New<float>(shape);
     constant<miaobyte,float>(tensor,float(1));
     print<miaobyte>(tensor);
     cout<<""<<endl;
@@ -31,8 +32,8 @@ void test_sum()
     for (const auto &comb : result)
     {
         std::cout <<"sum(t,"<< comb <<")"<< std::endl;
-        Shape sumshape=reduceShape(shape,comb);
-        Tensor<float> r = New<float>(sumshape.shape);
+        std::vector<int> sumshape=reducedShape(shape,comb);
+        Tensor<float> r = New<float>(sumshape);
         sum<miaobyte,float>(tensor, comb,r);
         print<miaobyte>(r);
     }
@@ -49,16 +50,16 @@ void test_sum()
 }
 
 void benchmark_sum(int i){
-    Shape shape({i,i,i});
-    deepx::Tensor<float> tensor= New<float>(shape.shape);
+    std::vector<int> shape={i,i,i};
+    deepx::Tensor<float> tensor= New<float>(shape);
     std::iota(tensor.data ,tensor.data+tensor.shape.size,0);
     std::vector<std::vector<int>> result = combination(3);
-     std::cout<<"sum "<<shape.shape<<"=>";
+     std::cout<<"sum "<<shape<<"=>";
      auto start = std::chrono::high_resolution_clock::now();
     for (const auto &comb : result)
     {
-        Shape sShape = reduceShape(shape, comb);
-        Tensor<float> r=New<float>(sShape.shape);
+        std::vector<int> sShape = reducedShape(shape, comb);
+        Tensor<float> r=New<float>(sShape);
         sum<miaobyte,float>(tensor, comb,r);
         save<miaobyte>(r,"5_tensor_sum"+std::to_string(i)+"result");
     }

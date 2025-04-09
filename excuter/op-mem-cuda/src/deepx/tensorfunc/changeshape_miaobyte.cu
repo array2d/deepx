@@ -7,7 +7,7 @@
 #include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/tensor_cuda.cuh"
 #include "deepx/tensorfunc/vector_cuda.cuh"
-#include "deepx/shape_broadcast.hpp"
+#include "deepx/shape_changeshape.hpp"
 
 namespace deepx::tensorfunc
 {

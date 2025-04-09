@@ -9,7 +9,7 @@
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "stdutil/vector.hpp"
 #include "tensorutil.hpp"
-#include "deepx/shape_transpose.hpp"
+#include "deepx/shape_changeshape.hpp"
 
 using namespace deepx::tensorfunc;
 using namespace deepx;

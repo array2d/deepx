@@ -4,7 +4,7 @@
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
 
-#include "deepx/shape_broadcast.hpp"
+#include "deepx/shape_changeshape.hpp"
 #include "deepx/tensorfunc/cuda.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 

@@ -8,8 +8,7 @@
 #include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/changeshape_miaobyte.cuh"
 #include "deepx/tensorfunc/cuda.hpp"
-#include "deepx/shape_concat.hpp"
-#include "deepx/shape_broadcast.hpp"
+#include "deepx/shape_changeshape.hpp"
 #include "stdutil/error.hpp"
 namespace deepx::tensorfunc
 {

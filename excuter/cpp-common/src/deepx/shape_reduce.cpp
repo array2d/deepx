@@ -3,60 +3,65 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "stdutil/error.hpp"
 #include "deepx/shape_reduce.hpp"
 
 namespace deepx
 {
-  std::vector<int> reduceDimMap(const Shape &shape, const std::vector<int> &dims)
+    std::vector<int> checkedDims(const std::vector<int> &inputshape, const std::vector<int> &dims)
     {
-        // Step 1: 确定输出形状
-        std::vector<int> sumDims;
+        std::vector<int> checkeddims;
+        // 如果dims为空，则求和所有维度
         if (dims.empty())
         {
-            for (int i = 0; i < shape.dim; ++i)
+            for (int i = 0; i < inputshape.size(); ++i)
             {
-                sumDims.push_back(i);
+                checkeddims.push_back(i);
             }
         }
         else
-        {
-            sumDims = std::vector<int>(dims.data(), dims.data() + dims.size());
-        }
-        std::sort(sumDims.begin(), sumDims.end());
-        // 去重
-        sumDims.erase(std::unique(sumDims.begin(), sumDims.end()), sumDims.end());
-
-        // 验证维度
-        for (int d : sumDims)
-        {
-            if (d < 0 || d >= shape.dim)
+        {   
+            // 验证维度
+            for (int d : dims)
             {
-                throw std::invalid_argument("Dimension out of range in sum");
+                if (d < 0)
+                {
+                    d = inputshape.size() + d;
+                }
+                if (d >= inputshape.size())
+                {
+                    throw TensorShapeError("Dimension out of range in sum");
+                }
+                checkeddims.push_back(d);
             }
         }
 
-        // 创建一个映射数组，标记哪些维度需要求和
-        std::vector<int> sumMap(shape.dim, 0);
-        for (int dim : sumDims)
-        {
-            sumMap[dim] = 1;
-        }
-        return sumMap;
+        // 排序
+        std::sort(checkeddims.begin(), checkeddims.end());
+        // 去重
+        checkeddims.erase(std::unique(checkeddims.begin(), checkeddims.end()), checkeddims.end());
+
+        return checkeddims;
     }
-    std::vector<int> reduceShape(const Shape &a, const std::vector<int> &dims)
+
+    std::vector<int> reducedShape(const std::vector<int> &inputshape, const std::vector<int> &dims, const bool keepdim)
     {
-        
+
         // 创建一个映射数组，标记哪些维度需要求和
-        std::vector<int> reduceMap = reduceDimMap(a, dims);
+        std::vector<int> reducedims = reducedDim(inputshape, dims);
 
         // 计算输出形状
         std::vector<int> outputShape;
 
-        for (size_t i = 0; i < a.dim; ++i)
+        for (size_t i = 0; i < inputshape.size(); ++i)
         {
-            if (reduceMap[i] == 0)
+            if (reducedims[i] == 0)
             {
-                outputShape.push_back(a[i]);
+                outputShape.push_back(inputshape[i]);
+            }
+            else if (keepdim)
+            {
+                outputShape.push_back(1);
             }
         }
 
@@ -66,5 +71,16 @@ namespace deepx
             outputShape.push_back(1);
         }
         return outputShape;
-    }   
+    }
+
+    std::vector<int> reducedDim(const std::vector<int> &shape, const std::vector<int> &dims)
+    {
+        // 创建一个映射数组，标记哪些维度需要求和
+        std::vector<int> sumMap(shape.size(), 0);
+        for (int dim : dims)
+        {
+            sumMap[dim] = 1;
+        }
+        return sumMap;
+    }
 }
