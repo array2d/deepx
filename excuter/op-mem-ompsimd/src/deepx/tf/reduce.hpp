@@ -9,7 +9,7 @@
 
 namespace deepx::tf
 {
-     template <typename Author>
+    template <typename Author>
     class Sum : public TF
     {
     public:

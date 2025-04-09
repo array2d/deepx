@@ -25,9 +25,11 @@ namespace deepx::tf
     {
         TypeDef dtype;
         string textvalue;
-        any value;
+ 
         Param(const string &textvalue = "", const DataCategory &dt = DataCategory::Unknown, const Precision &prec = Precision::Any)
             : textvalue(textvalue), dtype(make_dtype(dt, prec)) {}
+
+        
     };
 
     // TF:Tensor Function的缩写
@@ -82,8 +84,9 @@ namespace deepx::tf
                 // 转换为小写再判断
                 string lower_value = value;
                 std::transform(lower_value.begin(), lower_value.end(), lower_value.begin(),
-                               [](unsigned char c){ return std::tolower(c); });
-                
+                               [](unsigned char c)
+                               { return std::tolower(c); });
+
                 if (lower_value == "true")
                 {
                     return true;
@@ -105,10 +108,8 @@ namespace deepx::tf
             return mem->getarg<T>(vars[idx].textvalue);
         }
 
-        
-
         template <typename T>
-        vector<T> getvector(int idx,bool arg = true)
+        vector<T> getvector(int idx, bool arg = true)
         {
             vector<Param> &vars = arg ? args : returns;
             if (idx < 0)
