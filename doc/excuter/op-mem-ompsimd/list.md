@@ -4,6 +4,7 @@
 
 | Operation | Author | Func Def | Math Formula | IR Instruction |
 |-----------|--------|------------|--------------|----------------|
+| reducemax | miaobyte | reducemax(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) | B = reducemax(A, axis=[1 2], keepdims=false) | reducemax(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
 | broadcastTo | miaobyte | broadcastTo(tensor<any> A, vector<int32> new_shape)->(tensor<any> B) | T2 = T1.broadcastTo(new_shape=[4,3,2]) | broadcastTo(tensor<any> A, vector<int32> new_shape)->(tensor<any> B) |
 | concat | miaobyte | concat(listtensor<any> tensors, var<int32> axis)->(tensor<any> result) | Tresult = concat([T1, T2...], axis=3) | concat(listtensor<any> tensors, var<int32> axis)->(tensor<any> result) |
 | transpose | miaobyte | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) | T1.transpose(dimorder=[1,0])->T2 | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) |
@@ -21,8 +22,10 @@
 | newtensor |  none  | newtensor(vector<int32> shape)->(tensor<any> tensor1) | T1 =Tensor(shape=[...]) | newtensor(vector<int32> shape)->(tensor<any> tensor1) |
 | newtensor |  none  | newtensor(var<string> shape)->(tensor<any> tensor1) | T1 =Tensor(shape=[...]) | newtensor(var<string> shape)->(tensor<any> tensor1) |
 | vecset |  none  | vecset(vector<any> value)->(vector<any> name) | shape = [3  4  5] | vecset(vector<any> value)->(vector<any> name) |
+| reducemin | miaobyte | reducemin(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) | B = reducemin(A, axis=[1 2], keepdims=false) | reducemin(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
 | subscalar | miaobyte | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) | T3=T1-scalar | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
 | sqrt | miaobyte | sqrt(tensor<any> A)->(tensor<any> C) | T3=sqrt(T1) | sqrt(tensor<any> A)->(tensor<any> C) |
+| sum | miaobyte | sum(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) | B = sum(A, axis=[1 2], keepdims=false) | sum(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
 | argset |  none  | argset(var<any> value)->(var<any> name) | var argname = argvalue | argset(var<any> value)->(var<any> name) |
 | sub | miaobyte | sub(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1-T2 | sub(tensor<any> a, tensor<any> b)->(tensor<any> c) |
 | mulscalar | miaobyte | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) | T3=T1*scalar | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
@@ -36,6 +39,7 @@
 | exp | miaobyte | exp(tensor<any> A)->(tensor<any> C) | T3=exp(T1) | exp(tensor<any> A)->(tensor<any> C) |
 | rdivscalar | miaobyte | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
 | minscalar | miaobyte | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=min(T1,scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
+| prod | miaobyte | prod(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) | B = prod(A, axis=[1 2], keepdims=false) | prod(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
 | min | miaobyte | min(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=min(T1,T2) | min(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | compare | miaobyte | compare(tensor<any> A, tensor<any> B)->(tensor<float32> mask) | mask=compare(T1,T2) | compare(tensor<any> A, tensor<any> B)->(tensor<float32> mask) |
 | matmul | cblas | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) | T3=T1 @ T2 | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) |

@@ -50,23 +50,17 @@ OpNode.register("arange")
 class Arange(Function):
     @staticmethod
     def forward(ctx:Context,
+                t:Tensor,
                 start:Optional[Union[float,int]]=0,
-                end:Optional[Union[float,int]]=None,
-                step:Optional[Union[float,int]]=1,dtype=None, device=None,name:Union[Tensor,str]='',author='miaobyte')->Tensor:
-        outtensor=None
-        if isinstance(name,str):
-            shape=[end-start]
-            outtensor=Tensor(shape=shape, dtype=dtype, device=device)
-            outtensor.addtograph(name)
-        else:
-            outtensor=name
-        g=outtensor.graph
+                step:Optional[Union[float,int]]=1,
+                author='miaobyte')->Tensor:
+        g=t.graph
         if g.eager:
-            ir=DeepxIR("arange",  [outtensor.node.name,start,step], [],author)
+            ir=DeepxIR("arange",[t.node.name,start,step], [],author)
             send(ir)
-        return outtensor
-def arange(start=0, end=None, step=1,dtype=None, device=None,name:Union[Tensor,str]='',author='miaobyte')->Tensor:
-    return Arange.apply(start,end,step,dtype,device,name,author)
+        return t
+def arange(t:Tensor,start=0,step=1,author='miaobyte')->Tensor:
+    return Arange.apply(t,start,step,author)
 
 OpNode.register("uniform")
 class Uniform(Function):

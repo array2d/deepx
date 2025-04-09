@@ -31,9 +31,9 @@ def randn_(self):
     pass
 
 @tensor_method
-def arange_(self,start,end=None,step=1):
-    #todo
-    pass
+def arange_(self,start=0,step=1,author='miaobyte'):
+    from deepx.nn.functional import arange as arange_func
+    arange_func(self,start,step,author)
 
 @tensor_method
 def eye_(self,n,m=None):

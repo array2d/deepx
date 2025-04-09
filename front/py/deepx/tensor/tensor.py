@@ -29,6 +29,14 @@ class Tensor:
                 self._dtype = default_dtype
         else:
             self._dtype = str(dtype)
+        
+        # format
+        if self._dtype == 'float32' or self._dtype == 'float64' or self._dtype == 'float16' or self._dtype == 'bfloat16':
+            self._format = '%.4f'
+        elif self._dtype == 'int32' or self._dtype == 'int64' or self._dtype == 'int8' or self._dtype == 'int16':
+            self._format = '%d'
+        else:
+            self._format = '%s'
         # shape
         if shape is not None:
             if isinstance(shape, (tuple, list)) and all(isinstance(i, int) for i in shape):
@@ -145,9 +153,12 @@ class Tensor:
     def T(self) -> str:
         return self.transpose(1,0,out=self.node.name+".T")
 
+    # 打印
+    def set_format(self,format:str):
+        self._format = format
     def __repr__(self) -> str:
         from deepx.nn.functional import printtensor
-        s=printtensor(self)
+        s=printtensor(self,format=self._format)
         return s
 
 

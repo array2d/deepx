@@ -9,148 +9,148 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 334)">
 <title>%3</title>
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-334 285.5,-334 285.5,4 -4,4"/>
-<!-- 139260210680960 -->
+<!-- 139182860375312 -->
 <g id="node1" class="node">
-<title>139260210680960</title>
+<title>139182860375312</title>
 <polygon fill="aliceblue" stroke="skyblue" points="152,-184 90,-184 90,-146 152,-146 152,-184"/>
 <text text-anchor="middle" x="121" y="-168.8" font-family="Sans-Serif" font-size="14.00">a</text>
 <text text-anchor="middle" x="121" y="-153.8" font-family="Sans-Serif" font-size="14.00">(4, 2, 3)</text>
 </g>
-<!-- 139258236846528 -->
+<!-- 139181167609744 -->
 <g id="node2" class="node">
-<title>139258236846528</title>
+<title>139181167609744</title>
 <polygon fill="lightgray" stroke="darkslategray" points="158,-110 84,-110 84,-74 158,-74 158,-110"/>
 <text text-anchor="middle" x="121" y="-88.3" font-family="Courier Bold" font-size="14.00">reshape</text>
 </g>
-<!-- 139260210680960&#45;&gt;139258236846528 -->
+<!-- 139182860375312&#45;&gt;139181167609744 -->
 <g id="edge2" class="edge">
-<title>139260210680960&#45;&gt;139258236846528</title>
+<title>139182860375312&#45;&gt;139181167609744</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M115.01,-145.72C114.2,-137.29 114.04,-127.15 114.52,-118.02"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="117.31,-118.2 115.14,-110 111.73,-117.76 117.31,-118.2"/>
 </g>
-<!-- 139258235360240 -->
+<!-- 139181166123216 -->
 <g id="node10" class="node">
-<title>139258235360240</title>
+<title>139181166123216</title>
 <polygon fill="lightgray" stroke="darkslategray" points="241,-110 187,-110 187,-74 241,-74 241,-110"/>
 <text text-anchor="middle" x="214" y="-88.3" font-family="Courier Bold" font-size="14.00">add</text>
 </g>
-<!-- 139260210680960&#45;&gt;139258235360240 -->
+<!-- 139182860375312&#45;&gt;139181166123216 -->
 <g id="edge10" class="edge">
-<title>139260210680960&#45;&gt;139258235360240</title>
+<title>139182860375312&#45;&gt;139181166123216</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M144.95,-145.72C157.23,-136.34 172.28,-124.85 185.2,-114.99"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="187.07,-117.08 191.73,-110 183.67,-112.63 187.07,-117.08"/>
 </g>
-<!-- 139258236846528&#45;&gt;139260210680960 -->
+<!-- 139181167609744&#45;&gt;139182860375312 -->
 <g id="edge1" class="edge">
-<title>139258236846528&#45;&gt;139260210680960</title>
+<title>139181167609744&#45;&gt;139182860375312</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M126.86,-110C127.73,-118.25 127.96,-128.35 127.55,-137.57"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="124.75,-137.54 126.99,-145.72 130.33,-137.93 124.75,-137.54"/>
 </g>
-<!-- 139260210690752 -->
+<!-- 139182860384960 -->
 <g id="node3" class="node">
-<title>139260210690752</title>
+<title>139182860384960</title>
 <polygon fill="honeydew" stroke="darkseagreen" points="72,-184 0,-184 0,-146 72,-146 72,-184"/>
 <text text-anchor="middle" x="36" y="-168.8" font-family="Sans-Serif" font-size="14.00">vector_1</text>
 <text text-anchor="middle" x="36" y="-153.8" font-family="Sans-Serif" font-size="14.00">(4, 2, 3)</text>
 </g>
-<!-- 139260210690752&#45;&gt;139258236846528 -->
+<!-- 139182860384960&#45;&gt;139181167609744 -->
 <g id="edge3" class="edge">
-<title>139260210690752&#45;&gt;139258236846528</title>
+<title>139182860384960&#45;&gt;139181167609744</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M57.89,-145.72C69.01,-136.42 82.62,-125.06 94.35,-115.26"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="96.3,-117.28 100.64,-110 92.71,-112.98 96.3,-117.28"/>
 </g>
-<!-- 139258235360000 -->
+<!-- 139181166122448 -->
 <g id="node4" class="node">
-<title>139258235360000</title>
+<title>139181166122448</title>
 <polygon fill="aliceblue" stroke="skyblue" points="158,-330 104,-330 104,-292 158,-292 158,-330"/>
 <text text-anchor="middle" x="131" y="-314.8" font-family="Sans-Serif" font-size="14.00">b</text>
 <text text-anchor="middle" x="131" y="-299.8" font-family="Sans-Serif" font-size="14.00">(2, 1)</text>
 </g>
-<!-- 139258235359616 -->
+<!-- 139181166122592 -->
 <g id="node5" class="node">
-<title>139258235359616</title>
+<title>139181166122592</title>
 <polygon fill="lightgray" stroke="darkslategray" points="154,-256 80,-256 80,-220 154,-220 154,-256"/>
 <text text-anchor="middle" x="117" y="-234.3" font-family="Courier Bold" font-size="14.00">reshape</text>
 </g>
-<!-- 139258235360000&#45;&gt;139258235359616 -->
+<!-- 139181166122448&#45;&gt;139181166122592 -->
 <g id="edge5" class="edge">
-<title>139258235360000&#45;&gt;139258235359616</title>
+<title>139181166122448&#45;&gt;139181166122592</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M121.41,-291.72C118.93,-283.29 116.77,-273.15 115.45,-264.02"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="118.22,-263.61 114.49,-256 112.66,-264.28 118.22,-263.61"/>
 </g>
-<!-- 139258235360096 -->
+<!-- 139181166123168 -->
 <g id="node8" class="node">
-<title>139258235360096</title>
+<title>139181166123168</title>
 <polygon fill="lightgray" stroke="darkslategray" points="279.5,-256 172.5,-256 172.5,-220 279.5,-220 279.5,-256"/>
 <text text-anchor="middle" x="226" y="-234.3" font-family="Courier Bold" font-size="14.00">broadcastTo</text>
 </g>
-<!-- 139258235360000&#45;&gt;139258235360096 -->
+<!-- 139181166122448&#45;&gt;139181166123168 -->
 <g id="edge8" class="edge">
-<title>139258235360000&#45;&gt;139258235360096</title>
+<title>139181166122448&#45;&gt;139181166123168</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M155.46,-291.72C168.01,-282.34 183.39,-270.85 196.58,-260.99"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="198.52,-263.04 203.25,-256 195.16,-258.55 198.52,-263.04"/>
 </g>
-<!-- 139258235359616&#45;&gt;139258235360000 -->
+<!-- 139181166122592&#45;&gt;139181166122448 -->
 <g id="edge4" class="edge">
-<title>139258235359616&#45;&gt;139258235360000</title>
+<title>139181166122592&#45;&gt;139181166122448</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M126.21,-256C128.71,-264.25 130.93,-274.35 132.34,-283.57"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="129.59,-284.14 133.38,-291.72 135.14,-283.42 129.59,-284.14"/>
 </g>
-<!-- 139258235359856 -->
+<!-- 139181166122688 -->
 <g id="node6" class="node">
-<title>139258235359856</title>
+<title>139181166122688</title>
 <polygon fill="honeydew" stroke="darkseagreen" points="86,-330 14,-330 14,-292 86,-292 86,-330"/>
 <text text-anchor="middle" x="50" y="-314.8" font-family="Sans-Serif" font-size="14.00">vector_2</text>
 <text text-anchor="middle" x="50" y="-299.8" font-family="Sans-Serif" font-size="14.00">(2, 1)</text>
 </g>
-<!-- 139258235359856&#45;&gt;139258235359616 -->
+<!-- 139181166122688&#45;&gt;139181166122592 -->
 <g id="edge6" class="edge">
-<title>139258235359856&#45;&gt;139258235359616</title>
+<title>139181166122688&#45;&gt;139181166122592</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M67.25,-291.72C75.78,-282.68 86.15,-271.69 95.22,-262.08"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="97.5,-263.74 100.95,-256 93.43,-259.9 97.5,-263.74"/>
 </g>
-<!-- 139258235360048 -->
+<!-- 139181166122736 -->
 <g id="node7" class="node">
-<title>139258235360048</title>
+<title>139181166122736</title>
 <polygon fill="aliceblue" stroke="skyblue" points="281.5,-184 170.5,-184 170.5,-146 281.5,-146 281.5,-184"/>
 <text text-anchor="middle" x="226" y="-168.8" font-family="Sans-Serif" font-size="14.00">b.broadcasted</text>
 <text text-anchor="middle" x="226" y="-153.8" font-family="Sans-Serif" font-size="14.00">(4, 2, 3)</text>
 </g>
-<!-- 139258235360048&#45;&gt;139258235360240 -->
+<!-- 139181166122736&#45;&gt;139181166123216 -->
 <g id="edge11" class="edge">
-<title>139258235360048&#45;&gt;139258235360240</title>
+<title>139181166122736&#45;&gt;139181166123216</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M222.91,-145.72C221.48,-137.29 219.77,-127.15 218.23,-118.02"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="220.97,-117.42 216.87,-110 215.45,-118.36 220.97,-117.42"/>
 </g>
-<!-- 139258235360096&#45;&gt;139258235360048 -->
+<!-- 139181166123168&#45;&gt;139181166122736 -->
 <g id="edge7" class="edge">
-<title>139258235360096&#45;&gt;139258235360048</title>
+<title>139181166123168&#45;&gt;139181166122736</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M226,-219.81C226,-211.52 226,-201.39 226,-192.16"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="228.8,-192.02 226,-184.02 223.2,-192.02 228.8,-192.02"/>
 </g>
-<!-- 139258235360576 -->
+<!-- 139181166122928 -->
 <g id="node9" class="node">
-<title>139258235360576</title>
+<title>139181166122928</title>
 <polygon fill="honeydew" stroke="darkseagreen" points="262,-330 190,-330 190,-292 262,-292 262,-330"/>
 <text text-anchor="middle" x="226" y="-314.8" font-family="Sans-Serif" font-size="14.00">vector_3</text>
 <text text-anchor="middle" x="226" y="-299.8" font-family="Sans-Serif" font-size="14.00">(4, 2, 3)</text>
 </g>
-<!-- 139258235360576&#45;&gt;139258235360096 -->
+<!-- 139181166122928&#45;&gt;139181166123168 -->
 <g id="edge9" class="edge">
-<title>139258235360576&#45;&gt;139258235360096</title>
+<title>139181166122928&#45;&gt;139181166123168</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M226,-291.72C226,-283.29 226,-273.15 226,-264.02"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="228.8,-264 226,-256 223.2,-264 228.8,-264"/>
 </g>
-<!-- 139258235360480 -->
+<!-- 139181166123264 -->
 <g id="node11" class="node">
-<title>139258235360480</title>
+<title>139181166123264</title>
 <polygon fill="aliceblue" stroke="skyblue" points="250.5,-38 177.5,-38 177.5,0 250.5,0 250.5,-38"/>
 <text text-anchor="middle" x="214" y="-22.8" font-family="Sans-Serif" font-size="14.00">tensor_4</text>
 <text text-anchor="middle" x="214" y="-7.8" font-family="Sans-Serif" font-size="14.00">(4, 2, 3)</text>
 </g>
-<!-- 139258235360240&#45;&gt;139258235360480 -->
+<!-- 139181166123216&#45;&gt;139181166123264 -->
 <g id="edge12" class="edge">
-<title>139258235360240&#45;&gt;139258235360480</title>
+<title>139181166123216&#45;&gt;139181166123264</title>
 <path fill="none" stroke="#666666" stroke-width="1.2" d="M214,-73.81C214,-65.52 214,-55.39 214,-46.16"/>
 <polygon fill="#666666" stroke="#666666" stroke-width="1.2" points="216.8,-46.02 214,-38.02 211.2,-46.02 216.8,-46.02"/>
 </g>

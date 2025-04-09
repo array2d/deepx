@@ -1,10 +1,9 @@
 from typing import Optional, Union
 
 from deepx.tensor import Tensor
-from deepx.autograd.graph import OpNode
 from deepx.nn.deepxir import DeepxIR    
 from deepx.scheduler import send
-from .elementwise import _A_b_elementwiseop_C
+from deepx.autograd import OpNode,Function,Context
 
 def reduceshape(inshape: Union[list[int], tuple[int]], 
                dim: Union[list[int], tuple[int]], 
@@ -40,10 +39,11 @@ def reduceshape(inshape: Union[list[int], tuple[int]],
 
 def _A_v_reduceop_C(
         a:Tensor,
-        dim: Union[list[int],tuple[int]] = [],
+        dim: Union[list[int],tuple[int]]=None,
         keepdim:bool=False,
         op:str=None,
-        out:Union[Tensor,str]='')->Tensor:
+        out:Union[Tensor,str]='',
+        author:str='miaobyte')->Tensor:
     
     if dim is None:
         dim=list(range(a.ndim))
@@ -63,36 +63,26 @@ def _A_v_reduceop_C(
     result.node.add_input(opnode)
 
     if a.graph.eager:
-        args = [*dim, "keepdim"] if keepdim else [*dim]
-        varir=DeepxIR("argset",'int32', args, [vector_node.name])
-
-        send(varir)
-        ir=DeepxIR(op, a.dtype, [a.node.name,vector_node.name], [result.node.name])
+        ir=DeepxIR(op, [a.node.name,dim,"true" if keepdim else "false"], [result.node.name],author)
         send(ir)
     return result
-
-#max
-
-OpNode.register("reducemax")
-def reduce_max(
-        a:Tensor,
-        dim:list[int] = None,
-        keepdim=False,
-        out:Union[Tensor,str]='')->Tensor:
-    return _A_v_reduceop_C(a,dim,keepdim,"max",out)
- 
-#min    
-OpNode.register("reducemin")
-def reduce_min(
-        a:Tensor,
-        dim:list[int] = None,
-        keepdim=False,
-        out:Union[Tensor,str]='')->Tensor:
-    return _A_v_reduceop_C(a,dim,keepdim,"min",out)
-    
- 
 #sum    
 OpNode.register("sum")
+class Sum(Function):
+    @staticmethod
+    def forward(ctx:Context,a:Tensor,dim:Optional[Union[list[int],tuple[int]]]=None,keepdim:bool=False,out:Union[Tensor,str]='',author:str='miaobyte')->Tensor:
+        if ctx.requires_grad:
+            ctx.save_tensors('a',a)
+            ctx.save_data('dim',dim)
+            ctx.save_data('keepdim',keepdim)
+        return _A_v_reduceop_C(a,dim,keepdim,"sum",out,author)
+    
+    @staticmethod
+    def backward(ctx:Context,out_grad):
+        pass
+    
+    
+
 def sum(
         a:Tensor,
         dim:Optional[Union[
@@ -100,11 +90,22 @@ def sum(
             tuple[int],
             ]]=None,
         keepdim:bool=False,
-        out:Union[Tensor,str]='')->Tensor:
-    return _A_v_reduceop_C(a,dim,keepdim,"sum",out)
+        out:Union[Tensor,str]='',
+        author:str='miaobyte',
+        requires_grad:bool=False)->Tensor:
+    return Sum.apply(a,dim,keepdim,out,author,requires_grad=requires_grad)
 
 #prod
 OpNode.register("prod")
+class Prod(Function):
+    @staticmethod
+    def forward(ctx:Context,a:Tensor,dim:Optional[Union[list[int],tuple[int]]]=None,keepdim:bool=False,out:Union[Tensor,str]='',author:str='miaobyte')->Tensor:
+        return _A_v_reduceop_C(a,dim,keepdim,"prod",out,author)
+    
+    @staticmethod
+    def backward(ctx:Context,out_grad):
+        pass
+
 def prod(
         a:Tensor,
         dim:Optional[Union[
@@ -112,8 +113,50 @@ def prod(
             tuple[int],
             ]]=None,
         keepdim:bool=False,
-        out:Union[Tensor,str]='')->Tensor:
-    return _A_v_reduceop_C(a,dim,keepdim,"prod",out)
+        out:Union[Tensor,str]='',
+        author:str='miaobyte',
+        requires_grad:bool=False)->Tensor:
+    return Prod.apply(a,dim,keepdim,out,author,requires_grad=requires_grad)
+
+#max
+OpNode.register("reducemax")
+class ReduceMax(Function):
+    @staticmethod
+    def forward(ctx:Context,a:Tensor,dim:Optional[Union[list[int],tuple[int]]]=None,keepdim:bool=False,out:Union[Tensor,str]='',author:str='miaobyte')->Tensor:
+        return _A_v_reduceop_C(a,dim,keepdim,"reducemax",out,author)
+    
+    @staticmethod
+    def backward(ctx:Context,out_grad):
+        pass
+def reduce_max(
+        a:Tensor,
+        dim:list[int] = None,
+        keepdim=False,
+        out:Union[Tensor,str]='',
+        author:str='miaobyte',
+        requires_grad:bool=False)->Tensor:
+    return ReduceMax.apply(a,dim,keepdim,out,author,requires_grad=requires_grad)
+ 
+#min    
+OpNode.register("reducemin")
+class ReduceMin(Function):
+    @staticmethod
+    def forward(ctx:Context,a:Tensor,dim:Optional[Union[list[int],tuple[int]]]=None,keepdim:bool=False,out:Union[Tensor,str]='',author:str='miaobyte')->Tensor:
+        return _A_v_reduceop_C(a,dim,keepdim,"reducemin",out,author)
+    
+    @staticmethod
+    def backward(ctx:Context,out_grad):
+        pass
+def reduce_min(
+        a:Tensor,
+        dim:list[int] = None,
+        keepdim=False,
+        out:Union[Tensor,str]='',
+        author:str='miaobyte',
+        requires_grad:bool=False)->Tensor:
+    return ReduceMin.apply(a,dim,keepdim,out,author,requires_grad=requires_grad)
+    
+ 
 
 #mean
 OpNode.register("mean")
@@ -136,5 +179,3 @@ def mean(
         total *= a.shape[i]
     result = sum(a, dim, keepdim, out)/total
     return result
-# #var
-# OpNode.register("var")
