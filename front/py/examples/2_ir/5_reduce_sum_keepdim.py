@@ -29,7 +29,7 @@ s.set_format("%.0f")
 print(s)
 p=prod(t,dim=[1],out="p",keepdim=True)
 p.set_format("%.0f")
-# print(p)
+print(p)
 
 t1=ones(4,5,6,name="t1")
 t1.set_format("%.0f")

@@ -39,7 +39,7 @@ namespace deepx::tensorfunc
                         {
                             newIndices[j++] = indices[i];
                         }else if (keepdims && (reduced_dims[i] == 1)) {
-                            newIndices[j++] = indices[i];
+                            newIndices[j++] = 0;
                         }
                     }
                     int outputIdx = result.shape.linearat(newIndices);
@@ -58,7 +58,7 @@ namespace deepx::tensorfunc
                         {
                             newIndices[j++] = indices[i];
                         }else if (keepdims && (reduced_dims[i] == 1)) {
-                            newIndices[j++] = indices[i];
+                            newIndices[j++] = 0;
                         }
                     }
                     int outputIdx = result.shape.linearat(newIndices);
@@ -104,7 +104,7 @@ namespace deepx::tensorfunc
             std::vector<int> reduced_dims = reducedDim(tensor.shape.shape, checkeddims);
             const int minshape_1 = Lanes(ScalableTag<T>());
             // 如果dims的最后一个元素是tensor.shape.dim-1，则说明reduceprod的数据不连续（不对齐），无法simd（需要不停跳跃）
-            constant<miaobyte,T>(result, T(1));
+            constant<miaobyte, T>(result, T(1));
             if (reduced_dims.rbegin()[0] == tensor.shape.dim - 1 || tensor.shape.dim > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
                 tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
@@ -115,7 +115,7 @@ namespace deepx::tensorfunc
                                 if (reduced_dims[i]==0) {
                                         newIndices[j++]=indices[i];
                                     }else if (keepdims && (reduced_dims[i] == 1)) {
-                                        newIndices[j++]=indices[i];
+                                        newIndices[j++]=0;
                                     }
                                 }
                             // 累加求和
@@ -136,7 +136,7 @@ namespace deepx::tensorfunc
                                                    {
                                                        newIndices[j++] = indices[i];
                                                    }else if (keepdims && (reduced_dims[i] == 1)) {
-                                                       newIndices[j++] = indices[i];
+                                                       newIndices[j++] = 0;
                                                    }
                                                }
                                                // 累加求和
@@ -198,13 +198,12 @@ namespace deepx::tensorfunc
                                 if (reduced_dims[i]==0) {
                                         newIndices[j++]=indices[i];
                                     }else if (keepdims && (reduced_dims[i] == 1)) {
-                                        newIndices[j++]=indices[i];
+                                        newIndices[j++]=0;
                                     }
                                 }
                             // 累加求和
                             int outputIdx=result.shape.linearat(newIndices);
-                            result.data[outputIdx]=std::max(result.data[outputIdx],tensor.data[idx_linear]);
-                            }, result.shape.dim);
+                            result.data[outputIdx]=std::max(result.data[outputIdx],tensor.data[idx_linear]); }, result.shape.dim);
             }
             else
             {
@@ -219,7 +218,7 @@ namespace deepx::tensorfunc
                                                    {
                                                        newIndices[j++] = indices[i];
                                                    }else if (keepdims && (reduced_dims[i] == 1)) {
-                                                       newIndices[j++] = indices[i];
+                                                       newIndices[j++] =0;
                                                    }
                                                }
                                                
@@ -255,8 +254,7 @@ namespace deepx::tensorfunc
                                                    maxt = std::max(maxt,tensor.data[i + j]);
                                                }
  
-                                               result.data[outputIdx] = std::max(result.data[outputIdx],maxt);
-                                                }, result.shape.dim);
+                                               result.data[outputIdx] = std::max(result.data[outputIdx],maxt); }, result.shape.dim);
             }
         }
     };
@@ -281,14 +279,13 @@ namespace deepx::tensorfunc
                                 if (reduced_dims[i]==0) {
                                         newIndices[j++]=indices[i];
                                     }else if (keepdims && (reduced_dims[i] == 1)) {
-                                        newIndices[j++]=indices[i];
+                                        newIndices[j++]=0;
                                     }
                                 }
                             // 累加求和
                             int outputIdx=result.shape.linearat(newIndices);
  
-                            result.data[outputIdx]=std::min(result.data[outputIdx],tensor.data[idx_linear]);
-                            }, result.shape.dim);
+                            result.data[outputIdx]=std::min(result.data[outputIdx],tensor.data[idx_linear]); }, result.shape.dim);
             }
             else
             {
@@ -303,7 +300,7 @@ namespace deepx::tensorfunc
                                                    {
                                                        newIndices[j++] = indices[i];
                                                    }else if (keepdims && (reduced_dims[i] == 1)) {
-                                                       newIndices[j++] = indices[i];
+                                                       newIndices[j++] = 0;
                                                    }
                                                }
                                                
@@ -339,8 +336,7 @@ namespace deepx::tensorfunc
                                                    mint = std::min(mint,tensor.data[i + j]);
                                                }
  
-                                               result.data[outputIdx] = std::min(result.data[outputIdx],mint); 
-                                               }, result.shape.dim);
+                                               result.data[outputIdx] = std::min(result.data[outputIdx],mint); }, result.shape.dim);
             }
         }
     };
