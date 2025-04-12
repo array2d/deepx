@@ -35,7 +35,7 @@ void test_sum()
         std::vector<int> checkeddims=checkedDims(shape,comb);
         std::vector<int> sumshape=reducedShape(shape,checkeddims);
         Tensor<float> r = New<float>(sumshape);
-        sum<miaobyte,float>(tensor, checkeddims,r);
+        sum<miaobyte,float>(tensor, checkeddims,false,r);
         print<miaobyte>(r,"%.0f");
     }
 /*
@@ -63,7 +63,7 @@ void benchmark_sum(int i){
         std::vector<int> checkeddims=checkedDims(shape,comb);
         std::vector<int> sumshape=reducedShape(shape,checkeddims);
         Tensor<float> r=New<float>(sumshape);
-        sum<miaobyte,float>(tensor, checkeddims,r);
+        sum<miaobyte,float>(tensor, checkeddims,false,r);
         string combstr="";
         for (const auto &c : comb)
         {

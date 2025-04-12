@@ -43,22 +43,22 @@ namespace deepx::tf
             switch (input_type)
             {
             case Precision::Float64:
-                sum<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dims, *mem->gettensor<double>(this->returns[0].textvalue), keepdims);
+                sum<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<double>(this->returns[0].textvalue));
                 break;
             case Precision::Float32:
-                sum<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dims, *mem->gettensor<float>(this->returns[0].textvalue), keepdims);
+                sum<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dims,  keepdims,*mem->gettensor<float>(this->returns[0].textvalue));
                 break;
             case Precision::Int64:
-                sum<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dims, *mem->gettensor<int64_t>(this->returns[0].textvalue), keepdims);
+                sum<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dims,  keepdims,*mem->gettensor<int64_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int32:
-                sum<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dims, *mem->gettensor<int32_t>(this->returns[0].textvalue), keepdims);
+                sum<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dims,  keepdims,*mem->gettensor<int32_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int16:
-                sum<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dims, *mem->gettensor<int16_t>(this->returns[0].textvalue), keepdims);
+                sum<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dims,  keepdims,*mem->gettensor<int16_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int8:
-                sum<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dims, *mem->gettensor<int8_t>(this->returns[0].textvalue), keepdims);
+                sum<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dims,  keepdims,*mem->gettensor<int8_t>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(input_type);
@@ -101,22 +101,22 @@ namespace deepx::tf
             switch (input_type)
             {
             case Precision::Float64:
-                prod<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dims, *mem->gettensor<double>(this->returns[0].textvalue), keepdims);
+                prod<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<double>(this->returns[0].textvalue));
                 break;
             case Precision::Float32:
-                prod<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dims, *mem->gettensor<float>(this->returns[0].textvalue), keepdims);
+                prod<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
             case Precision::Int64:
-                prod<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dims, *mem->gettensor<int64_t>(this->returns[0].textvalue), keepdims);
+                prod<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int64_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int32:
-                prod<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dims, *mem->gettensor<int32_t>(this->returns[0].textvalue), keepdims);
+                prod<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int32_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int16:
-                prod<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dims, *mem->gettensor<int16_t>(this->returns[0].textvalue), keepdims);
+                prod<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int16_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int8:
-                prod<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dims, *mem->gettensor<int8_t>(this->returns[0].textvalue), keepdims);
+                prod<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(input_type);
@@ -159,22 +159,22 @@ namespace deepx::tf
             switch (input_type)
             {
             case Precision::Float64:
-                reducemax<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dims, *mem->gettensor<double>(this->returns[0].textvalue), keepdims);
+                reducemax<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<double>(this->returns[0].textvalue));
                 break;
             case Precision::Float32:
-                reducemax<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dims, *mem->gettensor<float>(this->returns[0].textvalue), keepdims);
+                reducemax<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
             case Precision::Int64:
-                reducemax<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dims, *mem->gettensor<int64_t>(this->returns[0].textvalue), keepdims);
+                reducemax<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int64_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int32:
-                reducemax<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dims, *mem->gettensor<int32_t>(this->returns[0].textvalue), keepdims);
+                reducemax<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int32_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int16:
-                reducemax<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dims, *mem->gettensor<int16_t>(this->returns[0].textvalue), keepdims);
+                reducemax<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int16_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int8:
-                reducemax<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dims, *mem->gettensor<int8_t>(this->returns[0].textvalue), keepdims);
+                reducemax<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(input_type);
@@ -217,22 +217,22 @@ namespace deepx::tf
             switch (input_type)
             {
             case Precision::Float64:
-                reducemin<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dims, *mem->gettensor<double>(this->returns[0].textvalue), keepdims);
+                reducemin<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<double>(this->returns[0].textvalue));
                 break;
             case Precision::Float32:
-                reducemin<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dims, *mem->gettensor<float>(this->returns[0].textvalue), keepdims);
+                reducemin<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
             case Precision::Int64:
-                reducemin<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dims, *mem->gettensor<int64_t>(this->returns[0].textvalue), keepdims);
+                reducemin<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int64_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int32:
-                reducemin<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dims, *mem->gettensor<int32_t>(this->returns[0].textvalue), keepdims);
+                reducemin<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int32_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int16:
-                reducemin<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dims, *mem->gettensor<int16_t>(this->returns[0].textvalue), keepdims);
+                reducemin<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int16_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int8:
-                reducemin<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dims, *mem->gettensor<int8_t>(this->returns[0].textvalue), keepdims);
+                reducemin<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dims, keepdims, *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(input_type);

@@ -2,15 +2,12 @@
 #define DEEPX_TENSORFUNC_REDUCE_MIAOBYTE_HPP
 
 #include <vector>
-#include <algorithm>
 #include <stdexcept>
 #include <hwy/highway.h>
 
-#include <deepx/vector_combination.hpp>
-#include "deepx/tensor.hpp"
-
 #include "deepx/tensorfunc/highway.hpp"
 #include "deepx/shape_reduce.hpp"
+#include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/reduce.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 
@@ -22,7 +19,7 @@ namespace deepx::tensorfunc
     template <typename T>
     struct sumDispatcher<miaobyte, T>
     {
-        static void sum(const Tensor<T> &tensor, const std::vector<int> &dims, Tensor<T> &result, const bool keepdims)
+        static void sum(const Tensor<T> &tensor, const std::vector<int> &dims, const bool keepdims, Tensor<T> &result)
         {
             constant<miaobyte, T>(result, T(0));
             std::vector<int> checkeddims = checkedDims(tensor.shape.shape, dims);
@@ -98,7 +95,7 @@ namespace deepx::tensorfunc
     template <typename T>
     struct prodDispatcher<miaobyte, T>
     {
-        static void prod(const Tensor<T> &tensor, const std::vector<int> &dims, Tensor<T> &result, const bool keepdims)
+        static void prod(const Tensor<T> &tensor, const std::vector<int> &dims, const bool keepdims, Tensor<T> &result)
         {
             std::vector<int> checkeddims = checkedDims(tensor.shape.shape, dims);
             std::vector<int> reduced_dims = reducedDim(tensor.shape.shape, checkeddims);
@@ -181,7 +178,7 @@ namespace deepx::tensorfunc
     template <typename T>
     struct reducemaxDispatcher<miaobyte, T>
     {
-        static void reducemax(const Tensor<T> &tensor, const std::vector<int> &dims, Tensor<T> &result, const bool keepdims)
+        static void reducemax(const Tensor<T> &tensor, const std::vector<int> &dims, const bool keepdims, Tensor<T> &result)
         {
             std::vector<int> checkeddims = checkedDims(tensor.shape.shape, dims);
             std::vector<int> reduced_dims = reducedDim(tensor.shape.shape, checkeddims);
@@ -262,7 +259,7 @@ namespace deepx::tensorfunc
     template <typename T>
     struct reduceminDispatcher<miaobyte, T>
     {
-        static void reducemin(const Tensor<T> &tensor, const std::vector<int> &dims, Tensor<T> &result, const bool keepdims)
+        static void reducemin(const Tensor<T> &tensor, const std::vector<int> &dims, const bool keepdims, Tensor<T> &result)
         {
             std::vector<int> checkeddims = checkedDims(tensor.shape.shape, dims);
             std::vector<int> reduced_dims = reducedDim(tensor.shape.shape, checkeddims);
