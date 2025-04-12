@@ -3,13 +3,15 @@
 
 #include <vector>
 #include <stdexcept>
+
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/changeshape.hpp"
-#include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/changeshape_miaobyte.cuh"
 #include "deepx/tensorfunc/cuda.hpp"
+#include "deepx/tensorfunc/authors.hpp"
 #include "deepx/shape_changeshape.hpp"
 #include "stdutil/error.hpp"
+
 namespace deepx::tensorfunc
 {
     template <typename T>

@@ -41,21 +41,7 @@ namespace deepx::tensorfunc
         }
     }
 
-    inline int nextPowerOf2(int n)
-    {
-        if (n <= 0)
-            return 1;
-        if ((n & (n - 1)) == 0)
-            return n; // 如果n已经是2的幂
-
-        n--;
-        n |= n >> 1;
-        n |= n >> 2;
-        n |= n >> 4;
-        n |= n >> 8;
-        n |= n >> 16;
-        return n + 1;
-    }
+   
 
     template <typename T>
     void launch_transpose(const int numBlocks, const int blockSize,

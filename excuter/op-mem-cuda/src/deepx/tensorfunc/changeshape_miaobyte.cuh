@@ -134,4 +134,4 @@ namespace deepx::tensorfunc
                                     const BroadcastMap *broadcastMap,
                                     int8_t *output, const int *outputStrides,const int outputDim,const int outputlen);
 }
-#endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_HPP
+#endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_CUH
