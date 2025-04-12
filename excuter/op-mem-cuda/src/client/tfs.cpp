@@ -9,6 +9,7 @@
 #include "deepx/tf/elementwise_compare.hpp"
 #include "deepx/tf/matmul.hpp"
 #include "deepx/tf/changeshape.hpp"
+#include "deepx/tf/reduce.hpp"
 #include "deepx/dtype.hpp"
 #include "deepx/tf/tffactory.hpp"
 #include "deepx/tensorfunc/authors.hpp"
@@ -371,20 +372,56 @@ namespace deepx::tf
                     Param("B", DataCategory::Tensor, Precision::Any),
                 })));
     }
-    // // reduce
-    // void register_reduce(OpFactory &opfactory)
-    // {
-    //     opfactory.add_op(Max<float>());
-    //     opfactory.add_op(Max<double>());
-    //     opfactory.add_op(Maxscalar<float>());
-    //     opfactory.add_op(Maxscalar<double>());
-    //     opfactory.add_op(Min<float>());
-    //     opfactory.add_op(Min<double>());
-    //     opfactory.add_op(Minscalar<float>());
-    //     opfactory.add_op(Minscalar<double>());
-    //     opfactory.add_op(Sum<float>());
-    //     opfactory.add_op(Sum<double>());
-    // }
+   // reduce
+     void register_reduce(TfFactory &tffactory)
+    {   
+        // sum
+        tffactory.add_tf(std::make_shared<Sum<miaobyte>>(vector<Param>(
+            {
+                Param("A", DataCategory::Tensor, Precision::Any),
+                Param("dims", DataCategory::Vector, Precision::Int32),
+                Param("keepdims", DataCategory::Var, Precision::Bool),
+            }),
+            vector<Param>(
+                {
+                    Param("B", DataCategory::Tensor, Precision::Any),
+                })));   
+        // prod
+        tffactory.add_tf(std::make_shared<Prod<miaobyte>>(vector<Param>(
+            {
+                Param("A", DataCategory::Tensor, Precision::Any),
+                Param("dims", DataCategory::Vector, Precision::Int32),
+                Param("keepdims", DataCategory::Var, Precision::Bool),
+            }), 
+            vector<Param>(
+                {
+                    Param("B", DataCategory::Tensor, Precision::Any),
+                })));  
+
+        // max
+        tffactory.add_tf(std::make_shared<ReduceMax<miaobyte>>(vector<Param>(
+            {
+                Param("A", DataCategory::Tensor, Precision::Any),
+                Param("dims", DataCategory::Vector, Precision::Int32),
+                Param("keepdims", DataCategory::Var, Precision::Bool),
+            }),
+            vector<Param>(
+                {
+                    Param("B", DataCategory::Tensor, Precision::Any),
+                })));
+        // min
+        tffactory.add_tf(std::make_shared<ReduceMin<miaobyte>>(vector<Param>(
+            {
+                Param("A", DataCategory::Tensor, Precision::Any),
+                Param("dims", DataCategory::Vector, Precision::Int32),
+                Param("keepdims", DataCategory::Var, Precision::Bool),
+            }), 
+            vector<Param>(
+                {
+                    Param("B", DataCategory::Tensor, Precision::Any),
+                })));
+    }
+ 
     int register_all(TfFactory &tffactory)
     {
         register_lifecycle(tffactory);

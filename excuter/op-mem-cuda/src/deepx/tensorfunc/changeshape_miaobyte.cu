@@ -44,8 +44,7 @@ namespace deepx::tensorfunc
    
 
     template <typename T>
-    void launch_transpose(const int numBlocks, const int blockSize,
-                          const T *input,
+    void launch_transpose(const T *input,
                           const int *inputStrides,
                           T *output,
                           const int *outputStrides,
@@ -58,7 +57,7 @@ namespace deepx::tensorfunc
         cudaVector<int> dimOrder_d(dimOrder, dim);
 
         int powDim = nextPowerOf2(dim);
-
+        auto [numBlocks, blockSize] = BestDims(len);
         // 根据计算出的2的幂次选择对应的模板实例
         switch (powDim)
         {
@@ -91,14 +90,14 @@ namespace deepx::tensorfunc
         }
     }
 
-    template void launch_transpose<double>(const int numBlocks, const int blockSize, const double *input, const int *inputStrides, double *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
-    template void launch_transpose<float>(const int numBlocks, const int blockSize, const float *input, const int *inputStrides, float *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
-    template void launch_transpose<nv_bfloat16>(const int numBlocks, const int blockSize, const nv_bfloat16 *input, const int *inputStrides, nv_bfloat16 *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
-    template void launch_transpose<__half>(const int numBlocks, const int blockSize, const __half *input, const int *inputStrides, __half *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
-    template void launch_transpose<int64_t>(const int numBlocks, const int blockSize, const int64_t *input, const int *inputStrides, int64_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
-    template void launch_transpose<int32_t>(const int numBlocks, const int blockSize, const int32_t *input, const int *inputStrides, int32_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
-    template void launch_transpose<int16_t>(const int numBlocks, const int blockSize, const int16_t *input, const int *inputStrides, int16_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
-    template void launch_transpose<int8_t>(const int numBlocks, const int blockSize, const int8_t *input, const int *inputStrides, int8_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    template void launch_transpose<double>(const double *input, const int *inputStrides, double *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    template void launch_transpose<float>(const float *input, const int *inputStrides, float *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    template void launch_transpose<nv_bfloat16>(const nv_bfloat16 *input, const int *inputStrides, nv_bfloat16 *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    template void launch_transpose<__half>(const __half *input, const int *inputStrides, __half *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    template void launch_transpose<int64_t>(const int64_t *input, const int *inputStrides, int64_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    template void launch_transpose<int32_t>(const int32_t *input, const int *inputStrides, int32_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    template void launch_transpose<int16_t>(const int16_t *input, const int *inputStrides, int16_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    template void launch_transpose<int8_t>(const int8_t *input, const int *inputStrides, int8_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
 
     // concat
     template <int DIM, typename T>
