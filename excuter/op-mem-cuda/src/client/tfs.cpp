@@ -430,7 +430,7 @@ namespace deepx::tf
         register_elementwise(tffactory);
         register_matmul(tffactory);
         register_changeshape(tffactory);
-        // register_reduce(opfactory);
+        register_reduce(tffactory);
         return 0;
     }
 }

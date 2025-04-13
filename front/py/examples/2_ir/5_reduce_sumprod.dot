@@ -2,37 +2,37 @@
 digraph {
 	rankdir=TB
 	node [shape=record]
-	124690717936416 [label="t
+	137168675850560 [label="t
 (3, 4, 5)" color=skyblue fillcolor=aliceblue fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124689026191840 [label="s
+	137168368280016 [label="s
 (4,)" color=skyblue fillcolor=aliceblue fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124688742603248 [label="vector_1
+	137168309032976 [label="vector_1
 [0, 2]" color=darkseagreen fillcolor=honeydew fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124688742602864 [label=sum color=darkslategray fillcolor=lightgray fontname="Courier Bold" labeljust=l shape=box style=filled]
-	124688742603104 [label="p
+	137168309032592 [label=sum color=darkslategray fillcolor=lightgray fontname="Courier Bold" labeljust=l shape=box style=filled]
+	137168309032832 [label="p
 (3, 5)" color=skyblue fillcolor=aliceblue fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124688742603392 [label="vector_2
+	137168309033120 [label="vector_2
 [1]" color=darkseagreen fillcolor=honeydew fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124688742603440 [label=prod color=darkslategray fillcolor=lightgray fontname="Courier Bold" labeljust=l shape=box style=filled]
-	124690717935984 [label="t1
+	137168309033168 [label=prod color=darkslategray fillcolor=lightgray fontname="Courier Bold" labeljust=l shape=box style=filled]
+	137168675850128 [label="t1
 (4, 5, 6)" color=skyblue fillcolor=aliceblue fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124688742603872 [label=constant color=darkslategray fillcolor=lightgray fontname="Courier Bold" labeljust=l shape=box style=filled]
-	124688742603632 [label="var_1
+	137168309033600 [label=constant color=darkslategray fillcolor=lightgray fontname="Courier Bold" labeljust=l shape=box style=filled]
+	137168309033360 [label="var_1
 1" color=orange fillcolor=moccasin fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124688742603584 [label="t2
+	137168309033312 [label="t2
 (6,)" color=skyblue fillcolor=aliceblue fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124688742604112 [label="vector_3
+	137168309033840 [label="vector_3
 [0, 1]" color=darkseagreen fillcolor=honeydew fontname="Sans-Serif" labeljust=l shape=box style=filled]
-	124688742603920 [label=sum color=darkslategray fillcolor=lightgray fontname="Courier Bold" labeljust=l shape=box style=filled]
-	124688742602864 -> 124689026191840 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124690717936416 -> 124688742602864 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124688742603248 -> 124688742602864 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124688742603440 -> 124688742603104 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124690717936416 -> 124688742603440 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124688742603392 -> 124688742603440 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124688742603872 -> 124690717935984 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124688742603632 -> 124688742603872 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124688742603920 -> 124688742603584 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124690717935984 -> 124688742603920 [arrowsize=0.8 color=gray40 penwidth=1.2]
-	124688742604112 -> 124688742603920 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168309033648 [label=sum color=darkslategray fillcolor=lightgray fontname="Courier Bold" labeljust=l shape=box style=filled]
+	137168309032592 -> 137168368280016 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168675850560 -> 137168309032592 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168309032976 -> 137168309032592 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168309033168 -> 137168309032832 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168675850560 -> 137168309033168 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168309033120 -> 137168309033168 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168309033600 -> 137168675850128 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168309033360 -> 137168309033600 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168309033648 -> 137168309033312 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168675850128 -> 137168309033648 [arrowsize=0.8 color=gray40 penwidth=1.2]
+	137168309033840 -> 137168309033648 [arrowsize=0.8 color=gray40 penwidth=1.2]
 }
