@@ -28,8 +28,6 @@ namespace deepx::tf
  
         Param(const string &textvalue = "", const DataCategory &dt = DataCategory::Unknown, const Precision &prec = Precision::Any)
             : textvalue(textvalue), dtype(make_dtype(dt, prec)) {}
-
-        
     };
 
     // TF:Tensor Function的缩写
@@ -138,6 +136,19 @@ namespace deepx::tf
                 result.push_back(to<T>(item));
             }
             return result;
+        }
+
+        bool checktensors(const initializer_list<string> &names, shared_ptr<MemBase> mem, string &error)
+        {
+            for (const auto &name : names)
+            {
+                if (!mem->gettensor(name))
+                {
+                    error = "tensor not found: " + name;
+                    return false;
+                }
+            }
+            return true;
         }
 
         std::string dtypes() const;

@@ -1,6 +1,6 @@
 from typing import Union
 import math
-from .leaffunc_new import newtensor
+from .leaffunc_new import newtensor,parse_shape
 from .rtf_init import *
 from deepx import Tensor
  
@@ -9,50 +9,45 @@ from deepx import Tensor
 # inplace操作的函数，其名为_后缀, 返回值为空
 # 非inplace操作的函数，其名为_后缀, 返回值为Tensor
 
-def parse_shape(shape:Union[tuple,list])->tuple:
-    if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
-        shape = shape[0]
-    return shape
-
 def constant_(t:Tensor,
             value: Union[float,int],
             author='miaobyte')->Tensor:
     rtf_constant(t,value,author)
  
 
-def constant(*shape, value:Union[float,int], dtype:str='float32')->Tensor:
-    s=parse_shape(shape)
-    outtensor=Tensor(shape=s, dtype=dtype)
-    newtensor(outtensor)
+def constant(*shape, value:Union[float,int], dtype:str='float32',name:str)->Tensor:
+    s = parse_shape(shape)
+    outtensor=newtensor(s,dtype=dtype,name=name)
     constant_(outtensor, value)
     return outtensor
 
-def full(*shape, value:Union[float,int], dtype:str='float32')->Tensor:
-    return constant(*shape, value=value, dtype=dtype)
+def full(*shape, value:Union[float,int], dtype:str='float32',name:str=None)->Tensor:
+    s = parse_shape(shape)
+    return constant(s, value=value, dtype=dtype,name=name)
 
-def zeros(*shape, dtype:str='float32')->Tensor:
-    return constant(*shape, value=0, dtype=dtype)
+def zeros(*shape, dtype:str='float32',name:str=None)->Tensor:
+    s = parse_shape(shape)
+    return constant(s, value=0, dtype=dtype,name=name)
 
-def ones(*size, dtype:str='float32')->Tensor:
-    return constant(*size, value=1, dtype=dtype)
+def ones(*shape, dtype:str='float32',name:str=None)->Tensor:
+    s = parse_shape(shape)
+    return constant(s, value=1, dtype=dtype,name=name)
  
 def arange_(t:Tensor,start=0,step=1,author='miaobyte')->Tensor:
     from .rtf_init import rtf_arange
     rtf_arange(t,start,step,author)
-def arange(*shape,start=0,step=1,dtype:str='float32',author='miaobyte')->Tensor:
-    s=parse_shape(shape)
-    outtensor=Tensor(shape=s, dtype=dtype)
-    newtensor(outtensor)
+def arange(*shape,start=0,step=1,dtype:str='float32',name:str=None,author='miaobyte')->Tensor:
+    s = parse_shape(shape)
+    outtensor=newtensor(s,dtype=dtype,name=name)
     arange_(outtensor,start,step,author)
     return outtensor
 
 def uniform_(t:Tensor,low=0, high=1,seed:int=0,author='miaobyte')->Tensor:
     from .rtf_init import rtf_uniform
     rtf_uniform(t,low,high,seed,author)
-def uniform(*shape,low=0, high=1,seed:int=0,dtype:str='float32',author='miaobyte')->Tensor:
-    s=parse_shape(shape)
-    outtensor=Tensor(shape=s, dtype=dtype)
-    newtensor(outtensor)
+def uniform(*shape,low=0, high=1,seed:int=0,dtype:str='float32',name:str=None,author='miaobyte')->Tensor:
+    s = parse_shape(shape)
+    outtensor=newtensor(s,dtype=dtype,name=name)
     uniform_(outtensor,low,high,seed,author)
     return outtensor
 
@@ -184,10 +179,8 @@ def kaiming_uniform_(
     bound = math.sqrt(3.0) * std  # Calculate uniform bounds from standard deviation
     return  uniform_(tensor,-bound, bound)
 
-def kaiming_uniform(*shape,a:float=0,mode:str='fan_in',nonlinearity:str='leaky_relu',dtype:str='float32',author='miaobyte')->Tensor:
-    s=parse_shape(shape)
-    outtensor=Tensor(shape=s, dtype=dtype)
-    newtensor(outtensor)
+def kaiming_uniform(*shape,a:float=0,mode:str='fan_in',nonlinearity:str='leaky_relu',dtype:str='float32',name:str=None,author='miaobyte')->Tensor:
+    outtensor=newtensor(shape,dtype=dtype,name=name)
     kaiming_uniform_(outtensor,a,mode,nonlinearity)
     return outtensor
 

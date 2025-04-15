@@ -32,6 +32,10 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
+            if (checktensors({this->args[0].textvalue, this->args[1].textvalue, this->returns[0].textvalue}, mem, error)!=0)
+            {
+                return 1;
+            }
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
             Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
             Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
@@ -88,7 +92,11 @@ namespace deepx::tf
             return make_shared<AddScalar<Author>>(*this);
         }
         int run(shared_ptr<MemBase> mem, string &error) override
-        {
+        {   
+            if (checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error)!=0)
+            {
+                return 1;
+            }
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
             Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
             if (a_type != c_type)
@@ -144,6 +152,10 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
+            if (checktensors({this->args[0].textvalue, this->args[1].textvalue, this->returns[0].textvalue}, mem, error)!=0)
+            {
+                return 1;
+            }
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
             Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
             Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;

@@ -45,7 +45,7 @@ namespace deepx::mem
         {
             if (mem.find(name) == mem.end())
             {
-                throw std::runtime_error("tensor not found: " + name);
+                return nullptr;
             }
             auto ptr = mem.at(name);
             auto result = make_shared<Tensor<void>>();

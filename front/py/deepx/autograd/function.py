@@ -4,7 +4,7 @@ class Context:
         self._requires_grad = requires_grad
         self._saved_tensors = []
         self._non_tensor_data = {}
-
+        self._authormap = {}
     def save_tensors(self, *tensors):
         self._saved_tensors.extend(tensors)
 
@@ -17,6 +17,13 @@ class Context:
 
     def get_data(self, key):
         return self._non_tensor_data.get(key)
+
+    def set_authormap(self,authormap:dict):
+        self._authormap = authormap
+
+    @property
+    def authormap(self):
+        return self._authormap
 
     @property
     def requires_grad(self):

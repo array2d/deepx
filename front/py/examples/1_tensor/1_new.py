@@ -13,16 +13,16 @@ def printall(t):
    print("t.numel=",t.numel())
    print("t.dtype=", t.dtype)
 def newtensorwithshape(shape):
-   t = Tensor(shape=[2,3,4])
+
    from deepx.nn.functional import newtensor
-   newtensor(t)
+   t=newtensor( 2,3,4 )
    printall (t)
 
 
 def newtensorwithdata():
-   t = Tensor([1,2,3])
+
    from deepx.nn.functional import newtensor
-   newtensor(t)
+   t=newtensor(1,2,3)
    printall(t)
 
 if __name__ == "__main__":

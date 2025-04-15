@@ -1,6 +1,5 @@
 from typing import Optional 
 from .shape import Shape
-from .devicetype import Device
 from .dtype import infer_dtype,default_dtype
 
 class Tensor:
@@ -8,10 +7,9 @@ class Tensor:
     #生命周期 
     def __init__(
             self,
-            data=None,
             shape=None,
-            device=None,
             dtype:Optional[str]=None,
+            data=None,
     ):
         # data
         if data is not None:
@@ -45,14 +43,7 @@ class Tensor:
                 self._shape = shape
             else:
                 raise ValueError("Invalid shape")
-
-        # device
-        if isinstance(device, str):
-            self._device = Device.from_string(device)
-        elif isinstance(device, Device):
-            self._device = device
-        else:
-            self._device = Device.CPU  # 默认设备
+ 
         self._graph = None
         self._node = None
 
@@ -103,15 +94,12 @@ class Tensor:
         return self._shape.numel() if self._shape else None
     
     
-    #dtype device
+    #dtype 
     @property
     def dtype(self):
         return self._dtype
 
-    @property
-    def device(self):
-        return self._device
-
+ 
     
     # 计算图
     def addtograph(self,name:str)->'Tensor':

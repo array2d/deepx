@@ -8,36 +8,36 @@ def rtf_add(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("add",a,b,out,author)
     return out
 
-def rtf_add_scalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("add",a,b,out,author)
+def rtf_addscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("addscalar",a,b,out,author)
     return out
 
 def rtf_sub(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("sub",a,b,out,author)
     return out
 
-def rtf_sub_scalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("sub",a,b,out,author)
+def rtf_subscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("subscalar",a,b,out,author)
     return out
 
 def rtf_mul(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("mul",a,b,out,author)
     return out
 
-def rtf_mul_scalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("mul",a,b,out,author)
+def rtf_mulscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("mulscalar",a,b,out,author)
     return out
 
 def rtf_div(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("div",a,b,out,author)
     return out
 
-def rtf_div_scalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("div",a,b,out,author)
+def rtf_divscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("divscalar",a,b,out,author)
     return out
 
-def rtf_rdiv_scalar(a:float, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("rdiv",a,b,out,author)
+def rtf_rdivscalar(a:float, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("rdivscalar",a,b,out,author)
     return out
 
 
@@ -50,8 +50,8 @@ def rtf_pow(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("pow",a,b,out,author)
     return out
 
-def rtf_pow_scalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("pow",a,b,out,author)
+def rtf_powscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("powscalar",a,b,out,author)
     return out
 
 def rtf_exp(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
@@ -86,14 +86,14 @@ def rtf_max(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("max",a,b,out,author)
     return out
 
-def rtf_max_scalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("max",a,b,out,author)
+def rtf_maxscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("maxscalar",a,b,out,author)
     return out
 
 def rtf_min(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("min",a,b,out,author)
     return out
 
-def rtf_min_scalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("min",a,b,out,author)
+def rtf_minscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("minscalar",a,b,out,author)
     return out

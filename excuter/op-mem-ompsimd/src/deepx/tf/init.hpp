@@ -33,6 +33,10 @@ namespace deepx::tf
         {
             string name = this->args[0].textvalue;
             auto tensor = mem->gettensor(name).get();
+            if (tensor==nullptr) {
+                error = "tensor not found: " + name;
+                return 1;
+            }
             auto type = tensor->shape.dtype;
             switch (type)
             {

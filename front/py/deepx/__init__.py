@@ -1,4 +1,4 @@
-from .tensor import Tensor,Shape,Device,DeviceType
+from .tensor import Tensor,Shape
 from deepx.nn.functional import *  # 导入所有functional函数
 from deepx.nn.functional import __all__ as _func_all  # 获取functional的导出列表
 
@@ -6,7 +6,6 @@ __all__ = [
     #tensor
     'Tensor',
     'Shape',
-    'Device','DeviceType',
     *_func_all
 ]
 

@@ -3,22 +3,24 @@ from deepx.tensor import Tensor,Shape
 from deepx.nn.deepxir import DeepxIR
 from deepx.scheduler import send
 from deepx.autograd import  Function,Context
- 
- 
+
+from .leaffunc_new import newtensor
+
 class Reshape(Function):
     @staticmethod
-    def forward(ctx:Context,t:Tensor,shape:list[int],out,author='miaobyte'):
+    def forward(ctx:Context,t:Tensor,shape:list[int],out:Union[Tensor,str],authormap:dict):
         if ctx.requires_grad:
             ctx.save_data('oldshape',t.shape)
             ctx.save_tensors('t',t)
+            ctx.set_authormap(authormap)
         outtensor=out
         if isinstance(out,str):
             outshape=shape
-            outtensor=Tensor(shape=outshape, dtype=t.dtype, device=t.device)
+            outtensor=newtensor(outshape,dtype=t.dtype,name=out)
         if outtensor.shape!=shape:
             raise ValueError(f"reshape失败：{t.shape} 无法reshape为 {shape} ")
         from .rtf_changeshape import rtf_reshape
-        rtf_reshape(t,shape,outtensor,author)
+        rtf_reshape(t,shape,outtensor,ctx.authormap['reshape'])
         return outtensor
     
     @staticmethod
@@ -26,13 +28,11 @@ class Reshape(Function):
         oldshape=ctx.get_data('oldshape')
         t=ctx.get_tensor('t')
         from .rtf_changeshape import rtf_reshape
-        rtf_reshape(out_grad,oldshape,t_grad.node.name)
+        rtf_reshape(out_grad,oldshape,t_grad,ctx.authormap['reshape'])
         return t_grad
 
-def reshape(t:Tensor,shape:list[int],out:Union[Tensor,str]='',author='miaobyte',requires_grad:bool=False)->Tensor:
-    if t.shape==shape:
-        return t
-    return Reshape.apply(t,shape,out,author,requires_grad=requires_grad)
+def reshape(t:Tensor,shape:list[int],out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
+    return Reshape.apply(t,shape,out,{'reshape':author},requires_grad=requires_grad)
 
  
 class Permute(Function):
@@ -41,23 +41,29 @@ class Permute(Function):
                 t:Tensor,
                 dimorder:list[int],
                 out:Union[Tensor,str]='',
-                author='miaobyte')->Tensor:
+                authormap:dict={'transpose':'miaobyte'})->Tensor:
         if ctx.requires_grad:
             ctx.save_data('dimorder',dimorder)
+            ctx.set_authormap(authormap)
         outtensor=out
         if isinstance(out,str):
             outshape = [t.shape[dim] for dim in dimorder]
-            outtensor=Tensor(shape=outshape, dtype=t.dtype, device=t.device)
-            outtensor.addtograph(out)
-        return _A_v_elementwiseop_C(t,dimorder,"transpose",outtensor,author)
+            outtensor=newtensor(outshape,dtype=t.dtype,name=out)
+
+        from .rtf_changeshape import rtf_transpose
+        rtf_transpose(t,dimorder,outtensor,ctx.authormap['transpose'])
+        return outtensor
+        
     
     @staticmethod
-    def backward(ctx:Context,in_grad,out_grad,author='miaobyte'):
+    def backward(ctx:Context,in_grad,out_grad):
         dimorder=ctx.get_data('dimorder')
         inverse_dimorder = [0] * len(dimorder)
         for i, j in enumerate(dimorder):
             inverse_dimorder[j] = i
-        return _A_v_elementwiseop_C(out_grad,inverse_dimorder,"transpose",in_grad,author)
+        from .rtf_changeshape import rtf_transpose
+        rtf_transpose(out_grad,inverse_dimorder,in_grad,ctx.authormap['transpose'])
+        return in_grad
 
 def permute(t:Tensor,
             dimorder:list[int],
@@ -67,12 +73,12 @@ def permute(t:Tensor,
     if t.dim!=len(dimorder):
         raise ValueError(f"shape参数不合法,当前输入维度数：{len(dimorder)}，张量维度数：{t.dim}")
     dimorder = [d % t.ndim for d in dimorder]
-    return Permute.apply(t,dimorder,out,requires_grad=requires_grad)
+    return Permute.apply(t,dimorder,out,{'transpose':author},requires_grad=requires_grad)
  
 def transpose(t:Tensor,out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
     dimorder = list(range(t.ndim))
     dimorder[-1],dimorder[-2]=dimorder[-2],dimorder[-1]
-    return Permute.apply(t,dimorder,out,author,requires_grad=requires_grad)
+    return Permute.apply(t,dimorder,out,{'transpose':author},requires_grad=requires_grad)
 
 
  
@@ -82,32 +88,23 @@ class Concat(Function):
                 tensors:list[Tensor],
                 dim:int,
                 out:Union[Tensor,str]='',
-                author='miaobyte')->Tensor:
+                authormap:dict={'concat':'miaobyte'})->Tensor:
         if ctx.requires_grad:
             ctx.save_data('dim',dim)
+            ctx.set_authormap(authormap)
         outtensor=out
         if isinstance(out,str):
             outshape=list(tensors[0].shape)
             outshape[dim]=sum(t.shape[dim] for t in tensors)
-            outtensor=Tensor(shape=outshape, dtype=tensors[0].dtype, device=tensors[0].device)
-            outtensor.addtograph(out)
-
-        g=tensors[0].graph
-        opnode = g.add_op("concat")
-        for t in tensors:
-            opnode.add_input(t.node)
-        opnode.add_input(g.add_var("",dim))
-
-        outtensor.node.add_input(opnode)
-        if g.eager:
-            ir=DeepxIR("concat", [[t.node.name for t in tensors], dim], [outtensor.node.name],author)
-            send(ir)
+            outtensor=newtensor(outshape,dtype=tensors[0].dtype,name=out)
+        from .rtf_changeshape import rtf_concat
+        rtf_concat(tensors,dim,outtensor,ctx.authormap['concat'])
         return outtensor
     
     @staticmethod
-    def backward(ctx:Context,out_grad,author='miaobyte'):
+    def backward(ctx:Context,out_grad):
         dim=ctx.get_data('dim')
-        return _A_v_elementwiseop_C(out_grad,dim,"concat",t.node.name,author)
+        #todo: 反向传播
 
 def concat(t:Tensor,dim:int,out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
     return Concat.apply(t,dim,out,author,requires_grad=requires_grad)
@@ -148,7 +145,8 @@ class BroadcastTo(Function):
     def forward(ctx:Context,
                 t:Tensor,
                 new_shape:tuple[int],
-                out:Union[Tensor,str]='',author='miaobyte')->Tensor:
+                out:Union[Tensor,str]='',
+                authormap:dict={'broadcastTo':'miaobyte'})->Tensor:
         bshape=broadcast_shape(t.shape,new_shape)
         if bshape!=new_shape:
             raise ValueError(f"广播失败：{t.shape} 无法广播为 {new_shape} ")
@@ -158,15 +156,16 @@ class BroadcastTo(Function):
         outtensor=out
         if isinstance(out,str):
             outshape=new_shape
-            outtensor=Tensor(shape=outshape, dtype=t.dtype, device=t.device)
-            outtensor.addtograph(out)
-        return _A_v_elementwiseop_C(t,new_shape,"broadcastTo",outtensor,author)
+            outtensor=newtensor(outshape,dtype=t.dtype,name=out)
+        from .rtf_changeshape import rtf_broadcastTo
+        rtf_broadcastTo(t,new_shape,outtensor,ctx.authormap['broadcastTo'])
+        return outtensor
     
     #todo: 反向传播
     @staticmethod
-    def backward(ctx:Context,out_grad,author='miaobyte'):
+    def backward(ctx:Context,out_grad):
         new_shape=ctx.get_data('new_shape')
-        return _A_v_elementwiseop_C(out_grad,new_shape,"broadcastTo",t.node.name,author)
+        #todo: 反向传播
 
 def broadcast_to(t:Tensor,new_shape:tuple[int],out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
     return BroadcastTo.apply(t,new_shape,out,author,requires_grad=requires_grad)

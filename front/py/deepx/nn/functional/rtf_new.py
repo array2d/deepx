@@ -4,7 +4,7 @@ from deepx.scheduler import send
 
 def rtf_newtensor(t:Tensor,name:str=None):
     args=[Param.vector(t.shape,'int32')]
-    if name is not None:
+    if name is not None and name != '':
         returns=[Param.tensorName(name,t.dtype)]
     else:
         returns=[Param.tensor(t)]

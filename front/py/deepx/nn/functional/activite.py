@@ -5,7 +5,7 @@ def relu(
         t: Tensor,
         inplace:bool=False,
         out:Union[Tensor,str]='')->Tensor:
-    from .elementwise import max as max_func
+    from .leaffunc_elementwise import max as max_func
     return max_func(t,0,out)
  
  # 数学公式：σ(x) = 1 / (1 + exp(-x))
@@ -35,7 +35,7 @@ def sigmoid(
             outtensor.addtograph(out)
         else:
             outtensor=out
-    from .elementwise import exp
+    from .leaffunc_elementwise import exp
     outtensor = 1 / ((t*-1).exp()+1)
     return outtensor
 

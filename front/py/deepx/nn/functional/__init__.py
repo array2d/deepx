@@ -4,7 +4,7 @@ from .leaffunc_io import printtensor
 from .leaffunc_init import *
 
 from .leaffunc_changeshape import *
-from .elementwise import *
+from .leaffunc_elementwise import *
 from .matmul import matmul
 
 from .reduce import reduce_max,reduce_min,sum,prod,mean
