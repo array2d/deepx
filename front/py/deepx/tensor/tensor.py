@@ -154,6 +154,7 @@ class Tensor:
         return self.transpose(1,0,out=self.node.name+".T")
 
     # 打印
+    
     def set_format(self,format:str):
         self._format = format
     def __repr__(self) -> str:

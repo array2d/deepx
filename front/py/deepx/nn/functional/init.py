@@ -6,7 +6,7 @@ from deepx.autograd import OpNode,Function,Context
 from deepx.nn.deepxir import DeepxIR,Param
 from deepx.scheduler import send
 
-OpNode.register("constant")
+ 
 class Constant(Function):
     @staticmethod
     def forward(ctx:Context,
@@ -45,8 +45,7 @@ def zeros(*shape, dtype=None, device=None,
 def ones(*size, dtype=None, device=None,
          name:Union[str]='')->Tensor:
     return full(*size, value=1, dtype=dtype, device=device,name=name)
-
-OpNode.register("arange")
+ 
 class Arange(Function):
     @staticmethod
     def forward(ctx:Context,
@@ -61,8 +60,7 @@ class Arange(Function):
         return t
 def arange(t:Tensor,start=0,step=1,author='miaobyte')->Tensor:
     return Arange.apply(t,start,step,author)
-
-OpNode.register("uniform")
+ 
 class Uniform(Function):
     @staticmethod
     def forward(ctx:Context,

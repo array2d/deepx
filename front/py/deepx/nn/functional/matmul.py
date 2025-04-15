@@ -1,12 +1,11 @@
-from typing import Optional,Union
+from typing import Union
 
 from deepx import Tensor
-from deepx.autograd import OpNode,Function,Context
+from deepx.autograd import Function,Context
 from deepx.nn import DeepxIR
 from deepx.scheduler import send
  
-
-OpNode.register("matmul")
+ 
 class Matmul(Function):
     @staticmethod
     def forward(ctx:Context,

@@ -3,7 +3,7 @@ from typing import Optional, Union
 from deepx.tensor import Tensor
 from deepx.nn.deepxir import DeepxIR    
 from deepx.scheduler import send
-from deepx.autograd import OpNode,Function,Context
+from deepx.autograd import Function,Context
 
 def reduceshape(inshape: Union[list[int], tuple[int]], 
                dim: Union[list[int], tuple[int]], 
@@ -67,7 +67,7 @@ def _A_v_reduceop_C(
         send(ir)
     return result
 #sum    
-OpNode.register("sum")
+ 
 class Sum(Function):
     @staticmethod
     def forward(ctx:Context,a:Tensor,dim:Optional[Union[list[int],tuple[int]]]=None,keepdim:bool=False,out:Union[Tensor,str]='',author:str='miaobyte')->Tensor:
@@ -96,7 +96,7 @@ def sum(
     return Sum.apply(a,dim,keepdim,out,author,requires_grad=requires_grad)
 
 #prod
-OpNode.register("prod")
+ 
 class Prod(Function):
     @staticmethod
     def forward(ctx:Context,a:Tensor,dim:Optional[Union[list[int],tuple[int]]]=None,keepdim:bool=False,out:Union[Tensor,str]='',author:str='miaobyte')->Tensor:
@@ -119,7 +119,7 @@ def prod(
     return Prod.apply(a,dim,keepdim,out,author,requires_grad=requires_grad)
 
 #max
-OpNode.register("reducemax")
+ 
 class ReduceMax(Function):
     @staticmethod
     def forward(ctx:Context,a:Tensor,dim:Optional[Union[list[int],tuple[int]]]=None,keepdim:bool=False,out:Union[Tensor,str]='',author:str='miaobyte')->Tensor:
@@ -138,7 +138,7 @@ def reduce_max(
     return ReduceMax.apply(a,dim,keepdim,out,author,requires_grad=requires_grad)
  
 #min    
-OpNode.register("reducemin")
+ 
 class ReduceMin(Function):
     @staticmethod
     def forward(ctx:Context,a:Tensor,dim:Optional[Union[list[int],tuple[int]]]=None,keepdim:bool=False,out:Union[Tensor,str]='',author:str='miaobyte')->Tensor:
@@ -159,7 +159,7 @@ def reduce_min(
  
 
 #mean
-OpNode.register("mean")
+ 
 def mean(
         a:Tensor,
         dim:Optional[Union[list[int],tuple[int]]]=None,
