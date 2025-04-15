@@ -18,7 +18,7 @@ print(torch_t6)
 
 ############-------DEEPX-------################
 
-from deepx import Tensor,mul,add,zeros,ones,full,kaiming_uniform_
+from deepx import zeros,ones,full,kaiming_uniform_
 print()
 
 t1 = zeros([3,4,5],dtype='float32',name="t1")

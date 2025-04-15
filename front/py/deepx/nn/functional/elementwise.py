@@ -1,7 +1,7 @@
 from typing import Optional, Union
 from deepx import Tensor
-from deepx.autograd import Graph,DataNode,OpNode,Function,Context
-from deepx.nn import DeepxIR,Param
+from deepx.autograd import  Function,Context
+from deepx.nn import DeepxIR
 from deepx.scheduler import send
 
 def _A_elementwiseop_C(
@@ -36,7 +36,7 @@ def _A_B_elementwiseop_C(
     A,B=a,b
     if a.shape != b.shape:
         broadcastshape=broadcast_shape(a.shape,b.shape)
-        from .changeshape import broadcast_to
+        from .leaffunc_changeshape import broadcast_to
         if a.shape != broadcastshape:
             A=broadcast_to(a,broadcastshape)
         if b.shape != broadcastshape:
@@ -100,7 +100,7 @@ def _a_B_elementwiseop_C(
     return outtensor
 
 #add
-OpNode.register("add")
+ 
 class Add(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -109,7 +109,7 @@ class Add(Function):
     @staticmethod
     def backward(ctx:Context,out_grad):
         return out_grad, out_grad
-OpNode.register("addscalar")
+ 
 class AddScalar(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -131,7 +131,7 @@ def add(
 
 
 #sub
-OpNode.register("sub")
+ 
 class Sub(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -140,8 +140,7 @@ class Sub(Function):
     @staticmethod
     def backward(ctx:Context, grad_output):
         return grad_output, -grad_output
-    
-OpNode.register("subscalar")
+ 
 class SubScalar(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -162,7 +161,7 @@ def sub(
         return SubScalar.apply(a,b,out,author,requires_grad=requires_grad)
 
 #mul
-OpNode.register("mul")
+ 
 class Mul(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -174,8 +173,7 @@ class Mul(Function):
     def backward(ctx:Context, out_grad):
         a,b=ctx.get_tensor
         return out_grad * b, out_grad * a
-    
-OpNode.register("mulscalar")
+ 
 class MulScalar(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -199,7 +197,7 @@ def mul(
  
 
 #div
-OpNode.register("div")
+ 
 class Div(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -212,7 +210,7 @@ class Div(Function):
         a,b=ctx.get_tensor
         return out_grad / b, -out_grad * a / b / b
     
-OpNode.register("divscalar")
+ 
 class DivScalar(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -224,8 +222,7 @@ class DivScalar(Function):
     def backward(ctx:Context, out_grad):
         b=ctx.get_data('b')
         return out_grad / b, None
-    
-OpNode.register("rdivscalar")
+ 
 class RDivScalar(Function):
     @staticmethod
     def forward(ctx:Context, a,b,out,author='miaobyte'):
@@ -252,17 +249,14 @@ def div(
         else:
             #C=a/B
             return RDivScalar.apply(a,b,out,author,requires_grad=requires_grad)
-
-OpNode.register("compare")
+ 
 class Compare(Function):
     @staticmethod
     def forward(ctx:Context,a,b,out,author='miaobyte'):
         if ctx.requires_grad:
             ctx.save_tensors(a,b)
         return _A_B_elementwiseop_C(a,b,"compare",out,author)
-
  
-OpNode.register("max")
 class Max(Function):
     @staticmethod
     def forward(ctx:Context,a,b,out,author='miaobyte'):
@@ -276,9 +270,7 @@ class Max(Function):
         mask_a=ctx.get_tensor
         mask_b=1-mask_a
         return out_grad*mask_a, out_grad*mask_b
-    
-
-OpNode.register("maxscalar")
+ 
 class MaxScalar(Function):
     @staticmethod
     def forward(ctx:Context,a,b,out,author='miaobyte'):
@@ -303,8 +295,7 @@ def max(
     else:
         return Max.apply(a,b,out,author,requires_grad=requires_grad)
 
-
-OpNode.register("min")
+ 
 class Min(Function):
     @staticmethod
     def forward(ctx:Context,a,b,out,author='miaobyte'):
@@ -316,8 +307,7 @@ class Min(Function):
     def backward(ctx:Context,out_grad):
         a,b=ctx.get_tensors()
         return out_grad, out_grad
-
-OpNode.register("minscalar")
+ 
 class MinScalar(Function):
     @staticmethod
     def forward(ctx:Context,a,b,out,author='miaobyte'):
@@ -344,7 +334,7 @@ def min(
 #clamp,TODO
 
 #sqrt
-OpNode.register("sqrt")
+ 
 class Sqrt(Function):
     @staticmethod
     def forward(ctx:Context, a,out,author='miaobyte'):
@@ -364,7 +354,7 @@ def sqrt(
         author='miaobyte')->Tensor:
     return Sqrt.apply(input,out,author,requires_grad=requires_grad)
 
-OpNode.register("pow")
+ 
 class Pow(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -376,8 +366,7 @@ class Pow(Function):
     def backward(ctx:Context, out_grad):
         a,b=ctx.get_tensor
         return out_grad * b * pow(a,b-1), out_grad * pow(a,b) * log(a)
-
-OpNode.register("powscalar")
+ 
 class PowScalar(Function):
     @staticmethod
     def forward(ctx:Context, a, b,out,author='miaobyte'):
@@ -402,7 +391,7 @@ def pow(
         return Pow.apply(a,b,out,author,requires_grad=requires_grad)
 
 #exp
-OpNode.register("exp")
+ 
 class Exp(Function):
     @staticmethod
     def forward(ctx:Context, a,out,author='miaobyte'):
@@ -422,7 +411,7 @@ def exp(
         author='miaobyte')->Tensor:
     return Exp.apply(a,out,author,requires_grad=requires_grad)  
 #log
-OpNode.register("log")
+ 
 class Log(Function):
     @staticmethod
     def forward(ctx:Context, a,out,author='miaobyte'):
@@ -441,8 +430,7 @@ def log(
         requires_grad:bool=False,
         author='miaobyte')->Tensor:
     return Log.apply(a,out,author,requires_grad=requires_grad)
-
-OpNode.register("rsqrt")
+ 
 class Rsqrt(Function):
     @staticmethod
     def forward(ctx:Context, a,out,author='miaobyte'):
@@ -462,42 +450,4 @@ def rsqrt(
         author='miaobyte')->Tensor:
     return Rsqrt.apply(input,out,author,requires_grad=requires_grad)
 
- 
-
-
-# OpNode.register("Placeholder", 102)
-# OpNode.register("Neg", 103)
-# NodeType.register("Less", 104)
-# NodeType.register("Equal", 105)
- 
-# NodeType.register("Tanh", 107)
- 
- 
-# def placeholder(name=None, shape=None):
-#     node = OpNode("Placeholder", name)
-#     if shape:
-#         node.set_attr("shape", shape)
-#     return node
-
-# def neg(x):
-#     node = OpNode("Neg")
-#     node.add_input("x", x)
-#     return node
- 
-# def less(a, b):
-#     node = OpNode("Less")
-#     node.add_input("a", a)
-#     node.add_input("b", b)
-#     return node
-
-# def equal(a, b):
-#     node = OpNode("Equal")
-#     node.add_input("a", a)
-#     node.add_input("b", b)
-#     return node
- 
-# def tanh(x):
-#     node = OpNode("Tanh")
-#     node.add_input("x", x)
-#     return node
- 
+  

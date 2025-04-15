@@ -1,18 +1,10 @@
 from typing import Tuple, List, Optional,Union
 import time
 from datetime import datetime  # 添加datetime模块
-
+from deepx.tensor import Tensor
 class Param:
-    def __init__(self, value:Optional[Union[str,int,float,list,tuple]], category:str=None,precision:str=None):
-        if isinstance(value,str):
-            self._textvalue=value
-        elif isinstance(value,int) or isinstance(value,float):
-            self._textvalue=str(value)
-        elif isinstance(value,list) or isinstance(value,tuple):
-            self._textvalue='['+' '.join(str(v) for v in value)+']'
-        else:
-            raise ValueError(f"Invalid value type: {type(value)}")
-
+    def __init__(self,textvalue:str, category:str=None,precision:str=None):
+        self._textvalue=textvalue
         self._category=category
         self._precision=precision
 
@@ -24,7 +16,45 @@ class Param:
                 return f"{self._category} {self._textvalue}"
         else:
             return self._textvalue
+    
+    @classmethod
+    def tensorName(cls,name:str,dtype:str):
+        return Param(name,category="tensor",precision=dtype)
 
+    @classmethod
+    def tensor(cls,t:Tensor):
+        tid=id(t)
+        name=f"tensor_{tid}"
+        return Param(name,category="tensor",precision=t.dtype)
+
+
+    @classmethod
+    def varnum(cls,value:Union[float,int]):
+        precision=None
+        if isinstance(value,float):
+            precision="float"
+        elif isinstance(value,int):
+            precision="int"
+        return Param(str(value),category="var",precision=precision)
+
+    @classmethod
+    def varbool(cls,value:bool):
+        return Param(str(value),category="var",precision="bool")
+
+    @classmethod
+    def varstr(cls,value:str):
+        return Param(value,category="var",precision="string")
+
+    @classmethod
+    def vector(cls,value:tuple,dtype:str):
+        textvalue='['+' '.join(str(v) for v in value)+']'
+        return Param(textvalue,category="vector",precision=dtype)
+    
+    @classmethod
+    def tensorlist(cls,value:tuple[str],dtype:str):
+        textvalue='['+' '.join(v for v in value)+']'
+        return Param(textvalue,category="tensorlist",precision=dtype)
+    
 class DeepxIR:
     def __init__(self, 
                 name:str,

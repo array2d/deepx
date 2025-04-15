@@ -10,6 +10,7 @@ class LlamaRMSNorm(Module):
         super().__init__()
         self.weight =  ones(hidden_size)
         self.variance_epsilon = eps
+ 
 
     def forward(self, hidden_states:Tensor):
         variance = hidden_states.pow(2).mean(-1, keepdim=True)

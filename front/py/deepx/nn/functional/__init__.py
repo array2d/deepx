@@ -1,10 +1,10 @@
 from .elementwise import *
 from .new import newtensor,deltensor
-from .print import printtensor
+from .io import printtensor
 from .matmul import matmul
 from .init import *
 from .reduce import reduce_max,reduce_min,sum,prod,mean
-from .changeshape import *
+from .leaffunc_changeshape import *
 from .activite import relu,sigmoid,swish
 __all__ = [
     "newtensor",

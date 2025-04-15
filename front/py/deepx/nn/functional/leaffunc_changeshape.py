@@ -2,27 +2,9 @@ from typing import Union,Tuple
 from deepx.tensor import Tensor,Shape
 from deepx.nn.deepxir import DeepxIR
 from deepx.scheduler import send
-from deepx.autograd import OpNode,Function,Context
-
-def _A_v_elementwiseop_C(
-        a:Tensor,
-        b: list[int] ,
-        op:str=None,
-        out:Tensor=None,
-        author='miaobyte')->Tensor:
-    g=a.graph
-    opnode = g.add_op(op)
-    opnode.add_input(a.node)
-    opnode.add_input(g.add_vector("",b))
-
-    outtensor=out
-    outtensor.node.add_input(opnode)
-    if g.eager:
-        ir=DeepxIR(op, [a.node.name,b], [outtensor.node.name],author)
-        send(ir)
-    return outtensor
-
-OpNode.register("reshape")
+from deepx.autograd import  Function,Context
+ 
+ 
 class Reshape(Function):
     @staticmethod
     def forward(ctx:Context,t:Tensor,shape:list[int],out,author='miaobyte'):
@@ -33,23 +15,26 @@ class Reshape(Function):
         if isinstance(out,str):
             outshape=shape
             outtensor=Tensor(shape=outshape, dtype=t.dtype, device=t.device)
-            outtensor.addtograph(out)
-        outtensor._shape=Shape(shape)
-        return _A_v_elementwiseop_C(t,shape,"reshape",outtensor,author)
+        if outtensor.shape!=shape:
+            raise ValueError(f"reshape失败：{t.shape} 无法reshape为 {shape} ")
+        from .rtf_changeshape import rtf_reshape
+        rtf_reshape(t,shape,outtensor,author)
+        return outtensor
     
     @staticmethod
-    def backward(ctx:Context,out_grad):
+    def backward(ctx:Context,t_grad:Tensor,out_grad:Tensor):
         oldshape=ctx.get_data('oldshape')
         t=ctx.get_tensor('t')
-        return _A_v_elementwiseop_C(out_grad,oldshape,"reshape",t.node.name,author)
+        from .rtf_changeshape import rtf_reshape
+        rtf_reshape(out_grad,oldshape,t_grad.node.name)
+        return t_grad
 
 def reshape(t:Tensor,shape:list[int],out:Union[Tensor,str]='',author='miaobyte',requires_grad:bool=False)->Tensor:
     if t.shape==shape:
         return t
     return Reshape.apply(t,shape,out,author,requires_grad=requires_grad)
 
-
-OpNode.register("transpose")
+ 
 class Permute(Function):
     @staticmethod
     def forward(ctx:Context,
@@ -90,9 +75,7 @@ def transpose(t:Tensor,out:Union[Tensor,str]='',requires_grad:bool=False,author=
     return Permute.apply(t,dimorder,out,author,requires_grad=requires_grad)
 
 
-
-
-OpNode.register("concat")
+ 
 class Concat(Function):
     @staticmethod
     def forward(ctx:Context,
@@ -159,8 +142,7 @@ def broadcast_shape(shape_a: tuple[int], shape_b: tuple[int]) -> tuple[int]:
         result_shape = list(shape_b[:len_b - len_a]) + result_shape
     
     return tuple(result_shape)
-
-OpNode.register("broadcastTo")
+ 
 class BroadcastTo(Function):
     @staticmethod
     def forward(ctx:Context,

@@ -3,9 +3,9 @@ from deepx.autograd import OpNode
 from deepx.nn import DeepxIR
 from deepx.scheduler import send
 
-OpNode.register("print")
+ 
 def printtensor(t:Tensor,format='',author='miaobyte'):
-    ir=DeepxIR("print",[t.node.name,format], [],author)
-    send(ir)
+    from .rtf_io import rtf_printtensor
+    rtf_printtensor(t,format,author)
     return ''
 
