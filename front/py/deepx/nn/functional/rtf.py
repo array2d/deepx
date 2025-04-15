@@ -8,6 +8,12 @@ def A_B_op_C(op:str,a:Tensor,b:Tensor,out:Tensor,author='miaobyte'):
     ir=DeepxIR(op, args, returns,author)
     send(ir)
 
+def A_scalar_op(op:str,a:Tensor,b:Union[float,int],author='miaobyte'):
+    args=[Param.tensor(a),Param.varnum(b)]
+    returns=[]
+    ir=DeepxIR(op, args, returns,author)
+    send(ir)
+
 def A_scalar_op_C(op:str,a:Tensor,b:Union[float,int],out:Tensor,author='miaobyte'):
     args=[Param.tensor(a),Param.varnum(b)]
     returns=[Param.tensor(out)]

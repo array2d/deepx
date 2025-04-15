@@ -1,7 +1,4 @@
 from deepx.tensor import Tensor
-from deepx.autograd.graph import Graph
-from deepx.nn.deepxir import DeepxIR,Param
-from deepx.scheduler import send
 
 def newtensor(t:Tensor,name:str=None):
     from .rtf_new import rtf_newtensor

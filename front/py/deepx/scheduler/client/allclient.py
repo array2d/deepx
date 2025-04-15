@@ -11,6 +11,7 @@ def send(ir:DeepxIR) -> DeepxIRResp:
     global _id_counter
     _id_counter=_id_counter+1
     ir._id=_id_counter
-    respstr=default_client.send(str(ir))
+    s=str(ir)
+    respstr=default_client.send(s)
     respir=DeepxIRResp(respstr)
     return respir

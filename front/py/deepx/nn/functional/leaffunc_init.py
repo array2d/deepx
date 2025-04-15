@@ -1,109 +1,76 @@
-from typing import Optional,Union
+from typing import Union
 import math
-
+from .leaffunc_new import newtensor
+from .rtf_init import *
 from deepx import Tensor
-from deepx.autograd import OpNode,Function,Context
-from deepx.nn.deepxir import DeepxIR,Param
-from deepx.scheduler import send
-
  
-class Constant(Function):
-    @staticmethod
-    def forward(ctx:Context,
-                t:Tensor,
-                value:Optional[Union[float,int]]=None,
-                author='miaobyte') -> Tensor:
-        opnode = t.graph.add_op("constant")
-        argnode=t.graph.add_var('',value)   
-        opnode.add_input(argnode)
-        t.node.add_input(opnode)
-        if t.graph.eager:
-            ir=DeepxIR("constant",  [Param(t.node.name, 'tensor', t.dtype),Param(value)], [],author)
-            send(ir)
-        return t
-def constant(t:Tensor,
-            value:Optional[Union[float,int]]=None,
-            author='miaobyte')->Tensor:
-    return Constant.apply(t,value,author)
 
-def full(*shape, value=0, dtype=None, device=None,
-         name:Union[Tensor,str]='')->Tensor:
+# 命名规则
+# inplace操作的函数，其名为_后缀, 返回值为空
+# 非inplace操作的函数，其名为_后缀, 返回值为Tensor
+
+def parse_shape(shape:Union[tuple,list])->tuple:
     if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
         shape = shape[0]
-    outtensor=None
-    if isinstance(name,str):
-        outtensor=Tensor(shape=shape, dtype=dtype, device=device)
-        outtensor.addtograph(name)
-    else:
-        outtensor=name
-    return constant(outtensor, value)
+    return shape
 
-def zeros(*shape, dtype=None, device=None,
-         name:Union[str]='')->Tensor:
-    return full(*shape, value=0, dtype=dtype, device=device,name=name)
-
-def ones(*size, dtype=None, device=None,
-         name:Union[str]='')->Tensor:
-    return full(*size, value=1, dtype=dtype, device=device,name=name)
+def constant_(t:Tensor,
+            value: Union[float,int],
+            author='miaobyte')->Tensor:
+    rtf_constant(t,value,author)
  
-class Arange(Function):
-    @staticmethod
-    def forward(ctx:Context,
-                t:Tensor,
-                start:Optional[Union[float,int]]=0,
-                step:Optional[Union[float,int]]=1,
-                author='miaobyte')->Tensor:
-        g=t.graph
-        if g.eager:
-            ir=DeepxIR("arange",[t.node.name,start,step], [],author)
-            send(ir)
-        return t
-def arange(t:Tensor,start=0,step=1,author='miaobyte')->Tensor:
-    return Arange.apply(t,start,step,author)
+
+def constant(*shape, value:Union[float,int], dtype:str='float32')->Tensor:
+    s=parse_shape(shape)
+    outtensor=Tensor(shape=s, dtype=dtype)
+    newtensor(outtensor)
+    constant_(outtensor, value)
+    return outtensor
+
+def full(*shape, value:Union[float,int], dtype:str='float32')->Tensor:
+    return constant(*shape, value=value, dtype=dtype)
+
+def zeros(*shape, dtype:str='float32')->Tensor:
+    return constant(*shape, value=0, dtype=dtype)
+
+def ones(*size, dtype:str='float32')->Tensor:
+    return constant(*size, value=1, dtype=dtype)
  
-class Uniform(Function):
-    @staticmethod
-    def forward(ctx:Context,
-                t:Tensor,
-                low:Optional[Union[float,int]]=0,
-                high:Optional[Union[float,int]]=1,
-                seed:Optional[int]=0,author='miaobyte')->Tensor:
-        if low >= high:
-                raise ValueError(f"low({low})必须小于high({high})")
-        if t is None:
-            raise ValueError("t不能为None")
-        g=t.graph
-    
-        opnode = g.add_op("uniform")
-        opnode.add_input(g.add_var('',low))
-        opnode.add_input(g.add_var('',high))
-        if seed is not None:
-            opnode.add_input(g.add_var('',seed))
-        t.node.add_input(opnode)
-        if t.graph.eager:
-            ir=DeepxIR("uniform",  [t.node.name,low, high,seed], [],author)
-            send(ir)
-        return t
+def arange_(t:Tensor,start=0,step=1,author='miaobyte')->Tensor:
+    from .rtf_init import rtf_arange
+    rtf_arange(t,start,step,author)
+def arange(*shape,start=0,step=1,dtype:str='float32',author='miaobyte')->Tensor:
+    s=parse_shape(shape)
+    outtensor=Tensor(shape=s, dtype=dtype)
+    newtensor(outtensor)
+    arange_(outtensor,start,step,author)
+    return outtensor
 
+def uniform_(t:Tensor,low=0, high=1,seed:int=0,author='miaobyte')->Tensor:
+    from .rtf_init import rtf_uniform
+    rtf_uniform(t,low,high,seed,author)
+def uniform(*shape,low=0, high=1,seed:int=0,dtype:str='float32',author='miaobyte')->Tensor:
+    s=parse_shape(shape)
+    outtensor=Tensor(shape=s, dtype=dtype)
+    newtensor(outtensor)
+    uniform_(outtensor,low,high,seed,author)
+    return outtensor
 
-def uniform(t:Tensor,low=0, high=1,seed:int=0,author='miaobyte')->Tensor:
-    return Uniform.apply(t,low,high,seed,author)
+# def rand(*size, dtype=None, device=None):
+#    #TODO
+#    pass
 
-def rand(*size, dtype=None, device=None):
-   #TODO
-   pass
+# def randn(*size, dtype=None, device=None):
+#     #TODO
+#     pass
 
-def randn(*size, dtype=None, device=None):
-    #TODO
-    pass
-
-def eye(
-        n:int,
-        m:Optional[int]=None,
-        dtype:Optional[str]=None, 
-        device:Optional[str]=None):
-    #TODO
-    pass
+# def eye(
+#         n:int,
+#         m:Optional[int]=None,
+#         dtype:Optional[str]=None, 
+#         device:Optional[str]=None):
+#     #TODO
+#     pass
  
 
 def calculate_fan_in_and_fan_out(tensor:Tensor)->tuple[int,int]:
@@ -215,4 +182,12 @@ def kaiming_uniform_(
     gain = calculate_gain(nonlinearity, a)
     std = gain / math.sqrt(fan)
     bound = math.sqrt(3.0) * std  # Calculate uniform bounds from standard deviation
-    return tensor.uniform_(-bound, bound)
+    return  uniform_(tensor,-bound, bound)
+
+def kaiming_uniform(*shape,a:float=0,mode:str='fan_in',nonlinearity:str='leaky_relu',dtype:str='float32',author='miaobyte')->Tensor:
+    s=parse_shape(shape)
+    outtensor=Tensor(shape=s, dtype=dtype)
+    newtensor(outtensor)
+    kaiming_uniform_(outtensor,a,mode,nonlinearity)
+    return outtensor
+

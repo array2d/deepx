@@ -11,9 +11,9 @@ class Param:
     def __str__(self):
         if self._category is not None:
             if self._precision is not None:
-                return f"{self._category}<{self._precision}> {self._textvalue}"
+                return f"{self._category}<{self._precision}>:{self._textvalue}"
             else:
-                return f"{self._category} {self._textvalue}"
+                return f"{self._category}:{self._textvalue}"
         else:
             return self._textvalue
     
@@ -32,9 +32,9 @@ class Param:
     def varnum(cls,value:Union[float,int]):
         precision=None
         if isinstance(value,float):
-            precision="float"
+            precision="float32"
         elif isinstance(value,int):
-            precision="int"
+            precision="int32"
         return Param(str(value),category="var",precision=precision)
 
     @classmethod
@@ -54,7 +54,16 @@ class Param:
     def tensorlist(cls,value:tuple[str],dtype:str):
         textvalue='['+' '.join(v for v in value)+']'
         return Param(textvalue,category="tensorlist",precision=dtype)
-    
+
+# 完整IR，携带类型
+# newtensor (vector<int32>:[3 4 5]) -> (tensor<float32> tensor_136144420556608) 
+# // id=1 created_at=1744724799.0650852 sent_at=1744724799.0650952
+
+# 简化IR
+# newtensor ( [3 4 5]) -> ( tensor_136144420556608) 
+# // id=1 created_at=1744724799.0650852 sent_at=1744724799.0650952
+
+
 class DeepxIR:
     def __init__(self, 
                 name:str,
