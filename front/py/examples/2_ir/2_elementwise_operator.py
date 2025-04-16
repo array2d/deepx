@@ -33,9 +33,6 @@ t7.mul_(2.5)
 print(t7)
 t8=t7.mul(t2,out='t8')
 print(t8)
-import os
-script_name = os.path.splitext(os.path.basename( os.path.abspath(__file__)))[0]  # 获取不带后缀的脚本名
-str=t3.graph.to_dot()
-str.render(script_name+".dot", format='svg')
+
 
 

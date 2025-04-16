@@ -37,10 +37,11 @@ def rtf_divscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
     return out
 
 def rtf_rdivscalar(a:float, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("rdivscalar",a,b,out,author)
+    args = [ Param.varnum(a),Param.tensor(b)]
+    returns = [Param.tensor(out)]
+    ir = DeepxIR("rdivscalar", args, returns, author)
+    send(ir)
     return out
-
-
 
 def rtf_sqrt(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("sqrt",a,out,author)

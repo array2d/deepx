@@ -168,11 +168,11 @@ class DivScalar(Function):
  
 class RDivScalar(Function):
     @staticmethod
-    def forward(ctx:Context, a:Tensor, b:float,out:Union[Tensor,str],authormap:dict={'rdivscalar':'miaobyte'})->Tensor:
+    def forward(ctx:Context, a:float,b:Tensor,out:Union[Tensor,str],authormap:dict={'rdivscalar':'miaobyte'})->Tensor:
         ctx.set_authormap(authormap)
         outtensor=out
         if isinstance(out,str):
-            outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
+            outtensor=newtensor(b.shape,dtype=b.dtype,name=out)
         from .rtf_elementwise import rtf_rdivscalar
         rtf_rdivscalar(a,b,outtensor,ctx.authormap['rdivscalar'])
         return outtensor

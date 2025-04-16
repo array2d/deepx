@@ -19,7 +19,7 @@ print(torch_t6)
 import deepx
 print()
 
-t1 = deepx.arange(end=3*4*5,dtype='float32',name="t1")
+t1 = deepx.arange(3*4*5,dtype='float32',name="t1")
 t2 = deepx.full([3*4*5],value=2,dtype='float32',name="t2")
 t3 = deepx.sqrt(t1,out='t3')
 print(t3)
@@ -30,9 +30,5 @@ print(t5)
 t6 = deepx.pow(t5,t3,out='t6')
 print(t6)
 
-import os
-script_name = os.path.splitext(os.path.basename( os.path.abspath(__file__)))[0]  # 获取不带后缀的脚本名
-str=t3.graph.to_dot()
-str.render(script_name+".dot", format='svg')
 
 

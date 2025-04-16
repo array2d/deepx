@@ -40,11 +40,9 @@ def mul_(self, other):
 @tensor_method
 def div(self, other:Union[Tensor,float,int],
         out:Union[Tensor,str]='')->Tensor:
-    result = Tensor(dtype=self.dtype,shape=self.shape)
-    result.addtograph(out)
     from deepx.nn.functional import div as div_func
-    div_func(self,other,result)
-    return result
+    return div_func(self,other,out)
+
 
 
 @tensor_method
