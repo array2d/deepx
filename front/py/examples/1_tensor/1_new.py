@@ -4,6 +4,7 @@ sys.path.append('/home/lipeng/code/git.array2d.com/ai/deepx/front/py')  # 将项
 from deepx.tensor import Tensor
 def printall(t):
    print("t=",t)
+   print("t.name",t.name)
    print("t.shape=",t.shape)
    print("t.shape[0]=",t.shape[0])
    print("t.stride=",t.stride)
@@ -12,27 +13,12 @@ def printall(t):
    print("t.ndimension=",t.ndimension)
    print("t.numel=",t.numel())
    print("t.dtype=", t.dtype)
-def newtensorwithshape(shape):
 
-   from deepx.nn.functional import newtensor
-   t=newtensor( 2,3,4 )
-   printall (t)
-
-
-def newtensorwithdata():
+def newtensor():
 
    from deepx.nn.functional import newtensor
    t=newtensor(1,2,3)
    printall(t)
 
 if __name__ == "__main__":
-   args = sys.argv[1:]
-   caseid = 0
-   if len(args) > 0:
-      caseid = int(args[0])
-   if caseid == 0:
-      newtensorwithshape([1, 2, 3])
-   elif caseid == 1:
-      newtensorwithdata()
-   elif caseid == 2:
-      newtensorwithshape([1, 2, 3])
+   newtensor()

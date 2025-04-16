@@ -79,6 +79,7 @@ int main()
             {
                 opresp.error(opresp.message);
                 server.resp(opresp.to_string());
+                cerr<<opresp.message<<endl;
                 continue;
             }
             opresp.finish("");

@@ -1,48 +1,30 @@
-from typing import Optional 
+import uuid
+from typing import Optional,Union
 from .shape import Shape
-from .dtype import infer_dtype,default_dtype
+
 
 class Tensor:
 
     #生命周期 
-    def __init__(
-            self,
-            shape=None,
-            dtype:Optional[str]=None,
-            data=None,
-    ):
-        # data
-        if data is not None:
-            import numpy as np
-            if not isinstance(data, np.ndarray):
-                data = np.array(data)
-            self.data = data           
-            self._shape = Shape(data.shape)
-        
+    def __init__(self,shape:Union[tuple[int],list[int],Shape],dtype:str='float32',name:str=None):
+        # name
+
+        self._name = name
+        if name =='':
+            self._name =None
         # dtype
-        if dtype is None:
-            if data is not None:
-                self._dtype = infer_dtype(data)
-            else:
-                self._dtype = default_dtype
-        else:
-            self._dtype = str(dtype)
+        self._dtype = dtype
         
         # format
-        if self._dtype == 'float32' or self._dtype == 'float64' or self._dtype == 'float16' or self._dtype == 'bfloat16':
-            self._format = '%.4f'
-        elif self._dtype == 'int32' or self._dtype == 'int64' or self._dtype == 'int8' or self._dtype == 'int16':
-            self._format = '%d'
-        else:
-            self._format = '%s'
+        self.autoformat()
         # shape
-        if shape is not None:
-            if isinstance(shape, (tuple, list)) and all(isinstance(i, int) for i in shape):
-                self._shape = Shape(shape)  # 这里会将列表/元组转换为Shape对象
-            elif isinstance(shape, Shape):
-                self._shape = shape
-            else:
-                raise ValueError("Invalid shape")
+ 
+        if isinstance(shape, (tuple, list)) and all(isinstance(i, int) for i in shape):
+            self._shape = Shape(shape)  # 这里会将列表/元组转换为Shape对象
+        elif isinstance(shape, Shape):
+            self._shape = shape
+        else:
+            raise ValueError("Invalid shape")
  
         self._graph = None
         self._node = None
@@ -55,7 +37,12 @@ class Tensor:
                 deltensor(self)
         except:
             pass
-
+    
+    # name
+    @property
+    def name(self):
+        return self._name
+    
     # shape
     @property
     def shape(self,dim:int=None):
@@ -98,15 +85,7 @@ class Tensor:
     @property
     def dtype(self):
         return self._dtype
-
  
-    
-    # 计算图
-    def addtograph(self,name:str)->'Tensor':
-        # graph
-        from deepx.nn.functional import newtensor
-        newtensor(self,name)
-        return self
     
     @property
     def graph(self):
@@ -142,7 +121,13 @@ class Tensor:
         return self.transpose(1,0,out=self.node.name+".T")
 
     # 打印
-    
+    def autoformat(self):
+        if self._dtype == 'float32' or self._dtype == 'float64' or self._dtype == 'float16' or self._dtype == 'bfloat16':
+            self._format = '%.4f'
+        elif self._dtype == 'int32' or self._dtype == 'int64' or self._dtype == 'int8' or self._dtype == 'int16':
+            self._format = '%d'
+        else:
+            self._format = '%s'
     def set_format(self,format:str):
         self._format = format
     def __repr__(self) -> str:

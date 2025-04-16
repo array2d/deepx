@@ -23,9 +23,12 @@ class Param:
 
     @classmethod
     def tensor(cls,t:Tensor):
-        tid=id(t)
-        name=f"tensor_{tid}"
-        return Param(name,category="tensor",precision=t.dtype)
+        name=None
+        if t.name is not None:
+            name=t.name
+        else:
+            name=id(t)
+        return Param(name, category="tensor", precision=t.dtype)
 
 
     @classmethod
