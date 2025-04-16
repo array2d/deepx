@@ -21,8 +21,3 @@ t3=ones([3,4,5],dtype='float32',name='t3')
  
 t=concat([t1,t2,t3],dim=1,out='t')
 print(t)
- 
-import os
-script_name = os.path.splitext(os.path.basename( os.path.abspath(__file__)))[0]  # 获取不带后缀的脚本名
-str=t.graph.to_dot()
-str.render(script_name+".dot", format='svg')

@@ -12,7 +12,7 @@ class Reshape(Function):
         if ctx.requires_grad:
             ctx.save_data('oldshape',t.shape)
             ctx.save_tensors('t',t)
-            ctx.set_authormap(authormap)
+        ctx.set_authormap(authormap)
         outtensor=out
         if isinstance(out,str):
             outshape=shape
@@ -44,7 +44,7 @@ class Permute(Function):
                 authormap:dict={'transpose':'miaobyte'})->Tensor:
         if ctx.requires_grad:
             ctx.save_data('dimorder',dimorder)
-            ctx.set_authormap(authormap)
+        ctx.set_authormap(authormap)
         outtensor=out
         if isinstance(out,str):
             outshape = [t.shape[dim] for dim in dimorder]
@@ -91,7 +91,7 @@ class Concat(Function):
                 authormap:dict={'concat':'miaobyte'})->Tensor:
         if ctx.requires_grad:
             ctx.save_data('dim',dim)
-            ctx.set_authormap(authormap)
+        ctx.set_authormap(authormap)
         outtensor=out
         if isinstance(out,str):
             outshape=list(tensors[0].shape)
@@ -107,7 +107,7 @@ class Concat(Function):
         #todo: 反向传播
 
 def concat(t:Tensor,dim:int,out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
-    return Concat.apply(t,dim,out,author,requires_grad=requires_grad)
+    return Concat.apply(t,dim,out,{"concat":author},requires_grad=requires_grad)
 
 def broadcast_shape(shape_a: tuple[int], shape_b: tuple[int]) -> tuple[int]:
     """计算两个形状的广播后形状"""
@@ -153,6 +153,7 @@ class BroadcastTo(Function):
         
         if ctx.requires_grad:
             ctx.save_data('new_shape',new_shape)
+        ctx.set_authormap(authormap)
         outtensor=out
         if isinstance(out,str):
             outshape=new_shape
@@ -167,9 +168,10 @@ class BroadcastTo(Function):
         new_shape=ctx.get_data('new_shape')
         #todo: 反向传播
 
-def broadcast_to(t:Tensor,new_shape:tuple[int],out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
-    return BroadcastTo.apply(t,new_shape,out,author,requires_grad=requires_grad)
-    
+def broadcastTo(t:Tensor,new_shape:tuple[int],out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
+    return BroadcastTo.apply(t,new_shape,out,{'broadcastTo':author},requires_grad=requires_grad)
+
+broadcast_to = broadcastTo
 
 # def unsqueeze(t:Tensor,dim:int)->Tensor:
 #     # 确保dim是有效的

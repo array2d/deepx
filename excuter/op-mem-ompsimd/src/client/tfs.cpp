@@ -367,7 +367,7 @@ namespace deepx::tf
         tffactory.add_tf(std::make_shared<Concat<miaobyte>>(vector<Param>(
                                                                 {
                                                                     Param("tensors", DataCategory::ListTensor, Precision::Any),
-                                                                    Param("axis", DataCategory::Var, Precision::Int32),
+                                                                    Param("dim", DataCategory::Var, Precision::Int32),
                                                                 }),
                                                             vector<Param>(
                                                                 {

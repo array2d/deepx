@@ -15,6 +15,7 @@
 
 #include "stdutil/error.hpp"
 #include "stdutil/num.hpp"
+#include "stdutil/string.hpp"
 namespace deepx::tf
 {
     using mem::MemBase;
@@ -28,6 +29,8 @@ namespace deepx::tf
  
         Param(const string &textvalue = "", const DataCategory &dt = DataCategory::Unknown, const Precision &prec = Precision::Any)
             : textvalue(textvalue), dtype(make_dtype(dt, prec)) {}
+        
+        void parse(const string &param);
     };
 
     // TF:Tensor Function的缩写
@@ -124,7 +127,8 @@ namespace deepx::tf
             }
 
             vector<T> result;
-            string textvalue = vars[idx].textvalue;
+            string textvalue =vars[idx].textvalue;
+            stdutil::trim(textvalue,"[]");
             if (textvalue.empty())
             {
                 throw std::invalid_argument("Invalid argument index");
@@ -138,7 +142,7 @@ namespace deepx::tf
             return result;
         }
 
-        bool checktensors(const initializer_list<string> &names, shared_ptr<MemBase> mem, string &error)
+        bool checktensors(const vector<string> &names, shared_ptr<MemBase> mem, string &error)
         {
             for (const auto &name : names)
             {

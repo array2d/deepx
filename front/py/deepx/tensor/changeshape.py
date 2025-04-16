@@ -44,9 +44,9 @@ def broadcastshape(self,other:Tensor)->tuple[int]:
     return result
 
 @tensor_method
-def broadcast_to(self,shape:tuple[int],out:Union[Tensor,str]='')->Tensor:
-    from deepx.nn.functional import broadcast_to as broadcast_to_func
-    result=broadcast_to_func(self,shape,out)
+def broadcastTo(self,shape:tuple[int],out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import broadcastTo as broadcastTo_func
+    result=broadcastTo_func(self,shape,out)
     return result
 
 

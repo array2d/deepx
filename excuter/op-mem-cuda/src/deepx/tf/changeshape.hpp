@@ -160,7 +160,16 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
+             if (!checktensors({ this->returns[0].textvalue}, mem, error)!=0)
+            {
+                return 1;
+            }
+
             vector<string> tensor_names = this->getvector<string>(0, true);
+            if (!checktensors(tensor_names, mem, error)!=0)
+            {
+                return 1;
+            }
             Precision input_type = mem->gettensor(tensor_names[0]).get()->shape.dtype;
             int axis = this->getvar<int>(1, mem, true);
             switch (input_type)

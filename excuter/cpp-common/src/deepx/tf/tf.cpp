@@ -4,8 +4,41 @@
 
 #include "deepx/tf/tf.hpp"
 #include "stdutil/time.hpp"
+#include "stdutil/string.hpp"
 namespace deepx::tf
-{
+{   
+
+
+    void Param::parse(const string &param)
+    {
+        //1. 按:分割类型和值
+        size_t colon_pos = param.find(':');
+        string type, textvalue;
+        if (colon_pos != string::npos)
+        {
+            type = param.substr(0, colon_pos);
+            stdutil::trimspace(type);
+            textvalue = param.substr(colon_pos + 1);
+            stdutil::trimspace(textvalue);
+        }
+        else
+        {
+            textvalue = param;
+            stdutil::trimspace(textvalue);
+        }
+        if (!type.empty())
+        {
+            this->dtype = deepx::dtype(type);
+            this->textvalue = textvalue;
+        }
+        else
+        {
+            this->dtype = deepx::dtype(textvalue);
+            this->textvalue = textvalue;
+        }
+        
+    }   
+    // 分割主体和元数据
     std::pair<string, string> split_body_metadata(const string &input)
     {
         size_t meta_pos = input.find("//");
@@ -153,141 +186,7 @@ namespace deepx::tf
         return value_str; // 默认作为字符串处理
     }
 
-    // 主参数解析函数,param已经去除两侧空格
-    Param parse_param(const string &param)
-    {
-        Param result;
-        if (param.empty())
-        {
-            return result;
-        }
-
-        // 初始化变量
-        string type;
-        string textvalue;
-        vector<string> vectorvalues;
-        bool vectorvalue = false;
-
-        // 首先检查是否包含冒号分隔符
-        size_t colon_pos = param.find(':');
-        if (colon_pos != string::npos)
-        {
-            // 使用冒号分隔类型和值
-            type = param.substr(0, colon_pos);
-            textvalue = param.substr(colon_pos + 1);
-
-            // 去除type两端的空格
-            type.erase(0, type.find_first_not_of(" "));
-            type.erase(type.find_last_not_of(" ") + 1);
-
-            // 去除textvalue两端的空格
-            textvalue.erase(0, textvalue.find_first_not_of(" "));
-            textvalue.erase(textvalue.find_last_not_of(" ") + 1);
-
-            // 检查是否是向量值（以[开头，]结尾）
-            if (textvalue.size() >= 2 && textvalue.front() == '[' && textvalue.back() == ']')
-            {
-                vectorvalue = true;
-                // 去除方括号，只保留内容
-                textvalue = textvalue.substr(1, textvalue.length() - 2);
-            }
-        }
-        else
-        {
-            // 无冒号，使用原有逻辑处理
-            // 检查是否是向量值（以]结尾）
-            if (param.back() == ']')
-            {
-                size_t bracket_start = param.find('[');
-                if (bracket_start != string::npos)
-                {
-                    vectorvalue = true;
-                    // 提取方括号内的内容作为textvalue
-                    textvalue = param.substr(bracket_start + 1, param.length() - bracket_start - 2);
-                    // 提取方括号前的内容作为type
-                    type = param.substr(0, bracket_start);
-                    // 去除type两端的空格
-                    type.erase(0, type.find_first_not_of(" "));
-                    type.erase(type.find_last_not_of(" ") + 1);
-                }
-            }
-
-            if (!vectorvalue)
-            {
-                // 没有方括号，按空格分割
-                stringstream ss(param);
-                string first, second;
-                ss >> first;
-                if (ss >> second)
-                {
-                    // 如果能读取到两个部分
-                    type = first;
-                    textvalue = second;
-                }
-                else
-                {
-                    textvalue = first;
-                }
-            }
-        }
-
-        // 处理向量值
-        if (vectorvalue)
-        {
-            // 分割字符串为向量
-            stringstream ss(textvalue);
-            string item;
-            while (getline(ss, item, ' '))
-            {
-                item.erase(0, item.find_first_not_of(" "));
-                item.erase(item.find_last_not_of(" ") + 1);
-                if (!item.empty())
-                {
-                    vectorvalues.push_back(item);
-                }
-            }
-        }
-
-        // 设置结果
-        if (!type.empty())
-        {
-            result.dtype = dtype(type);
-        }
-        else
-        {
-            // 没有显式类型声明,根据值推断
-            if (vectorvalue)
-            {
-                if (!vectorvalues.empty())
-                {
-                    if (is_integer(vectorvalues[0]))
-                    {
-                        result.dtype = make_dtype(DataCategory::Vector, Precision::Int32);
-                    }
-                    else if (is_float(vectorvalues[0]))
-                    {
-                        result.dtype = make_dtype(DataCategory::Vector, Precision::Float64);
-                    }
-                    else
-                    {
-                        result.dtype = make_dtype(DataCategory::ListTensor, Precision::Any);
-                    }
-                }
-                else
-                {
-                    result.dtype = make_dtype(DataCategory::Vector, Precision::Any);
-                }
-            }
-            else
-            {
-                result.dtype = make_dtype(DataCategory::Var | DataCategory::Tensor, Precision::Any);
-            }
-        }
-
-        result.textvalue = textvalue;
-        return result;
-    };
-
+  
     // 解析参数列表
     vector<Param> parse_params(const string &params_str)
     {
@@ -298,14 +197,14 @@ namespace deepx::tf
         while (getline(params_ss, param, ','))
         {
             // 去除首尾空格
-            param.erase(0, param.find_first_not_of(" "));
-            param.erase(param.find_last_not_of(" ") + 1);
+            stdutil::trimspace(param);
 
             if (param.empty())
                 continue;
 
             // 解析单个参数
-            Param parsed_param = parse_param(param);
+            Param parsed_param;
+            parsed_param.parse(param);
             params.push_back(parsed_param);
         }
 

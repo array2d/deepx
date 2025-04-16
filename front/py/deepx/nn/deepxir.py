@@ -54,9 +54,16 @@ class Param:
         return Param(textvalue,category="vector",precision=dtype)
     
     @classmethod
-    def tensorlist(cls,value:tuple[str],dtype:str):
-        textvalue='['+' '.join(v for v in value)+']'
-        return Param(textvalue,category="tensorlist",precision=dtype)
+    def listtensor(cls,value:tuple[Tensor]):
+        tensorNames=[]
+        for t in value:
+            if t.name is not None:
+                tensorNames.append(t.name)
+            else:
+                tensorNames.append(id(t))
+        textvalue='['+' '.join(tensorNames)+']'
+        dtype=value[0].dtype
+        return Param(textvalue,category="listtensor",precision=dtype)
 
 # 完整IR，携带类型
 # newtensor (vector<int32>:[3 4 5]) -> (tensor<float32> tensor_136144420556608) 

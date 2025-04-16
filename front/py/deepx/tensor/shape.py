@@ -110,7 +110,7 @@ class Shape:
             raise ValueError(f"matmul: self.ndimension()!=other.ndimension()")
         if self[-1]!=other[-2]:
             raise ValueError(f"matmul: self.shape[-1]!=other.shape[-2]")
-        resultshape=list(self)
+        resultshape=list(self._shape)
         resultshape[-1]=other[-1]
-        return Shape(resultshape)
+        return tuple(resultshape)
         

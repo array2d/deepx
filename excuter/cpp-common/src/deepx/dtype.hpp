@@ -4,9 +4,14 @@
 #include <string>
 #include <cstdint>
 #include <sstream>
+#include <vector>
+#include "stdutil/string.hpp"
+#include "stdutil/num.hpp"
 
 namespace deepx
 {
+    using namespace  std;
+
     template <typename T>
     T to(const std::string &textvalue)
     {
@@ -134,7 +139,7 @@ namespace deepx
         Bool = 1 << 13,   // 0010 0000 0000 0000
         String = 1 << 15, // 0100 0000 0000 0000
                           // 常用组合
-        Any = 0xFFFF, // 1111 1111 1111 1111
+        Any = 0xFFFF,     // 1111 1111 1111 1111
         Float = Float64 | Float32 | Float16 | BFloat16 | Float8E5M2 | Float8E4M3 | Float4E2M1,
         Float8 = Float8E5M2 | Float8E4M3, // 所有FP8格式
         Int = Int64 | Int32 | Int16 | Int8 | Int4
@@ -370,6 +375,98 @@ namespace deepx
         return make_dtype(
             base_category(category_str),
             precision(precision_str));
+    }
+
+    inline TypeDef autodtype(const std::string &param)
+    {
+        std::string type;
+        std::string textvalue;
+        std::vector<std::string> vectorvalues;
+        bool vectorvalue = false;
+        if (param.back() == ']')
+        {
+            size_t bracket_start = param.find('[');
+            if (bracket_start != string::npos)
+            {
+                vectorvalue = true;
+                // 提取方括号内的内容作为textvalue
+                textvalue = param.substr(bracket_start + 1, param.length() - bracket_start - 2);
+                // 提取方括号前的内容作为type
+                type = param.substr(0, bracket_start);
+                // 去除type两端的空格
+                stdutil::trim(type);
+            }
+        }
+
+        if (!vectorvalue)
+        {
+            // 没有方括号，按空格分割
+            stringstream ss(param);
+            string first, second;
+            ss >> first;
+            if (ss >> second)
+            {
+                // 如果能读取到两个部分
+                type = first;
+                textvalue = second;
+            }
+            else
+            {
+                textvalue = first;
+            }
+        }
+        // 处理向量值
+        if (vectorvalue)
+        {
+            // 分割字符串为向量
+            stringstream ss(textvalue);
+            string item;
+            while (getline(ss, item, ' '))
+            {
+                item.erase(0, item.find_first_not_of(" "));
+                item.erase(item.find_last_not_of(" ") + 1);
+                if (!item.empty())
+                {
+                    vectorvalues.push_back(item);
+                }
+            }
+        }
+
+        // 设置结果
+        if (!type.empty())
+        {
+            return dtype(type);
+        }
+        else
+        {
+            // 没有显式类型声明,根据值推断
+            if (vectorvalue)
+            {
+                if (!vectorvalues.empty())
+                {
+                    if (is_integer(vectorvalues[0]))
+                    {
+                        return make_dtype(DataCategory::Vector, Precision::Int32);
+                    }
+                    else if (is_float(vectorvalues[0]))
+                    {
+                        return make_dtype(DataCategory::Vector, Precision::Float64);
+                    }
+                    else
+                    {
+                        return make_dtype(DataCategory::ListTensor, Precision::Any);
+                    }
+                }
+                else
+                {
+                    return make_dtype(DataCategory::Vector, Precision::Any);
+                }
+            }
+            else
+            {
+                return make_dtype(DataCategory::Var | DataCategory::Tensor, Precision::Any);
+            }
+        }
     }
 
 } // namespace deepx

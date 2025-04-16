@@ -38,25 +38,8 @@ namespace deepx::tf
                 error = "newtensor: return type must include tensor category";
                 return 1;
             }
-            vector<int> shape;
-            if (this->args.size() == 1 && !is_positive_integer(this->args[0].textvalue))
-            {
-                shape = mem->getvector<int32_t>(this->args[0].textvalue);
-            }
-            else
-            {
-                vector<string> value_strs;
-                stringstream ss(this->args[0].textvalue);
-                string item;
-                while (ss >> item) {
-                    value_strs.push_back(item);
-                }
-                vector<int32_t> values;
-                for (const auto &str : value_strs) {
-                    values.push_back(stoi(str));
-                }
-                shape=values;
-            }
+            vector<int> shape=this->getvector<int>(0);
+             
             switch (type.precision())
             {
             case Precision::Float32:

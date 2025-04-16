@@ -16,7 +16,7 @@ def rtf_transpose(t:Tensor,dimorder:tuple[int],out:Tensor,author='miaobyte'):
     send(ir)
  
 def rtf_concat(tensors:tuple[Tensor],dim:int,out:Tensor,author='miaobyte'):
-    args=[Param.tensorlist([t for t in tensors],tensors[0].dtype),Param.varnum(dim,'int32')]
+    args=[Param.listtensor(tensors),Param.varnum(dim)]
     returns=[Param.tensor(out)]
     ir=DeepxIR("concat", args, returns,author)
     send(ir)
