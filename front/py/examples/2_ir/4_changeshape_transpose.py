@@ -24,8 +24,3 @@ print(t2)
 t3=ones([2,3,4],dtype='float32',name='t3')
 t4=t3.transpose(out='t4')
 print(t4)
-
-import os
-script_name = os.path.splitext(os.path.basename( os.path.abspath(__file__)))[0]  # 获取不带后缀的脚本名
-str=t4.graph.to_dot()
-str.render(script_name+".dot", format='svg')

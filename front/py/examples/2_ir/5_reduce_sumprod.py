@@ -19,27 +19,20 @@ print(torch_t2)
 from deepx import Tensor,ones,zeros,arange
 from deepx.nn.functional import sum,prod
 
-t=Tensor(shape=(3,4,5))
-t.addtograph("t")
+t=arange(3,4,5,name='t')
 t.arange_(0,1)
 t.set_format("%.0f")
 print(t)
-s=sum(t,dim=[0,2],out="s")
+s=sum(t,dims=[0,2],out="s")
 s.set_format("%.0f")
 print(s)
-p=prod(t,dim=[1],out="p")
+p=prod(t,dims=[1],out="p")
 p.set_format("%.0f")
 print(p)
 
 t1=ones(4,5,6,name="t1")
 t1.set_format("%.0f")
 print(t1)
-t2=sum(t1,dim=[0,1],out='t2')
+t2=sum(t1,dims=[0,1],out='t2')
 t2.set_format("%.0f")
 print(t2)
-
-
-import os
-script_name = os.path.splitext(os.path.basename( os.path.abspath(__file__)))[0]
-str=t2.graph.to_dot()
-str.render(script_name+".dot", format='svg')

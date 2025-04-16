@@ -44,6 +44,7 @@ class Sum(Function):
             ctx.save_tensors('a',a)
             ctx.save_data('dims',dims)
             ctx.save_data('keepdim',keepdim)
+        ctx.set_authormap(authormap)
         if dims is None:
             dims=tuple(range(a.ndim))
 
@@ -52,7 +53,7 @@ class Sum(Function):
             resultshape=reduceshape(a.shape,dims,keepdim)
             result=newtensor(resultshape, dtype=a.dtype,name=out)
         from .rtf_reduce import rtf_sum
-        rtf_sum(a,dims,result,ctx.authormap['sum'])
+        rtf_sum(a,dims,keepdim,result,ctx.authormap['sum'])
         return result
     
     @staticmethod
@@ -79,6 +80,7 @@ class Prod(Function):
             ctx.save_tensors('a',a)
             ctx.save_data('dims',dims)
             ctx.save_data('keepdim',keepdim)
+        ctx.set_authormap(authormap)
         if dims is None:
             dims=tuple(range(a.ndim))
 
@@ -87,7 +89,7 @@ class Prod(Function):
             resultshape=reduceshape(a.shape,dims,keepdim)
             result=newtensor(resultshape, dtype=a.dtype,name=out)
         from .rtf_reduce import rtf_prod
-        rtf_prod(a,dims,result,ctx.authormap['prod'])
+        rtf_prod(a,dims,keepdim,result,ctx.authormap['prod'])
         return result
     
     @staticmethod
@@ -112,6 +114,7 @@ class ReduceMax(Function):
             ctx.save_tensors('a',a)
             ctx.save_data('dims',dims)
             ctx.save_data('keepdim',keepdim)
+        ctx.set_authormap(authormap)
         if dims is None:
             dims=tuple(range(a.ndim))
 
@@ -120,7 +123,7 @@ class ReduceMax(Function):
             resultshape=reduceshape(a.shape,dims,keepdim)
             result=newtensor(resultshape, dtype=a.dtype,name=out)
         from .rtf_reduce import rtf_reducemax
-        rtf_reducemax(a,dims,result,ctx.authormap['reducemax'])
+        rtf_reducemax(a,dims,keepdim,result,ctx.authormap['reducemax'])
         return result
     
     @staticmethod
@@ -146,6 +149,7 @@ class ReduceMin(Function):
             ctx.save_tensors('a',a)
             ctx.save_data('dims',dims)
             ctx.save_data('keepdim',keepdim)
+        ctx.set_authormap(authormap)
         if dims is None:
             dims=tuple(range(a.ndim))
 
@@ -154,7 +158,7 @@ class ReduceMin(Function):
             resultshape=reduceshape(a.shape,dims,keepdim)
             result=newtensor(resultshape, dtype=a.dtype,name=out)
         from .rtf_reduce import rtf_reducemin
-        rtf_reducemin(a,dims,result,ctx.authormap['reducemin'])
+        rtf_reducemin(a,dims,keepdim,result,ctx.authormap['reducemin'])
         return result
     
     @staticmethod

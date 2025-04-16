@@ -13,12 +13,19 @@ class Reshape(Function):
             ctx.save_data('oldshape',t.shape)
             ctx.save_tensors('t',t)
         ctx.set_authormap(authormap)
+
+        total_size=1
+        for i in shape:
+            total_size*=i
+        if total_size!=t.numel():
+            raise ValueError(f"reshape失败：{t.shape} 无法reshape为 {shape} ")
         outtensor=out
         if isinstance(out,str):
             outshape=shape
             outtensor=newtensor(outshape,dtype=t.dtype,name=out)
-        if outtensor.shape!=shape:
-            raise ValueError(f"reshape失败：{t.shape} 无法reshape为 {shape} ")
+        else:
+            outtensor=out
+            outtensor._shape=Shape(shape)
         from .rtf_changeshape import rtf_reshape
         rtf_reshape(t,shape,outtensor,ctx.authormap['reshape'])
         return outtensor
