@@ -332,7 +332,7 @@ namespace deepx::tf
     // // changeshape
     void register_changeshape(TfFactory &tffactory)
     {
-
+        // reshape
         tffactory.add_tf(std::make_shared<Reshape<miaobyte>>(vector<Param>(
                                                                  {
                                                                      Param("A", DataCategory::Tensor, Precision::Any),
@@ -342,7 +342,7 @@ namespace deepx::tf
                                                                  {
                                                                      Param("B", DataCategory::Tensor, Precision::Any),
                                                                  })));
-
+        // transpose
         tffactory.add_tf(std::make_shared<Transpose<miaobyte>>(vector<Param>(
                 {
                     Param("A", DataCategory::Tensor, Precision::Any),
@@ -352,16 +352,17 @@ namespace deepx::tf
                 {
                     Param("C", DataCategory::Tensor, Precision::Any),
                 })));
-
+        // concat
         tffactory.add_tf(std::make_shared<Concat<miaobyte>>(vector<Param>(
                 {
                     Param("tensors", DataCategory::ListTensor, Precision::Any),
-                    Param("axis", DataCategory::Var, Precision::Int32),
+                    Param("dim", DataCategory::Var, Precision::Int32),
                 }),
             vector<Param>(
                 {
                     Param("result", DataCategory::Tensor, Precision::Any),
                 })));
+        // broadcastTo
         tffactory.add_tf(std::make_shared<BroadcastTo<miaobyte>>(vector<Param>(
                 {
                     Param("A", DataCategory::Tensor, Precision::Any),

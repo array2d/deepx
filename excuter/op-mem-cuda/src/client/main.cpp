@@ -68,6 +68,7 @@ int main()
             {
                 opresp.error("op" + op.name + " not found");
                 server.resp(opresp.to_string());
+                cerr<<opresp.message<<endl;
                 continue;
             }
             (*src).init(op.name, op.args, op.returns);
