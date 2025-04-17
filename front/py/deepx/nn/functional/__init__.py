@@ -1,5 +1,5 @@
 
-from .leaffunc_new import newtensor,deltensor
+from .leaffunc_life import newtensor,copytensor,deltensor
 from .leaffunc_io import printtensor
 from .leaffunc_init import *
 from .leaffunc_changeshape import *

@@ -1,6 +1,6 @@
 #include "deepx/tf/arg.hpp"
 #include "deepx/tf/tf.hpp"
-#include "deepx/tf/new.hpp"
+#include "deepx/tf/tensorlife.hpp"
 #include "deepx/tf/io.hpp"
 #include "deepx/tf/init.hpp"
 #include "deepx/tf/elementwise_basic.hpp"
@@ -52,7 +52,19 @@ namespace deepx::tf
                                                          {
                                                              Param("tensor1", DataCategory::Tensor, Precision::Any),
                                                          })));
-        // opfactory.add_op(DelTensor<float>());
+        //copytensor
+        tffactory.add_tf(std::make_shared<CopyTensor>(vector<Param>(
+                                                         {
+                                                             Param("src", DataCategory::Tensor, Precision::Any),
+                                                             Param("dst", DataCategory::Tensor, Precision::Any),
+                                                         }),
+                                                     vector<Param>()));
+        //deltensor
+        tffactory.add_tf(std::make_shared<DelTensor>(vector<Param>(
+                                                         {
+                                                             Param("t", DataCategory::Tensor, Precision::Any),
+                                                         }),
+                                                     vector<Param>()));
     }
 
     // init

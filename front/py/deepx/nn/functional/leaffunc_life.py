@@ -9,14 +9,14 @@ def parse_shape(shape:Union[tuple,list])->tuple[int, ...]:
 def newtensor(*shape,dtype:str='float32',name:str=None):
     s=parse_shape(shape)
     t=Tensor(shape=s,dtype=dtype,name=name)
-    from .rtf_new import rtf_newtensor
+    from .rtf_life import rtf_newtensor
     rtf_newtensor(t)
     return t
 
 def copytensor(t:Tensor,out:Tensor):
-    from .rtf_new import rtf_copytensor
+    from .rtf_life import rtf_copytensor
     rtf_copytensor(t,out)
 def deltensor(t:Tensor):
-    from .rtf_new import rtf_deltensor
+    from .rtf_life import rtf_deltensor
     rtf_deltensor(t)
 

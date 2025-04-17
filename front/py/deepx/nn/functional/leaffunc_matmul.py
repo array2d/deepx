@@ -1,7 +1,7 @@
 from typing import Union
 
 from deepx import Tensor
-from .leaffunc_new import newtensor
+from .leaffunc_life import newtensor
 from .authormap import defaultauthor
 
 def matmul(a:Tensor,b:Tensor,out:Union[Tensor,str]='')->Tensor:

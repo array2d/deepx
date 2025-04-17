@@ -1,6 +1,6 @@
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/elementwise.hpp"
 #include "deepx/tensorfunc/elementwise_cublas_basic.hpp"

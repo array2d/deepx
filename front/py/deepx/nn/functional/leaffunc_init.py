@@ -1,6 +1,6 @@
 from typing import Union
 import math
-from .leaffunc_new import newtensor,parse_shape
+from .leaffunc_life import newtensor,parse_shape
 from .rtf_init import *
 from deepx import Tensor
  

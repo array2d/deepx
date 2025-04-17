@@ -3,7 +3,7 @@ import importlib
 
 
 from deepx.tensor import Tensor,Shape
-from .leaffunc_new import newtensor
+from .leaffunc_life import newtensor
 from .authormap import defaultauthor
 
 # inplace操作的函数，其名为_后缀, 返回值为空

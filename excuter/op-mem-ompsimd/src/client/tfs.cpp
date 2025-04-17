@@ -2,7 +2,7 @@
 
 #include "deepx/dtype.hpp"
 #include "deepx/tf/arg.hpp"
-#include "deepx/tf/new.hpp"
+#include "deepx/tf/tensorlife.hpp"
 #include "deepx/tf/init.hpp"
 #include "deepx/tf/io.hpp"
 #include "deepx/tf/changeshape.hpp"
@@ -53,8 +53,21 @@ namespace deepx::tf
                                                          }),
                                                      vector<Param>(
                                                          {
-                                                             Param("tensor1", DataCategory::Tensor, Precision::Any),
+                                                             Param("t", DataCategory::Tensor, Precision::Any),
                                                          })));
+        //copytensor
+        tffactory.add_tf(std::make_shared<CopyTensor>(vector<Param>(
+                                                         {
+                                                             Param("src", DataCategory::Tensor, Precision::Any),
+                                                             Param("dst", DataCategory::Tensor, Precision::Any),
+                                                         }),
+                                                     vector<Param>()));
+        //deltensor
+        tffactory.add_tf(std::make_shared<DelTensor>(vector<Param>(
+                                                         {
+                                                             Param("t", DataCategory::Tensor, Precision::Any),
+                                                         }),
+                                                     vector<Param>()));
     }
 
     // init

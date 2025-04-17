@@ -1,7 +1,7 @@
 from typing import Union
 from deepx.tensor import Tensor,Shape
 
-from .leaffunc_new import newtensor
+from .leaffunc_life import newtensor
 from .authormap import defaultauthor
 
 def reshape(t:Tensor,shape:list[int],out:Union[Tensor,str]='')->Tensor:

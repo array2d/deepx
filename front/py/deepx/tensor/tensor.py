@@ -1,17 +1,19 @@
-import uuid
 from typing import Optional,Union
 from .shape import Shape
 
+tensorid=1
 
 class Tensor:
 
-    #生命周期 
+    #life
     def __init__(self,shape:Union[tuple[int],list[int],Shape],dtype:str='float32',name:str=None):
         # name
 
         self._name = name
-        if name =='':
-            self._name =None
+        if name is None or name =='':
+            global tensorid
+            self._name =tensorid
+            tensorid+=1
         # dtype
         self._dtype = dtype
         
@@ -28,15 +30,15 @@ class Tensor:
  
         self._graph = None
         self._node = None
+    def copy_to(self,t:'Tensor'):
+        from deepx.nn.functional import copytensor
+        copytensor(self,t)
 
-    # todo，待实现eager模式下的tensor释放
-    def __del__(self):
-        try:
-            if self.graph.eager:
-                from deepx.nn.functional import deltensor
-                deltensor(self)
-        except:
-            pass
+    def clone(self,name:str=None):
+        from deepx.nn.functional import copytensor,newtensor
+        t=newtensor(self.shape,dtype=self.dtype,name=name)
+        copytensor(self,t)
+        return t
     
     # name
     @property
@@ -130,11 +132,11 @@ class Tensor:
             self._format = '%s'
     def set_format(self,format:str):
         self._format = format
-    def __repr__(self) -> str:
+    def print(self):
         from deepx.nn.functional import printtensor
-        s=printtensor(self,format=self._format)
-        return s
-
+        printtensor(self,format=self._format)
+    def __repr__(self) -> str:
+        return 'Tensor(shape={},dtype={},name={})'.format(self.shape,self.dtype,self.name)
 
 def tensor_method(f):
     setattr(Tensor, f.__name__, f)

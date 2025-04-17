@@ -2,7 +2,10 @@ from typing import Tuple, List, Optional,Union
 import time
 from datetime import datetime  # 添加datetime模块
 from deepx.tensor import Tensor
+
+
 class Param:
+
     def __init__(self,textvalue:str, category:str=None,precision:str=None):
         self._textvalue=textvalue
         self._category=category
@@ -21,14 +24,10 @@ class Param:
     def tensorName(cls,name:str,dtype:str):
         return Param(name,category="tensor",precision=dtype)
 
+
     @classmethod
     def tensor(cls,t:Tensor):
-        name=None
-        if t.name is not None:
-            name=t.name
-        else:
-            name=id(t)
-        return Param(name, category="tensor", precision=t.dtype)
+        return Param(t.name, category="tensor", precision=t.dtype)
 
 
     @classmethod

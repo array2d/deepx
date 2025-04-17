@@ -2,7 +2,7 @@ from typing import Optional, Union
 from deepx import Tensor,Shape
 
 from .leaffunc import create_A_B_tf_C,create_A_tf_C
-from .leaffunc_new import newtensor
+from .leaffunc_life import newtensor
 from .authormap import defaultauthor
 
 # 创建具体操作函数

@@ -1,5 +1,5 @@
-#ifndef DEEPX_TF_NEW_HPP
-#define DEEPX_TF_NEW_HPP
+#ifndef DEEPX_TF_TENSORLIFE_HPP
+#define DEEPX_TF_TENSORLIFE_HPP
 
 #include "deepx/tf/tf.hpp"
 #include "deepx/dtype.hpp"
@@ -134,24 +134,69 @@ namespace deepx::tf
     class CopyTensor : public TF
     {
     public:
-        CopyTensor()
+        CopyTensor(vector<Param> args, vector<Param> returns)
         {
             this->name = "copytensor";
+            this->args = args;
+            this->returns = returns;
         }
-        CopyTensor(string text)
+ 
+         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            this->parse(text);
-            if (this->name != "copytensor")
+            if (!checktensors({this->args[0].textvalue, this->args[1].textvalue}, mem, error) != 0)
             {
-                throw std::runtime_error("Invalid name: " + this->name);
+                return 1;
             }
-        }
-        int run(shared_ptr<MemBase> mem, string &error) override
-        {
-            // TODO
-            //  auto src=mem.gettensor<T>(this->args[0].name);
-            //  auto dst=mem.gettensor<T>(this->returns[0].name);
-            //  tensorfunc::copytensor(*src,*dst);
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            Precision type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            if (input_type != type)
+            {
+                error = "copytensor: input type and return type must be the same";
+                return 1;
+            }
+            switch (input_type)
+            {
+            case Precision::Float64:
+            {
+                tensorfunc::copy(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<double>(this->args[1].textvalue));
+                break;
+            }
+            case Precision::Float32:
+            {
+                tensorfunc::copy(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->args[1].textvalue));
+                break;
+            }
+            case Precision::Int64:
+            {
+                tensorfunc::copy(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue));
+                break;
+            }
+            case Precision::Int32:
+            {
+                tensorfunc::copy(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue));
+                break;
+            }
+            case Precision::Int16:
+            {
+                tensorfunc::copy(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->args[1].textvalue));
+                break;
+            }
+            case Precision::Int8:
+            {
+                tensorfunc::copy(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->args[1].textvalue));
+                break;
+            }
+            case Precision::Bool:
+            {
+                tensorfunc::copy(*mem->gettensor<bool>(this->args[0].textvalue), *mem->gettensor<bool>(this->args[1].textvalue));
+                break;
+            }
+            default:
+            {
+                error = "copytensor: unsupported precision";
+                return 1;
+            }
+            };
             return 0;
         }
 
@@ -165,46 +210,14 @@ namespace deepx::tf
         }
     };
 
-    class CloneTensor : public TF
-    {
-    public:
-        CloneTensor()
-        {
-            this->name = "clonetensor";
-        }
-        int run(shared_ptr<MemBase> mem, string &error) override
-        {
-            // TODO
-            //  auto src=mem.gettensor<T>(this->args[0]);
-            //  string dst=this->returns[0];
-            //  mem.addtensor(dst,tensorfunc::clone(*src));
-            return 0;
-        }
-
-        string math_formula() const override
-        {
-            return "T2 = T1.clone()";
-        }
-        shared_ptr<TF> clone() const override
-        {
-            return make_shared<CloneTensor>(*this);
-        }
-    };
-
     class DelTensor : public TF
     {
     public:
-        DelTensor()
+        DelTensor(vector<Param> args, vector<Param> returns)
         {
             this->name = "deltensor";
-        }
-        DelTensor(string text)
-        {
-            this->parse(text);
-            if (this->name != "deltensor")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
+            this->args = args;
+            this->returns = returns;
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {

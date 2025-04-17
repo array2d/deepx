@@ -18,10 +18,6 @@ namespace deepx::tensorfunc
     //copy
     template <typename T>
     void copy(const Tensor<T> &src,Tensor<T> &dst);
-    
-    //delete
-    template <typename T>
-    void Delete(Tensor<T> &tensor);
-    
+
 }
 #endif

@@ -12,9 +12,7 @@ def softmax(t: Tensor,dim:int=-1)->Tensor:
         reducemax_t = t.reducemax(dim=[dim], keepdim=True)  # 保持维度用于广播
     else:
         reducemax_t = t.reducemax(keepdim=True)
-    t_subed=t
-    if t.name is not None:
-        t_subed=newtensor(t.shape,dtype=t.dtype)
+    t_subed=t.clone()
     t_subed.sub_(reducemax_t)
 
     # 实现公式：exp(t_subed) / sum(exp(t_subed))

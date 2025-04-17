@@ -160,7 +160,7 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-             if (!checktensors({ this->returns[0].textvalue}, mem, error)!=0)
+            if (!checktensors({ this->returns[0].textvalue}, mem, error)!=0)
             {
                 return 1;
             }

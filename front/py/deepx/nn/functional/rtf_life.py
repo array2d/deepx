@@ -10,8 +10,8 @@ def rtf_newtensor(t:Tensor):
 
 
 def rtf_copytensor(t:Tensor,out:Tensor):
-    args=[Param.tensor(t)]
-    returns=[Param.tensor(out)]
+    args=[Param.tensor(t),Param.tensor(out)]
+    returns=[]
     ir=DeepxIR("copytensor", args, returns,'')
     send(ir)
 

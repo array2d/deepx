@@ -1,7 +1,7 @@
 from deepx.tensor import Tensor,Shape
 from typing import Optional,Union
 from .leaffunc_reduce import sum
-from .leaffunc_new import newtensor
+from .leaffunc_life import newtensor
 #mean
  
 def mean(a:Tensor,dim:tuple[int]=None,keepdim:bool=False)->Tensor:
