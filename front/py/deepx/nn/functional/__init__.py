@@ -11,9 +11,10 @@ from .authormap import defaultauthor
 
 from .reduce import mean
 
-from .activite import relu,sigmoid,swish
+from .activite import *
 
-from .elementwise import rsqrt
+from .elementwise import *
+from .normalization import *
 __all__ = [
     #leaffunc
     "newtensor",
@@ -23,10 +24,11 @@ __all__ = [
     "leaffunc_matmul",
     "reducemax","reducemin","sum","prod",
     "reshape","permute","transpose","concat","broadcastTo",
-    "relu","sigmoid","swish",
 
     #functional
+    "relu","sigmoid","swish",
     "mean",
     "rsqrt",
+    "softmax",
 
 ]
