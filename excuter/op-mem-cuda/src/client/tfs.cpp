@@ -227,7 +227,7 @@ namespace deepx::tf
         tffactory.add_tf(std::make_shared<PowScalar<miaobyte>>(vector<Param>(
                                                                    {
                                                                        Param("A", DataCategory::Tensor, Precision::Float64 | Precision::Float32),
-                                                                       Param("scalar", DataCategory::Var, Precision::Float64 | Precision::Float32),
+                                                                       Param("scalar", DataCategory::Var, Precision::Float64 | Precision::Int32),
                                                                    }),
                                                                vector<Param>(
                                                                    {
