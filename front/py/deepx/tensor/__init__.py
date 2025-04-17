@@ -1,4 +1,4 @@
-from .tensor import Tensor,tensor_method
+from .tensor import *
 from .shape import Shape
 from .elementwise import *  # 导入所有包含@tensor_method装饰的方法
 from .matmul import *       # 导入矩阵乘法相关方法
@@ -10,7 +10,7 @@ __all__ = [
     'Shape',
     'Tensor',
     'tensor_method',
- 
+    'Number',
     # 'lt', 'gt', 'eq',
     # 'sin', 'cos', 'tan',
     # 'DType',

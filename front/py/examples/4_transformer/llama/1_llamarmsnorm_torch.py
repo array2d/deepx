@@ -1,6 +1,6 @@
 ############### PyTorch 实现部分 ###############
 import torch
-from transformers.models.llama.modeling_llama import LlamaRMSNorm as PTLlamaRMSNorm
+from transformers.models.llama.modeling_llama import LlamaRMSNorm
 
 # 使用小规模数据以便打印完整结果
 hidden_size = 8
@@ -10,7 +10,7 @@ eps = 1e-6
 print("PyTorch 输入:")
 print(pt_input)
 # 使用transformers库中的官方LlamaRMSNorm实现
-pt_norm = PTLlamaRMSNorm(hidden_size, eps=eps)
+pt_norm = LlamaRMSNorm(hidden_size, eps=eps)
 # 设置权重为固定值0.5
 with torch.no_grad():
     pt_norm.weight.fill_(0.5)

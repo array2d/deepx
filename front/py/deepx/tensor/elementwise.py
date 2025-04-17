@@ -1,6 +1,6 @@
 from typing import Optional,Union
 
-from deepx.tensor import Tensor,tensor_method
+from deepx.tensor import Tensor,tensor_method,Number
 
 @tensor_method
 def add(self,
@@ -128,6 +128,13 @@ def pow_(self,
         b:Union[float,int]):
     from deepx.nn.functional import pow as pow_func
     pow_func(self,b,self)
+
+@tensor_method
+def rpow(self,
+        a:Number,
+        out:Union[Tensor,str]=''):
+    from deepx.nn.functional import rpow as rpow_func
+    return rpow_func(a,self,out)
 
 
 @tensor_method

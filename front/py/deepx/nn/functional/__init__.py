@@ -21,7 +21,7 @@ __all__ = [
     "printtensor",
     "constant","constant_","full","zeros","ones","uniform","uniform_","arange","arange_","kaiming_uniform","kaiming_uniform_","calculate_fan_in_and_fan_out",
     "add","sub","mul","div","sqrt","pow","exp","log",
-    "leaffunc_matmul",
+    "matmul",
     "reducemax","reducemin","sum","prod",
     "reshape","permute","transpose","concat","broadcastTo",
 

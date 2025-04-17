@@ -17,9 +17,6 @@ def create_A_B_tf_C(op_name):
             b: Union[Tensor, float, int] = None, 
             out: Union[Tensor, str] = None) -> Tensor:
         outtensor = out
-        if isinstance(out, str):
-            outtensor = newtensor(a.shape, dtype=a.dtype, name=out)
-
         rtf_module = importlib.import_module('deepx.nn.functional.rtf_elementwise')
         if isinstance(b, Tensor):
             an=a
@@ -28,9 +25,16 @@ def create_A_B_tf_C(op_name):
                 newshape = Shape.broadcast_shape(a.shape, b.shape)
                 an = a.broadcastTo(newshape)
                 bn = b.broadcastTo(newshape)
+                if isinstance(out,str):
+                    outtensor=newtensor(newshape,dtype=a.dtype,name=out)
+            else:
+                if isinstance(out,str):
+                    outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
             rtf_func = getattr(rtf_module, f'rtf_{op_name}')
             rtf_func(an, bn, outtensor, defaultauthor[op_name])
         else:
+            if isinstance(out,str):
+                outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
             rtf_func = getattr(rtf_module, f'rtf_{op_name}scalar')
             rtf_func(a, b, outtensor, defaultauthor[f'{op_name}scalar'])
         return outtensor

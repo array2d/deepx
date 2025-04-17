@@ -1,5 +1,8 @@
-from typing import Optional,Union
+from typing import Optional,Union,TypeAlias
 from .shape import Shape
+
+
+Number: TypeAlias = Union[int, float, bool]
 
 tensorid=1
 
@@ -91,23 +94,28 @@ class Tensor:
 
     
     #elementwise
-    def __add__(self, other):
+    def __add__(self, other:Union[Number,'Tensor']):
         return self.add(other)
     
-    def __sub__(self, other):
+    def __sub__(self, other:Union[Number,'Tensor']):
         return self.sub(other)
     
-    def __mul__(self, other):
+    def __mul__(self, other:Union[Number,'Tensor']):
         return self.mul(other)
     
-    def __truediv__(self, other):
+    def __truediv__(self, other:Union[Number,'Tensor']):
         return self.div(other)
     
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other:Union[Number,'Tensor']):
         return self.rdiv(other)
 
+    def __pow__(self, other:Union[Number,'Tensor']):
+        return self.pow(other)
+    
+    def __rpow__(self, other:Union[Number,'Tensor']):
+        return self.rpow(other)
     #矩阵乘法
-    def __matmul__(self, other):
+    def __matmul__(self, other:Union[Number,'Tensor']):
         return self.matmul(other)
 
     #shape操作

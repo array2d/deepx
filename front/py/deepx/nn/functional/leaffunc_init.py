@@ -4,7 +4,7 @@ import time
 import os
 from .leaffunc_life import newtensor,parse_shape
 from .rtf_init import *
-from deepx import Tensor
+from deepx import Tensor,Number
 from .authormap import defaultauthor
 
 # 命名规则
@@ -36,8 +36,9 @@ def ones(*shape, dtype:str='float32',name:str=None)->Tensor:
 def arange_(t:Tensor,start=0,step=1)->Tensor:
     from .rtf_init import rtf_arange
     rtf_arange(t,start,step,defaultauthor['arange'])
-def arange(*shape,start=0,step=1,dtype:str='float32',name:str=None)->Tensor:
-    s = parse_shape(shape)
+#pytorch style
+def arange(start:Number,end:Number,step:Number=1,dtype:str='float32',name:str=None)->Tensor:
+    s =[int((end-start)/step)]
     outtensor=newtensor(s,dtype=dtype,name=name)
     arange_(outtensor,start,step)
     return outtensor
