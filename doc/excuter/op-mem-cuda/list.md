@@ -31,7 +31,7 @@
 | minscalar | miaobyte | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=min(T1, scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | rdivscalar | miaobyte | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
 | constant | miaobyte | constant(tensor<any> t, var<any> value)->() | constant(T1) | constant(tensor<any> t, var<any> value)->() |
-| powscalar | miaobyte | powscalar(tensor<float64|float32> A, var<float64|float32> scalar)->(tensor<float64|float32> C) | T3=pow(T1, scalar) | powscalar(tensor<float64|float32> A, var<float64|float32> scalar)->(tensor<float64|float32> C) |
+| powscalar | miaobyte | powscalar(tensor<float64|float32> A, var<float64|int32> scalar)->(tensor<float64|float32> C) | T3=pow(T1, scalar) | powscalar(tensor<float64|float32> A, var<float64|int32> scalar)->(tensor<float64|float32> C) |
 | vecset |  none  | vecset(vector<any> value)->(vector<any> name) | shape = [3  4  5] | vecset(vector<any> value)->(vector<any> name) |
 | reducemin | miaobyte | reducemin(tensor<any> A, vector<int32> dims, var<bool> keepdims)->(tensor<any> B) | B = reducemin(A, axis=[1 2], keepdims=false) | reducemin(tensor<any> A, vector<int32> dims, var<bool> keepdims)->(tensor<any> B) |
 | subscalar | miaobyte | subscalar(tensor<any> A, var<any> b)->(tensor<any> C) | T3=T1-scalar | subscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
