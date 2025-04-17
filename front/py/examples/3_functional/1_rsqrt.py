@@ -14,5 +14,5 @@ from deepx.nn.functional import rsqrt
 
 t=arange(2,3,4,name='t')
 print((t))
-rsqrt_t=rsqrt(t,out='rsqrt_t')
+rsqrt_t=rsqrt(t)
 print(rsqrt_t)

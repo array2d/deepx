@@ -10,7 +10,7 @@
 
 namespace deepx
 {
-    using namespace  std;
+    using namespace std;
 
     template <typename T>
     T to(const std::string &textvalue)
@@ -226,15 +226,19 @@ namespace deepx
             return value != other.value;
         }
 
-        // 判断当前类型是否在other类型的精度范围内
-        bool in(const TypeDef &other) const
+        // 判断other是否在当前类型的精度范围内
+        bool match(const TypeDef &other) const
         {
             // 类型必须相同
-            if (parts.category != other.parts.category)
+            uint8_t this_cat = static_cast<uint8_t>(parts.category);
+            uint8_t other_cat = static_cast<uint8_t>(other.parts.category);
+            if ((this_cat & other_cat) != this_cat)
             {
                 return false;
             }
-            // other的精度必须包含当前精度（通过位与运算判断）
+
+            // 使用位操作检查precision
+            // 检查this的precision位是否都在other的precision中
             uint16_t this_prec = static_cast<uint16_t>(parts.precision);
             uint16_t other_prec = static_cast<uint16_t>(other.parts.precision);
             return (this_prec & other_prec) == this_prec;

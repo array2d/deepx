@@ -22,6 +22,6 @@ x.sub_(3.0)
 print("\nDEEPX tensor:")
 print(x)
 
-out=sigmoid(x,out="out")
+out=sigmoid(x)
 print("\nDEEPX sigmoid result:")
 print(out)

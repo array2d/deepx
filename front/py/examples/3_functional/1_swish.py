@@ -15,18 +15,13 @@ print(out_torch)
 from deepx import  arange,swish
 
 # 使用相同的初始化方式
-x = arange(0,60,1,name="x").reshape_(3,4,5)
+x = arange(3,4,5,name="x")
 x.div_(10.0)
 x.sub_(3.0)
 
 print("\nDEEPX tensor:")
 print(x)
 
-out=swish(x,out="out")
+out=swish(x)
 print("\nDEEPX swish result:")
 print(out)
- 
-import os
-script_name = os.path.splitext(os.path.basename( os.path.abspath(__file__)))[0]  # 获取不带后缀的脚本名
-str=out.graph.to_dot()
-str.render(script_name+".dot", format='svg')

@@ -18,23 +18,14 @@ namespace deepx::tf
         }
 
     private:
-        static bool is_compatible_types(const vector<TypeDef> &a, const vector<TypeDef> &b)
+        static bool is_compatible_types(const vector<TypeDef> &def, const vector<TypeDef> &other)
         {
-            if (a.size() != b.size())
+            if (def.size() != other.size())
                 return false;
-            for (size_t i = 0; i < a.size(); i++)
+            for (size_t i = 0; i < def.size(); i++)
             {
-                if ((static_cast<uint8_t>(a[i].parts.category) &
-                     static_cast<uint8_t>(b[i].parts.category)) == 0)
-                {
+                if (!def[i].match(other[i]))
                     return false;
-                }
-                if (a[i].parts.precision != Precision::Any &&
-                    b[i].parts.precision != Precision::Any &&
-                    a[i].parts.precision != b[i].parts.precision)
-                {
-                    return false;
-                }
             }
             return true;
         }
