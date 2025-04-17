@@ -1,6 +1,6 @@
 from .module import Module
 from deepx  import Tensor
-from deepx.nn.functional import uniform,kaiming_uniform_,calculate_fan_in_and_fan_out
+from deepx.nn.functional import uniform_,kaiming_uniform_,calculate_fan_in_and_fan_out
 import math
 
 class Linear(Module):
@@ -35,14 +35,17 @@ class Linear(Module):
         if self.bias is not None:
             fan_in, _ = calculate_fan_in_and_fan_out(self.weight)
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            uniform(self.bias, -bound, bound)
+            uniform_(self.bias, -bound, bound)
 
     def forward(self, input: Tensor) -> Tensor:
-        #`y = xA^T + b` 
-        if self.bias is None:
-            return  input @ self.weight.T 
-        else:
-            return  input @ self.weight.T + self.bias
+        #`y = xA^T + b`
+        y=input @ self.weight.T
+        oldshape=y.shape
+        if self.bias is not None:
+            y.reshape_(y.shape[1])
+            y=y+self.bias
+        y.reshape_(*oldshape)
+        return y
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, bias={self.bias is not None}"

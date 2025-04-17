@@ -13,6 +13,6 @@ from deepx import  arange
 from deepx.nn.functional import rsqrt
 
 t=arange(2,3,4,name='t')
-print((t))
+t.print()
 rsqrt_t=rsqrt(t)
-print(rsqrt_t)
+rsqrt_t.print()

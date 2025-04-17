@@ -20,8 +20,8 @@ x.div_(10.0)
 x.sub_(3.0)
 
 print("\nDEEPX tensor:")
-print(x)
+x.print()
 
 out=swish(x)
 print("\nDEEPX swish result:")
-print(out)
+out.print()

@@ -27,9 +27,7 @@ class Tensor:
             self._shape = shape
         else:
             raise ValueError("Invalid shape")
- 
-        self._graph = None
-        self._node = None
+
     def copy_to(self,t:'Tensor'):
         from deepx.nn.functional import copytensor
         copytensor(self,t)
@@ -44,7 +42,10 @@ class Tensor:
     @property
     def name(self):
         return self._name
-    
+    @name.setter
+    def name(self,name:str):
+        self._name=name
+
     # shape
     @property
     def shape(self,dim:int=None):
@@ -87,15 +88,7 @@ class Tensor:
     @property
     def dtype(self):
         return self._dtype
- 
-    
-    @property
-    def graph(self):
-        return self._graph
-     
-    @property
-    def node(self):
-        return self._node
+
     
     #elementwise
     def __add__(self, other):
@@ -120,7 +113,7 @@ class Tensor:
     #shape操作
     @property
     def T(self) -> str:
-        return self.transpose(1,0,out=self.node.name+".T")
+        return self.transpose()
 
     # 打印
     def autoformat(self):

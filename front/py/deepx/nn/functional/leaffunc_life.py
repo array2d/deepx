@@ -12,7 +12,10 @@ def newtensor(*shape,dtype:str='float32',name:str=None):
     from .rtf_life import rtf_newtensor
     rtf_newtensor(t)
     return t
-
+def rnewtensor(t:Tensor):
+    from .rtf_life import rtf_newtensor
+    rtf_newtensor(t)
+    return t
 def copytensor(t:Tensor,out:Tensor):
     from .rtf_life import rtf_copytensor
     rtf_copytensor(t,out)

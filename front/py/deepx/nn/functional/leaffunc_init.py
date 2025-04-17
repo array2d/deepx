@@ -1,18 +1,18 @@
 from typing import Union
 import math
+import time
+import os
 from .leaffunc_life import newtensor,parse_shape
 from .rtf_init import *
 from deepx import Tensor
- 
+from .authormap import defaultauthor
 
 # 命名规则
 # inplace操作的函数，其名为_后缀, 返回值为空
 # 非inplace操作的函数，其名为_后缀, 返回值为Tensor
 
-def constant_(t:Tensor,
-            value: Union[float,int],
-            author='miaobyte')->Tensor:
-    rtf_constant(t,value,author)
+def constant_(t:Tensor,value: Union[float,int])->Tensor:
+    rtf_constant(t,value,defaultauthor['constant'])
  
 
 def constant(*shape, value:Union[float,int], dtype:str='float32',name:str)->Tensor:
@@ -33,22 +33,26 @@ def ones(*shape, dtype:str='float32',name:str=None)->Tensor:
     s = parse_shape(shape)
     return constant(s, value=1, dtype=dtype,name=name)
  
-def arange_(t:Tensor,start=0,step=1,author='miaobyte')->Tensor:
+def arange_(t:Tensor,start=0,step=1)->Tensor:
     from .rtf_init import rtf_arange
-    rtf_arange(t,start,step,author)
-def arange(*shape,start=0,step=1,dtype:str='float32',name:str=None,author='miaobyte')->Tensor:
+    rtf_arange(t,start,step,defaultauthor['arange'])
+def arange(*shape,start=0,step=1,dtype:str='float32',name:str=None)->Tensor:
     s = parse_shape(shape)
     outtensor=newtensor(s,dtype=dtype,name=name)
-    arange_(outtensor,start,step,author)
+    arange_(outtensor,start,step)
     return outtensor
 
-def uniform_(t:Tensor,low=0, high=1,seed:int=0,author='miaobyte')->Tensor:
+def uniform_(t:Tensor,low=0, high=1,seed:int=None)->Tensor:
+    if seed is None:
+        seed = int(time.time() * 1000) & 0xffffffff
+        seed = (seed + os.getpid()) & 0xffffffff
     from .rtf_init import rtf_uniform
-    rtf_uniform(t,low,high,seed,author)
-def uniform(*shape,low=0, high=1,seed:int=0,dtype:str='float32',name:str=None,author='miaobyte')->Tensor:
+    rtf_uniform(t,low,high,seed,defaultauthor['uniform'])
+
+def uniform(*shape,low=0, high=1,seed:int=None,dtype:str='float32',name:str=None)->Tensor:
     s = parse_shape(shape)
     outtensor=newtensor(s,dtype=dtype,name=name)
-    uniform_(outtensor,low,high,seed,author)
+    uniform_(outtensor,low,high,seed)
     return outtensor
 
 # def rand(*size, dtype=None, device=None):

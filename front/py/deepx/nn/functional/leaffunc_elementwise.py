@@ -14,9 +14,7 @@ mul = create_A_B_tf_C('mul')
 def div(
         a: Optional[Union[Tensor, float, int]] = None,
         b: Optional[Union[Tensor, float, int]] = None, 
-        out:Union[Tensor,str]=None,
-        requires_grad:bool=False,
-        author='miaobyte')->Tensor:
+        out:Union[Tensor,str]=None)->Tensor:
     if isinstance(b,Tensor) and isinstance(a,Tensor):
         #C=A/B
         outtensor=out

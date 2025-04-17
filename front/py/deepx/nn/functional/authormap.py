@@ -1,4 +1,10 @@
 defaultauthor=dict({
+        #io
+        'print':'miaobyte',
+        #init
+        'uniform':'miaobyte',
+        'constant':'miaobyte',
+        'arange':'miaobyte',
         #elementwise
         'add':'miaobyte',
         'addscalar':'miaobyte',
@@ -27,7 +33,8 @@ defaultauthor=dict({
         'broadcastTo':'miaobyte',
         'concat':'miaobyte',
         #matmul
-        'matmul':'miaobyte',
+        # 'matmul':'miaobyte',
+        'matmul':'cublas',
         #reduce
         'sum':'miaobyte',
         'prod':'miaobyte',
