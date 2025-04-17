@@ -53,7 +53,8 @@ namespace deepx::tensorfunc
     template <typename T>
     Tensor<T> New(const std::initializer_list<int> &shapedata, T *data = nullptr)
     {
-        Shape shape(shapedata);
+        std::vector<int> shape_vec(shapedata);
+        Shape shape(shape_vec);
         shape.dtype=precision<T>();
         Tensor<T> tensor(shape);
         tensor.device = CUDA; // 使用 CUDA 设备

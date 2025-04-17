@@ -6,7 +6,6 @@
 
 #include "deepx/tensor.hpp"
 #include "deepx/shape_changeshape.hpp"
-#include "deepx/tensorfunc/new.hpp"
 #include "deepx/tensorfunc/changeshape.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 namespace deepx::tensorfunc

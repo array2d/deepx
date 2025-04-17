@@ -3,7 +3,7 @@
 
 #include "deepx/tensorfunc/equal.hpp"
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 
 using namespace deepx;
 using namespace deepx::tensorfunc;

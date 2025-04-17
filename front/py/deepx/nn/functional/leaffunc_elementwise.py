@@ -1,10 +1,9 @@
 from typing import Optional, Union
-from deepx import Tensor
+from deepx import Tensor,Shape
 
 from .leaffunc import create_A_B_tf_C,create_A_tf_C
 from .leaffunc_new import newtensor
 from .authormap import defaultauthor
-
 
 # 创建具体操作函数
 add = create_A_B_tf_C('add')
@@ -23,8 +22,14 @@ def div(
         outtensor=out
         if isinstance(out,str):
             outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
+        an=a
+        bn=b
+        if a.shape!=b.shape:
+            newshape=Shape.broadcast_shape(a.shape,b.shape)
+            an=a.broadcastTo(newshape)
+            bn=b.broadcastTo(newshape)
         from .rtf_elementwise import rtf_div
-        rtf_div(a,b,outtensor,defaultauthor['div'])
+        rtf_div(an,bn,outtensor,defaultauthor['div'])
         return outtensor
     else:
         if isinstance(a,Tensor):

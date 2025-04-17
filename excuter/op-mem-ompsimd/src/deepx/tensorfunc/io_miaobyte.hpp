@@ -8,8 +8,7 @@
 #include "stdutil/print.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/io.hpp"
-#include "deepx/tensorfunc/new.hpp"
-
+#include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 namespace deepx::tensorfunc
 {
     // 通用模板特化

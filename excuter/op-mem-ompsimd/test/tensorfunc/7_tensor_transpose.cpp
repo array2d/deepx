@@ -4,7 +4,7 @@
 
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/changeshape_miaobyte.hpp"
-#include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "stdutil/vector.hpp"

@@ -5,7 +5,7 @@
 
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
     
 #include "deepx/tensorfunc/matmul.hpp"
 #include "deepx/tensorfunc/matmul_miaobyte.hpp"

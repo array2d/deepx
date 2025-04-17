@@ -50,6 +50,8 @@ def concat(tensors:Union[list[Tensor],tuple[Tensor]],dim:int,out:Union[Tensor,st
     return outtensor
 
 def broadcastTo(t:Tensor,new_shape:tuple[int],out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
+    if t.shape==new_shape:
+        return t
     bshape=Shape.broadcast_shape(t.shape,new_shape)
     if bshape!=new_shape:
         raise ValueError(f"广播失败：{t.shape} 无法广播为 {new_shape} ")

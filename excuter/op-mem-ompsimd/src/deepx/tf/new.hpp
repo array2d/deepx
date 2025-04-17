@@ -4,7 +4,7 @@
 #include "deepx/tf/tf.hpp"
 #include "deepx/dtype.hpp"
 #include "deepx/mem/mem.hpp"
-#include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 #include "stdutil/num.hpp"
 
 namespace deepx::tf

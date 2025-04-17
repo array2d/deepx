@@ -22,8 +22,14 @@ def create_A_B_tf_C(op_name):
 
         rtf_module = importlib.import_module('deepx.nn.functional.rtf_elementwise')
         if isinstance(b, Tensor):
+            an=a
+            bn=b
+            if a.shape != b.shape:
+                newshape = Shape.broadcast_shape(a.shape, b.shape)
+                an = a.broadcastTo(newshape)
+                bn = b.broadcastTo(newshape)
             rtf_func = getattr(rtf_module, f'rtf_{op_name}')
-            rtf_func(a, b, outtensor, defaultauthor[op_name])
+            rtf_func(an, bn, outtensor, defaultauthor[op_name])
         else:
             rtf_func = getattr(rtf_module, f'rtf_{op_name}scalar')
             rtf_func(a, b, outtensor, defaultauthor[f'{op_name}scalar'])

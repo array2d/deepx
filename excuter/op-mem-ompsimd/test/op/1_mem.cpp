@@ -1,7 +1,7 @@
 #include <memory>
 #include "deepx/mem/mem_ompsimd.hpp"
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/authors.hpp"

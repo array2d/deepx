@@ -323,6 +323,21 @@ namespace deepx::tensorfunc
     {
         comparescalarDispatcher<Author, T>::comparescalar(A, scalar, mask);
     }
+
+    // 判断两个张量是否相等，TODO
+    template <typename Author, typename T>
+    struct equalDispatcher
+    {
+        static bool equal(const Tensor<T> &A, const Tensor<T> &B, float epsilon=1e-6) = delete;
+    };
+
+    template <typename Author, typename T>
+    bool equal(const Tensor<T> &A, const Tensor<T> &B,float epsilon=1e-6)
+    {
+        return equalDispatcher<Author, T>::equal(A, B, epsilon);
+    }
+    
+    
 } // namespace deepx::tensorfunc
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_HPP

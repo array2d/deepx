@@ -7,7 +7,7 @@
 #include "deepx/tensor.hpp"
 #include "deepx/shape.hpp"
 #include "deepx/shape_changeshape.hpp"
-#include "deepx/tensorfunc/new.hpp"
+#include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "stdutil/vector.hpp"
