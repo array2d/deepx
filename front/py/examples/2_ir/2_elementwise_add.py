@@ -15,10 +15,7 @@ from deepx import Tensor,full
 print()
 
 t1 = full(2,3,4, value=10,dtype="float32")
-print(t1)
 t2 = full(2,3,4, value=5,dtype="float32")
-print(t2)
 t3 = t1+t2
-print(t3)
 t3.add_(0.5)
 print(t3)

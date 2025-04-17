@@ -10,7 +10,7 @@ def add(self,
     return add_func(self,other,out)
 
 @tensor_method
-def add_(self, other):
+def add_(self, other:Union[Tensor,float,int]):
     from deepx.nn.functional import add as add_func
     add_func(self,other,self)
      
@@ -22,7 +22,7 @@ def sub(self, other:Union[Tensor,float,int],
     return sub_func(self,other,out)
 
 @tensor_method
-def sub_(self, other):
+def sub_(self, other:Union[Tensor,float,int]):
     from deepx.nn.functional import sub as sub_func
     sub_func(self,other,self)
 
@@ -33,7 +33,7 @@ def mul(self,  other:Union[Tensor,float,int],
     return mul_func(self,other,out)
 
 @tensor_method
-def mul_(self, other):
+def mul_(self, other:Union[Tensor,float,int]):
     from deepx.nn.functional import mul as mul_func
     mul_func(self,other,self)
 
@@ -46,20 +46,20 @@ def div(self, other:Union[Tensor,float,int],
 
 
 @tensor_method
-def div_(self, other):
+def div_(self, other:Union[Tensor,float,int]):
     from deepx.nn.functional import div as div_func
     div_func(self,other,self)
 
 
 @tensor_method
-def rdiv(self,  other:Union[Tensor,float,int],
+def rdiv(self,other:Union[float,int],
         out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import div as div_func
     return div_func(other,self,out)
 
 
 @tensor_method
-def rdiv_(self, other):
+def rdiv_(self, other:Union[float,int]):
     from deepx.nn.functional import div as div_func
     div_func(other,self,self)
     return self
@@ -72,7 +72,7 @@ def min(self,  other:Union[Tensor,float,int],
 
 
 @tensor_method
-def min_(self, other):
+def min_(self, other:Union[Tensor,float,int]):
     from deepx.nn.functional import min  as min_func
     min_func(self,other,self)
     return self
@@ -85,7 +85,7 @@ def max(self,  other:Union[Tensor,float,int],
     return out
 
 @tensor_method
-def max_(self, other):
+def max_(self, other:Union[Tensor,float,int]):
     from deepx.nn.functional import max as max_func
     max_func(self,other,self)
  
@@ -98,9 +98,9 @@ def clamp(self, min:Union[float,int], max:Union[float,int],
  
 
 @tensor_method
-def clamp_(self, min, max):
-    from deepx.nn.functional import clamp as clamp_func
-    clamp_func(self,min,max,self)
+def clamp_(self, min:Union[float,int], max:Union[float,int]):
+    #todo
+    pass
  
 
 @tensor_method

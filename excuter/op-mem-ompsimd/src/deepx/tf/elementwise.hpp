@@ -978,11 +978,10 @@ namespace deepx::tf
         int run(shared_ptr<MemBase> mem, string &error) override
         {
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
-            Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
             Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
-            if (a_type != b_type || a_type != c_type)
+            if ( a_type != c_type)
             {
-                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(b_type) + " != " + precision_str(c_type);
+                error = "Type mismatch: " + precision_str(a_type)  + " != " + precision_str(c_type);
                 return 1;
             }
             switch (a_type)

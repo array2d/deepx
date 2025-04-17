@@ -6,20 +6,20 @@ from .leaffunc_reduce import sum
  
 def mean(
         a:Tensor,
-        dims:Optional[Union[list[int],tuple[int]]]=None,
+        dim:Optional[Union[list[int],tuple[int]]]=None,
         keepdim:bool=False,
         out:Union[str]='')->Tensor:
     # 如果dim为None,则对所有维度求平均
-    if dims is None:
-        dims = list(range(a.ndim))
-    elif isinstance(dims, int):
-        dims = [dims]
+    if dim is None:
+        dim = list(range(a.ndim))
+    elif isinstance(dim, int):
+        dim = [dim]
     else:
-        dims = list(dims)
+        dim = list(dim)
     total = 1
-    for i in dims:
+    for i in dim:
         if i < 0:
-            dims[i] = i + a.dim()
+            dim[i] = i + a.dim()
         total *= a.shape[i]
-    result = sum(a, dims, keepdim, out)/total
+    result = sum(a, dim, keepdim, out)/total
     return result

@@ -10,17 +10,12 @@ print(torch_relu_t)
 ############-------DEEPX-------################
 
 from deepx import Tensor,ones
-from deepx.nn.functional import relu
+from deepx.nn.functional import relu,uniform
 
-t=Tensor(shape=(10,10))
-t.addtograph("t").uniform_(low=-1,high=1)
+t=uniform(10,10,low=-1,high=1,name='t')
 
 print((t))
 relu_t=relu(t,out='relu_t')
 print(relu_t)
 
 
-import os
-script_name = os.path.splitext(os.path.basename( os.path.abspath(__file__)))[0]  # 获取不带后缀的脚本名
-str=relu_t.graph.to_dot()
-str.render(script_name+".dot", format='svg')

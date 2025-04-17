@@ -14,15 +14,15 @@ def reshape_(self,*shape)->Tensor:
     return result
 
 @tensor_method
-def permute(self,*axes,out:Union[Tensor,str]=''):
+def permute(self,*dimorder,out:Union[Tensor,str]=''):
     from deepx.nn.functional import permute as permute_func
-    result=permute_func(self,axes,out)
+    result=permute_func(self,dimorder,out)
     return result
 
 @tensor_method
-def permute_(self,*axes):
+def permute_(self,*dimorder):
     from deepx.nn.functional import permute as permute_func
-    permute_func(self,axes,self)
+    permute_func(self,dimorder,self)
     return self
 
 @tensor_method

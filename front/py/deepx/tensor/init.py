@@ -1,7 +1,8 @@
+from typing import Union
 from deepx.tensor import tensor_method
 
 @tensor_method
-def full_(self,value):
+def full_(self,value:Union[float,int]):
     from deepx.nn.functional import constant as constant_func
     constant_func(self,value=value)
 

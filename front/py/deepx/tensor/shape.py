@@ -98,19 +98,75 @@ class Shape:
         """使Shape可哈希，便于在字典和集合中使用"""
         return hash(self.shape)
 
-    def transpose(self,dimorder:list[int]=None):
-        if dimorder is None:
-            dimorder=list(range(self.ndimension))
-        return Shape(tuple(self.shape[i] for i in dimorder))
+    @classmethod
+    def total_size(cls,other:tuple[int])->int:
+        total_size=1
+        for i in other:
+            total_size*=i
+        return total_size
     
-    def matmul(self,other:'Shape')->'Shape':
-        if len(self)<2 or len(other)<2:
+
+    @classmethod
+    def transpose(cls,shape:tuple[int],dimorder:list[int]=None):
+        if dimorder is None:
+            dimorder=list(range(len(shape)))
+        return Shape(tuple(shape[i] for i in dimorder))
+    
+    @classmethod
+    def matmul(cls,shape:tuple[int],other:tuple[int])->tuple[int]:
+        if len(shape)<2 or len(other)<2:
             raise ValueError(f"matmul: self.ndimension()<2 or other.ndimension()<2")
-        if len(self)!=len(other):
+        if len(shape)!=len(other):
             raise ValueError(f"matmul: self.ndimension()!=other.ndimension()")
-        if self[-1]!=other[-2]:
+        if shape[-1]!=other[-2]:
             raise ValueError(f"matmul: self.shape[-1]!=other.shape[-2]")
-        resultshape=list(self._shape)
+        resultshape=list(shape)
         resultshape[-1]=other[-1]
         return tuple(resultshape)
+    
+    @classmethod
+    def broadcast_shape(cls,shape_a: tuple[int], shape_b: tuple[int]) -> tuple[int]:
+        """计算两个形状的广播后形状"""
+        # 获取形状的长度
+        len_a, len_b = len(shape_a), len(shape_b)
         
+        # 创建结果形状
+        result_shape = []
+        
+        # 从右往左对齐并计算每个维度
+        for i in range(1, min(len_a, len_b) + 1):
+            dim_a = shape_a[-i]
+            dim_b = shape_b[-i]
+            
+            if dim_a == 1 or dim_b == 1:
+                # 广播规则：如果一个维度为1，取另一个维度的值
+                result_shape.insert(0, max(dim_a, dim_b))
+            elif dim_a == dim_b:
+                # 维度相同，保持不变
+                result_shape.insert(0, dim_a)
+            else:
+                # 维度不同且都不为1，无法广播
+                raise ValueError(f"无法广播的形状：{shape_a} 和 {shape_b}")
+        
+        # 添加较长形状中多出的前导维度
+        if len_a > len_b:
+            result_shape = list(shape_a[:len_a - len_b]) + result_shape
+        elif len_b > len_a:
+            result_shape = list(shape_b[:len_b - len_a]) + result_shape
+        
+        return tuple(result_shape)
+
+    @classmethod
+    def reduceshape(cls,shape:tuple[int],dim:list[int],keepdim:bool)->tuple[int]:
+        ndim = len(shape)
+        # 处理负数维度
+        normalized_dim = [d % ndim for d in dim]
+        # 去重并排序
+        unique_dim = sorted(set(normalized_dim))
+        
+        if keepdim:
+            return tuple(1 if i in unique_dim else s 
+                        for i, s in enumerate(shape))
+        else:
+            return tuple(s for i, s in enumerate(shape)
+                        if i not in unique_dim)

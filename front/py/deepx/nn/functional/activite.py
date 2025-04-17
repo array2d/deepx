@@ -1,42 +1,27 @@
-from typing import Optional,Union
-from deepx import Tensor
+from typing import Union
+from deepx.tensor import Tensor
+from deepx.nn.functional import newtensor
 
-def relu(
-        t: Tensor,
-        inplace:bool=False,
-        out:Union[Tensor,str]='')->Tensor:
+def relu(t: Tensor,out:Union[Tensor,str]='',requires_grad:bool=False)->Tensor:
     from .leaffunc_elementwise import max as max_func
-    return max_func(t,0,out)
+    return max_func(t,0,out,requires_grad)
  
  # 数学公式：σ(x) = 1 / (1 + exp(-x))
 def sigmoid(
         t: Tensor,
-        inplace:bool=False,
-        out:Union[Tensor,str]='')->Tensor:
-    """Sigmoid激活函数
-
-    .. math::
-        \sigma(x) = \frac{1}{1 + e^{-x}}
-
-    Args:
-        t: 输入张量
-        inplace: 是否原地操作
-        out: 输出张量或名称
-
-    Returns:
-        输出张量
-    """
-    outtensor=None
-    if inplace:
-        outtensor=t
+        out:Union[Tensor,str]='',
+        requires_grad:bool=False)->Tensor:
+    outtensor=out
+    if isinstance(out,str):
+        outtensor=newtensor(t.shape, dtype=t.dtype,name=out)
+    
+    if requires_grad:
+        outtensor = 1 / ((t*-1).exp()+1)
     else:
-        if isinstance(out,str):
-            outtensor=Tensor(shape=t.shape, dtype=t.dtype, device=t.device)
-            outtensor.addtograph(out)
-        else:
-            outtensor=out
-    from .leaffunc_elementwise import exp
-    outtensor = 1 / ((t*-1).exp()+1)
+        t.mul(-1,out=outtensor)
+        outtensor.exp_()
+        outtensor.add_(1)
+        outtensor.rdiv_(1)
     return outtensor
 
 def swish(
