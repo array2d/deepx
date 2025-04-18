@@ -773,22 +773,27 @@ namespace deepx::tensorfunc
         }
     };
 
-    template <typename T>
-    struct compareDispatcher<miaobyte, T>
+    //equal
+    template <typename T,typename MaskT>
+    struct equalDispatcher<miaobyte, T,MaskT>
     {
-        static void compare(const Tensor<T> &A, const Tensor<T> &B, const Tensor<float> &mask)
+        static void equal(const Tensor<T> &A, const Tensor<T> &B,const float epsilon, Tensor<MaskT> &mask)
         {
             if (A.shape == B.shape && mask.shape == A.shape)
-            {
-                A.shape.rangeParallel(A.shape.dim, [&A, &B, &mask](int idx)
+            {   
+                A.shape.rangeParallel(A.shape.dim-1, [&A, &B, &mask,epsilon](int idx)
                                       {
-                                            if(A.data[idx]==B.data[idx]){
-                                                mask.data[idx]=0.5;
-                                            }else if(A.data[idx]>B.data[idx]){
-                                                mask.data[idx]=1;
-                                            }else{
-                                                mask.data[idx]=0;
-                                            } });
+                                            for (int i = 0; i < A.shape[-1]; i++)
+                                            {
+                                                if (epsilon == 0)
+                                                {
+                                                    mask.data[idx+i]=A.data[idx+i]==B.data[idx+i];
+                                                }
+                                                else{
+                                                    mask.data[idx+i]=std::abs(A.data[idx+i]-B.data[idx+i])<=epsilon;
+                                                }
+                                            }
+                                            });
             }
             else
             {
@@ -797,22 +802,27 @@ namespace deepx::tensorfunc
         }
     };
 
-    template <typename T>
-    struct comparescalarDispatcher<miaobyte, T>
+    //equalscalar
+    template <typename T,typename MaskT>
+    struct equalscalarDispatcher<miaobyte, T,MaskT>
     {
-        static void comparescalar(const Tensor<T> &A, const T scalar, Tensor<float> &mask)
+        static void equalscalar(const Tensor<T> &A, const T scalar,const float epsilon, Tensor<MaskT> &mask)
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeParallel(A.shape.dim, [&A, &mask, &scalar](int idx)
+                A.shape.rangeParallel(A.shape.dim-1, [&A, &mask, &scalar,epsilon](int idx)
                                       {
-                if(A.data[idx]==scalar){
-                    mask.data[idx]=0.5;
-                }else if(A.data[idx]>scalar){
-                    mask.data[idx]=1;
-                }else{
-                    mask.data[idx]=0;
-                } });
+                for (int i = 0; i < A.shape[-1]; i++)
+                {
+                    if (epsilon == 0)
+                    {
+                        mask.data[idx+i]=A.data[idx+i]==scalar;
+                    }
+                    else{
+                        mask.data[idx+i]=std::abs(A.data[idx+i]-scalar)<=epsilon;
+                    }
+                }
+                });
             }
             else
             {
@@ -821,6 +831,121 @@ namespace deepx::tensorfunc
         };
     };
 
+    //less
+    template <typename T,typename MaskT>
+    struct lessDispatcher<miaobyte, T,MaskT>
+    {
+        static void less(const Tensor<T> &A, const Tensor<T> &B, Tensor<MaskT> &mask)
+        {
+            if (A.shape == B.shape && mask.shape == A.shape)
+            {
+                A.shape.rangeParallel(A.shape.dim-1, [&A, &B, &mask](int idx)
+                                      {
+                for (int i = 0; i < A.shape[-1]; i++)
+                {
+                    mask.data[idx+i]=A.data[idx+i]<B.data[idx+i];
+                }   
+                });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }   
+    };
+
+    //lessscalar
+    template <typename T,typename MaskT>
+    struct lessscalarDispatcher<miaobyte, T,MaskT>
+    {
+        static void lessscalar(const Tensor<T> &A, const T scalar, Tensor<MaskT> &mask)
+        {
+            if (A.shape == mask.shape)
+            {
+                A.shape.rangeParallel(A.shape.dim-1, [&A, &mask, &scalar](int idx)
+                                      {
+                for (int i = 0; i < A.shape[-1]; i++)
+                {
+                    mask.data[idx+i]=A.data[idx+i]<scalar;
+                }
+                });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }   
+    };
+    
+    //greater
+    template <typename T,typename MaskT>
+    struct greaterDispatcher<miaobyte, T,MaskT>
+    {
+        static void greater(const Tensor<T> &A, const Tensor<T> &B, Tensor<MaskT> &mask)
+        {
+            if (A.shape == B.shape && mask.shape == A.shape)
+            {
+                A.shape.rangeParallel(A.shape.dim-1, [&A, &B, &mask](int idx)
+                                      {
+                for (int i = 0; i < A.shape[-1]; i++)
+                {
+                    mask.data[idx+i]=A.data[idx+i]>B.data[idx+i];
+                }
+                });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }
+    };
+
+    //greaterscalar
+    template <typename T,typename MaskT>
+    struct greaterscalarDispatcher<miaobyte, T,MaskT>
+    {
+        static void greaterscalar(const Tensor<T> &A, const T scalar, Tensor<MaskT> &mask)
+        {
+            if (A.shape == mask.shape)
+            {
+                A.shape.rangeParallel(A.shape.dim-1, [&A, &mask, &scalar](int idx)
+                                      {
+                for (int i = 0; i < A.shape[-1]; i++)
+                {
+                    mask.data[idx+i]=A.data[idx+i]>scalar;
+                }
+                });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }   
+    };      
+
+    //switch
+    template <typename T,typename casesT>
+    struct switchDispatcher<miaobyte, T,casesT>
+    {
+        static void Switch(const vector<Tensor<T>*> tensors,const Tensor<casesT> &cases, Tensor<T> &C)
+        {
+            if (cases.shape == C.shape)
+            {
+                C.shape.rangeParallel(C.shape.dim-1, [&tensors, &cases, &C](int idx)
+                                      {
+                for (int i = 0; i < C.shape[-1]; i++)
+                {   
+                    int which_tensor=cases.data[idx];
+                    C.data[idx+i]=tensors[which_tensor]->data[idx];
+                }
+                });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }   
+        }
+    };      
     
 };
 #endif // DEEPX_OP_CPU_ELEMENTWISE_HPP

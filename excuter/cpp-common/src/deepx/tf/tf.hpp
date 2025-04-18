@@ -146,7 +146,7 @@ namespace deepx::tf
         {
             for (const auto &name : names)
             {
-                if (!mem->gettensor(name))
+                if (!mem->existstensor(name))
                 {
                     error = "tensor not found: " + name;
                     return false;

@@ -132,6 +132,8 @@ class Tensor:
             self._format = '%.4f'
         elif self._dtype == 'int32' or self._dtype == 'int64' or self._dtype == 'int8' or self._dtype == 'int16':
             self._format = '%d'
+        elif self._dtype == 'bool':
+            self._format = '%d'
         else:
             self._format = '%s'
     def set_format(self,format:str):

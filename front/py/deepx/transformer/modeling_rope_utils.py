@@ -254,7 +254,7 @@ def _compute_llama3_parameters(    base: float = 10000.0,
     low_freq_factor:float=1,
     high_freq_factor:float=4,
     old_context_len:int=8192,
-    seq_len: Optional[int] = None, **rope_kwargs
+    seq_len: Optional[int] = None
 ) -> Tuple[Tensor, float]:
     # Gets the default RoPE parameters
     inv_freq, attention_factor = _compute_default_rope_parameters(base, head_dim, partial_rotary_factor)

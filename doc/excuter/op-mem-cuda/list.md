@@ -10,8 +10,7 @@
 | transpose | miaobyte | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) | T2 = T1.transpose(dimorder=[1,0]) | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) |
 | reshape | miaobyte | reshape(tensor<any> A, vector<int32> shape)->(tensor<any> B) | T1.reshape(shape)->T2 | reshape(tensor<any> A, vector<int32> shape)->(tensor<any> B) |
 | matmul | cublas | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1 @ T2 | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| comparescalar | miaobyte | comparescalar(tensor<any> A, var<any> scalar)->(tensor<int8> mask) | mask=compare(T1, scalar) | comparescalar(tensor<any> A, var<any> scalar)->(tensor<int8> mask) |
-| compare | miaobyte | compare(tensor<any> A, tensor<any> B)->(tensor<int8> mask) | mask=compare(T1, T2) | compare(tensor<any> A, tensor<any> B)->(tensor<int8> mask) |
+| equalscalar | miaobyte | equalscalar(tensor<any> A, var<any> scalar, var<float64> epsilon)->(tensor<bool> mask) | mask=compare(T1, scalar) | equalscalar(tensor<any> A, var<any> scalar, var<float64> epsilon)->(tensor<bool> mask) |
 | prod | miaobyte | prod(tensor<any> A, vector<int32> dims, var<bool> keepdims)->(tensor<any> B) | B = prod(A, axis=[1 2], keepdims=false) | prod(tensor<any> A, vector<int32> dims, var<bool> keepdims)->(tensor<any> B) |
 | min | miaobyte | min(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=min(T1, T2) | min(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | maxscalar | miaobyte | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=max(T1, scalar) | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
@@ -41,6 +40,7 @@
 | sub | miaobyte | sub(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1-T2 | sub(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | sum | miaobyte | sum(tensor<any> A, vector<int32> dims, var<bool> keepdims)->(tensor<any> B) | B = sum(A, axis=[1 2], keepdims=false) | sum(tensor<any> A, vector<int32> dims, var<bool> keepdims)->(tensor<any> B) |
 | argset |  none  | argset(var<any> value)->(var<any> name) | var argname = argvalue | argset(var<any> value)->(var<any> name) |
+| equal | miaobyte | equal(tensor<any> A, tensor<any> B, var<float64> epsilon)->(tensor<bool> mask) | mask=compare(T1, T2) | equal(tensor<any> A, tensor<any> B, var<float64> epsilon)->(tensor<bool> mask) |
 | mulscalar | miaobyte | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) | T3=T1*scalar | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
 | div | miaobyte | div(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1/T2 | div(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | invert | miaobyte | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) | T3=~T1 | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) |

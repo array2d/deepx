@@ -14,7 +14,12 @@ namespace stdutil
     {
         switch (dtype)
         {
-        case deepx::Precision::Int8:
+        case Precision::Bool:{
+            bool bool_data = ((bool *)data)[offset];
+            printf(format.c_str(), static_cast<int8_t>(bool_data));
+            break;
+        }
+        case  Precision::Int8:
             printf(format.c_str(), ((int8_t *)data)[offset]);
             break;
         case Precision::Int16:
@@ -26,15 +31,16 @@ namespace stdutil
         case Precision::Int64:
             printf(format.c_str(), ((int64_t *)data)[offset]);
             break;
-        case Precision::Float32:
-            printf(format.c_str(), ((float *)data)[offset]);
-            break;
+
         case Precision::Float64:
             printf(format.c_str(), ((double *)data)[offset]);
             break;
+        case Precision::Float32:
+            printf(format.c_str(), ((float *)data)[offset]);
+            break;
         case Precision::Float16:
             printf(format.c_str(), ((float *)data)[offset]);
-            break;  
+            break;
         case Precision::BFloat16:
             printf(format.c_str(), ((float *)data)[offset]);
             break;
@@ -58,25 +64,25 @@ namespace stdutil
             format = "%d";
         }
         else if (dtype == Precision::String)
-        {   
+        {
             format = "%s";
         };
-         
-        
+
         return format;
     }
 
-     void print(const std::vector<int> &shape_vec, void *data, const Precision &dtype, const std::string &f="")
+    void print(const std::vector<int> &shape_vec, void *data, const Precision &dtype, const std::string &f = "")
     {
         std::string format = f;
-        if (f.empty()) {
+        if (f.empty())
+        {
             format = stdutil::default_format(dtype);
         }
 
         // 创建临时Shape对象用于打印和计算
         deepx::Shape shape(shape_vec);
         shape.dtype = dtype;
-        
+
         shape.print();
         if (shape.dim == 1)
         {
@@ -89,10 +95,10 @@ namespace stdutil
             }
             std::cout << "]" << std::endl;
         }
-        else 
+        else
         {
             shape.range(-2, [&format, data, &shape, &dtype](const int idx_linear, const std::vector<int> &indices)
-                          {
+                        {
                         std::cout << indices << "=";
                         std::cout<<"["<<std::endl;
                         for (int i = 0; i < shape[-2]; ++i)
@@ -103,7 +109,7 @@ namespace stdutil
                                 if (j > 0)
                                     std::cout << " ";
                                 int offset = idx_linear + i * shape[-1] + j;
-                                stdutil::print_element(data, offset, dtype, format);
+                                print_element(data, offset, dtype, format);
                             }
                             
                             std::cout<<"]";

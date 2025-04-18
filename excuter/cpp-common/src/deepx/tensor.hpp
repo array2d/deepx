@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <memory>
 
 #include "deepx/shape.hpp"
 #include "deepx/dtype.hpp"
@@ -12,7 +13,7 @@
 namespace deepx
 {
     using namespace std;
-    
+
     template <typename T>
     struct Tensor : public TensorBase
     {
@@ -28,11 +29,11 @@ namespace deepx
         CopyFn copyer; // 拷贝内存
 
         Tensor() = default;
-        Tensor(const vector<int> &s)  
+        Tensor(const vector<int> &s)
         {
             shape = Shape(s);
         }
-        Tensor(const Shape &s)  
+        Tensor(const Shape &s)
         {
             shape = s;
         }
@@ -140,28 +141,6 @@ namespace deepx
             tensor.newer = nullptr;
             return *this;
         }
-    };
-
-    // template <typename T>
-    // struct TensorSlice {
-    //     Slice  slice;
-    //     Tensor<T> tensor;
-    // };
-
-    // 添加一个新的类用于类型擦除
-    struct TensorVoid : public TensorBase {
-        void* data;
-        void (*deleter)(void*);
-        void (*copyer)(void*, void*, int);
-        void* (*newer)(int);
-        
-        TensorVoid() = default;
-        ~TensorVoid() {
-            if (data && deleter) {
-                deleter(data);
-                data = nullptr;
-            }
-        }
-    };
+    }; 
 }
 #endif
