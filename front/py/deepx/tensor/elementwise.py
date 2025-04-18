@@ -156,3 +156,10 @@ def rsqrt(self,out:Union[Tensor,str]='')->Tensor:
 def rsqrt_(self):
     from deepx.nn.functional import rsqrt as rsqrt_func
     rsqrt_func(self,self)
+
+@tensor_method
+def invert(self,out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import invert as invert_func
+    return invert_func(self,out)
+
+

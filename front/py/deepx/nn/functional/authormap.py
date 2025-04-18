@@ -16,7 +16,7 @@ defaultauthor=dict({
         'divscalar':'miaobyte',
         'rdiv':'miaobyte',
         'rdivscalar':'miaobyte',
-
+        'invert':'miaobyte',
         'compare':'miaobyte',
         'min':'miaobyte',
         'minscalar':'miaobyte',
@@ -26,6 +26,7 @@ defaultauthor=dict({
         'log':'miaobyte',
         'pow':'miaobyte',
         'powscalar':'miaobyte',
+        'rpowscalar':'miaobyte',
         'sqrt':'miaobyte',
         #changeshape
         'reshape':'miaobyte',

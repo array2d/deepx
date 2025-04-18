@@ -114,6 +114,9 @@ class Tensor:
     
     def __rpow__(self, other:Union[Number,'Tensor']):
         return self.rpow(other)
+    
+    def __invert__(self):
+        return self.invert()
     #矩阵乘法
     def __matmul__(self, other:Union[Number,'Tensor']):
         return self.matmul(other)

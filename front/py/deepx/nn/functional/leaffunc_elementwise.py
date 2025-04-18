@@ -51,3 +51,6 @@ def rpow(a:Number,b:Tensor,out:Union[Tensor,str]=None)->Tensor:
 sqrt=create_A_tf_C('sqrt')
 exp=create_A_tf_C('exp')
 log=create_A_tf_C('log')
+
+#invert
+invert=create_A_tf_C('invert')

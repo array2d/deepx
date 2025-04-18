@@ -546,6 +546,61 @@ namespace deepx::tf
         }
     };
 
+    // invert
+    template <typename Author>
+    class Invert : public TF
+    {
+    public:
+        Invert(vector<Param> args, vector<Param> returns)
+        {
+            this->name = "invert";
+            this->author = Author::name();
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override
+        {
+            return "T3=~T1";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Invert<Author>>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            if (!checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error)!=0)
+            {
+                return 1;
+            }
+            Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (a_type != c_type)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(c_type);
+                return 1;
+            }   
+            switch (a_type)
+            {
+            case Precision::Int64:
+                tensorfunc::invert<Author>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int32:
+                tensorfunc::invert<Author>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                tensorfunc::invert<Author>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int8:
+                tensorfunc::invert<Author>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported dtype: " + precision_str(a_type);
+                return 1;
+            }
+            return 0;
+        }
+    };
+
     template <typename Author>
     class Sqrt : public TF
     {
@@ -675,6 +730,51 @@ namespace deepx::tf
                 error = "Unsupported dtype: " + precision_str(a_type);
                 return 1;
             }
+            return 0;
+        }
+    };
+
+    // rpowscalar
+    template <typename Author>
+    class RpowScalar : public TF
+    {
+    public:
+        RpowScalar(vector<Param> args, vector<Param> returns)
+        {
+            this->name = "rpowscalar";
+            this->author = Author::name();
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override
+        {
+            return "T3=scalar^T1";
+        }
+        shared_ptr<TF> clone() const override
+        {   
+            return make_shared<RpowScalar<Author>>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision a_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (a_type != c_type)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(c_type);
+                return 1;
+            }
+            switch (a_type) 
+            {
+            case Precision::Float64:
+                tensorfunc::rpowscalar<Author, double>(this->getvar<double>(0, mem), *mem->gettensor<double>(this->args[1].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:    
+                tensorfunc::rpowscalar<Author, float>(this->getvar<float>(0, mem), *mem->gettensor<float>(this->args[1].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported dtype: " + precision_str(a_type);
+                return 1;
+            }   
             return 0;
         }
     };

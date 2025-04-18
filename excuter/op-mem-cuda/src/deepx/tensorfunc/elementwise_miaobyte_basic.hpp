@@ -21,9 +21,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != B.shape.size || A.shape.size != C.shape.size) {
                 throw TensorShapeError("add");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_add(numBlocks, blockSize, A.data, B.data, C.data, A.shape.size);
+            launch_add(A.data, B.data, C.data, A.shape.size);
            
         }   
     };
@@ -36,9 +34,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != C.shape.size) {
                 throw TensorShapeError("addscalar");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_addscalar(numBlocks, blockSize, A.data, scalar, C.data, A.shape.size);
+            launch_addscalar(A.data, scalar, C.data, A.shape.size);
         }
     };
 
@@ -50,9 +46,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != B.shape.size || A.shape.size != C.shape.size) { 
                 throw TensorShapeError("sub");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_sub(numBlocks, blockSize, A.data, B.data, C.data, A.shape.size);
+            launch_sub(A.data, B.data, C.data, A.shape.size);
         }
     };
 
@@ -64,9 +58,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != C.shape.size) { 
                 throw TensorShapeError("subscalar");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_subscalar(numBlocks, blockSize, A.data, scalar, C.data, A.shape.size);
+            launch_subscalar(A.data, scalar, C.data, A.shape.size);
         }
     };  
 
@@ -78,9 +70,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != B.shape.size || A.shape.size != C.shape.size) { 
                 throw TensorShapeError("mul");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_mul(numBlocks, blockSize, A.data, B.data, C.data, A.shape.size);
+            launch_mul(A.data, B.data, C.data, A.shape.size);
         }
     };
 
@@ -92,9 +82,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != C.shape.size) { 
                 throw TensorShapeError("mulscalar");    
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_mulscalar(numBlocks, blockSize, A.data, scalar, C.data, A.shape.size);
+            launch_mulscalar(A.data, scalar, C.data, A.shape.size);
         }
     };  
 
@@ -106,9 +94,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != B.shape.size || A.shape.size != C.shape.size) { 
                 throw TensorShapeError("div");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize; 
-            launch_div(numBlocks, blockSize, A.data, B.data, C.data, A.shape.size);
+            launch_div(A.data, B.data, C.data, A.shape.size);
         }
     };
 
@@ -120,9 +106,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != C.shape.size) { 
                 throw TensorShapeError("divscalar");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_divscalar(numBlocks, blockSize, A.data, scalar, C.data, A.shape.size);
+            launch_divscalar(A.data, scalar, C.data, A.shape.size);
         }
     };
 
@@ -134,12 +118,21 @@ namespace deepx::tensorfunc
             if (A.shape.size != C.shape.size) { 
                 throw TensorShapeError("rdivscalar");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_rdivscalar(numBlocks, blockSize, scalar, A.data, C.data, A.shape.size);
+            launch_rdivscalar(scalar, A.data, C.data, A.shape.size);
         }
     };
-    
+
+    template <typename T>
+    struct invertDispatcher<miaobyte, T>
+    {
+        static void invert(const Tensor<T> &A, Tensor<T> &C)
+        {
+            if (A.shape.size != C.shape.size) { 
+                throw TensorShapeError("invert");
+            }
+            launch_invert( A.data, C.data, A.shape.size);
+        }
+    };
 }
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_BASIC_HPP

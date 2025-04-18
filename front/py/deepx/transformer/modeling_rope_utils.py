@@ -1,27 +1,14 @@
 from typing import   Tuple
-from deepx import arange
+import math
+from deepx import arange,Tensor
 
 def _compute_default_rope_parameters(
     base: float = 10000.0,
-    dim: int = 0,
     head_dim: int = 0,
     partial_rotary_factor: float = 1.0,
-) -> Tuple:
-    """
-    计算原始RoPE实现的逆频率
-    
-    参数:
-        base: 用于旋转位置编码的基数，默认为10000.0
-        dim: 特征维度，必须是偶数
-        head_dim: 每个头的特征维度，必须是偶数
-        partial_rotary_factor: 部分旋转因子，默认为1.0
-    
-    返回:
-        包含RoPE嵌入的逆频率的元组和应用于计算的cos/sin的后处理缩放因子
-    """
+) -> Tuple[Tensor, float]:
     attention_factor = 1.0  # 在这种类型的RoPE中未使用
-    if dim == 0:
-        dim = head_dim*partial_rotary_factor
+    dim   = head_dim*partial_rotary_factor
     # 计算逆频率
     inv_freq = 1.0 / (base ** (arange(0, dim, 2, dtype='float64')/ dim))
     return inv_freq, attention_factor
@@ -260,32 +247,17 @@ def _compute_default_rope_parameters(
 #     return inv_freq, attention_factor
 
 
-def _compute_llama3_parameters(
-    config: PretrainedConfig, device: "torch.device", seq_len: Optional[int] = None, **rope_kwargs
-) -> Tuple["torch.Tensor", float]:
-    """
-    Computes the inverse frequencies for llama 3.1.
-
-    Args:
-        config ([`~transformers.PretrainedConfig`]):
-            The model configuration.
-        device (`torch.device`):
-            The device to use for initialization of the inverse frequencies.
-        seq_len (`int`, *optional*):
-            The current sequence length. Unused for this type of RoPE.
-        rope_kwargs (`Dict`, *optional*):
-            BC compatibility with the previous RoPE class instantiation, will be removed in v4.45.
-    Returns:
-        Tuple of (`torch.Tensor`, `float`), containing the inverse frequencies for the RoPE embeddings and the
-        post-processing scaling factor applied to the computed cos/sin.
-    """
+def _compute_llama3_parameters(    base: float = 10000.0,
+    head_dim: int = 0,
+    partial_rotary_factor: float = 1.0,
+    factor:float=8,
+    low_freq_factor:float=1,
+    high_freq_factor:float=4,
+    old_context_len:int=8192,
+    seq_len: Optional[int] = None, **rope_kwargs
+) -> Tuple[Tensor, float]:
     # Gets the default RoPE parameters
-    inv_freq, attention_factor = _compute_default_rope_parameters(config, device, seq_len, **rope_kwargs)
-
-    factor = config.rope_scaling["factor"]  # `8` in the original implementation
-    low_freq_factor = config.rope_scaling["low_freq_factor"]  # `1` in the original implementation
-    high_freq_factor = config.rope_scaling["high_freq_factor"]  # `4` in the original implementation
-    old_context_len = config.rope_scaling["original_max_position_embeddings"]  # `8192` in the original implementation
+    inv_freq, attention_factor = _compute_default_rope_parameters(base, head_dim, partial_rotary_factor)
 
     low_freq_wavelen = old_context_len / low_freq_factor
     high_freq_wavelen = old_context_len / high_freq_factor
@@ -312,6 +284,6 @@ ROPE_INIT_FUNCTIONS = {
     # "dynamic": _compute_dynamic_ntk_parameters,
     # "yarn": _compute_yarn_parameters,
     # "longrope": _compute_longrope_parameters,
-    # "llama3": _compute_llama3_parameters,
+    "llama3": _compute_llama3_parameters,
 }
   

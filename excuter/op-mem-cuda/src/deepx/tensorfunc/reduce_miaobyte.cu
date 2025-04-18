@@ -9,8 +9,9 @@
 #include "deepx/tensorfunc/reduce_miaobyte.cuh"
 #include "deepx/tensorfunc/tensor_cuda.cuh"
 #include "deepx/tensorfunc/vector_cuda.cuh"
-#include "deepx/tensorfunc/cuda_math.cuh"
 
+#include "deepx/tensorfunc/cuda_atomic.cuh"
+#include "deepx/tensorfunc/cuda_math.cuh"
 namespace deepx::tensorfunc
 {
 

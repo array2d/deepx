@@ -284,6 +284,29 @@ namespace deepx::tensorfunc
         }
     };
 
+    // invert
+    template <typename T>
+    struct invertDispatcher<miaobyte, T>
+    {
+        static void invert(const Tensor<T> &A, Tensor<T> &C)
+        {   
+            if (A.shape == C.shape)
+            {
+                A.shape.rangeParallel(A.shape.dim-1, [&A, &C](int idx)
+                                      {
+                                           for (int j=0;j<A.shape[-1];j++)
+                                           {
+                                                C.data[idx+j]=~A.data[idx+j];
+                                           } 
+                                      });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }
+    };  
+
     template <typename T>
     struct sqrtDispatcher<miaobyte, T, std::enable_if_t<std::is_floating_point_v<T>>>
     {
@@ -391,6 +414,26 @@ namespace deepx::tensorfunc
             }
         }
     };
+
+    // rpowscalar
+    template <typename T>
+    struct rpowscalarDispatcher<miaobyte, T>
+    {
+        static void rpowscalar(const T value, const Tensor<T> &input, Tensor<T> &output)
+        {
+            if (input.shape == output.shape)
+            {
+                output.shape.rangeParallel(output.shape.dim - 1, [&input, &output, &value](int i)
+                                           {
+                                                for (int j = 0; j < output.shape[-1]; j++)
+                                                output.data[i+j] = std::pow(value, input.data[i+j]); });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }
+    };  
 
     template <typename T>
     struct logDispatcher<miaobyte, T>

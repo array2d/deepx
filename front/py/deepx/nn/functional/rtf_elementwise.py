@@ -104,3 +104,7 @@ def rtf_min(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
 def rtf_minscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
     A_scalar_op_C("minscalar",a,b,out,author)
     return out
+
+def rtf_invert(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
+    A_op_C("invert",a,out,author)
+    return out
