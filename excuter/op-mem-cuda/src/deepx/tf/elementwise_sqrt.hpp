@@ -16,19 +16,11 @@ namespace deepx::tf
         {
             this->name = "pow";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Pow(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "pow")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=pow(T1, T2)";
@@ -79,19 +71,11 @@ namespace deepx::tf
         {
             this->name = "powscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        PowScalar(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "powscalar")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=pow(T1, scalar)";
@@ -140,6 +124,7 @@ namespace deepx::tf
         {
             this->name = "rpowscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -190,19 +175,12 @@ namespace deepx::tf
         {
             this->name = "sqrt";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
 
-        Sqrt(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "sqrt")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+        
         string math_formula() const override
         {
             return "T3=sqrt(T1)";
@@ -255,19 +233,11 @@ namespace deepx::tf
         {
             this->name = "log";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Log(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "log")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=log(T1)";
@@ -320,19 +290,11 @@ namespace deepx::tf
         {
             this->name = "exp";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Exp(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "exp")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=exp(T1)";

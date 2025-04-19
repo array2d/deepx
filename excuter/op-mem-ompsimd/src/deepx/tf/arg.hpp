@@ -16,19 +16,11 @@ namespace deepx::tf
          ArgSet(vector<Param> args, vector<Param> returns)
         {
             this->name = "argset";
-            this->author = "";
+            this->tftype = "arg";
             this->args = args;
             this->returns = returns;
         }
-        ArgSet(string text, bool call = false)
-        {
-            this->parse(text);
-            if (this->name != "argset")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
-
+ 
         string math_formula() const override
         {
             return "var argname = argvalue";
@@ -85,19 +77,11 @@ namespace deepx::tf
         VecSet(vector<Param> args, vector<Param> returns)
         {
             this->name = "vecset";
-            this->author = "";
+            this->tftype = "arg";
             this->args = args;
             this->returns = returns;
         }
-        VecSet(string text)
-        {
-            this->parse(text);
-            if (this->name != "vecset")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
-
+        
         string math_formula() const override
         {
             return "shape = [3  4  5]";

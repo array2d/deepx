@@ -15,19 +15,12 @@ namespace deepx::tf
         Print(vector<Param> args, vector<Param> returns)
         {
             this->name = "print";
+            this->tftype = "io";
             this->author = Author::name();
             this->args = args;
             this->returns = returns;
         }
-        Print(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "print")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         int run(shared_ptr<MemBase> mem, string &error) override
         {
             string name = this->args[0].textvalue;

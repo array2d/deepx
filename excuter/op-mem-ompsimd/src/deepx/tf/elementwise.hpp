@@ -19,6 +19,7 @@ namespace deepx::tf
         {
             this->name = "add";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -80,6 +81,7 @@ namespace deepx::tf
         {
             this->name = "addscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -139,6 +141,7 @@ namespace deepx::tf
         {
             this->name = "sub";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -200,6 +203,7 @@ namespace deepx::tf
         {
             this->name = "subscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -260,6 +264,7 @@ namespace deepx::tf
         {   
             this->name = "mul";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }   
@@ -321,6 +326,7 @@ namespace deepx::tf
         {
             this->name = "mulscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -381,6 +387,7 @@ namespace deepx::tf
         {   
             this->name = "div";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }   
@@ -442,6 +449,7 @@ namespace deepx::tf
         {
             this->name = "divscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -498,6 +506,7 @@ namespace deepx::tf
         {
             this->name = "rdivscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -555,6 +564,7 @@ namespace deepx::tf
         {
             this->name = "invert";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -609,6 +619,7 @@ namespace deepx::tf
         {
             this->name = "sqrt";
             this->author = Author::name();  
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -653,6 +664,7 @@ namespace deepx::tf
         {
             this->name = "pow";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -698,6 +710,7 @@ namespace deepx::tf
         {
             this->name = "powscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -743,6 +756,7 @@ namespace deepx::tf
         {
             this->name = "rpowscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -787,6 +801,7 @@ namespace deepx::tf
         {
             this->name = "log";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -831,6 +846,7 @@ namespace deepx::tf
         {   
             this->name = "exp";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -875,6 +891,7 @@ namespace deepx::tf
         {
             this->name = "sin";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -919,6 +936,7 @@ namespace deepx::tf
         {   
             this->name = "cos";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -963,6 +981,7 @@ namespace deepx::tf
         {   
             this->name = "tan";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1007,6 +1026,7 @@ namespace deepx::tf
         {
             this->name = "max";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1064,6 +1084,7 @@ namespace deepx::tf
         {
             this->name = "maxscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1120,6 +1141,7 @@ namespace deepx::tf
         {   
             this->name = "min"; 
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1177,6 +1199,7 @@ namespace deepx::tf
         {
             this->name = "minscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1235,6 +1258,7 @@ namespace deepx::tf
         {   
             this->name = "equal";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1294,6 +1318,7 @@ namespace deepx::tf
         {
             this->name = "equalscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1352,6 +1377,7 @@ namespace deepx::tf
         {
             this->name = "less";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1410,6 +1436,7 @@ namespace deepx::tf
         {
             this->name = "lessscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1467,6 +1494,7 @@ namespace deepx::tf
         {
             this->name = "greater";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1525,6 +1553,7 @@ namespace deepx::tf
         {
             this->name = "greaterscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
@@ -1582,6 +1611,7 @@ namespace deepx::tf
         {
             this->name = "switch";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }

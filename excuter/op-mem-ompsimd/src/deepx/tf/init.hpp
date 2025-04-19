@@ -16,19 +16,11 @@ namespace deepx::tf
         {
             this->name = "constant";
             this->author = Author::name();
+            this->tftype = "init";
             this->args = args;
             this->returns = returns;
         }
-        Constant(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "constant")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
-
+ 
         int run(shared_ptr<MemBase> mem, string &error) override
         {
             string name = this->args[0].textvalue;
@@ -105,6 +97,7 @@ namespace deepx::tf
         {
             this->name = "arange";
             this->author = Author::name();
+            this->tftype = "init";
             this->args = args;
             this->returns = returns;
         }
@@ -179,6 +172,7 @@ namespace deepx::tf
         {
             this->name = "uniform";
             this->author = Author::name();
+            this->tftype = "init";
             this->args = args;
             this->returns = returns;
         }
@@ -253,6 +247,7 @@ namespace deepx::tf
         {
             this->name = "normal";
             this->author = Author::name();
+            this->tftype = "init";
             this->args = args;
             this->returns = returns;
         }

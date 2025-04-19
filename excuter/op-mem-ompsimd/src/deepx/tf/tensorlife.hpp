@@ -15,18 +15,11 @@ namespace deepx::tf
         NewTensor(vector<Param> args, vector<Param> returns)
         {
             this->name = "newtensor";
+            this->tftype = "tensorlife";
             this->args = args;
             this->returns = returns;
         }
-
-        NewTensor(string text, bool call = false)
-        {
-            this->parse(text);
-            if (this->name != "newtensor")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         int run(shared_ptr<MemBase> mem, string &error) override
         {
             string name = this->returns[0].textvalue;
@@ -139,6 +132,7 @@ namespace deepx::tf
             this->name = "copytensor";
             this->args = args;
             this->returns = returns;
+            this->tftype = "tensorlife";
         }
  
          int run(shared_ptr<MemBase> mem, string &error) override
@@ -218,6 +212,7 @@ namespace deepx::tf
             this->name = "deltensor";
             this->args = args;
             this->returns = returns;
+            this->tftype = "tensorlife";
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {

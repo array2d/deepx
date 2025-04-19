@@ -16,19 +16,11 @@ namespace deepx::tf
         {
             this->name = "sin";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Sin(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "sin")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=sin(T1)";
@@ -77,19 +69,11 @@ namespace deepx::tf
         {
             this->name = "cos";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Cos(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "cos")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=cos(T1)";
@@ -140,19 +124,11 @@ namespace deepx::tf
         {
             this->name = "tan";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Tan(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "tan")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=tan(T1)";

@@ -17,6 +17,7 @@ namespace deepx::tf
         {
             this->name = "sum";
             this->author = Author::name();
+            this->tftype = "reduce";
             this->args = args;
             this->returns = returns;
         }
@@ -82,6 +83,7 @@ namespace deepx::tf
         {
             this->name = "prod";
             this->author = Author::name();
+            this->tftype = "reduce";
             this->args = args;
             this->returns = returns;
         }
@@ -140,6 +142,7 @@ namespace deepx::tf
         {
             this->name = "reducemax";
             this->author = Author::name();
+            this->tftype = "reduce";
             this->args = args;
             this->returns = returns;
         }
@@ -190,7 +193,7 @@ namespace deepx::tf
         }
     };
 
-        template <typename Author>
+    template <typename Author>
     class ReduceMin : public TF
     {
     public:
@@ -198,6 +201,7 @@ namespace deepx::tf
         {
             this->name = "reducemin";
             this->author = Author::name();
+            this->tftype = "reduce";
             this->args = args;
             this->returns = returns;
         }

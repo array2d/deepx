@@ -19,6 +19,7 @@ namespace deepx::tf
         {
             this->name = "reshape";
             this->author = Author::name();
+            this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
         }
@@ -79,6 +80,7 @@ namespace deepx::tf
         {
             this->name = "transpose";
             this->author = Author::name();
+            this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
         }
@@ -146,6 +148,7 @@ namespace deepx::tf
         {
             this->name = "concat";
             this->author = Author::name();
+            this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
         }
@@ -279,6 +282,7 @@ namespace deepx::tf
         {
             this->name = "broadcastTo";
             this->author = Author::name();
+            this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
         }

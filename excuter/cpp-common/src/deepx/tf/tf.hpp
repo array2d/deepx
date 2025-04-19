@@ -39,6 +39,7 @@ namespace deepx::tf
     public:
         string name;
         string author;
+        string tftype; 
         vector<Param> args;
         vector<Param> returns;
         //

@@ -16,20 +16,12 @@ namespace deepx::tf
         Add(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "add";
-            this->author = Author::name();
+            this->author = Author::name();  
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
 
-        Add(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "add")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
         string math_formula() const override
         {
             return "T3=T1+T2";
@@ -94,19 +86,11 @@ namespace deepx::tf
         {
             this->name = "addscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        AddScalar(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "addscalar")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=T1+scalar";
@@ -170,19 +154,11 @@ namespace deepx::tf
         {
             this->name = "sub";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Sub(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "sub")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=T1-T2";
@@ -247,19 +223,11 @@ namespace deepx::tf
         {
             this->name = "subscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        SubScalar(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "subscalar")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=T1-scalar";
@@ -323,19 +291,11 @@ namespace deepx::tf
         {
             this->name = "mul";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Mul(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "mul")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=T1*T2";
@@ -400,19 +360,11 @@ namespace deepx::tf
         {
             this->name = "mulscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        MulScalar(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "mulscalar")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=T1*scalar";
@@ -476,19 +428,11 @@ namespace deepx::tf
         {
             this->name = "div";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        Div(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "div")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=T1/T2";
@@ -553,19 +497,11 @@ namespace deepx::tf
         {
             this->name = "divscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        DivScalar(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "divscalar")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=scalar/T1";
@@ -629,19 +565,11 @@ namespace deepx::tf
         {
             this->name = "rdivscalar";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
-
-        RDivScalar(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "rdivscalar")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=scalar/T1";
@@ -706,6 +634,7 @@ namespace deepx::tf
         {
             this->name = "invert";
             this->author = Author::name();
+            this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }

@@ -21,6 +21,7 @@ namespace deepx::tf
             this->author = Author::name();
             this->args = args;
             this->returns = returns;
+            this->tftype = "changeshape";
         }
 
         string math_formula() const override
@@ -84,6 +85,7 @@ namespace deepx::tf
         {
             this->name = "transpose";
             this->author = Author::name();
+            this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
         }
@@ -149,6 +151,7 @@ namespace deepx::tf
         {
             this->name = "concat";
             this->author = Author::name();
+            this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
         }
@@ -260,6 +263,7 @@ namespace deepx::tf
         {
             this->name = "broadcastTo";
             this->author = Author::name();
+            this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
         }

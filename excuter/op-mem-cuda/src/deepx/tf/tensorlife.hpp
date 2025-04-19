@@ -17,6 +17,7 @@ namespace deepx::tf
         NewTensor(vector<Param> args, vector<Param> returns)
         {
             this->name = "newtensor";
+            this->tftype = "tensorlife";
             this->args = args;
             this->returns = returns;
         }
@@ -138,6 +139,7 @@ namespace deepx::tf
         CopyTensor(vector<Param> args, vector<Param> returns)
         {
             this->name = "copytensor";
+            this->tftype = "tensorlife";
             this->args = args;
             this->returns = returns;
         }
@@ -226,6 +228,7 @@ namespace deepx::tf
         DelTensor(vector<Param> args, vector<Param> returns)
         {
             this->name = "deltensor";
+            this->tftype = "tensorlife";
             this->args = args;
             this->returns = returns;
         }

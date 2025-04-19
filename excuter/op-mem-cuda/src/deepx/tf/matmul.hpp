@@ -19,6 +19,7 @@ namespace deepx::tf
         {
             this->name = "matmul";
             this->author = Author::name();
+            this->tftype = "matmul";
             this->args = args;
             this->returns = returns;
         }

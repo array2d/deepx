@@ -17,19 +17,11 @@ namespace deepx::tf
         {
             this->name = "matmul";
             this->author = Author::name();
+            this->tftype = "matmul";
             this->args = args;
             this->returns = returns;
         }
-
-        MatMul(string text)
-        {
-            this->parse(text);
-            this->author = Author::name();
-            if (this->name != "matmul")
-            {
-                throw std::runtime_error("Invalid name: " + this->name);
-            }
-        }
+ 
         string math_formula() const override
         {
             return "T3=T1 @ T2";

@@ -78,24 +78,36 @@ namespace deepx::tf
         std::stringstream ss;
         ss << "## " << excuter_name << " 支持算子列表 \n\n";
         ss << "本页面由 `excuter/" << excuter_name << " 生成，请勿手动修改 \n\n";
-        ss << "| Operation | Author | Func Def | Math Formula | IR Instruction |\n";
-        ss << "|-----------|--------|------------|--------------|----------------|\n";
-
-        // 输出每个操作及其信息
-        for (const auto &[name, tf_family] : tf_families)
-        {
-            for (const auto &[author, tf_author] : tf_family->tf_authors)
-            {
-                for (const auto &tf : tf_author->tfs)
-                {
-                    ss << "| " << name << " | ";
-                    ss << (author.empty() ? " none " : author) << " | ";
-                    ss << tf->to_string(false, true) << " | ";
-                    ss << tf->math_formula() << " | ";
-                    ss << tf->to_string(false, true) << " |\n";
+ 
+        // 首先按tftype分组
+        unordered_map<string, vector<shared_ptr<TF>>> tf_by_type;
+        
+        // 收集所有TF并按tftype分组
+        for (const auto &[name, tf_family] : tf_families) {
+            for (const auto &[author, tf_author] : tf_family->tf_authors) {
+                for (const auto &tf : tf_author->tfs) {
+                    tf_by_type[tf->tftype].push_back(tf);
                 }
             }
         }
+        
+        // 为每个tftype生成一个表格
+        for (const auto &[tftype, tfs] : tf_by_type) {
+            ss << "### " << tftype << "\n\n";
+            ss << "| Operation | Author | Func Def | Math Formula | IR Instruction |\n";
+            ss << "|-----------|--------|------------|--------------|----------------|\n";
+            
+            for (const auto &tf : tfs) {
+                ss << "| " << tf->name << " | ";
+                ss << (tf->author.empty() ? " none " : tf->author) << " | ";
+                ss << tf->to_string(false, true) << " | ";
+                ss << tf->math_formula() << " | ";
+                ss << tf->to_string(false, true) << " |\n";
+            }
+            
+            ss << "\n";
+        }
+        
         return ss.str();
     }
 }
