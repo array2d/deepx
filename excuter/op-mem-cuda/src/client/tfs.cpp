@@ -93,6 +93,14 @@ namespace deepx::tf
                                                                      Param("seed", DataCategory::Var, Precision::Int32),
                                                                  }),
                                                              vector<Param>()));
+        tffactory.add_tf(std::make_shared<Normal<miaobyte>>(vector<Param>(
+                                                                 {
+                                                                     Param("t", DataCategory::Tensor, Precision::Any),
+                                                                     Param("mean", DataCategory::Var, Precision::Any),
+                                                                     Param("stddev", DataCategory::Var, Precision::Any),
+                                                                     Param("seed", DataCategory::Var, Precision::Int32),    
+                                                                 }),
+                                                             vector<Param>())); 
     }
     // io
     void register_util(TfFactory &opfactory)

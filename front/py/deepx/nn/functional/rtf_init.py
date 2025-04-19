@@ -22,3 +22,10 @@ def rtf_uniform(t:Tensor,low=0, high=1,seed:int=0,author='miaobyte')->Tensor:
     ir=DeepxIR("uniform", args, returns,author)
     send(ir)
     return t
+
+def rtf_normal(t:Tensor,mean:float=0, stddev:float=1,seed:int=0,author='miaobyte')->Tensor:
+    args=[Param.tensor(t),Param.varnum(mean),Param.varnum(stddev),Param.varnum(seed)]
+    returns=[]
+    ir=DeepxIR("normal", args, returns,author)
+    send(ir)
+    return t

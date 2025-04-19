@@ -56,23 +56,6 @@ def uniform(*shape,low=0, high=1,seed:int=None,dtype:str='float32',name:str=None
     uniform_(outtensor,low,high,seed)
     return outtensor
 
-# def rand(*size, dtype=None, device=None):
-#    #TODO
-#    pass
-
-# def randn(*size, dtype=None, device=None):
-#     #TODO
-#     pass
-
-# def eye(
-#         n:int,
-#         m:Optional[int]=None,
-#         dtype:Optional[str]=None, 
-#         device:Optional[str]=None):
-#     #TODO
-#     pass
- 
-
 def calculate_fan_in_and_fan_out(tensor:Tensor)->tuple[int,int]:
     dimensions = tensor.dim()
     if dimensions < 2:
@@ -189,3 +172,15 @@ def kaiming_uniform(*shape,a:float=0,mode:str='fan_in',nonlinearity:str='leaky_r
     kaiming_uniform_(outtensor,a,mode,nonlinearity)
     return outtensor
 
+def normal_(t:Tensor,mean:float=0, stddev:float=1,seed:int=None)->Tensor:
+    if seed is None:
+        seed = int(time.time() * 1000) & 0xffffffff
+        seed = (seed + os.getpid()) & 0xffffffff
+    from .rtf_init import rtf_normal
+    rtf_normal(t,mean,stddev,seed,defaultauthor['normal'])
+
+def normal(*shape,mean:float=0, stddev:float=1,seed:int=None,dtype:str='float32',name:str=None,author='miaobyte')->Tensor:
+    s = parse_shape(shape)
+    outtensor=newtensor(s,dtype=dtype,name=name)
+    normal_(outtensor,mean,stddev,seed)
+    return outtensor

@@ -5,6 +5,7 @@ defaultauthor=dict({
         'uniform':'miaobyte',
         'constant':'miaobyte',
         'arange':'miaobyte',
+        'normal':'miaobyte',
         #elementwise
         'add':'miaobyte',
         'addscalar':'miaobyte',

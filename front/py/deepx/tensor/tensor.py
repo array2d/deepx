@@ -19,9 +19,7 @@ class Tensor:
             tensorid+=1
         # dtype
         self._dtype = dtype
-        
-        # format
-        self.autoformat()
+
         # shape
  
         if isinstance(shape, (tuple, list)) and all(isinstance(i, int) for i in shape):
@@ -127,20 +125,22 @@ class Tensor:
         return self.transpose()
 
     # 打印
-    def autoformat(self):
-        if self._dtype == 'float32' or self._dtype == 'float64' or self._dtype == 'float16' or self._dtype == 'bfloat16':
-            self._format = '%.4f'
-        elif self._dtype == 'int32' or self._dtype == 'int64' or self._dtype == 'int8' or self._dtype == 'int16':
-            self._format = '%d'
-        elif self._dtype == 'bool':
-            self._format = '%d'
+    @staticmethod
+    def autoformat(dtype):
+        if dtype == 'float32' or dtype == 'float64' or dtype == 'float16' or dtype == 'bfloat16':
+            return '%.4f'
+        elif dtype == 'int32' or dtype == 'int64' or dtype == 'int8' or dtype == 'int16':
+            return '%d'
+        elif dtype == 'bool':
+            return '%d'
         else:
-            self._format = '%s'
-    def set_format(self,format:str):
-        self._format = format
-    def print(self):
+            return '%s'
+ 
+    def print(self,format:str=None):
+        if format is None:
+            format=self.autoformat(self.dtype)
         from deepx.nn.functional import printtensor
-        printtensor(self,format=self._format)
+        printtensor(self,format)
     def __repr__(self) -> str:
         return 'Tensor(shape={},dtype={},name={})'.format(self.shape,self.dtype,self.name)
 

@@ -17,7 +17,6 @@ namespace deepx::tensorfunc
                 throw std::runtime_error("Failed to create cuBLAS handle");
             }
         }
-
         ~CublasHandle()
         {
             if (handle_)
@@ -29,26 +28,36 @@ namespace deepx::tensorfunc
     private:
         cublasHandle_t handle_;
     };
-
-    inline std::pair<int, int> BestDims(int total_elements)
+    //TODO 
+    inline int deviceblocksize(){
+        int device_id;
+        cudaGetDevice(&device_id);
+        cudaDeviceProp props;
+        cudaGetDeviceProperties(&props, device_id);
+        return props.maxThreadsPerBlock;
+    }
+    inline int deviceblock()
     {
-        // 默认块大小
-        int optimal_block_size = 256; // 一般256或512是较好的选择
-        // 计算设备属性以确定最佳配置
         int device_id;
         cudaGetDevice(&device_id);
         cudaDeviceProp props;
         cudaGetDeviceProperties(&props, device_id);
 
-        // 根据SM数量和每个SM的最大线程数决定块数
+        // 根据SM数量计算建议的块数上限
         int sm_count = props.multiProcessorCount;
         int optimal_blocks = sm_count * 8; // 每个SM分配多个块以增加并行度
+        return optimal_blocks;
+    }
 
-        // 确保至少启动足够的线程来处理所有数据
-        int min_blocks = (total_elements + optimal_block_size - 1) / optimal_block_size;
-        int actual_blocks = std::min(optimal_blocks, min_blocks);
-
-        return {actual_blocks, optimal_block_size};
+    // 计算最佳的块大小和块数
+    inline std::pair<int, int> BestDims(int total_elements)
+    {
+        // 默认块大小
+        int blocksize = total_elements > 256 ? 256 : total_elements;
+        int blocks = (total_elements + blocksize - 1) / blocksize; // 向上取整除法
+        int optimal_blocks = deviceblock();
+        blocks = std::min(blocks, optimal_blocks);
+        return {blocks, blocksize};
     };
 }
 
