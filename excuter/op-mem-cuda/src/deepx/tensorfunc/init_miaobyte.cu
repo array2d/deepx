@@ -87,7 +87,6 @@ namespace deepx::tensorfunc
 
             // 先用float类型进行计算，然后转换为目标类型
             float result = low + (high - low) * rand;
-            printf("threadIdx: %d, idx: %d, result: %f\n", threadIdx.x, idx, result);
             data[idx] = static_cast<T>(result);
         }
     }
@@ -124,13 +123,10 @@ namespace deepx::tensorfunc
         for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             // 生成[0,1)范围的随机数
-            float rand = curand_uniform(&state);
-
+            float rand = curand_normal(&state);
             // 先用float类型进行计算，然后转换为目标类型
-            float result =  rand;
-            // float result = mean + stddev * rand;
-            printf("threadIdx: %d, idx: %d, result: %f\n", threadIdx.x, idx, result);
-            data[idx] = static_cast<T>(rand);
+            float result = mean + stddev * rand;
+            data[idx] = static_cast<T>(result);
         }
     }
     template <typename T>

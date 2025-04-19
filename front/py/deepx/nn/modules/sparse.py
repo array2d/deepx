@@ -3,8 +3,8 @@ from deepx.tensor import Tensor
 
 class Embedding(Module):
     def __init__(self, 
-                 num_embeddings:int, 
-                 embedding_dim:int, 
+                 num_embeddings:int, #vocab_size，llama=128256
+                 embedding_dim:int, #hidden_size，llama=4096
                  padding_idx:int=None, 
                  max_norm:float=None, 
                  norm_type:float=2.0, 
