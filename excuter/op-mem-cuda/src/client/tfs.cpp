@@ -103,7 +103,7 @@ namespace deepx::tf
                                                              vector<Param>())); 
     }
     // io
-    void register_util(TfFactory &opfactory)
+    void register_io(TfFactory &opfactory)
     {
         opfactory.add_tf(std::make_shared<Print<miaobyte>>(vector<Param>(
                                                                {
@@ -520,7 +520,7 @@ namespace deepx::tf
     {
         register_lifecycle(tffactory);
         register_init(tffactory);
-        register_util(tffactory);
+        register_io(tffactory);
         register_elementwise(tffactory);
         register_matmul(tffactory);
         register_changeshape(tffactory);

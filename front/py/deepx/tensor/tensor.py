@@ -119,6 +119,10 @@ class Tensor:
     def __matmul__(self, other:Union[Number,'Tensor']):
         return self.matmul(other)
 
+    #gather
+    def __getitem__(self, indices:'Tensor'):
+        return self.gather(indices)
+
     #shape操作
     @property
     def T(self) -> str:

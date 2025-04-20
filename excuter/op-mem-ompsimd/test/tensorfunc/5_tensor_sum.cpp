@@ -68,7 +68,6 @@ void benchmark_sum(int i){
         {
             combstr+=std::to_string(c)+"_";
         }
-        save<miaobyte>(r,"5_tensor_sum."+ combstr);
         print<miaobyte>(r,"%.0f");
     }
     auto end=std::chrono::high_resolution_clock::now();

@@ -23,3 +23,6 @@ def deltensor(t:Tensor):
     from .rtf_life import rtf_deltensor
     rtf_deltensor(t)
 
+def load(path:str)->Tensor:
+    from .rtf_io import rtf_load
+    return rtf_load(path)

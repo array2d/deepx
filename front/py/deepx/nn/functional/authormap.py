@@ -34,6 +34,7 @@ defaultauthor=dict({
         'transpose':'miaobyte',
         'broadcastTo':'miaobyte',
         'concat':'miaobyte',
+        'gather':'miaobyte',
         #matmul
         # 'matmul':'miaobyte',
         'matmul':'cublas',

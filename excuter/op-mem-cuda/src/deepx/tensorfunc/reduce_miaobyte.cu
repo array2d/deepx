@@ -58,8 +58,8 @@ namespace deepx::tensorfunc
         cudaVector<int> result_strides_d(result_strides, result_dim, cudaMemcpyHostToDevice);
         cudaVector<int> reduced_dims_d(reduced_dims, tensor_dim, cudaMemcpyHostToDevice);
 
-        int powDim = nextPowerOf2(tensor_dim);
-        switch (powDim)
+ 
+        switch (tensor_dim)
         {
         case 1:
             sum_kernel<1, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
@@ -67,26 +67,38 @@ namespace deepx::tensorfunc
         case 2:
             sum_kernel<2, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
+        case 3:
+            sum_kernel<3, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
         case 4:
             sum_kernel<4, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 5:
+            sum_kernel<5, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 6:
+            sum_kernel<6, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 7:
+            sum_kernel<7, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);    
             break;
         case 8:
             sum_kernel<8, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 16:
-            sum_kernel<16, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+        case 9:
+            sum_kernel<9, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 32:
-            sum_kernel<32, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);    
+        case 10:
+            sum_kernel<10, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 64:
-            sum_kernel<64, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
-            break;
-        case 128:
-            sum_kernel<128, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+        case 11:
+            sum_kernel<11, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;  
+        case 12:
+            sum_kernel<12, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
         default:
-            throw std::runtime_error("dim too large, max support 128");
+            throw std::runtime_error("dim too large, max support " + std::to_string(MAX_DIM));
         }
     }
 
@@ -155,8 +167,7 @@ namespace deepx::tensorfunc
         cudaVector<int> result_strides_d(result_strides, result_dim, cudaMemcpyHostToDevice);
         cudaVector<int> reduced_dims_d(reduced_dims, tensor_dim, cudaMemcpyHostToDevice);
 
-        int powDim = nextPowerOf2(tensor_dim);
-        switch (powDim)
+        switch (tensor_dim)
         {
         case 1:
             prod_kernel<1, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
@@ -164,26 +175,26 @@ namespace deepx::tensorfunc
         case 2:
             prod_kernel<2, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
+        case 3:
+            prod_kernel<3, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
         case 4:
             prod_kernel<4, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 5:
+            prod_kernel<5, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 6:
+            prod_kernel<6, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 7:
+            prod_kernel<7, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
         case 8:
             prod_kernel<8, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 16:
-            prod_kernel<16, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
-            break;
-        case 32:
-            prod_kernel<32, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
-            break;
-        case 64:
-            prod_kernel<64, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
-            break;
-        case 128:
-            prod_kernel<128, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
-            break;
         default:
-            throw std::runtime_error("dim too large, max support 128");
+            throw std::runtime_error("dim too large, max support " + std::to_string(MAX_DIM));
         }
     }
 
@@ -252,8 +263,7 @@ namespace deepx::tensorfunc
         cudaVector<int> result_strides_d(result_strides, result_dim, cudaMemcpyHostToDevice);
         cudaVector<int> reduced_dims_d(reduced_dims, tensor_dim, cudaMemcpyHostToDevice);
 
-        int powDim = nextPowerOf2(tensor_dim);
-        switch (powDim)
+        switch (tensor_dim)
         {
         case 1:
             max_kernel<1, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
@@ -261,26 +271,38 @@ namespace deepx::tensorfunc
         case 2:
             max_kernel<2, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
+        case 3:
+            max_kernel<3, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
         case 4:
             max_kernel<4, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 5:
+            max_kernel<5, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 6:
+            max_kernel<6, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 7:
+            max_kernel<7, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
         case 8:
             max_kernel<8, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 16:
-            max_kernel<16, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+        case 9:
+            max_kernel<9, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 32:
-            max_kernel<32, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+        case 10:
+            max_kernel<10, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;  
+        case 11:
+            max_kernel<11, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 64:
-            max_kernel<64, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
-            break;
-        case 128:
-            max_kernel<128, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+        case 12:
+            max_kernel<12, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
         default:
-            throw std::runtime_error("dim too large, max support 128");
+            throw std::runtime_error("dim too large, max support " + std::to_string(MAX_DIM));
         }
     };
 
@@ -349,8 +371,7 @@ namespace deepx::tensorfunc
         cudaVector<int> result_strides_d(result_strides, result_dim, cudaMemcpyHostToDevice);
         cudaVector<int> reduced_dims_d(reduced_dims, tensor_dim, cudaMemcpyHostToDevice);
 
-        int powDim = nextPowerOf2(tensor_dim);
-        switch (powDim)
+        switch (tensor_dim)
         {
         case 1:
             min_kernel<1, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
@@ -358,26 +379,38 @@ namespace deepx::tensorfunc
         case 2:
             min_kernel<2, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
+        case 3:
+            min_kernel<3, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
         case 4:
             min_kernel<4, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 5:
+            min_kernel<5, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 6:
+            min_kernel<6, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;
+        case 7:
+            min_kernel<7, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
         case 8:
             min_kernel<8, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 16:
-            min_kernel<16, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+        case 9:
+            min_kernel<9, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 32:
-            min_kernel<32, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+        case 10:
+            min_kernel<10, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 64:
-            min_kernel<64, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+        case 11:
+            min_kernel<11, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
             break;
-        case 128:
-            min_kernel<128, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
-            break;
+        case 12:
+            min_kernel<12, T><<<numBlocks, blockSize>>>(tensor_data, tensor_strides_d.data, tensor_dim, tensor_len, reduced_dims_d.data, keepdims, result_data, result_strides_d.data, result_dim);
+            break;  
         default:
-            throw std::runtime_error("dim too large, max support 128");
+            throw std::runtime_error("dim too large, max support " + std::to_string(MAX_DIM));
         }
     }
 

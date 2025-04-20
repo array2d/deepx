@@ -49,10 +49,8 @@ void test_tensor_matmul(){
 void bench_tensor_matmul(int i) {
     Tensor<float> tensor= New<float>({i,i});
     uniform<miaobyte,float>(tensor,0,1);
-    save<miaobyte>(tensor,"4_tensor_matmul"+std::to_string(i)+"tensor");
     Tensor<float> tensor2= New<float>({i,i});
     uniform<miaobyte,float>(tensor2,0,1);
-    save<miaobyte>(tensor2,"4_tensor_matmul"+std::to_string(i)+"tensor2");
     Tensor<float> tensor3= New<float>(matmul_shape(tensor.shape, tensor2.shape).shape);
     std::cout<<("matmul ", i, "x", i);
     auto start = std::chrono::high_resolution_clock::now();
@@ -60,7 +58,6 @@ void bench_tensor_matmul(int i) {
     matmul<tensorfunc::miaobyte,float>(tensor, tensor2, tensor3);
     auto end=std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
-    save<miaobyte>(tensor3,"4_tensor_matmul"+std::to_string(i)+"result");
     std::cout << "time:" << duration.count() << " seconds" << std::endl;
 }
  

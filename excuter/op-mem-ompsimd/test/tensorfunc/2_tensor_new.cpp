@@ -14,11 +14,11 @@ void test_tensor_new(){
     Tensor<float> tensor=New<float>({2, 3});
     constant<miaobyte,float>(tensor,1);
     print<miaobyte>(tensor);
-    save<miaobyte>(tensor,"tensor");
+    save(tensor,"tensor");
     Tensor<float> tensor2=New<float>({2, 3});
     constant<miaobyte,float>(tensor2,2);
     print<miaobyte>(tensor2);
-    save<miaobyte>(tensor2,"tensor2");
+    save(tensor2,"tensor2");
 }
 
 void test_arange() {
@@ -30,6 +30,7 @@ void test_arange() {
 int main(int argc,char **argv){
     int i=0;
     if (argc>1){
+        
         i=std::atoi(argv[1]);
     }
     switch (i) {

@@ -98,6 +98,17 @@ namespace deepx::mem
             mem[name] = ptr;
         }
 
+        template <typename T>
+        void addtensor(const string &name, shared_ptr<Tensor<T>> tensor)
+        {
+            if (mem.find(name) != mem.end())
+            {
+                cerr << "tensor already exists: " << name << endl;
+                return;
+            }
+            mem[name] = tensor;
+        }
+
         // template <typename T>
         // shared_ptr<Tensor<T>> temptensor(vector<int> shape)
         // {

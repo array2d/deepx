@@ -152,7 +152,7 @@ namespace deepx
         }
     }
 
-    void Shape::rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices, std::vector<int> &newIndices)> func, int newIndiceDim) const
+    void Shape::rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
     {
         dimCount = checkdim(dimCount, dim);
         int totalSize = checkTotalSize(dimCount, shape);
@@ -160,7 +160,7 @@ namespace deepx
 #pragma omp parallel
         {
             std::vector<int> indices(dimCount, 0);
-            std::vector<int> newIndices(newIndiceDim, 0);
+            ThreadLocalVectors tlv(tlv_sizes);
 #pragma omp for
             for (int idx = 0; idx < totalSize; idx++)
             {
@@ -171,11 +171,11 @@ namespace deepx
                     indices[dim] = idx_ % shape[dim]; // 计算当前维度的索引
                     idx_ /= shape[dim];               // 更新 idx
                 }
-                func(indices, newIndices); // 调用传入的函数
+                func(indices, tlv); // 调用传入的函数
             }
         }
     }
-    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, std::vector<int> &newIndices)> func, int newIndiceDim) const
+    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
     {
         dimCount = checkdim(dimCount, dim);
         int stride = checkStride(dimCount, shape);
@@ -185,16 +185,16 @@ namespace deepx
 
 #pragma omp parallel
         {
-            std::vector<int> newIndices(newIndiceDim, 0);
+            ThreadLocalVectors tlv(tlv_sizes);
 #pragma omp for
             for (int idx = 0; idx < total; idx++)
             {
-                func(idx * stride, newIndices);
+                func(idx * stride, tlv);
             }
         }
     }
 
-    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)> func, int newIndiceDim) const
+    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
     {
         dimCount = checkdim(dimCount, dim);
         int totalSize = checkTotalSize(dimCount, shape);
@@ -203,7 +203,7 @@ namespace deepx
 #pragma omp parallel
         {
             std::vector<int> indices(dimCount, 0);
-            std::vector<int> newIndices(newIndiceDim, 0);
+            ThreadLocalVectors tlv(tlv_sizes);
 #pragma omp for
             for (int idx = 0; idx < totalSize; idx++)
             {
@@ -214,7 +214,7 @@ namespace deepx
                     indices[dim] = idx_ % shape[dim]; // 计算当前维度的索引
                     idx_ /= shape[dim];               // 更新 idx
                 }
-                func(idx * stride, indices, newIndices);
+                func(idx * stride, indices, tlv);
             }
         }
     }

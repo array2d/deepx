@@ -9,7 +9,8 @@
 #include "deepx/tensorfunc/changeshape.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 namespace deepx::tensorfunc
-{
+{   
+    // reshape
     template <typename T>
     struct reshapeDispatcher<miaobyte, T>
     {
@@ -40,7 +41,7 @@ namespace deepx::tensorfunc
             }
         }
     };
-
+    // transpose
     template <typename T>
     struct transposeDispatcher<miaobyte, T>
     {
@@ -55,16 +56,17 @@ namespace deepx::tensorfunc
             {
                 throw std::runtime_error("transpose error!shape");
             }
-            output.shape.rangeParallel(dim_order.size(), [&tensor, &output, &dim_order](int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
+            output.shape.rangeParallel(dim_order.size(), [&tensor, &output, &dim_order](int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                        {
                                         
                             for (size_t i = 0; i < dim_order.size(); ++i) {
-                                newIndices[dim_order[i]] = indices[i];
+                                tlv.get(0)[dim_order[i]] = indices[i];
                             }
-                            output.data[idx_linear]= tensor.data[tensor.shape.linearat(newIndices)]; }, tensor.shape.dim);
+                            output.data[idx_linear]= tensor.data[tensor.shape.linearat(tlv.get(0))];
+                             }, {tensor.shape.dim});
         }
     };
-
+    // concat
     template <typename T>
     struct concatDispatcher<miaobyte, T>
     {
@@ -137,6 +139,58 @@ namespace deepx::tensorfunc
                     });
         }
     };
+
+
+    //gather
+    //支持高维indices
+    //结果写入input_indices
+    void fromGatherIndices(const vector<int> &output_indices, const Tensor<int> &indices, vector<int> indices_indices, const int gatherAxis, vector<int> &input_indices)
+    {
+         // 复制axis之前的索引
+        for (int i = 0; i < gatherAxis; ++i) {
+            input_indices[i] = output_indices[i];
+        }
+        //indice的indice
+        for (int i = 0; i < indices.shape.dim; ++i) {
+            indices_indices[i]=output_indices[i+gatherAxis];
+        }
+        int gather_indiceidx=indices.shape.linearat(indices_indices);
+        input_indices[gatherAxis]=indices.data[gather_indiceidx];
+
+        //复制axis之后的索引
+        for (int i = gatherAxis+1,j=gatherAxis+indices.shape.dim; i < input_indices.size(); ++i,++j) {
+            input_indices[i]=output_indices[j];
+        }
+    }
+
+    template <typename T>
+    struct gatherDispatcher<miaobyte, T>
+    {
+        static void gather(const Tensor<T> &input, const Tensor<int> &indices, const int axis, Tensor<T> &output)
+        {
+            int gatherAxis = axis < 0 ? input.shape.dim + axis : axis;
+            if (gatherAxis < 0 || gatherAxis >= input.shape.dim)
+            {
+                throw std::invalid_argument("Axis is out of bounds");
+            }
+
+            vector<int> input_gatherShape = gatherShape(input.shape.shape, indices.shape.shape, gatherAxis);
+            if (input_gatherShape.empty()||input_gatherShape!=output.shape.shape)
+            {
+                throw TensorShapeError("Gather shape mismatch");
+            }
+            output.shape.rangeParallel(output.shape.dim, [&](const int idx, const std::vector<int> &output_indices,ThreadLocalVectors &tlv)
+                                       {  
+                        fromGatherIndices(output_indices, indices,tlv.get(0), gatherAxis, tlv.get(1));
+                        output.data[idx] = input.data[input.shape.linearat(tlv.get(1))];
+                    },{indices.shape.dim,input.shape.dim});
+        }
+    };
+
+
+
+
+
 
     // template <typename T>
     // void split(const Tensor<T> &tensor, const int axis, std::vector<Tensor<T> *> &results)

@@ -13,9 +13,8 @@ namespace deepx::tensorfunc
     __global__ void transpose_kernel(const T *input, const int *inputStrides, T *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
 
     template <typename T>
-    void launch_transpose(  const T *input, const int *inputStrides, T *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    void launch_transpose(const T *input, const int *inputStrides, T *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
 
-   
     template <typename DIM, typename T>
     __global__ void concat_kernel(const T **tensorsData,
                                   const int *inputStrides,
@@ -30,21 +29,40 @@ namespace deepx::tensorfunc
     template <typename T>
     void launch_concat(const T **tensorsData, const int *inputStrides, T *outputData, const int *outputStrides, const int dim, const int len, const int axis, const int numTensors, const int *shapeAtAxis);
 
-    
-
-    __host__ __device__ void fromBroadcastIndices(const BroadcastMap *broadcastMap, const int *broadcastIndices, const int broadcastIndicesDim, int *indices);
-    
     // broadcastTo
+    __host__ __device__ void fromBroadcastIndices(const BroadcastMap *broadcastMap, const int *broadcastIndices, const int broadcastIndicesDim, int *indices);
+
     template <int DIM, typename T>
     __global__ void broadcastTo_kernel(
-        const T *input, const int *inputStrides,const int inputDim,
+        const T *input, const int *inputStrides, const int inputDim,
         const BroadcastMap *broadcastMap,
-        T *output, const int *outputStrides,const int outputDim,const int outputlen);
+        T *output, const int *outputStrides, const int outputDim, const int outputlen);
 
     template <typename T>
-    void launch_broadcastTo(const T *input, const int *inputStrides,const int intputDim,
+    void launch_broadcastTo(const T *input, const int *inputStrides, const int intputDim,
                             const BroadcastMap *broadcastMap,
-                            T *output, const int *outputStrides,const int outputDim,const int outputlen);
+                            T *output, const int *outputStrides, const int outputDim, const int outputlen);
+
+    // gather
  
+    __host__ __device__ void fromGatherIndices(
+    const int *output_indices,const int outputDim,  // 输出张量的索引
+    const int *indices,const int *indicesStrides,const int indicesDim, // 索引张量的stride
+    const int gatherAxis,      // gather操作的轴
+    int *input_indices,const int inputDim);       // 计算出的输入张量索引  
+
+    template <int DIM, typename T>
+    __global__ void gather_kernel(
+        const T *input, const int *inputStrides, const int inputDim,
+        const int *indices,const int *indicesStrides,const int indicesDim,
+        const int gatherAxis,
+        T *output, const int *outputStrides, const int outputDim, const int outputlen);
+
+    template <typename T>
+    void launch_gather(
+        const T *input, const int *inputStrides, const int inputDim, 
+        const int *indices,const int *indicesStrides,const int indicesDim,
+        const int gatherAxis,
+        T *output, const int *outputStrides, const int outputDim, const int outputlen);
 };
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_CUH

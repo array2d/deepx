@@ -28,8 +28,9 @@ namespace deepx::tensorfunc
     private:
         cublasHandle_t handle_;
     };
-    //TODO 
-    inline int deviceblocksize(){
+    // TODO
+    inline int deviceblocksize()
+    {
         int device_id;
         cudaGetDevice(&device_id);
         cudaDeviceProp props;
@@ -59,6 +60,8 @@ namespace deepx::tensorfunc
         blocks = std::min(blocks, optimal_blocks);
         return {blocks, blocksize};
     };
+
+    
 }
 
 #endif

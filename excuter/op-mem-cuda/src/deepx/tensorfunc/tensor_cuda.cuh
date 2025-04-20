@@ -34,22 +34,8 @@ namespace deepx::tensorfunc
             neworder[i] = order[dimOrder[i]];
         }
     }
-   
-    inline int nextPowerOf2(int n)
-    {
-        if (n <= 0)
-            return 1;
-        if ((n & (n - 1)) == 0)
-            return n; // 如果n已经是2的幂
-
-        n--;
-        n |= n >> 1;
-        n |= n >> 2;
-        n |= n >> 4;
-        n |= n >> 8;
-        n |= n >> 16;
-        return n + 1;
-    }
+    
+    const int MAX_DIM = 12;
 }
 
 #endif // DEEPX_TENSORFUNC_TENSOR_CUDA_CUH

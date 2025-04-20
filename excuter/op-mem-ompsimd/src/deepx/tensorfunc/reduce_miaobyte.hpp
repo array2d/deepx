@@ -27,38 +27,38 @@ namespace deepx::tensorfunc
             const int minshape_1 = Lanes(ScalableTag<T>());
             if (reduced_dims.rbegin()[0] == tensor.shape.dim - 1 || tensor.shape.dim > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
-                tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
+                tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                     // 计算输出索引
                     for (size_t i = 0, j = 0; i < tensor.shape.dim; ++i)
                     {
                         if (reduced_dims[i] == 0)
                         {
-                            newIndices[j++] = indices[i];
+                            tlv.get(0)[j++] = indices[i];
                         }else if (keepdims && (reduced_dims[i] == 1)) {
-                            newIndices[j++] = 0;
+                            tlv.get(0)[j++] = 0;
                         }
                     }
-                    int outputIdx = result.shape.linearat(newIndices);
+                    int outputIdx = result.shape.linearat(tlv.get(0));
 #pragma omp atomic
-                    result.data[outputIdx] += tensor.data[idx_linear]; }, result.shape.dim);
+                    result.data[outputIdx] += tensor.data[idx_linear]; }, {result.shape.dim});
             }
             else
             {
                 // 如果数据连续（对齐），则可以simd
-                tensor.shape.rangeParallel(tensor.shape.dim - 1, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
+                tensor.shape.rangeParallel(tensor.shape.dim - 1, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                     // 计算输出索引
                     for (size_t i = 0, j = 0; i < tensor.shape.dim; ++i)
                     {
                         if (reduced_dims[i] == 0)
                         {
-                            newIndices[j++] = indices[i];
+                            tlv.get(0)[j++] = indices[i];
                         }else if (keepdims && (reduced_dims[i] == 1)) {
-                            newIndices[j++] = 0;
+                            tlv.get(0)[j++] = 0;
                         }
                     }
-                    int outputIdx = result.shape.linearat(newIndices);
+                    int outputIdx = result.shape.linearat(tlv.get(0));
                     int shape_last = tensor.shape[-1];
                     const ScalableTag<T> tag;
                     const size_t lanes = Lanes(tag);
@@ -86,7 +86,8 @@ namespace deepx::tensorfunc
                         sum += tensor.data[idx_linear + j];
                     }
 #pragma omp atomic
-                    result.data[outputIdx] += sum; }, result.shape.dim);
+                    result.data[outputIdx] += sum; },
+                     {result.shape.dim});
             }
         }
     };
@@ -104,26 +105,27 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, T(1));
             if (reduced_dims.rbegin()[0] == tensor.shape.dim - 1 || tensor.shape.dim > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
-                tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
+                tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                             // 计算输出索引
                          
                             for (size_t i = 0,j=0; i < tensor.shape.dim ; ++i) {
                                 if (reduced_dims[i]==0) {
-                                        newIndices[j++]=indices[i];
+                                        tlv.get(0)[j++]=indices[i];
                                     }else if (keepdims && (reduced_dims[i] == 1)) {
-                                        newIndices[j++]=0;
+                                        tlv.get(0)[j++]=0;
                                     }
                                 }
                             // 累加求和
-                            int outputIdx=result.shape.linearat(newIndices);
+                            int outputIdx=result.shape.linearat(tlv.get(0));
 #pragma omp atomic
-                            result.data[outputIdx]*=tensor.data[idx_linear]; }, result.shape.dim);
+                            result.data[outputIdx]*=tensor.data[idx_linear]; 
+                            }, {result.shape.dim});
             }
             else
             {
                 // 如果数据连续（对齐），则可以simd
-                tensor.shape.rangeParallel(tensor.shape.dim - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, std::vector<int> &newIndices)
+                tensor.shape.rangeParallel(tensor.shape.dim - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                                                // 计算输出索引
 
@@ -131,13 +133,13 @@ namespace deepx::tensorfunc
                                                {
                                                    if (reduced_dims[i] == 0)
                                                    {
-                                                       newIndices[j++] = indices[i];
+                                                       tlv.get(0)[j++] = indices[i];
                                                    }else if (keepdims && (reduced_dims[i] == 1)) {
-                                                       newIndices[j++] = 0;
+                                                       tlv.get(0)[j++] = 0;
                                                    }
                                                }
                                                // 累加求和
-                                               int outputIdx = result.shape.linearat(newIndices);
+                                               int outputIdx = result.shape.linearat(tlv.get(0));
 
                                                int shape_last = tensor.shape[-1];
                                                const ScalableTag<T> tag;
@@ -170,7 +172,8 @@ namespace deepx::tensorfunc
                                                    product *= tensor.data[i + j];
                                                }
 #pragma omp atomic
-                                               result.data[outputIdx] *= product; }, result.shape.dim);
+                                               result.data[outputIdx] *= product; 
+                                               }, {result.shape.dim});
             }
         }
     };
@@ -187,25 +190,26 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, std::numeric_limits<T>::lowest());
             if (reduced_dims.rbegin()[0] == tensor.shape.dim - 1 || tensor.shape.dim > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
-                tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
+                tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                             // 计算输出索引
                          
                             for (size_t i = 0,j=0; i < tensor.shape.dim ; ++i) {
                                 if (reduced_dims[i]==0) {
-                                        newIndices[j++]=indices[i];
+                                        tlv.get(0)[j++]=indices[i];
                                     }else if (keepdims && (reduced_dims[i] == 1)) {
-                                        newIndices[j++]=0;
+                                        tlv.get(0)[j++]=0;
                                     }
                                 }
                             // 累加求和
-                            int outputIdx=result.shape.linearat(newIndices);
-                            result.data[outputIdx]=std::max(result.data[outputIdx],tensor.data[idx_linear]); }, result.shape.dim);
+                            int outputIdx=result.shape.linearat(tlv.get(0));
+                            result.data[outputIdx]=std::max(result.data[outputIdx],tensor.data[idx_linear]); 
+                            }, {result.shape.dim});
             }
             else
             {
                 // 如果数据连续（对齐），则可以simd
-                tensor.shape.rangeParallel(tensor.shape.dim - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, std::vector<int> &newIndices)
+                tensor.shape.rangeParallel(tensor.shape.dim - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                                                // 计算输出索引
 
@@ -213,13 +217,13 @@ namespace deepx::tensorfunc
                                                {
                                                    if (reduced_dims[i] == 0)
                                                    {
-                                                       newIndices[j++] = indices[i];
+                                                       tlv.get(0)[j++] = indices[i];
                                                    }else if (keepdims && (reduced_dims[i] == 1)) {
-                                                       newIndices[j++] =0;
+                                                       tlv.get(0)[j++] =0;
                                                    }
                                                }
                                                
-                                               int outputIdx = result.shape.linearat(newIndices);
+                                               int outputIdx = result.shape.linearat(tlv.get(0));
 
                                                int shape_last = tensor.shape[-1];
                                                const ScalableTag<T> tag;
@@ -251,7 +255,8 @@ namespace deepx::tensorfunc
                                                    maxt = std::max(maxt,tensor.data[i + j]);
                                                }
  
-                                               result.data[outputIdx] = std::max(result.data[outputIdx],maxt); }, result.shape.dim);
+                                               result.data[outputIdx] = std::max(result.data[outputIdx],maxt); 
+                                               }, {result.shape.dim});
             }
         }
     };
@@ -268,26 +273,27 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, std::numeric_limits<T>::max());
             if (reduced_dims.rbegin()[0] == tensor.shape.dim - 1 || tensor.shape.dim > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
-                tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, std::vector<int> &newIndices)
+                tensor.shape.rangeParallel(tensor.shape.dim, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                             // 计算输出索引
                          
                             for (size_t i = 0,j=0; i < tensor.shape.dim ; ++i) {
                                 if (reduced_dims[i]==0) {
-                                        newIndices[j++]=indices[i];
+                                        tlv.get(0)[j++]=indices[i];
                                     }else if (keepdims && (reduced_dims[i] == 1)) {
-                                        newIndices[j++]=0;
+                                        tlv.get(0)[j++]=0;
                                     }
                                 }
                             // 累加求和
-                            int outputIdx=result.shape.linearat(newIndices);
+                            int outputIdx=result.shape.linearat(tlv.get(0));
  
-                            result.data[outputIdx]=std::min(result.data[outputIdx],tensor.data[idx_linear]); }, result.shape.dim);
+                            result.data[outputIdx]=std::min(result.data[outputIdx],tensor.data[idx_linear]); 
+                            }, {result.shape.dim});
             }
             else
             {
                 // 如果数据连续（对齐），则可以simd
-                tensor.shape.rangeParallel(tensor.shape.dim - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, std::vector<int> &newIndices)
+                tensor.shape.rangeParallel(tensor.shape.dim - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                                                // 计算输出索引
 
@@ -295,13 +301,13 @@ namespace deepx::tensorfunc
                                                {
                                                    if (reduced_dims[i] == 0)
                                                    {
-                                                       newIndices[j++] = indices[i];
+                                                       tlv.get(0)[j++] = indices[i];
                                                    }else if (keepdims && (reduced_dims[i] == 1)) {
-                                                       newIndices[j++] = 0;
+                                                       tlv.get(0)[j++] = 0;
                                                    }
                                                }
                                                
-                                               int outputIdx = result.shape.linearat(newIndices);
+                                               int outputIdx = result.shape.linearat(tlv.get(0));
 
                                                int shape_last = tensor.shape[-1];
                                                const ScalableTag<T> tag;
@@ -333,7 +339,7 @@ namespace deepx::tensorfunc
                                                    mint = std::min(mint,tensor.data[i + j]);
                                                }
  
-                                               result.data[outputIdx] = std::min(result.data[outputIdx],mint); }, result.shape.dim);
+                                               result.data[outputIdx] = std::min(result.data[outputIdx],mint); }, {result.shape.dim});
             }
         }
     };

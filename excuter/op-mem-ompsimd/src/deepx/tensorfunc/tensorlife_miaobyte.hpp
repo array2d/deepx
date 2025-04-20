@@ -37,7 +37,6 @@ namespace deepx::tensorfunc
         shape.dtype = precision<T>();
 
         Tensor<T> tensor(shape);
-        tensor.device = CPU;
         tensor.deleter = dataFree<T>;
         tensor.copyer = dataCopy<T>;
         tensor.newer = dataNew<T>;

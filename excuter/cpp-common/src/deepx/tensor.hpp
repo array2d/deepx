@@ -54,7 +54,6 @@ namespace deepx
         Tensor(const Tensor<T> &tensor)
         {
             shape = tensor.shape;
-            device = tensor.device;
             newer = tensor.newer;
             deleter = tensor.deleter;
             copyer = tensor.copyer;
@@ -73,7 +72,6 @@ namespace deepx
         Tensor(Tensor<T> &&other) noexcept
         {
             shape = std::move(other.shape);
-            device = other.device;
 
             deleter = other.deleter;
             copyer = other.copyer;
@@ -101,7 +99,6 @@ namespace deepx
                 return *this;
 
             shape = tensor.shape;
-            device = tensor.device;
             deleter = tensor.deleter;
             copyer = tensor.copyer;
             newer = tensor.newer;
@@ -126,7 +123,6 @@ namespace deepx
             if (this == &tensor)
                 return *this;
             shape = tensor.shape;
-            device = tensor.device;
             newer = tensor.newer;
             deleter = tensor.deleter;
             copyer = tensor.copyer;

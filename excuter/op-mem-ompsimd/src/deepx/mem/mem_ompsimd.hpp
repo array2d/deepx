@@ -50,7 +50,6 @@ namespace deepx::mem
             auto ptr = mem.at(name);
             auto result = make_shared<Tensor<void>>();
             result->shape = ptr->shape;
-            result->device = ptr->device;
             result->deleter = nullptr;
             result->copyer = nullptr;
             result->newer = nullptr;

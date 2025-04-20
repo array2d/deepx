@@ -12,7 +12,6 @@
 namespace deepx::tensorfunc
 {
     // transpose
-    //  DIM=2^n
     template <int DIM, typename T>
     __global__ void transpose_kernel(const T *inputData,
                                      const int *inputStrides,
@@ -41,8 +40,6 @@ namespace deepx::tensorfunc
         }
     }
 
-   
-
     template <typename T>
     void launch_transpose(const T *input,
                           const int *inputStrides,
@@ -56,10 +53,8 @@ namespace deepx::tensorfunc
         cudaVector<int> newStrides_d(outputStrides, dim);
         cudaVector<int> dimOrder_d(dimOrder, dim);
 
-        int powDim = nextPowerOf2(dim);
         auto [numBlocks, blockSize] = BestDims(len);
-        // 根据计算出的2的幂次选择对应的模板实例
-        switch (powDim)
+        switch (dim)
         {
         case 1:
             transpose_kernel<1, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
@@ -67,26 +62,44 @@ namespace deepx::tensorfunc
         case 2:
             transpose_kernel<2, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
             break;
+        case 3:
+            transpose_kernel<3, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
+            break;
         case 4:
             transpose_kernel<4, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
+            break;
+        case 5:
+            transpose_kernel<5, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
+            break;
+        case 6:
+            transpose_kernel<6, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
+            break;
+        case 7:
+            transpose_kernel<7, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
             break;
         case 8:
             transpose_kernel<8, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
             break;
-        case 16:
-            transpose_kernel<16, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
+        case 9:
+            transpose_kernel<9, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
             break;
-        case 32:
-            transpose_kernel<32, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
+        case 10:
+            transpose_kernel<10, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
             break;
-        case 64:
-            transpose_kernel<64, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
+        case 11:
+            transpose_kernel<11, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
             break;
-        case 128:
-            transpose_kernel<128, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
+        case 12:
+            transpose_kernel<12, T><<<numBlocks, blockSize>>>(input, strides_d.data, output, newStrides_d.data, dim, len, dimOrder_d.data);
             break;
+
         default:
-            throw std::runtime_error("dim too large, max support 128");
+            throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
+        }
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("cuda error");
         }
     }
 
@@ -169,11 +182,7 @@ namespace deepx::tensorfunc
 
         // shapeAtAxis
         cudaVector<int> shapeAtAxis_d(shapeAtAxis, numTensors, cudaMemcpyHostToDevice);
-
-        int powDim = nextPowerOf2(dim);
-
-        // 根据计算出的2的幂次选择对应的模板实例
-        switch (powDim)
+        switch (dim)
         {
         case 1:
             concat_kernel<1, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
@@ -181,26 +190,44 @@ namespace deepx::tensorfunc
         case 2:
             concat_kernel<2, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
             break;
+        case 3:
+            concat_kernel<3, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
+            break;
         case 4:
             concat_kernel<4, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
+            break;
+        case 5:
+            concat_kernel<5, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
+            break;
+        case 6:
+            concat_kernel<6, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
+            break;
+        case 7:
+            concat_kernel<7, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
             break;
         case 8:
             concat_kernel<8, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
             break;
-        case 16:
-            concat_kernel<16, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
+        case 9:
+            concat_kernel<9, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
             break;
-        case 32:
-            concat_kernel<32, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
+        case 10:
+            concat_kernel<10, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
             break;
-        case 64:
-            concat_kernel<64, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
+        case 11:
+            concat_kernel<11, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
             break;
-        case 128:
-            concat_kernel<128, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
+        case 12:
+            concat_kernel<12, T><<<numBlocks, blockSize>>>(tensorsDataList.data, inputStrides_d.data, outputData, outputStrides_d.data, dim, outputLen, axis, numTensors, shapeAtAxis_d.data);
             break;
+
         default:
-            throw std::runtime_error("dim too large, max support 128");
+            throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
+        }
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("cuda error");
         }
     }
     template void launch_concat<double>(const double **tensorsData, const int *inputStrides, double *outputData, const int *outputStrides, const int dim, const int len, const int axis, const int numTensors, const int *shapeAtAxis);
@@ -253,7 +280,8 @@ namespace deepx::tensorfunc
     template <typename T>
     void launch_broadcastTo(const T *input, const int *inputStrides, const int intputDim,
                             const BroadcastMap *broadcastMap,
-                            T *output, const int *outputStrides, const int outputDim, const int outputlen){
+                            T *output, const int *outputStrides, const int outputDim, const int outputlen)
+    {
 
         auto [numBlocks, blockSize] = BestDims(outputlen);
 
@@ -266,37 +294,51 @@ namespace deepx::tensorfunc
         // input
         cudaVector<int> inputStrides_d(inputStrides, intputDim, cudaMemcpyHostToDevice);
 
-     
-        int powDim = nextPowerOf2(outputDim);   
-        // 根据计算出的2的幂次选择对应的模板实例
-        switch (powDim)
+        switch (outputDim)
         {
         case 1:
-            broadcastTo_kernel<1, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);    
+            broadcastTo_kernel<1, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 2:
-            broadcastTo_kernel<2, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);    
+            broadcastTo_kernel<2, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 3:
+            broadcastTo_kernel<3, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 4:
-            broadcastTo_kernel<4, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);    
+            broadcastTo_kernel<4, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 5:
+            broadcastTo_kernel<5, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 6:
+            broadcastTo_kernel<6, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 7:
+            broadcastTo_kernel<7, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 8:
-            broadcastTo_kernel<8, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);    
+            broadcastTo_kernel<8, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
             break;
-        case 16:
-            broadcastTo_kernel<16, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);       
+        case 9:
+            broadcastTo_kernel<9, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
             break;
-        case 32:
-            broadcastTo_kernel<32, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);       
+        case 10:
+            broadcastTo_kernel<10, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
             break;
-        case 64:
-            broadcastTo_kernel<64, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);       
+        case 11:
+            broadcastTo_kernel<11, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
             break;
-        case 128:
-            broadcastTo_kernel<128, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);       
+        case 12:
+            broadcastTo_kernel<12, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, intputDim, broadcastMap_d.data, output, outputStrides_d.data, outputDim, outputlen);
             break;
         default:
-            throw std::runtime_error("dim too large, max support 128");
+            throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
+        }
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("cuda error");
         }
     }
     template void launch_broadcastTo<double>(const double *input, const int *inputStrides, const int inputDim,
@@ -310,7 +352,7 @@ namespace deepx::tensorfunc
                                                   nv_bfloat16 *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_broadcastTo<__half>(const __half *input, const int *inputStrides, const int inputDim,
                                              const BroadcastMap *broadcastMap,
-                                             __half *output,     const int *outputStrides, const int outputDim, const int outputlen);
+                                             __half *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_broadcastTo<int64_t>(const int64_t *input, const int *inputStrides, const int inputDim,
                                               const BroadcastMap *broadcastMap,
                                               int64_t *output, const int *outputStrides, const int outputDim, const int outputlen);
@@ -323,5 +365,150 @@ namespace deepx::tensorfunc
     template void launch_broadcastTo<int8_t>(const int8_t *input, const int *inputStrides, const int inputDim,
                                              const BroadcastMap *broadcastMap,
                                              int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
-}
+
+    // gather
+
+    __host__ __device__ void fromGatherIndices(
+        const int *output_indices, const int outputDim,
+        const int *indices,
+        const int gatherAxis,
+        int *input_indices)
+    {
+        // 1. 首先复制所有输出索引到输入索引
+        for (int i = 0; i < outputDim; i++)
+        {
+            input_indices[i] = output_indices[i];
+        }
+
+        // 2. 使用indices中存储的值作为gatherAxis维度的索引
+        // 这里假设indices是一个一维数组，索引位置由output_indices[gatherAxis]确定
+        input_indices[gatherAxis] = indices[output_indices[gatherAxis]];
+    }
+
+    template <int DIM, typename T>
+    __global__ void gather_kernel(const T *input, const int *inputStrides, const int inputDim,
+                                  const int *indices, const int *indicesStrides, const int indicesDim,
+                                  const int gatherAxis,
+                                  T *output, const int *outputStrides, const int outputDim, const int outputlen)
+    {
+        const int grid_stride = gridDim.x * blockDim.x;
+        int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+        for (; thread_id < outputlen; thread_id += grid_stride)
+        {
+            // 输出索引
+            int output_indices[DIM];
+            linearTo(outputStrides, outputDim, output_indices, thread_id);
+
+            // 输入索引
+            int input_indices[DIM];
+            fromGatherIndices(indices_indices, gatherAxis, input_indices);
+            int inputIdx = linearAt(inputStrides, inputDim, input_indices);
+            int outputIdx = linearAt(outputStrides, outputDim, output_indices);
+            output[outputIdx] = input[inputIdx];
+        }
+    }
+
+    template <typename T>
+    void launch_gather(const T *input, const int *inputStrides, const int inputDim,
+                       const int *indices, const int *indicesStrides, const int indicesDim,
+                       const int gatherAxis,
+                       T *output, const int *outputStrides, const int outputDim, const int outputlen)
+    {
+
+        auto [numBlocks, blockSize] = BestDims(outputlen);
+
+        // output
+        cudaVector<int> outputStrides_d(outputStrides, outputDim, cudaMemcpyHostToDevice);
+
+        // indices
+        cudaVector<int> indicesStrides_d(indicesStrides, indicesDim, cudaMemcpyHostToDevice);
+
+        // input
+        cudaVector<int> inputStrides_d(inputStrides, inputDim, cudaMemcpyHostToDevice);
+
+        switch (outputDim)
+        {
+        case 1:
+            gather_kernel<1, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 2:
+            gather_kernel<2, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 3:
+            gather_kernel<3, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 4:
+            gather_kernel<4, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 5:
+            gather_kernel<5, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 6:
+            gather_kernel<6, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 7:
+            gather_kernel<7, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 8:
+            gather_kernel<8, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 9:
+            gather_kernel<9, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 10:
+            gather_kernel<10, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 11:
+            gather_kernel<11, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        case 12:
+            gather_kernel<12, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            break;
+        default:
+            throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
+        }
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("cuda error");
+        }
+    }
+    template void launch_gather<double>(const double *input, const int *inputStrides, const int inputDim,
+                                        const int *indices, const int *indicesStrides, const int indicesDim,
+                                        const int gatherAxis,
+                                        double *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<float>(const float *input, const int *inputStrides, const int inputDim,
+                                       const int *indices, const int *indicesStrides, const int indicesDim,
+                                       const int gatherAxis,
+                                       float *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<nv_bfloat16>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
+                                             const int *indices, const int *indicesStrides, const int indicesDim,
+                                             const int gatherAxis,
+                                             nv_bfloat16 *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<__half>(const __half *input, const int *inputStrides, const int inputDim,
+                                        const int *indices, const int *indicesStrides, const int indicesDim,
+                                        const int gatherAxis,
+                                        __half *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<int64_t>(const int64_t *input, const int *inputStrides, const int inputDim,
+                                         const int *indices, const int *indicesStrides, const int indicesDim,
+                                         const int gatherAxis,
+                                         int64_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<int32_t>(const int32_t *input, const int *inputStrides, const int inputDim,
+                                         const int *indices, const int *indicesStrides, const int indicesDim,
+                                         const int gatherAxis,
+                                         int32_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<int16_t>(const int16_t *input, const int *inputStrides, const int inputDim,
+                                         const int *indices, const int *indicesStrides, const int indicesDim,
+                                         const int gatherAxis,
+                                         int16_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<int8_t>(const int8_t *input, const int *inputStrides, const int inputDim,
+                                        const int *indices, const int *indicesStrides, const int indicesDim,
+                                        const int gatherAxis,
+                                        int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<bool>(const bool *input, const int *inputStrides, const int inputDim,
+                                      const int *indices, const int *indicesStrides, const int indicesDim,
+                                      const int gatherAxis,
+                                      bool *output, const int *outputStrides, const int outputDim, const int outputlen);
+
+};
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_HPP

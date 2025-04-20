@@ -175,8 +175,8 @@ namespace deepx
         case Precision::Float8E4M3:
             return 8;
         //TODO 需要根据平台支持
-        case Precision::Float4E2M1:
-            return 4;
+        // case Precision::Float4E2M1:
+        //     return 4;
         case Precision::Int64:
             return 64;
         case Precision::Int32:
@@ -186,8 +186,8 @@ namespace deepx
         case Precision::Int8:
             return 8;
         //TODO，int4 需要根据平台支持
-        case Precision::Int4:
-            return 4;
+        // case Precision::Int4:
+        //     return 4;
         case Precision::Bool:
             return 8;
         case Precision::String:

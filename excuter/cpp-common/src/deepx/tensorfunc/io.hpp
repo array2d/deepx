@@ -15,25 +15,14 @@ namespace deepx::tensorfunc{
         printDispatcher<Author,T>::print(t, f);
     }
 
-    template <typename Author, typename T>
-    struct saveDispatcher{
-        static void save(Tensor<T> &tensor,const std::string &path,int filebegin=0)=delete;
-    };
+    template <typename T>
+    void save(Tensor<T> &tensor,const std::string &path);
 
-    template <typename Author, typename T>
-    void save(Tensor<T> &tensor,const std::string &path,int filebegin=0){
-        saveDispatcher<Author,T>::save(tensor, path, filebegin);
-    }
+    template <typename T>
+    pair<std::string,shared_ptr<Tensor<T>>> load(const std::string &path);
 
-    template <typename Author, typename T>
-    struct loadDispatcher{
-        static Tensor<T> load(const std::string &path,int filebegin=0)=delete;
-    };
-
-    template <typename Author, typename T>
-    Tensor<T> load(const std::string &path,int filebegin=0){
-        return loadDispatcher<Author,T>::load(path, filebegin);
-    }
+    pair<std::string,Shape> loadShape(const std::string &path);
+    
 }
 
 #endif // DEEPX_TENSORFUNC_IO_HPP

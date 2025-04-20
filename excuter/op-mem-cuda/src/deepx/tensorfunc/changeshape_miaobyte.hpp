@@ -13,6 +13,7 @@
 
 namespace deepx::tensorfunc
 {
+    //reshape
     template <typename T>
     struct reshapeDispatcher<miaobyte, T>
     {
@@ -43,6 +44,7 @@ namespace deepx::tensorfunc
         }
     };
 
+    //transpose
     template <typename T>
     struct transposeDispatcher<miaobyte, T>
     {
@@ -59,6 +61,7 @@ namespace deepx::tensorfunc
         }
     };
 
+    //concat        
     template <typename T>
     struct concatDispatcher<miaobyte, T>
     {
@@ -96,7 +99,7 @@ namespace deepx::tensorfunc
         };
     };
 
-
+    //broadcastTo
     template <typename T>
     struct broadcastToDispatcher<miaobyte, T>
     {
@@ -111,6 +114,24 @@ namespace deepx::tensorfunc
             launch_broadcastTo<T>(A.data, A.shape.strides.data(), A.shape.dim,
             bmap.data(),
             B.data, B.shape.strides.data(), B.shape.dim, B.shape.size);
+        }
+    };
+
+    //gather
+    template <typename T>
+    struct gatherDispatcher<miaobyte, T>
+    {
+        static void gather(const Tensor<T> &input, const Tensor<int> &indices, const int axis, Tensor<T> &output){
+            vector<int> input_gatherShape = gatherShape(input.shape.shape, indices.shape.shape, axis);
+            if (input_gatherShape.empty()||input_gatherShape!=output.shape.shape)
+            {
+                throw TensorShapeError("Gather shape mismatch");
+            }
+            int gatherAxis = axis < 0 ? input.shape.dim + axis : axis;
+            launch_gather<T>(input.data, input.shape.strides.data(), input.shape.dim,
+                            indices.data, indices.shape.strides.data(), indices.shape.dim,
+                            gatherAxis,
+                            output.data, output.shape.strides.data(), output.shape.dim, output.shape.size);
         }
     };
 }

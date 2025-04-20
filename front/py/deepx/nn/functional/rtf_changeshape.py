@@ -28,3 +28,9 @@ def rtf_broadcastTo(t:Tensor,new_shape:tuple[int],out:Tensor,author='miaobyte'):
     ir=DeepxIR("broadcastTo", args, returns,author)
     send(ir)
  
+def rtf_gather(input:Tensor,indices:Tensor,axis:int,out:Tensor,author='miaobyte'):
+    args=[Param.tensor(input),Param.tensor(indices),Param.varnum(axis)]
+    returns=[Param.tensor(out)]
+    ir=DeepxIR("gather", args, returns,author)
+    send(ir)
+ 

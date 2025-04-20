@@ -6,3 +6,7 @@ def printtensor(t:Tensor,format=''):
     rtf_printtensor(t,format,defaultauthor['print'])
     return ''
 
+def save(t:Tensor,path:str):
+    from .rtf_io import rtf_save
+    rtf_save(t,path)
+    return t

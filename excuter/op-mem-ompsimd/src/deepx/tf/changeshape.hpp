@@ -11,6 +11,7 @@ namespace deepx::tf
     using namespace deepx::tensorfunc;
     using namespace std;
 
+    //reshape
     template <typename Author>
     class Reshape : public TF
     {
@@ -77,6 +78,7 @@ namespace deepx::tf
         }
     };
 
+    //transpose
     template <typename Author>
     class Transpose : public TF
     {
@@ -143,6 +145,7 @@ namespace deepx::tf
         }
     };
 
+    //concat
     template <typename Author>
     class Concat : public TF
     {
@@ -255,7 +258,8 @@ namespace deepx::tf
         };
     };
 
-        template <typename Author>
+    //broadcastTo
+    template <typename Author>
     class BroadcastTo : public TF
     {
     public:
@@ -318,6 +322,86 @@ namespace deepx::tf
         }
     };
     
+    //gather
+    template <typename Author>
+    class Gather : public TF
+    {
+    public:
+        Gather(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "gather";
+            this->author = Author::name();
+            this->tftype = "changeshape";
+            this->args = args;
+            this->returns = returns;
+        }
+
+        string math_formula() const override
+        {
+            return "T2 = T1.gather(indices=T3, axis=3)";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Gather<Author>>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {   
+            if (!checktensors({this->args[0].textvalue, this->args[1].textvalue, this->returns[0].textvalue}, mem, error)!=0)
+            {
+                return 1;
+            }
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            
+            Precision output_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (input_type != output_type)
+            {
+                error = "Type mismatch: " + precision_str(input_type) + " != " + precision_str(output_type);
+                return 1;
+            }
+            Precision indices_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            if (indices_type != Precision::Int32)
+            {
+                error = "indices only support int32";
+                return 1;
+            }
+            int axis = this->getvar<int>(2, mem, true);
+            switch (input_type)
+            {
+            case Precision::Float64:
+                gather<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<double>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:
+                gather<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<float>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                gather<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                break;  
+            case Precision::Int32:
+                gather<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                gather<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int8:
+                gather<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Bool:
+                gather<Author, bool>(*mem->gettensor<bool>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported type: " + precision_str(input_type);
+                return 1;   
+            }
+            return 0;
+        }
+    };
+
+
+
+
+
+
+
     // class Split : public TF
     // {
     // public:
