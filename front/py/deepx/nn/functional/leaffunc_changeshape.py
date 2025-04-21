@@ -64,14 +64,12 @@ def broadcastTo(t:Tensor,new_shape:tuple[int],out:Union[Tensor,str]='',requires_
     return outtensor
 broadcast_to = broadcastTo
 
-def gather(input:Tensor,indices:Tensor,axis:int,out:Union[Tensor,str]='')->Tensor:
+def gather(input:Tensor,indices:Tensor,gatheraxis:int,out:Union[Tensor,str]='')->Tensor:
     outtensor=out
     if isinstance(out,str):
-        outshape=input.shape
-        outshape[axis]=indices.shape[axis]
-        outtensor=newtensor(outshape,dtype=input.dtype,name=out)
+        outtensor=newtensor(indices.shape,dtype=input.dtype,name=out)
     from .rtf_changeshape import rtf_gather
-    rtf_gather(input,indices,axis,outtensor,defaultauthor['gather'])
+    rtf_gather(input,indices,gatheraxis,outtensor,defaultauthor['gather'])
     return outtensor
 
 # def unsqueeze(t:Tensor,dim:int)->Tensor:

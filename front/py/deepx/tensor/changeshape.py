@@ -50,14 +50,14 @@ def broadcastTo(self,shape:tuple[int],out:Union[Tensor,str]='')->Tensor:
     return result
 
 @tensor_method
-def gather(self,indices:Tensor,axis:int,out:Union[Tensor,str]='')->Tensor:
+def gather(self,indices:Tensor,dim:int,out:Union[Tensor,str]='')->Tensor:
     final_indices=indices
     #TODO 当indices不是tensor时，需要转换为tensor
     if not isinstance(indices,Tensor):
         raise ValueError("indices must be a Tensor")
 
     from deepx.nn.functional import gather as gather_func
-    result=gather_func(self,final_indices,axis,out)
+    result=gather_func(self,final_indices,dim,out)
     return result
 
 
