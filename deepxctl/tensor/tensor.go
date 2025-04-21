@@ -9,13 +9,13 @@ import (
 type Shape struct {
 	Shape  []int  `json:"shape"`
 	Stride []int  `json:"stride"`
-	Ndim   int    `json:"ndim"`
+	Dim    int    `json:"ndim"`
 	Size   int    `json:"size"`
 	Dtype  string `json:"dtype"`
 }
 
 func NewTensorShape(shape []int) (s Shape) {
-	s.Ndim = len(shape)
+	s.Dim = len(shape)
 	s.Shape = make([]int, len(shape))
 	copy(s.Shape, shape)
 	s.Stride = make([]int, len(shape))
@@ -43,8 +43,8 @@ func (s Shape) LinearAt(indices []int) int {
 }
 func (s Shape) LinearTo(idx int) (indices []int) {
 	linearIndex := idx
-	indices = make([]int, s.Ndim)
-	for i := 0; i < s.Ndim; i++ {
+	indices = make([]int, s.Dim)
+	for i := 0; i < s.Dim; i++ {
 		indices[i] = linearIndex / s.Stride[i]
 		linearIndex %= s.Stride[i]
 	}

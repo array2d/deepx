@@ -58,14 +58,14 @@ func (t *Tensor) Print(format_ ...string) {
 		format = format_[0]
 	}
 	fmt.Print("shape:[")
-	for i := 0; i < Shape.Ndim; i++ {
+	for i := 0; i < Shape.Dim; i++ {
 		fmt.Print(Shape.At(i))
-		if i < Shape.Ndim-1 {
+		if i < Shape.Dim-1 {
 			fmt.Print(", ")
 		}
 	}
 	fmt.Println("]")
-	if Shape.Ndim == 1 {
+	if Shape.Dim == 1 {
 		fmt.Print("[")
 		for i := 0; i < Shape.At(0); i++ {
 			if i > 0 {
@@ -74,7 +74,7 @@ func (t *Tensor) Print(format_ ...string) {
 			fmt.Printf(format, t.Get(i))
 		}
 		fmt.Println("]")
-	} else if Shape.Ndim == 2 {
+	} else if Shape.Dim == 2 {
 		fmt.Println("[")
 		for i := 0; i < Shape.At(0); i++ {
 			fmt.Print(" [")
@@ -93,9 +93,9 @@ func (t *Tensor) Print(format_ ...string) {
 		}
 		fmt.Println("]")
 	} else {
-		t.Range(Shape.Ndim-2, func(indices []int) {
+		t.Range(Shape.Dim-2, func(indices []int) {
 			fmt.Print(indices)
-			m, n := Shape.At(Shape.Ndim-2), Shape.At(Shape.Ndim-1)
+			m, n := Shape.At(Shape.Dim-2), Shape.At(Shape.Dim-1)
 			fmt.Print([]int{m, n})
 			fmt.Println("=")
 
