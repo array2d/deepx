@@ -1,6 +1,7 @@
 package tensor
 
 import (
+	"encoding/binary"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -19,13 +20,8 @@ func LoadShape(filePath string) (shape Shape, err error) {
 	}
 	return
 }
-func LoadTensor(filePath string) (tensor Tensor, err error) {
-	var data []byte
+func LoadTensor[T Number](filePath string) (tensor Tensor[T], err error) {
 
-	data, err = os.ReadFile(filePath + ".data")
-	if err != nil {
-		return
-	}
 	_, err = os.ReadFile(filePath + ".shape")
 	if err != nil {
 		return
@@ -35,6 +31,17 @@ func LoadTensor(filePath string) (tensor Tensor, err error) {
 	if err != nil {
 		return
 	}
-	tensor = Tensor{Data: data, Shape: shape}
+	file, err := os.Open(filePath + ".data")
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	data := make([]T, shape.Size)
+
+	err = binary.Read(file, binary.LittleEndian, data)
+	if err != nil {
+		return
+	}
+	tensor = Tensor[T]{Data: data, Shape: shape}
 	return
 }

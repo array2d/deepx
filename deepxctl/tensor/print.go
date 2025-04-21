@@ -2,7 +2,7 @@ package tensor
 
 import "fmt"
 
-func (t *Tensor) Range(dimCount int, f func(indices []int)) {
+func (t *Tensor[T]) Range(dimCount int, f func(indices []int)) {
 	Shape := t.Shape
 	if dimCount > len(Shape.Shape) {
 		panic("dimCount exceeds the number of dimensions in the Tensor.")
@@ -51,7 +51,7 @@ func AutoFormat(dtype string) string {
 }
 
 // Print 打印Tensor的值
-func (t *Tensor) Print(format_ ...string) {
+func (t *Tensor[T]) Print(format_ ...string) {
 	Shape := t.Shape
 	format := AutoFormat(t.Dtype)
 	if len(format_) > 0 {

@@ -1,9 +1,7 @@
 package tensor
 
 import (
-	"encoding/binary"
 	"fmt"
-	"math"
 )
 
 type Shape struct {
@@ -74,49 +72,19 @@ func BitSize(Dtype string) int {
 	}
 }
 
-type Tensor struct {
-	Data []byte
+type Number interface {
+	comparable
+	float64 | float32 | int64 | int32 | int16 | int8 | bool
+}
+
+type Tensor[T Number] struct {
+	Data []T
 	Shape
 }
 
-func (t *Tensor) GetLinear(idx int) interface{} {
-	byteSize := BitSize(t.Dtype) / 8
-	start := idx
-	end := start + byteSize
-
-	if end > len(t.Data) {
-		// 处理索引越界，这里简单返回nil，实际应根据需求处理
-		return nil
-	}
-
-	data := t.Data[start:end]
-
-	switch t.Dtype {
-	case "bool":
-		return data[0] != 0
-	case "int8":
-		return int8(data[0])
-	case "int16":
-		return int16(binary.BigEndian.Uint16(data))
-	case "int32":
-		return int32(binary.BigEndian.Uint32(data))
-	case "int64":
-		return binary.BigEndian.Uint64(data)
-	case "float16":
-		// Float16需要特殊处理，这里假设使用IEEE 754格式，实际可能需要转换函数
-		return Byte2ToFloat16(data)
-	case "float32":
-		return math.Float32frombits(binary.BigEndian.Uint32(data))
-	case "float64":
-		return math.Float64frombits(binary.BigEndian.Uint64(data))
-	default:
-		return nil
-	}
-}
-
 // Get 获取Tensor的值
-func (t *Tensor) Get(indices ...int) interface{} {
+func (t *Tensor[T]) Get(indices ...int) T {
 	idx := t.Shape.LinearAt(indices)
-	return t.GetLinear(idx)
+	return t.Data[idx]
 
 }
