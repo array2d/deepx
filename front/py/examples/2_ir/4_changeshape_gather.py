@@ -1,18 +1,28 @@
 ############-------PyTorch-------################
+import numpy as np  
+print()
+indices_np = np.array([[0, 1, 2], [0, 1, 2]])
+
+print(indices_np)
 
 import torch
-torch_t = torch.arange(100*3, dtype=torch.float32).reshape_(100,3) 
-torch_indices = torch.tensor([[0, 1, 2], [0, 1, 2]])
-torch_t = torch.gather(torch_t, torch_indices, dim=1)
+torch_t = torch.arange(10*5, dtype=torch.float32).reshape(10,5)
+torch_indices = torch.tensor(indices_np)
+torch_t = torch.gather(torch_t, 1,torch_indices)
+print(torch_t.shape)
 print(torch_t)
 
 
 ############-------DEEPX-------################
 
-from deepx import Tensor,zeros, ones, concat
+from deepx import Tensor,arange,Shape
+from deepx.nn.functional import load,save_npy
 
-t = Tensor.arange(100,3,dtype='float32',name='t')
+ 
+save_npy(indices_np,'/home/lipeng/model/deepxmodel/tester/testindices')
 
-indices = Tensor([[0, 1, 2], [0, 1, 2]],dtype='int32',name='indices')
+t = arange(start=0,end=10*5,dtype='float32',name='t').reshape(10,5)
+indices = load('/home/lipeng/model/deepxmodel/tester/testindices')
+indices.print()
 t = t.gather(indices,dim=1)
-print(t)
+t.print()

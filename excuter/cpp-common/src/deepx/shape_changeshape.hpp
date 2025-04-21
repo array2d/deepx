@@ -72,7 +72,6 @@ namespace deepx
 
 
     //gather
-    std::vector<int> gatherShape(const std::vector<int> &input, const std::vector<int> &indicesShape, const int axis);
+    //gather的out.shape=indices.shape,所以无需计算
 }
-
 #endif // DEEPX_SHAPE_CHANGESHAPE_HPP

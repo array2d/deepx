@@ -120,21 +120,5 @@ namespace deepx
             }
         }
     }
-
-    // gather
-    std::vector<int> gatherShape(const std::vector<int> &input, const std::vector<int> &indicesShape, const int _axis)
-    {
-        int axis = _axis < 0 ? input.size() + _axis : _axis;
-        if (axis < 0 || axis >= input.size())
-        {
-            throw std::invalid_argument("Axis is out of bounds");
-        }
-        int outputDim=input.size()+indicesShape.size()-1;
-        std::vector<int> outputShape(outputDim);
-        
-        copy(input.begin(), input.begin() + axis, outputShape.begin());   // 复制axis前
-        copy(indicesShape.begin(), indicesShape.end(), outputShape.begin() + axis);     // 插入indices维度
-        copy(input.begin() + axis + 1, input.end(), outputShape.begin() + axis + indicesShape.size()); // 复制axis后
-        return outputShape;
-    }
+ 
 }

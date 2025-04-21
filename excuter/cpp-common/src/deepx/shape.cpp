@@ -83,7 +83,7 @@ namespace deepx
         node["dtype"] = precision_str(dtype);
         node["dim"] = dim;
         node["shape"] = shape;
-        node["strides"] = strides;
+        node["stride"] = strides;
         node["size"] = size;
         return YAML::Dump(node);
     }
@@ -92,7 +92,7 @@ namespace deepx
         dtype = precision(node["dtype"].as<std::string>());
         dim = node["dim"].as<int>();
         shape = node["shape"].as<std::vector<int>>();
-        strides=node["strides"].as<std::vector<int>>();
+        strides=node["stride"].as<std::vector<int>>();
         size=node["size"].as<int>();
     }
 }

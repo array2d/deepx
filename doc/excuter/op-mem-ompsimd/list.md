@@ -80,7 +80,7 @@
 
 | Operation | Author | Func Def | Math Formula | IR Instruction |
 |-----------|--------|------------|--------------|----------------|
-| gather | miaobyte | gather(tensor<any> A, tensor<int32> indices, var<int32> axis)->(tensor<any> B) | T2 = T1.gather(indices=T3, axis=3) | gather(tensor<any> A, tensor<int32> indices, var<int32> axis)->(tensor<any> B) |
+| gather | miaobyte | gather(tensor<any> A, tensor<int64|int32> indices, var<int32> axis)->(tensor<any> B) | T2 = T1.gather(indices=T3, axis=3) | gather(tensor<any> A, tensor<int64|int32> indices, var<int32> axis)->(tensor<any> B) |
 | broadcastTo | miaobyte | broadcastTo(tensor<any> A, vector<int32> new_shape)->(tensor<any> B) | T2 = T1.broadcastTo(new_shape=[4,3,2]) | broadcastTo(tensor<any> A, vector<int32> new_shape)->(tensor<any> B) |
 | concat | miaobyte | concat(listtensor<any> tensors, var<int32> dim)->(tensor<any> result) | Tresult = concat([T1, T2...], axis=3) | concat(listtensor<any> tensors, var<int32> dim)->(tensor<any> result) |
 | transpose | miaobyte | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) | T1.transpose(dimorder=[1,0])->T2 | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) |

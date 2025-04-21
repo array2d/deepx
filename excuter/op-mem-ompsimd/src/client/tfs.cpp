@@ -492,7 +492,7 @@ namespace deepx::tf
         tffactory.add_tf(std::make_shared<Gather<miaobyte>>(vector<Param>(
                                                                 {
                                                                     Param("A", DataCategory::Tensor, Precision::Any),
-                                                                    Param("indices", DataCategory::Tensor, Precision::Int32),
+                                                                    Param("indices", DataCategory::Tensor, Precision::Int32 | Precision::Int64),
                                                                     Param("axis", DataCategory::Var, Precision::Int32),
                                                                 }),
                                                             vector<Param>(

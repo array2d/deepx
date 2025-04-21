@@ -62,16 +62,16 @@ namespace deepx::tensorfunc
     }
 
     // gather
-    template <typename Author, typename T>
+    template <typename Author, typename T, typename GatherAxisT>
     struct gatherDispatcher
     {
-        static void gather(const Tensor<T> &input, const Tensor<int> &indices, const int axis, Tensor<T> &output) = delete;
+        static void gather(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output) = delete;
     };
 
-    template <typename Author, typename T>
-    void gather(const Tensor<T> &input, const Tensor<int> &indices, const int axis, Tensor<T> &output)
+    template <typename Author, typename T, typename GatherAxisT>
+    void gather(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output)
     {
-        gatherDispatcher<Author, T>::gather(input, indices, axis, output);
+        gatherDispatcher<Author, T, GatherAxisT>::gather(input, indices, axis, output);
     }
 
     // // split

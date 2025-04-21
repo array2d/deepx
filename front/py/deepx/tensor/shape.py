@@ -8,6 +8,7 @@ class Shape:
         self._size = int(np.prod(self.shape)) if self.shape else 0
         # 计算 stride（步长）
         self._strides = self._compute_strides()
+        self._dtype=None
         
     @property
     def shape(self,dim=None):
@@ -156,6 +157,7 @@ class Shape:
         
         return tuple(result_shape)
 
+ 
     @classmethod
     def reduceshape(cls,shape:tuple[int],dim:list[int],keepdim:bool)->tuple[int]:
         ndim = len(shape)
@@ -170,3 +172,4 @@ class Shape:
         else:
             return tuple(s for i, s in enumerate(shape)
                         if i not in unique_dim)
+    
