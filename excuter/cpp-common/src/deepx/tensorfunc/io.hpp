@@ -2,6 +2,7 @@
 #define DEEPX_TENSORFUNC_IO_HPP
 
 #include "deepx/tensor.hpp"
+#include "stdutil/fs.hpp"
 
 namespace deepx::tensorfunc{
     
@@ -21,7 +22,17 @@ namespace deepx::tensorfunc{
     template <typename T>
     pair<std::string,shared_ptr<Tensor<T>>> load(const std::string &path);
 
-    pair<std::string,Shape> loadShape(const std::string &path);
+    inline pair<std::string,Shape> loadShape(const std::string &path)
+    {
+        std::string shapepath = path + ".shape";
+        std::ifstream shape_fs(shapepath, std::ios::binary);
+        std::string shapedata((std::istreambuf_iterator<char>(shape_fs)), std::istreambuf_iterator<char>());
+        Shape shape;
+        shape.fromYaml(shapedata);
+        std::string filename = stdutil::filename(path);
+        std::string tensor_name = filename.substr(0, filename.find_last_of('.'));
+        return std::make_pair(tensor_name, shape);
+    }
     
 }
 

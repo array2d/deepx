@@ -44,25 +44,25 @@ namespace deepx::tensorfunc
                             T *output, const int *outputStrides, const int outputDim, const int outputlen);
 
     // gather
- 
+     template <typename GatherAxisT>
     __host__ __device__ void fromGatherIndices(
-    const int *output_indices,const int outputDim,  // 输出张量的索引
-    const int *indices,const int *indicesStrides,const int indicesDim, // 索引张量的stride
+    const int *output_indices,  // 输出张量的索引
+    const GatherAxisT *indices,const int *indicesStrides,const int indicesDim, //indices是tensor
     const int gatherAxis,      // gather操作的轴
     int *input_indices,const int inputDim);       // 计算出的输入张量索引  
 
-    template <int DIM, typename T>
+    template <int DIM, typename T,typename GatherAxisT>
     __global__ void gather_kernel(
         const T *input, const int *inputStrides, const int inputDim,
-        const int *indices,const int *indicesStrides,const int indicesDim,
+        const GatherAxisT *indices,const int *indicesStrides,const int indicesDim,
         const int gatherAxis,
-        T *output, const int *outputStrides, const int outputDim, const int outputlen);
+        T *output,const int outputlen);//output 和input的shape相同,所以共享strides,dim,len
 
-    template <typename T>
+    template <typename T,typename GatherAxisT>
     void launch_gather(
         const T *input, const int *inputStrides, const int inputDim, 
-        const int *indices,const int *indicesStrides,const int indicesDim,
+        const GatherAxisT *indices,const int *indicesStrides,const int indicesDim,
         const int gatherAxis,
-        T *output, const int *outputStrides, const int outputDim, const int outputlen);
+        T *output,const  int outputlen);//output 和input的shape相同,所以共享strides,dim,len
 };
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_CUH

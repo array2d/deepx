@@ -107,16 +107,30 @@ namespace deepx::tf
     {
         opfactory.add_tf(std::make_shared<Print<miaobyte>>(vector<Param>(
                                                                {
-                                                                   Param("", DataCategory::Tensor, Precision::Any),
+                                                                   Param("t", DataCategory::Tensor, Precision::Any),
                                                                }),
                                                            vector<Param>()));
 
         opfactory.add_tf(std::make_shared<Print<miaobyte>>(vector<Param>(
                                                                {
-                                                                   Param("", DataCategory::Tensor, Precision::Any),
-                                                                   Param("", DataCategory::Var, Precision::String),
+                                                                   Param("t", DataCategory::Tensor, Precision::Any),
+                                                                   Param("format", DataCategory::Var, Precision::String),
                                                                }),
                                                            vector<Param>()));
+
+        opfactory.add_tf(std::make_shared<Save>(vector<Param>(
+                                                               {
+                                                                   Param("t", DataCategory::Tensor, Precision::Any),
+                                                                   Param("path", DataCategory::Var, Precision::String),
+                                                               }),
+                                                           vector<Param>()));
+
+        opfactory.add_tf(std::make_shared<Load>(vector<Param>(
+                                                               {
+                                                                   Param("path", DataCategory::Var, Precision::String),
+                                                               }),
+                                                           vector<Param>())); 
+                                                           
     }
 
     // elementwise
@@ -422,7 +436,7 @@ namespace deepx::tf
                                                                   Param("C", DataCategory::Tensor, Precision::Any),
                                                               })));
     }
-    // // changeshape
+    // changeshape
     void register_changeshape(TfFactory &tffactory)
     {
         // reshape
@@ -461,6 +475,17 @@ namespace deepx::tf
                     Param("A", DataCategory::Tensor, Precision::Any),
                     Param("new_shape", DataCategory::Vector, Precision::Int32),
                 }),
+            vector<Param>(
+                {
+                    Param("B", DataCategory::Tensor, Precision::Any),
+                })));
+        // gather
+        tffactory.add_tf(std::make_shared<Gather<miaobyte>>(vector<Param>(
+                {
+                    Param("A", DataCategory::Tensor, Precision::Any),
+                    Param("indices", DataCategory::Tensor, Precision::Int64|Precision::Int32),
+                    Param("axis", DataCategory::Var, Precision::Int32),
+                }), 
             vector<Param>(
                 {
                     Param("B", DataCategory::Tensor, Precision::Any),

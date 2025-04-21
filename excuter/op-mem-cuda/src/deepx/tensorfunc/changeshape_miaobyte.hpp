@@ -118,20 +118,20 @@ namespace deepx::tensorfunc
     };
 
     //gather
-    template <typename T>
-    struct gatherDispatcher<miaobyte, T>
+    template <typename T,typename GatherAxisT>
+    struct gatherDispatcher<miaobyte, T,GatherAxisT>
     {
-        static void gather(const Tensor<T> &input, const Tensor<int> &indices, const int axis, Tensor<T> &output){
-            vector<int> input_gatherShape = gatherShape(input.shape.shape, indices.shape.shape, axis);
+        static void gather(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output){
+            vector<int> input_gatherShape = indices.shape.shape;
             if (input_gatherShape.empty()||input_gatherShape!=output.shape.shape)
             {
                 throw TensorShapeError("Gather shape mismatch");
             }
             int gatherAxis = axis < 0 ? input.shape.dim + axis : axis;
-            launch_gather<T>(input.data, input.shape.strides.data(), input.shape.dim,
+            launch_gather<T,GatherAxisT>(input.data, input.shape.strides.data(), input.shape.dim,
                             indices.data, indices.shape.strides.data(), indices.shape.dim,
                             gatherAxis,
-                            output.data, output.shape.strides.data(), output.shape.dim, output.shape.size);
+                            output.data,output.shape.size);//output和indices的shape相同，共享strides等
         }
     };
 }

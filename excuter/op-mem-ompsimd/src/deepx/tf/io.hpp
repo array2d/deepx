@@ -106,7 +106,7 @@ namespace deepx::tf
         }
         string math_formula() const override
         {
-            return "load(path)";
+            return "mem.load(path)";
         }
         shared_ptr<TF> clone() const override
         {

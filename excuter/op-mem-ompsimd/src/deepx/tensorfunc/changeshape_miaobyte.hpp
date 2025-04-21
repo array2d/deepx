@@ -142,7 +142,7 @@ namespace deepx::tensorfunc
     // 支持高维indices
     // 结果写入input_indices
     template <typename GatherAxisT>
-    void fromGatherIndices(const vector<int> &output_indices, const Tensor<GatherAxisT> &indices, vector<int> indices_indices, const int gatherAxis, vector<int> &input_indices)
+    void fromGatherIndices(const vector<int> &output_indices, const Tensor<GatherAxisT> &indices, const int gatherAxis, vector<int> &input_indices)
     {
         std::copy(output_indices.begin(), output_indices.begin()+input_indices.size(), input_indices.begin());
         int indices_idx = indices.shape.linearat(output_indices);
@@ -167,10 +167,10 @@ namespace deepx::tensorfunc
             }
             output.shape.rangeParallel(output.shape.dim, [&](const int idx, const std::vector<int> &output_indices, ThreadLocalVectors &tlv)
                                        {  
-                            fromGatherIndices(output_indices, indices,tlv.get(0), gatherAxis, tlv.get(1));
-                            output.data[idx] = input.data[input.shape.linearat(tlv.get(1))]; 
+                            fromGatherIndices(output_indices, indices, gatherAxis, tlv.get(0));
+                            output.data[idx] = input.data[input.shape.linearat(tlv.get(0))]; 
                         },
-                    {indices.shape.dim, input.shape.dim});
+                    {input.shape.dim});
         }
     };
 

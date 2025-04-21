@@ -16,7 +16,7 @@ namespace deepx::tensorfunc
         }
     }
 
-    inline __host__ __device__ int linearAt(const int *strides, const int dim, int *indices)
+    inline __host__ __device__ int linearAt(const int *strides, const int dim,const int *indices)
     {
         int idx = 0;
         for (int i = 0; i < dim; i++)

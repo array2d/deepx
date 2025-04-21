@@ -368,28 +368,30 @@ namespace deepx::tensorfunc
 
     // gather
 
+    template <typename GatherAxisT>
     __host__ __device__ void fromGatherIndices(
-        const int *output_indices, const int outputDim,
-        const int *indices,
-        const int gatherAxis,
-        int *input_indices)
+        const int *output_indices,                                                   // 输出张量的索引
+        const GatherAxisT *indices, const int *indicesStrides, const int indicesDim, // indices是tensor
+        const int gatherAxis,                                                        // gather操作的轴
+        int *input_indices, const int inputDim)
     {
-        // 1. 首先复制所有输出索引到输入索引
-        for (int i = 0; i < outputDim; i++)
+
+        for (int i = 0; i < inputDim; ++i)
         {
             input_indices[i] = output_indices[i];
         }
 
-        // 2. 使用indices中存储的值作为gatherAxis维度的索引
-        // 这里假设indices是一个一维数组，索引位置由output_indices[gatherAxis]确定
-        input_indices[gatherAxis] = indices[output_indices[gatherAxis]];
+        // 使用indices张量中对应位置的值来替换gatherAxis维度的索引
+        int indices_idx = linearAt(indicesStrides, indicesDim, output_indices);
+        input_indices[gatherAxis] = indices[indices_idx];
     }
 
-    template <int DIM, typename T>
-    __global__ void gather_kernel(const T *input, const int *inputStrides, const int inputDim,
-                                  const int *indices, const int *indicesStrides, const int indicesDim,
-                                  const int gatherAxis,
-                                  T *output, const int *outputStrides, const int outputDim, const int outputlen)
+    template <int DIM, typename T, typename GatherAxisT>
+    __global__ void gather_kernel(
+        const T *input, const int *inputStrides, const int inputDim,
+        const GatherAxisT *indices, const int *indicesStrides, const int indicesDim,
+        const int gatherAxis,
+        T *output, const int outputlen)
     {
         const int grid_stride = gridDim.x * blockDim.x;
         int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -397,72 +399,73 @@ namespace deepx::tensorfunc
         {
             // 输出索引
             int output_indices[DIM];
-            linearTo(outputStrides, outputDim, output_indices, thread_id);
+            linearTo(indicesStrides, indicesDim, output_indices, thread_id);
 
             // 输入索引
             int input_indices[DIM];
-            fromGatherIndices(indices_indices, gatherAxis, input_indices);
+            fromGatherIndices(output_indices,
+                              indices, indicesStrides, indicesDim,
+                              gatherAxis,
+                              input_indices, inputDim);
             int inputIdx = linearAt(inputStrides, inputDim, input_indices);
-            int outputIdx = linearAt(outputStrides, outputDim, output_indices);
+            int outputIdx = linearAt(indicesStrides, indicesDim, output_indices);
             output[outputIdx] = input[inputIdx];
         }
     }
 
-    template <typename T>
-    void launch_gather(const T *input, const int *inputStrides, const int inputDim,
-                       const int *indices, const int *indicesStrides, const int indicesDim,
-                       const int gatherAxis,
-                       T *output, const int *outputStrides, const int outputDim, const int outputlen)
+    template <typename T, typename GatherAxisT>
+    void launch_gather(
+        const T *input, const int *inputStrides, const int inputDim,
+        const GatherAxisT *indices, const int *indicesStrides, const int indicesDim,
+        const int gatherAxis,
+        T *output, const int outputlen)
     {
 
         auto [numBlocks, blockSize] = BestDims(outputlen);
-
-        // output
-        cudaVector<int> outputStrides_d(outputStrides, outputDim, cudaMemcpyHostToDevice);
 
         // indices
         cudaVector<int> indicesStrides_d(indicesStrides, indicesDim, cudaMemcpyHostToDevice);
 
         // input
         cudaVector<int> inputStrides_d(inputStrides, inputDim, cudaMemcpyHostToDevice);
-
-        switch (outputDim)
+        int dim=std::max(inputDim,indicesDim);
+        switch (dim)
         {
         case 1:
-            gather_kernel<1, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<1, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 2:
-            gather_kernel<2, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<2, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 3:
-            gather_kernel<3, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<3, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 4:
-            gather_kernel<4, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<4, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 5:
-            gather_kernel<5, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<5, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 6:
-            gather_kernel<6, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<6, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 7:
-            gather_kernel<7, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<7, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 8:
-            gather_kernel<8, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<8, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 9:
-            gather_kernel<9, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<9, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 10:
-            gather_kernel<10, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<10, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 11:
-            gather_kernel<11, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<11, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         case 12:
-            gather_kernel<12, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices_d.data, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            gather_kernel<12, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputlen);
             break;
         default:
             throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
@@ -473,42 +476,72 @@ namespace deepx::tensorfunc
             throw std::runtime_error("cuda error");
         }
     }
-    template void launch_gather<double>(const double *input, const int *inputStrides, const int inputDim,
-                                        const int *indices, const int *indicesStrides, const int indicesDim,
-                                        const int gatherAxis,
-                                        double *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_gather<float>(const float *input, const int *inputStrides, const int inputDim,
-                                       const int *indices, const int *indicesStrides, const int indicesDim,
-                                       const int gatherAxis,
-                                       float *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_gather<nv_bfloat16>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
-                                             const int *indices, const int *indicesStrides, const int indicesDim,
-                                             const int gatherAxis,
-                                             nv_bfloat16 *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_gather<__half>(const __half *input, const int *inputStrides, const int inputDim,
-                                        const int *indices, const int *indicesStrides, const int indicesDim,
-                                        const int gatherAxis,
-                                        __half *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_gather<int64_t>(const int64_t *input, const int *inputStrides, const int inputDim,
-                                         const int *indices, const int *indicesStrides, const int indicesDim,
-                                         const int gatherAxis,
-                                         int64_t *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_gather<int32_t>(const int32_t *input, const int *inputStrides, const int inputDim,
-                                         const int *indices, const int *indicesStrides, const int indicesDim,
-                                         const int gatherAxis,
-                                         int32_t *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_gather<int16_t>(const int16_t *input, const int *inputStrides, const int inputDim,
-                                         const int *indices, const int *indicesStrides, const int indicesDim,
-                                         const int gatherAxis,
-                                         int16_t *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_gather<int8_t>(const int8_t *input, const int *inputStrides, const int inputDim,
-                                        const int *indices, const int *indicesStrides, const int indicesDim,
-                                        const int gatherAxis,
-                                        int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_gather<bool>(const bool *input, const int *inputStrides, const int inputDim,
-                                      const int *indices, const int *indicesStrides, const int indicesDim,
-                                      const int gatherAxis,
-                                      bool *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_gather<double, int64_t>(const double *input, const int *inputStrides, const int inputDim,
+                                                 const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                 const int gatherAxis,
+                                                 double *output, const int outputlen);
+    template void launch_gather<float, int64_t>(const float *input, const int *inputStrides, const int inputDim,
+                                                const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                const int gatherAxis,
+                                                float *output, const int outputlen);
+    template void launch_gather<nv_bfloat16, int64_t>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
+                                                      const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                      const int gatherAxis,
+                                                      nv_bfloat16 *output, const int outputlen);
+    template void launch_gather<__half, int64_t>(const __half *input, const int *inputStrides, const int inputDim,
+                                                 const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                 const int gatherAxis,
+                                                 __half *output, const int outputlen);
+    template void launch_gather<int64_t, int64_t>(const int64_t *input, const int *inputStrides, const int inputDim,
+                                                  const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                  const int gatherAxis,
+                                                  int64_t *output, const int outputlen);
+    template void launch_gather<int32_t, int64_t>(const int32_t *input, const int *inputStrides, const int inputDim,
+                                                  const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                  const int gatherAxis,
+                                                  int32_t *output, const int outputlen);
+    template void launch_gather<int16_t, int64_t>(const int16_t *input, const int *inputStrides, const int inputDim,
+                                                  const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                  const int gatherAxis,
+                                                  int16_t *output, const int outputlen);
+    template void launch_gather<int8_t, int64_t>(const int8_t *input, const int *inputStrides, const int inputDim,
+                                                 const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                 const int gatherAxis,
+                                                 int8_t *output, const int outputlen);
 
-};
+    template void launch_gather<double, int32_t>(const double *input, const int *inputStrides, const int inputDim,
+                                                 const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                 const int gatherAxis,
+                                                 double *output, const int outputlen);
+    template void launch_gather<float, int32_t>(const float *input, const int *inputStrides, const int inputDim,
+                                                const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                const int gatherAxis,
+                                                float *output, const int outputlen);
+    template void launch_gather<nv_bfloat16, int32_t>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
+                                                      const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                      const int gatherAxis,
+                                                      nv_bfloat16 *output, const int outputlen);
+    template void launch_gather<__half, int32_t>(const __half *input, const int *inputStrides, const int inputDim,
+                                                 const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                 const int gatherAxis,
+                                                 __half *output, const int outputlen);
+    template void launch_gather<int64_t, int32_t>(const int64_t *input, const int *inputStrides, const int inputDim,
+                                                  const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                  const int gatherAxis,
+                                                  int64_t *output, const int outputlen);
+    template void launch_gather<int32_t, int32_t>(const int32_t *input, const int *inputStrides, const int inputDim,
+                                                  const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                  const int gatherAxis,
+                                                  int32_t *output, const int outputlen);
+    template void launch_gather<int16_t, int32_t>(const int16_t *input, const int *inputStrides, const int inputDim,
+                                                  const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                  const int gatherAxis,
+                                                  int16_t *output, const int outputlen);
+    template void launch_gather<int8_t, int32_t>(const int8_t *input, const int *inputStrides, const int inputDim,
+                                                 const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                 const int gatherAxis,
+                                                 int8_t *output, const int outputlen);
+}
+
+ 
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_HPP

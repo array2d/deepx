@@ -38,7 +38,6 @@ namespace deepx::tensorfunc
         Shape shape(shapedata);
         shape.dtype=precision<T>();
         Tensor<T> tensor(shape);
-        tensor.device = CUDA; // 使用 CUDA 设备
         tensor.deleter = dataFree<T>;
         tensor.copyer = dataCopy<T>;
         tensor.newer = dataNew<T>;
