@@ -19,12 +19,12 @@ __all__ = [
 
     #leaffunc
     "newtensor","printtensor","load", #life
-    "printtensor","save","save_npy",#io
+    "printtensor","save","save_npy","save_torch",#io
     "constant","constant_","full","zeros","ones","uniform","uniform_","arange","arange_","kaiming_uniform","kaiming_uniform_","calculate_fan_in_and_fan_out",
     "add","sub","mul","div","sqrt","pow","exp","log",
     "matmul",
     "reducemax","reducemin","sum","prod",
-    "reshape","permute","transpose","concat","broadcastTo",
+    "reshape","permute","transpose","concat","broadcastTo","indexselect",
 
     #functional
     "relu","sigmoid","swish",

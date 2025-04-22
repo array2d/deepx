@@ -19,5 +19,7 @@ namespace deepx::tensorfunc
     template <typename T>
     void copy(const Tensor<T> &src,Tensor<T> &dst);
 
+    //rename
+    //通过tf直接实现
 }
 #endif

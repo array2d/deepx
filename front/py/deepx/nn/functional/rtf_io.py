@@ -23,4 +23,4 @@ def rtf_load(path:str)->Tensor:
     send(ir)
     shapefile=path+'.shape'
     tensor_name,shape,dtype=loadShape(shapefile)
-    return Tensor(shape,dtype,tensor_name)
+    return Tensor(shape.shape,dtype,tensor_name)

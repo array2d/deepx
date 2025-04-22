@@ -322,14 +322,14 @@ namespace deepx::tf
         }
     };
 
-    // gather
+    // indexselect
     template <typename Author>
-    class Gather : public TF
+    class IndexSelect : public TF
     {
     public:
-        Gather(const vector<Param> &args, const vector<Param> &returns)
+        IndexSelect(const vector<Param> &args, const vector<Param> &returns)
         {
-            this->name = "gather";
+            this->name = "indexselect";
             this->metadata.author = Author::name();
             this->tftype = "changeshape";
             this->args = args;
@@ -338,11 +338,11 @@ namespace deepx::tf
 
         string math_formula() const override
         {
-            return "T2 = T1.gather(indices=T3, axis=3)";
+            return "T2 = T1.indexselect(index=T3, axis=3)";
         }
         shared_ptr<TF> clone() const override
         {
-            return make_shared<Gather<Author>>(*this);
+            return make_shared<IndexSelect<Author>>(*this);
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
@@ -358,10 +358,10 @@ namespace deepx::tf
                 error = "Type mismatch: " + precision_str(input_type) + " != " + precision_str(output_type);
                 return 1;
             }
-            Precision indices_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
-            if (indices_type != Precision::Int32 && indices_type != Precision::Int64)
+            Precision index_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            if (index_type != Precision::Int32 && index_type != Precision::Int64)
             {
-                error = "indices only support int32 or int64";
+                error = "index only support int32 or int64";
                 return 1;
             }
             int axis = this->getvar<int>(2, mem, true);
@@ -369,73 +369,73 @@ namespace deepx::tf
             {
             case Precision::Float64:
             {
-                if (indices_type == Precision::Int32)
+                if (index_type == Precision::Int32)
                 {
-                    gather<Author, double, int32_t>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<double>(this->returns[0].textvalue));
+                    indexselect<Author, double, int32_t>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<double>(this->returns[0].textvalue));
                 }
                 else
                 {
-                    gather<Author, double, int64_t>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<double>(this->returns[0].textvalue));
+                    indexselect<Author, double, int64_t>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<double>(this->returns[0].textvalue));
                 }
                 break;
             }
             case Precision::Float32:
             {
-                if (indices_type == Precision::Int32)
+                if (index_type == Precision::Int32)
                 {
-                    gather<Author, float, int32_t>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<float>(this->returns[0].textvalue));
+                    indexselect<Author, float, int32_t>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<float>(this->returns[0].textvalue));
                 }
                 else
                 {
-                    gather<Author, float, int64_t>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<float>(this->returns[0].textvalue));
+                    indexselect<Author, float, int64_t>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<float>(this->returns[0].textvalue));
                 }
                 break;
             }
             case Precision::Int64:
             {
-                if (indices_type == Precision::Int32)
+                if (index_type == Precision::Int32)
                 {
-                    gather<Author, int64_t, int32_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    indexselect<Author, int64_t, int32_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int64_t>(this->returns[0].textvalue));
                 }
                 else
                 {
-                    gather<Author, int64_t, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    indexselect<Author, int64_t, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<int64_t>(this->returns[0].textvalue));
                 }
                 break;
             }
             case Precision::Int16:
             {
-                if (indices_type == Precision::Int32)
+                if (index_type == Precision::Int32)
                 {
-                    gather<Author, int16_t, int32_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    indexselect<Author, int16_t, int32_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int16_t>(this->returns[0].textvalue));
                 }
                 else
                 {
-                    gather<Author, int16_t, int64_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    indexselect<Author, int16_t, int64_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<int16_t>(this->returns[0].textvalue));
                 }
                 break;
             }
             case Precision::Int8:
             {
-                if (indices_type == Precision::Int32)
+                if (index_type == Precision::Int32)
                 {
-                    gather<Author, int8_t, int32_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    indexselect<Author, int8_t, int32_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 }
                 else
                 {
-                    gather<Author, int8_t, int64_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    indexselect<Author, int8_t, int64_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 }
                 break;
             }
             case Precision::Bool:
             {
-                if (indices_type == Precision::Int32)
+                if (index_type == Precision::Int32)
                 {
-                    gather<Author, bool, int32_t>(*mem->gettensor<bool>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<bool>(this->returns[0].textvalue));
+                    indexselect<Author, bool, int32_t>(*mem->gettensor<bool>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), axis, *mem->gettensor<bool>(this->returns[0].textvalue));
                 }
                 else
                 {
-                    gather<Author, bool, int64_t>(*mem->gettensor<bool>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<bool>(this->returns[0].textvalue));
+                    indexselect<Author, bool, int64_t>(*mem->gettensor<bool>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), axis, *mem->gettensor<bool>(this->returns[0].textvalue));
                 }
                 break;
             }

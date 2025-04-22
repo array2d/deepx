@@ -61,7 +61,7 @@ def create_A_tf_C(op_name):
 def create_A_dim_keepdim_tf_C(op_name):
     def op_func(
             a:Tensor,
-            dim:list[int],
+            dim:tuple[int,...],
             keepdim:bool=False,
             out:Union[Tensor,str]='',
             author:str='miaobyte',

@@ -12,8 +12,7 @@ class Module:
 
     def _generate_default_name(self) -> str:
         class_name = self.__class__.__name__
-        # 修改正则表达式，保留连续大写字母为一个单词
-        base_name = re.sub(r'(?<![A-Z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])', '_', class_name).lower()
+        base_name = class_name.lower()
         if not hasattr(self.__class__, '_instance_counter'):
             self.__class__._instance_counter = 0
         count = self.__class__._instance_counter
@@ -27,14 +26,14 @@ class Module:
         else:
             return f"{self._parent.full_name}.{self._name}"
     
-    def __setattr__(self, name: str, value: Any) -> None:
-        if not name.startswith('_'):
-            if isinstance(value, Module):
-                self.register_module(name, value)
-            elif isinstance(value, Tensor):
-                self.register_parameter(name, value)
-            # 使用父类方法设置属性，避免递归
-        super().__setattr__(name, value)
+    # def __setattr__(self, name: str, value: Any) -> None:
+    #     if not name.startswith('_'):
+    #         if isinstance(value, Module):
+    #             self.register_module(name, value)
+    #         elif isinstance(value, Tensor):
+    #             self.register_parameter(name, value)
+    #         # 使用父类方法设置属性，避免递归
+    #     super().__setattr__(name, value)
         
     def register_module(self, name: str, module: Optional['Module']) -> None:
         if module is None:
@@ -89,25 +88,7 @@ class Module:
             for name, module in self._modules.items():
                 submodule_prefix = f"{prefix}.{name}" if prefix else name
                 yield from module.named_modules(memo, submodule_prefix)
-                
-    # def to(self, device: Union[Device, str]) -> 'Module':
-    #     """移动模块到指定设备"""
-    #     for param in self.parameters():
-    #         param.to(device)
-    #     for buf in self.buffers():
-    #         buf.to(device)
-    #     return self
-    
-    # def train(self, mode: bool = True) -> 'Module':
-    #     self.training = mode
-    #     for module in self.children():
-    #         module.train(mode)
-    #     return self
-    
-    # def eval(self) -> 'Module':
-    #     """设置评估模式"""
-    #     return self.train(False)
-    
+
     def state_dict(self) -> Dict[str, Tensor]:
         """返回模型状态字典"""
         state = {}

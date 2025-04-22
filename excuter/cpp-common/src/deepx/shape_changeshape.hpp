@@ -70,8 +70,8 @@ namespace deepx
     };
     std::vector<BroadcastMap> broadcastMap(const std::vector<int> &a, const std::vector<int> &b);
 
-
-    //gather
-    //gather的out.shape=indices.shape,所以无需计算
+ 
+    //indexselect
+    vector<int> indexselectShape(const vector<int> &input_shape, const vector<int> &index_shape, const int axis);
 }
 #endif // DEEPX_SHAPE_CHANGESHAPE_HPP

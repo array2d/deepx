@@ -11,7 +11,7 @@ def loadShape(path:str)->tuple[str,Shape,str]:
         raise ValueError("文件名必须以.shape结尾")
  
     tensor_name = filename[:-6]  # 移除'.shape'后缀
-    return (tensor_name,Shape(shape['shape']),shape['dtype'])
+    return (tensor_name,Shape(tuple(shape['shape'])),shape['dtype'])
 
 def saveShape(t:Shape,path:str):
     if path.endswith('.shape'):

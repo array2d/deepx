@@ -4,7 +4,11 @@ from deepx.tensor import Tensor,Shape
 from .leaffunc_life import newtensor
 from .authormap import defaultauthor
 
-def reshape(t:Tensor,shape:list[int],out:Union[Tensor,str]='')->Tensor:
+def reshape(t:Tensor,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
+    assert isinstance(shape,tuple)
+    for i in shape:
+        assert isinstance(i,int) and i>0
+
     outtensor=out
     if isinstance(out,str):
         outshape=shape
@@ -18,8 +22,12 @@ def reshape(t:Tensor,shape:list[int],out:Union[Tensor,str]='')->Tensor:
  
 
 def permute(t:Tensor,
-            dimorder:list[int],
+            dimorder:tuple[int,...],
             out:Union[Tensor,str]='')->Tensor:
+    assert isinstance(dimorder,tuple)
+    for i in dimorder:
+        assert isinstance(i,int)
+
     if t.ndim!=len(dimorder):
         raise ValueError(f"shape参数不合法,当前输入维度数：{len(dimorder)}，张量维度数：{t.ndim}")
     dimorder = [d % t.ndim for d in dimorder]
@@ -49,11 +57,15 @@ def concat(tensors:Union[list[Tensor],tuple[Tensor]],dim:int,out:Union[Tensor,st
     rtf_concat(tensors,dim,outtensor,defaultauthor['concat'])
     return outtensor
 
-def broadcastTo(t:Tensor,new_shape:tuple[int],out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
+def broadcastTo(t:Tensor,new_shape:tuple[int,...],out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
+    assert isinstance(new_shape,tuple)
+    for i in new_shape:
+        assert isinstance(i,int) and i>0
+    
     if t.shape==new_shape:
         return t
     bshape=Shape.broadcast_shape(t.shape,new_shape)
-    if bshape!=new_shape:
+    if bshape!=tuple(new_shape):
         raise ValueError(f"广播失败：{t.shape} 无法广播为 {new_shape} ")
     outtensor=out
     if isinstance(out,str):
@@ -64,12 +76,17 @@ def broadcastTo(t:Tensor,new_shape:tuple[int],out:Union[Tensor,str]='',requires_
     return outtensor
 broadcast_to = broadcastTo
 
-def gather(input:Tensor,indices:Tensor,gatheraxis:int,out:Union[Tensor,str]='')->Tensor:
+def indexselect(input:Tensor,indices:Tensor,gatheraxis:int,out:Union[Tensor,str]='')->Tensor:
+    assert gatheraxis>=0 and gatheraxis<input.ndim
+
     outtensor=out
     if isinstance(out,str):
-        outtensor=newtensor(indices.shape,dtype=input.dtype,name=out)
-    from .rtf_changeshape import rtf_gather
-    rtf_gather(input,indices,gatheraxis,outtensor,defaultauthor['gather'])
+        outshape=Shape.indexselectshape(input.shape,indices.shape,gatheraxis)
+        outtensor=newtensor(outshape,dtype=input.dtype,name=out)
+    assert outtensor.shape==outshape
+    
+    from .rtf_changeshape import rtf_indexselect
+    rtf_indexselect(input,indices,gatheraxis,outtensor,defaultauthor['indexselect'])
     return outtensor
 
 # def unsqueeze(t:Tensor,dim:int)->Tensor:
@@ -87,7 +104,7 @@ def gather(input:Tensor,indices:Tensor,gatheraxis:int,out:Union[Tensor,str]='')-
 #     return reshape(t, new_shape)
 
 # OpNode.register("expand")
-# def expand(t:Tensor,shape:list[int],out:Union[Tensor,str]='')->Tensor:
+# def expand(t:Tensor,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
 #     outtensor=None
 #     if isinstance(out,str):
 #         outtensor=Tensor(shape=shape, dtype=t.dtype, device=t.device)

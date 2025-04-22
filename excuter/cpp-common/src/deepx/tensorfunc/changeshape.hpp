@@ -61,17 +61,17 @@ namespace deepx::tensorfunc
         broadcastToDispatcher<Author, T>::broadcastTo(A, new_shape, B);
     }
 
-    // gather
+    // indexselect
     template <typename Author, typename T, typename GatherAxisT>
-    struct gatherDispatcher
+    struct indexselectDispatcher
     {
-        static void gather(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output) = delete;
+        static void indexselect(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output) = delete;
     };
 
     template <typename Author, typename T, typename GatherAxisT>
-    void gather(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output)
+    void indexselect(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output)
     {
-        gatherDispatcher<Author, T, GatherAxisT>::gather(input, indices, axis, output);
+        indexselectDispatcher<Author, T, GatherAxisT>::indexselect(input, indices, axis, output);
     }
 
     // // split

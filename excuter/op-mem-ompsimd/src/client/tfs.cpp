@@ -68,6 +68,13 @@ namespace deepx::tf
                                                              Param("t", DataCategory::Tensor, Precision::Any),
                                                          }),
                                                      vector<Param>()));
+        //renametensor
+        tffactory.add_tf(std::make_shared<RenameTensor>(vector<Param>(
+                                                         {
+                                                             Param("t", DataCategory::Tensor, Precision::Any),
+                                                             Param("new_name", DataCategory::Var, Precision::String),
+                                                         }),
+                                                     vector<Param>()));
     }
 
     // init
@@ -488,11 +495,11 @@ namespace deepx::tf
                                                                      {
                                                                          Param("B", DataCategory::Tensor, Precision::Any),
                                                                      })));
-        // gather author=miaobyte
-        tffactory.add_tf(std::make_shared<Gather<miaobyte>>(vector<Param>(
+        // indexselect author=miaobyte
+        tffactory.add_tf(std::make_shared<IndexSelect<miaobyte>>(vector<Param>(
                                                                 {
                                                                     Param("A", DataCategory::Tensor, Precision::Any),
-                                                                    Param("indices", DataCategory::Tensor, Precision::Int32 | Precision::Int64),
+                                                                    Param("index", DataCategory::Tensor, Precision::Int32 | Precision::Int64),
                                                                     Param("axis", DataCategory::Var, Precision::Int32),
                                                                 }),
                                                             vector<Param>(

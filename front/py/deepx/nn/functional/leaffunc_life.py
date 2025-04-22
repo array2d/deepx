@@ -22,6 +22,13 @@ def copytensor(t:Tensor,out:Tensor):
 def deltensor(t:Tensor):
     from .rtf_life import rtf_deltensor
     rtf_deltensor(t)
+def renametensor(t:Tensor,new_name:str):
+    assert isinstance(t,Tensor)
+    assert isinstance(new_name,str) and new_name != ''
+    assert t.name is not None and t.name != ''
+
+    from .rtf_life import rtf_renametensor
+    rtf_renametensor(t,new_name)
 
 def load(path:str)->Tensor:
     from .rtf_io import rtf_load

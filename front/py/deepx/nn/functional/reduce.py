@@ -4,14 +4,11 @@ from .leaffunc_reduce import sum
 from .leaffunc_life import newtensor
 #mean
  
-def mean(a:Tensor,dim:tuple[int]=None,keepdim:bool=False)->Tensor:
+def mean(a:Tensor,dim:tuple[int,...]=None,keepdim:bool=False)->Tensor:
     # 如果dim为None,则对所有维度求平均
     if dim is None:
         dim = list(range(a.ndim))
-    elif isinstance(dim, int):
-        dim = [dim]
-    else:
-        dim = list(dim)
+    dim=list(dim)
     total = 1
     for i in dim:
         if i < 0:
@@ -19,6 +16,6 @@ def mean(a:Tensor,dim:tuple[int]=None,keepdim:bool=False)->Tensor:
         total *= a.shape[i]
     reduceshape=Shape.reduceshape(a.shape,dim,keepdim)
     out=newtensor(reduceshape,dtype=a.dtype)
-    sum(a, dim, keepdim, out)
+    sum(a, tuple(dim), keepdim, out)
     out.div_(total)
     return out

@@ -138,21 +138,24 @@ namespace deepx::tensorfunc
         }
     };
 
-    // gather
-    // 支持高维indices
-    // 结果写入input_indices
+    // indexselect
+    // output_indices,index,index_indices,gatheraxis->input_indices
     template <typename GatherAxisT>
-    void fromGatherIndices(const vector<int> &output_indices, const Tensor<GatherAxisT> &indices, const int gatherAxis, vector<int> &input_indices)
+    void fromIndexselectIndices(const vector<int> &output_indices, const Tensor<GatherAxisT> &index,vector<int> &index_indices, const int gatherAxis, vector<int> &input_indices)
     {
-        std::copy(output_indices.begin(), output_indices.begin()+input_indices.size(), input_indices.begin());
-        int indices_idx = indices.shape.linearat(output_indices);
-        input_indices[gatherAxis] = indices.data[indices_idx];
+ 
+        std::copy(output_indices.begin(), output_indices.begin()+gatherAxis, input_indices.begin());
+        std::copy(output_indices.begin()+gatherAxis,output_indices.begin()+gatherAxis+index_indices.size(), index_indices.begin());
+        int index_idx=index.shape.linearat(index_indices);
+        input_indices[gatherAxis] = index.data[index_idx];
+        std::copy(output_indices.begin()+gatherAxis+index_indices.size(),output_indices.begin()+output_indices.size(), input_indices.begin()+gatherAxis+1);
+
     }
 
     template <typename T, typename GatherAxisT>
-    struct gatherDispatcher<miaobyte, T, GatherAxisT>
+    struct indexselectDispatcher<miaobyte, T, GatherAxisT>
     {
-        static void gather(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output)
+        static void indexselect(const Tensor<T> &input, const Tensor<GatherAxisT> &index, const int axis, Tensor<T> &output)
         {
             int gatherAxis = axis < 0 ? input.shape.dim + axis : axis;
             if (gatherAxis < 0 || gatherAxis >= input.shape.dim)
@@ -160,17 +163,17 @@ namespace deepx::tensorfunc
                 throw std::invalid_argument("Axis is out of bounds");
             }
 
-            vector<int> input_gatherShape =  indices.shape.shape;
-            if (input_gatherShape.empty() || input_gatherShape != output.shape.shape)
+            vector<int>  gatherShape =  indexselectShape(input.shape.shape,index.shape.shape,gatherAxis);
+            if (gatherShape.empty() || gatherShape != output.shape.shape)
             {
-                throw TensorShapeError("Gather shape mismatch");
+                throw TensorShapeError("Indexselect shape mismatch");
             }
             output.shape.rangeParallel(output.shape.dim, [&](const int idx, const std::vector<int> &output_indices, ThreadLocalVectors &tlv)
                                        {  
-                            fromGatherIndices(output_indices, indices, gatherAxis, tlv.get(0));
+                            fromIndexselectIndices(output_indices, index,tlv.get(1), gatherAxis, tlv.get(0));
                             output.data[idx] = input.data[input.shape.linearat(tlv.get(0))]; 
                         },
-                    {input.shape.dim});
+                    {input.shape.dim,index.shape.dim});
         }
     };
 

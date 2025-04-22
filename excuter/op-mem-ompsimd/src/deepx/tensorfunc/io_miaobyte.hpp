@@ -85,7 +85,7 @@ namespace deepx::tensorfunc
         std::ifstream data_fs(datapath, std::ios::binary);
         data_fs.seekg(0, std::ios::end);
         std::streamsize fileSize = data_fs.tellg();
-        std::streamsize expectedSize = shape.size * precision_bits(shape.dtype) / 8;
+        std::streamsize expectedSize = shape.size * (precision_bits(shape.dtype) / 8);
 
         if (fileSize != expectedSize)
         {

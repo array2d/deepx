@@ -93,51 +93,55 @@ class Embedding(Module):
     def __init__(self, 
                  num_embeddings:int, #嵌入字典的大小（词汇表大小）vocab_size，llama=128256
                  embedding_dim:int, #每个嵌入向量的维度,隐藏层大小hidden_size，llama=4096
-                 padding_idx:int=None,
-                 max_norm:float=None, 
-                 norm_type:float=2.0, 
-                 scale_grad_by_freq:bool=False, 
-                 _weight:Tensor=None,dtype=None,
-                 sparse:bool=False):
+                #  padding_idx:int=None,
+                #  max_norm:float=None, 
+                #  norm_type:float=2.0, 
+                #  scale_grad_by_freq:bool=False, 
+                 weight:Tensor=None,dtype='float32',
+                #  sparse:bool=False
+                 ):
         super(Embedding, self).__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
        
-        if padding_idx is not None:
-            if padding_idx > 0:
-                assert (
-                    padding_idx < self.num_embeddings
-                ), "Padding_idx必须在num_embeddings范围内"
-            elif padding_idx < 0:
-                assert (
-                    padding_idx >= -self.num_embeddings
-                ), "Padding_idx必须在num_embeddings范围内"
-                padding_idx = self.num_embeddings + padding_idx
-        self.padding_idx = padding_idx
-        self.max_norm = max_norm
-        self.norm_type = norm_type
-        self.scale_grad_by_freq = scale_grad_by_freq
-        if _weight is None:
+        # if padding_idx is not None:
+        #     if padding_idx > 0:
+        #         assert (
+        #             padding_idx < self.num_embeddings
+        #         ), "Padding_idx必须在num_embeddings范围内"
+        #     elif padding_idx < 0:
+        #         assert (
+        #             padding_idx >= -self.num_embeddings
+        #         ), "Padding_idx必须在num_embeddings范围内"
+        #         padding_idx = self.num_embeddings + padding_idx
+        # self.padding_idx = padding_idx
+        # self.max_norm = max_norm
+        # self.norm_type = norm_type
+        # self.scale_grad_by_freq = scale_grad_by_freq
+        if weight is None:
             self.weight = Tensor(shape=(num_embeddings, embedding_dim),dtype=dtype)
+            self.register_parameter('weight', self.weight)
             self.reset_parameters()
         else:
-            assert list(_weight.shape) == [
+            assert list(weight.shape) == [
                 num_embeddings,
                 embedding_dim,
             ], "权重形状与num_embeddings和embedding_dim不匹配"
-            self.weight = _weight
+            self.weight = weight
         
-        self.sparse = sparse
+        # self.sparse = sparse
         
-        if padding_idx is not None:
-            self.weight[padding_idx] = 0
+        # if padding_idx is not None:
+        #     self.weight[padding_idx] = 0
     def reset_parameters(self) -> None:
         self.weight.normal_()  # 正态分布初始化权重
         self._fill_padding_idx_with_zero()  # 填充索引位置归零
 
     def _fill_padding_idx_with_zero(self) -> None:
-        if self.padding_idx is not None:
-           self.weight[self.padding_idx].fill_(0)
+        #TODO
+        pass
+        # if self.padding_idx is not None:
+        #    self.weight[self.padding_idx].fill_(0)
     def forward(self, input:Tensor)->Tensor:
         return self.weight[input]
     

@@ -2,31 +2,36 @@ from typing import Union
 from  .tensor import Tensor,tensor_method
 
 @tensor_method
-def reshape(self,*shape,out:Union[Tensor,str]='')->Tensor:
+def reshape(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
+    assert isinstance(shape,tuple)
     from deepx.nn.functional import reshape as reshape_func
     result=reshape_func(self,shape,out)
     return result
 
 @tensor_method
-def reshape_(self,*shape)->Tensor:
+def reshape_(self,shape:tuple[int,...])->Tensor:
+    assert isinstance(shape,tuple)
     from deepx.nn.functional import reshape as reshape_func
     result=reshape_func(self,shape,self)
     return result
 
 @tensor_method
-def permute(self,*dimorder,out:Union[Tensor,str]=''):
+def permute(self,dimorder:tuple[int,...],out:Union[Tensor,str]=''):
+    assert isinstance(dimorder,tuple)
     from deepx.nn.functional import permute as permute_func
     result=permute_func(self,dimorder,out)
     return result
 
 @tensor_method
-def permute_(self,*dimorder):
+def permute_(self,dimorder:tuple[int,...])->Tensor:
+    assert isinstance(dimorder,tuple)
     from deepx.nn.functional import permute as permute_func
     permute_func(self,dimorder,self)
     return self
 
 @tensor_method
 def transpose(self,out:Union[Tensor,str]=''):
+    assert isinstance(out,str) or isinstance(out,Tensor)
     from deepx.nn.functional import transpose as transpose_func
     result=transpose_func(self,out)
     return result
@@ -38,26 +43,23 @@ def transpose_(self):
     return self
 
 @tensor_method
-def broadcastshape(self,other:Tensor)->tuple[int]:
+def broadcastshape(self,other:Tensor)->tuple[int,...]:
     from deepx.nn.functional import broadcastshape as broadcastshape_func
     result=broadcastshape_func(self.shape,other.shape)
     return result
 
 @tensor_method
-def broadcastTo(self,shape:tuple[int],out:Union[Tensor,str]='')->Tensor:
+def broadcastTo(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import broadcastTo as broadcastTo_func
     result=broadcastTo_func(self,shape,out)
     return result
 
 @tensor_method
-def gather(self,indices:Tensor,dim:int,out:Union[Tensor,str]='')->Tensor:
-    final_indices=indices
-    #TODO 当indices不是tensor时，需要转换为tensor
-    if not isinstance(indices,Tensor):
-        raise ValueError("indices must be a Tensor")
-
-    from deepx.nn.functional import gather as gather_func
-    result=gather_func(self,final_indices,dim,out)
+def indexselect(self,index:Tensor,axis:int=0,out:Union[Tensor,str]='')->Tensor:
+    assert isinstance(index,Tensor)
+    gatheraxis=axis%self.ndim
+    from deepx.nn.functional import indexselect as indexselect_func
+    result=indexselect_func(self,index,gatheraxis,out)
     return result
 
 

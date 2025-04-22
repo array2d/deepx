@@ -120,5 +120,26 @@ namespace deepx
             }
         }
     }
- 
+    
+    vector<int> indexselectShape(const vector<int> &input_shape, const vector<int> &index_shape, const int axis){
+
+        vector<int> output_shape(input_shape.size()-1+index_shape.size());
+        for (int output_idx=0,input_idx=0,index_idx=0;output_idx<output_shape.size();output_idx++){
+            if (output_idx<axis){
+                if (input_idx==axis){
+                    input_idx++;
+                }
+                output_shape[output_idx]=input_shape[input_idx++];
+            }else if (output_idx>=axis+index_shape.size()){
+                if (input_idx==axis){
+                    input_idx++;
+                }
+                output_shape[output_idx]=input_shape[input_idx++];
+            }else{
+                //index
+                output_shape[output_idx]=index_shape[index_idx++];
+            }
+        }
+        return output_shape;
+    }
 }

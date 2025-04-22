@@ -108,17 +108,7 @@ namespace deepx::mem
             }
             mem[name] = tensor;
         }
-
-        // template <typename T>
-        // shared_ptr<Tensor<T>> temptensor(vector<int> shape)
-        // {
-        //     // 直接构造到shared_ptr避免移动
-        //     auto temp = tensorfunc::New<T>(shape); // 临时对象
-        //     auto cloned = make_shared<Tensor<T>>(std::move(temp));
-        //     mem["temp" + to_string(tempidx)] = cloned;
-        //     tempidx++;
-        //     return cloned;
-        // }
+ 
 
         bool existstensor(const string &name) const
         {
@@ -171,6 +161,16 @@ namespace deepx::mem
         void delete_arg(const string &name)
         {
             args.erase(name);
+        }
+
+        void rename_tensor(const string &old_name, const string &new_name)
+        {
+            if (mem.find(old_name) == mem.end())
+            {
+                throw std::runtime_error("tensor not found: " + old_name);
+            }
+            mem[new_name] = mem[old_name];  
+            mem.erase(old_name);
         }
     };
 }
