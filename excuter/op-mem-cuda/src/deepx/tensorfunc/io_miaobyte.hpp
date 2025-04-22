@@ -30,6 +30,12 @@ namespace deepx::tensorfunc
             {
                 throw std::runtime_error("Failed to allocate host memory");
             }
+            cudaError_t err = cudaMemcpy(host_data, t.data, total_bytes, cudaMemcpyDeviceToHost);
+            if (err != cudaSuccess)
+            {
+                delete[] host_data;
+                throw std::runtime_error("Failed to copy data from device to host");
+            }
 
             stdutil::print(t.shape.shape, host_data, t.shape.dtype, f);
             delete[] host_data;

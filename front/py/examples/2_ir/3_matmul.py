@@ -1,4 +1,4 @@
-benchcnt=1000
+benchcnt=100
 
 from deepx.nn.functional import save_npy
 import numpy as np
@@ -34,6 +34,8 @@ print()
 t1 = load(npy_path+'t1')
 t2 = load(npy_path+'t2')
 t3= zeros(1024,1024,dtype='float32',name="t3")
+from deepx.nn.functional import defaultauthor
+defaultauthor['matmul']='miaobyte'
 # warmup
 matmul(t1,t2,out=t3)
 
