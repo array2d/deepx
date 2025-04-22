@@ -18,7 +18,7 @@ namespace deepx::tf
         Constant(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "constant";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "init";
             this->args = args;
             this->returns = returns;
@@ -98,7 +98,7 @@ namespace deepx::tf
         Arange(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "arange";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "init";
             this->args = args;
             this->returns = returns;
@@ -183,7 +183,7 @@ namespace deepx::tf
         Uniform(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "uniform";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "init";
             this->args = args;
             this->returns = returns;
@@ -269,7 +269,7 @@ namespace deepx::tf
         Normal(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "normal";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "init";
             this->args = args;
             this->returns = returns;

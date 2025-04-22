@@ -85,14 +85,14 @@ namespace deepx::tf
             }
 
             // 检查是否存在该作者的实现，不存在则创建
-            if (tf_families[tf->name]->tf_authors.find(tf->author) ==
+            if (tf_families[tf->name]->tf_authors.find(tf->metadata.author) ==
                 tf_families[tf->name]->tf_authors.end())
             {
-                tf_families[tf->name]->tf_authors[tf->author] = std::make_shared<TFAuthor>();
+                tf_families[tf->name]->tf_authors[tf->metadata.author] = std::make_shared<TFAuthor>();
             }
 
             // 直接添加到vector中
-            tf_families[tf->name]->tf_authors[tf->author]->tfs.push_back(tf);
+            tf_families[tf->name]->tf_authors[tf->metadata.author]->tfs.push_back(tf);
         }
         shared_ptr<TF> get_tf(const TF &other) const;
         // 输出为markdown表格格式

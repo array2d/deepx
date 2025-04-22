@@ -22,11 +22,18 @@ namespace deepx::tf
         }
 
         // 检查作者是否存在
-        auto author_it = family_it->second->tf_authors.find(other.author);
+        auto author_it = family_it->second->tf_authors.find(other.metadata.author);
         if (author_it == family_it->second->tf_authors.end())
         {
-            cerr << "<op> " << other.name << " author:" << other.author << " not found" << endl;
-            return nullptr;
+            cerr << "<op> " << other.name << " author:" << other.metadata.author << " not found" << endl;
+            //使用第一个作者
+            author_it = family_it->second->tf_authors.begin();
+            cerr << "<op> " << other.name << " use first author:" << author_it->first << endl;
+            if (author_it == family_it->second->tf_authors.end())
+            {
+                cerr << "<op> " << other.name << " default author:" << author_it->first << " not found" << endl;
+                return nullptr;
+            }
         }
 
         // 提取参数和返回值类型
@@ -71,7 +78,9 @@ namespace deepx::tf
         }
 
         // 使用clone()方法创建新实例，而不是直接复制构造
-        return tf->clone();
+        auto cloned = tf->clone();
+        cloned->metadata=other.metadata;
+        return cloned;
     }
     string TfFactory::print_markdown(string excuter_name) const
     {
@@ -99,7 +108,7 @@ namespace deepx::tf
             
             for (const auto &tf : tfs) {
                 ss << "| " << tf->name << " | ";
-                ss << (tf->author.empty() ? " none " : tf->author) << " | ";
+                ss << (tf->metadata.author.empty() ? " none " : tf->metadata.author) << " | ";
                 ss << tf->to_string(false, true) << " | ";
                 ss << tf->math_formula() << " | ";
                 ss << tf->to_string(false, true) << " |\n";

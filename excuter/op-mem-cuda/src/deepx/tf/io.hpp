@@ -15,7 +15,7 @@ namespace deepx::tf
         Print(vector<Param> args, vector<Param> returns)
         {
             this->name = "print";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "io";
             this->args = args;
             this->returns = returns;

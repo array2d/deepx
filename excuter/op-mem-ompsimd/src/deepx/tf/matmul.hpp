@@ -16,7 +16,7 @@ namespace deepx::tf
         MatMul(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "matmul";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "matmul";
             this->args = args;
             this->returns = returns;
@@ -30,16 +30,7 @@ namespace deepx::tf
         {
             return make_shared<MatMul<Author>>(*this);
         }
-        int run(shared_ptr<MemBase> mem, string &error) override
-        {
-            Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
-            Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
-            Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
-            if (a_type != b_type || a_type != c_type)
-            {
-                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(b_type) + " != " + precision_str(c_type);
-                return 1;
-            }
+        int compute(shared_ptr<MemBase> mem, Precision a_type,string &error){
             switch (a_type)
             {
             case Precision::Float64:
@@ -63,6 +54,30 @@ namespace deepx::tf
             default:
                 error = "Unsupported dtype: " + precision_str(a_type);
                 return 1;
+            }
+            return 0;
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (a_type != b_type || a_type != c_type)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(b_type) + " != " + precision_str(c_type);
+                return 1;
+            }
+            if (metadata.benchmark.repeat > 0)
+            {   
+                for (int i = 0; i < metadata.benchmark.repeat; i++)
+                {
+                    if (compute(mem, a_type, error))
+                    {
+                        return 1;
+                    }
+                }
+            }else{
+                return compute(mem, a_type, error);
             }
             return 0;
         }

@@ -19,7 +19,8 @@ class Param:
                 return f"{self._category}:{self._textvalue}"
         else:
             return self._textvalue
-    
+ 
+
     @classmethod
     def tensorName(cls,name:str,dtype:str):
         return Param(name,category="tensor",precision=dtype)
@@ -72,6 +73,43 @@ class Param:
 # newtensor ( [3 4 5]) -> ( tensor_136144420556608) 
 # // id=1 created_at=1744724799.0650852 sent_at=1744724799.0650952
 
+class Benchmark:
+    def __init__(self,repeat:int):
+        self._repeat=repeat
+
+    def __str__(self):
+        return f"benchmark.repeat={self._repeat}"
+        
+class Metadata:
+    def __init__(self,author:str=None,id:str=None,created_at:datetime=None,sent_at:datetime=None):
+        self._author=None
+        if author is not None and author != "":
+            self._author=author
+ 
+        self._id=None
+        if id is not None and id != "":
+            self._id=id
+        self._created_at=created_at
+        self._sent_at=sent_at
+        self._benchmark=None
+        
+    def __str__(self):
+        parts =[]
+        if self._author is not None :
+            parts.append(f"author={self._author}")
+        if self._id is not None and self._id != "":
+            parts.append(f" id={self._id}")
+        if self._created_at is not None:
+            parts.append(f" created_at={self._created_at}")
+        if self._sent_at is not None:
+            parts.append(f" sent_at={self._sent_at}")
+        if  self._benchmark is not None:
+            parts.append(f" {self._benchmark}")
+        return ' '.join(parts)
+    
+    def openbench(self,repeat:int):
+        self._benchmark=Benchmark(repeat)
+
 
 class DeepxIR:
     def __init__(self, 
@@ -90,11 +128,8 @@ class DeepxIR:
         self._name = name
         self._args = [arg if isinstance(arg, Param) else Param(arg) for arg in args]
         self._returns = [ret if isinstance(ret, Param) else Param(ret) for ret in returns]
-        self._author = author
-        self._id=None
-        self._created_at=time.time()
-        self._sent_at=None
-
+        self._metadata=Metadata(author=author,id=None,created_at=time.time())
+ 
     def __str__(self):
         # 函数名部分
         parts = [self._name]
@@ -120,14 +155,7 @@ class DeepxIR:
 
         # 添加元数据
         parts.append("//")
-        if self._id is not None:
-            parts.append(f"id={self._id}")
-        if self._author:
-            parts.append(f"author={self._author}")
-        parts.append(f"created_at={self._created_at}")
-        if self._sent_at is not None:
-            parts.append(f"sent_at={self._sent_at}")
-        
+        parts.append(str(self._metadata))
         return ' '.join(parts)
 
 class DeepxIRResp:

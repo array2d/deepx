@@ -51,7 +51,7 @@ namespace client
             while (getline(ss, line)) {
                 if (!line.empty()) {
                     deepx::tf::TF tf;
-                    tf.recv_at = chrono::system_clock::now();
+                    tf.metadata.recv_at = chrono::system_clock::now();
                     tf.parse(line);
                     queue.push(tf);
                 }

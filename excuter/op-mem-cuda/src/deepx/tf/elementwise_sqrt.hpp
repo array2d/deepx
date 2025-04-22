@@ -15,7 +15,7 @@ namespace deepx::tf
         Pow(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "pow";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -70,7 +70,7 @@ namespace deepx::tf
         PowScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "powscalar";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -123,7 +123,7 @@ namespace deepx::tf
         RpowScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "rpowscalar";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -174,7 +174,7 @@ namespace deepx::tf
         Sqrt(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "sqrt";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -232,7 +232,7 @@ namespace deepx::tf
         Log(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "log";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -289,7 +289,7 @@ namespace deepx::tf
         Exp(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "exp";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;

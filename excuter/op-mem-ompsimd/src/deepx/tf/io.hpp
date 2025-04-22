@@ -16,7 +16,7 @@ namespace deepx::tf
         {
             this->name = "print";
             this->tftype = "io";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->args = args;
             this->returns = returns;
         }

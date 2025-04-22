@@ -60,8 +60,8 @@ int main()
             }
 
             deepx::tf::OpResp opresp;
-            opresp.id = op.id;
-            opresp.recv_at = op.recv_at;
+            opresp.id = op.metadata.id;
+            opresp.recv_at = op.metadata.recv_at;
 
             auto src = tf_factory.get_tf(op);
             if (src == nullptr)

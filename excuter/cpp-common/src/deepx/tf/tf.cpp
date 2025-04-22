@@ -1,17 +1,17 @@
 #include <iomanip>
 #include <sstream>
 #include <ctime>
+#include <map>
 
 #include "deepx/tf/tf.hpp"
 #include "stdutil/time.hpp"
 #include "stdutil/string.hpp"
 namespace deepx::tf
-{   
-
+{
 
     void Param::parse(const string &param)
     {
-        //1. 按:分割类型和值
+        // 1. 按:分割类型和值
         size_t colon_pos = param.find(':');
         string type, textvalue;
         if (colon_pos != string::npos)
@@ -36,8 +36,88 @@ namespace deepx::tf
             this->dtype = deepx::dtype(textvalue);
             this->textvalue = textvalue;
         }
-        
-    }   
+    }
+
+    string TFMetadata::to_string() const
+    {
+        stringstream ss;
+        if (!author.empty())
+        {
+            ss << "author=" << author << " ";
+        }
+        if (id > 0)
+        {
+            ss << "id=" << id << " ";
+        }
+        if (created_at != system_clock::time_point::min())
+        {
+            ss << "created_at=" << duration_cast<milliseconds>(created_at.time_since_epoch()).count() << " ";
+        }
+        if (sent_at != system_clock::time_point::min())
+        {
+            ss << "sent_at=" << duration_cast<milliseconds>(sent_at.time_since_epoch()).count() << " ";
+        }
+        if (recv_at != system_clock::time_point::min())
+        {
+            ss << "recv_at=" << duration_cast<milliseconds>(recv_at.time_since_epoch()).count() << " ";
+        }
+        if (benchmark.repeat > 0)
+        {
+            ss << "benchmark.repeat=" << benchmark.repeat << " ";
+        }
+        return ss.str();
+    }
+
+     std::unordered_map<string, string> parse_metadata_map(const string &meta)
+    {
+        std::unordered_map<string, string> metadata;
+        stringstream meta_ss(meta);
+        string key_value;
+        while (meta_ss >> key_value)
+        {
+            size_t eq_pos = key_value.find('=');
+            if (eq_pos == string::npos)
+                continue;
+            string key = key_value.substr(0, eq_pos);
+            string value = key_value.substr(eq_pos + 1);
+            metadata[key] = value;
+        }
+        return metadata;
+    }
+
+    // 解析元数据
+    void  TFMetadata::parse(const string &meta)
+    {
+        if (meta.empty())
+            return;
+
+        auto metadata_map = parse_metadata_map(meta);
+        if (metadata_map.find("id") != metadata_map.end())
+        {
+            id = stoi(metadata_map["id"]);
+        }
+        if (metadata_map.find("author") != metadata_map.end())
+        {
+            author = metadata_map["author"];
+        }   
+        if (metadata_map.find("created_at") != metadata_map.end())
+        {
+            created_at = system_clock::from_time_t(stod(metadata_map["created_at"]));
+        }
+        if (metadata_map.find("sent_at") != metadata_map.end())
+        {
+            sent_at = system_clock::from_time_t(stod(metadata_map["sent_at"]));
+        }
+        if (metadata_map.find("recv_at") != metadata_map.end())
+        {
+            recv_at = system_clock::from_time_t(stod(metadata_map["recv_at"]));
+        }
+        if (metadata_map.find("benchmark.repeat") != metadata_map.end())
+        {   
+            benchmark.repeat = stoi(metadata_map["benchmark.repeat"]);
+        }
+    }
+
     // 分割主体和元数据
     std::pair<string, string> split_body_metadata(const string &input)
     {
@@ -186,7 +266,6 @@ namespace deepx::tf
         return value_str; // 默认作为字符串处理
     }
 
-  
     // 解析参数列表
     vector<Param> parse_params(const string &params_str)
     {
@@ -211,51 +290,7 @@ namespace deepx::tf
         return params;
     }
 
-    // 解析元数据键值对
-    void parse_metadata_pair(const string &key_value, int &id, string &author,
-                             system_clock::time_point &created_at,
-                             system_clock::time_point &sent_at)
-    {
-        size_t eq_pos = key_value.find('=');
-        if (eq_pos == string::npos)
-            return;
-
-        string key = key_value.substr(0, eq_pos);
-        string value = key_value.substr(eq_pos + 1);
-
-        if (key == "id")
-        {
-            id = stoi(value);
-        }
-        else if (key == "author")
-        {
-            author = value;
-        }
-        else if (key == "created_at")
-        {
-            created_at = system_clock::from_time_t(stod(value));
-        }
-        else if (key == "sent_at")
-        {
-            sent_at = system_clock::from_time_t(stod(value));
-        }
-    }
-
-    // 解析元数据
-    void parse_metadata(const string &meta, int &id, string &author,
-                        system_clock::time_point &created_at,
-                        system_clock::time_point &sent_at)
-    {
-        if (meta.empty())
-            return;
-
-        stringstream meta_ss(meta);
-        string key_value;
-        while (meta_ss >> key_value)
-        {
-            parse_metadata_pair(key_value, id, author, created_at, sent_at);
-        }
-    }
+   
 
     // 主解析函数
     void TF::parse(const string &input)
@@ -274,7 +309,7 @@ namespace deepx::tf
         returns = parse_params(output_part);
 
         // 5. 解析元数据
-        parse_metadata(meta, id, author, created_at, sent_at);
+        metadata.parse(meta);
     }
 
     void TF::init(const string &opname,
@@ -282,7 +317,6 @@ namespace deepx::tf
                   const vector<Param> &returns)
     {
         this->name = opname;
-        this->author = "";
         this->args = args;
         this->returns = returns;
     }
@@ -330,9 +364,7 @@ namespace deepx::tf
 
         if (show_extra)
         {
-            ss << " //id=" << id
-               << " created_at=" << stdutil::format_time(created_at)
-               << " sent_at=" << stdutil::format_time(sent_at);
+            ss << " //" << metadata.to_string();
         }
 
         return ss.str();

@@ -18,7 +18,7 @@ namespace deepx::tf
         MatMul(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "matmul";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "matmul";
             this->args = args;
             this->returns = returns;

@@ -16,7 +16,7 @@ namespace deepx::tf
         Add(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "add";
-            this->author = Author::name();  
+            this->metadata.author = Author::name();  
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -85,7 +85,7 @@ namespace deepx::tf
         AddScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "addscalar";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -153,7 +153,7 @@ namespace deepx::tf
         Sub(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "sub";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -222,7 +222,7 @@ namespace deepx::tf
         SubScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "subscalar";
-            this->author = Author::name();
+            this->metadata.author=Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -290,7 +290,7 @@ namespace deepx::tf
         Mul(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "mul";
-            this->author = Author::name();
+            this->metadata.author=Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -359,7 +359,7 @@ namespace deepx::tf
         MulScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "mulscalar";
-            this->author = Author::name();
+            this->metadata.author=Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -427,7 +427,7 @@ namespace deepx::tf
         Div(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "div";
-            this->author = Author::name();
+            this->metadata.author=Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -496,7 +496,7 @@ namespace deepx::tf
         DivScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "divscalar";
-            this->author = Author::name();
+            this->metadata.author=Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -564,7 +564,7 @@ namespace deepx::tf
         RDivScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "rdivscalar";
-            this->author = Author::name();
+            this->metadata.author=Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -633,7 +633,7 @@ namespace deepx::tf
         Invert(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "invert";
-            this->author = Author::name();
+            this->metadata.author=Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;

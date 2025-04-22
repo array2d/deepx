@@ -26,27 +26,40 @@ namespace deepx::tf
     {
         TypeDef dtype;
         string textvalue;
- 
+
         Param(const string &textvalue = "", const DataCategory &dt = DataCategory::Unknown, const Precision &prec = Precision::Any)
             : textvalue(textvalue), dtype(make_dtype(dt, prec)) {}
-        
+
         void parse(const string &param);
     };
+    // 元数据
+    struct Benchmark
+    {
+        int repeat = 0;
+    };
+    struct TFMetadata
+    {
+        string author;
+        int id;
+        system_clock::time_point created_at;
+        system_clock::time_point sent_at;
+        system_clock::time_point recv_at;
+        Benchmark benchmark;
 
+        string to_string() const;
+        void parse(const string &str);
+    };
     // TF:Tensor Function的缩写
     class TF
     {
     public:
         string name;
-        string author;
-        string tftype; 
+
+        string tftype;
         vector<Param> args;
         vector<Param> returns;
-        //
-        int id;
-        system_clock::time_point created_at;
-        system_clock::time_point sent_at;
-        system_clock::time_point recv_at;
+        // metadata
+        TFMetadata metadata;
 
     public:
         TF() = default;
@@ -128,8 +141,8 @@ namespace deepx::tf
             }
 
             vector<T> result;
-            string textvalue =vars[idx].textvalue;
-            stdutil::trim(textvalue,"[]");
+            string textvalue = vars[idx].textvalue;
+            stdutil::trim(textvalue, "[]");
             if (textvalue.empty())
             {
                 throw std::invalid_argument("Invalid argument index");

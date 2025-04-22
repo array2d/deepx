@@ -20,7 +20,7 @@ namespace deepx::tf
         Reshape(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "reshape";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
@@ -82,7 +82,7 @@ namespace deepx::tf
         Transpose(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "transpose";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
@@ -151,7 +151,7 @@ namespace deepx::tf
         Concat(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "concat";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
@@ -286,7 +286,7 @@ namespace deepx::tf
         BroadcastTo(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "broadcastTo";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;
@@ -352,7 +352,7 @@ namespace deepx::tf
         Gather(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "gather";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "changeshape";
             this->args = args;
             this->returns = returns;

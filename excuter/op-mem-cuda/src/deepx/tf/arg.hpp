@@ -14,7 +14,6 @@ namespace deepx::tf
         ArgSet(vector<Param> args, vector<Param> returns)
         {
             this->name = "argset";
-            this->author = "";
             this->tftype = "arg";
             this->args = args;
             this->returns = returns;
@@ -76,7 +75,6 @@ namespace deepx::tf
         VecSet(vector<Param> args, vector<Param> returns)
         {
             this->name = "vecset";
-            this->author = "";
             this->tftype = "arg";
             this->args = args;
             this->returns = returns;

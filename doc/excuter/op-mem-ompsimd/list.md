@@ -25,7 +25,7 @@
 | save |  none  | save(tensor<any> t, var<string> path)->() | save(T1,path) | save(tensor<any> t, var<string> path)->() |
 | print | miaobyte | print(tensor<any> t)->() | print(T1) | print(tensor<any> t)->() |
 | print | miaobyte | print(tensor<any> t, var<string> format)->() | print(T1) | print(tensor<any> t, var<string> format)->() |
-| load |  none  | load(var<string> path)->() | load(path) | load(var<string> path)->() |
+| load |  none  | load(var<string> path)->() | mem.load(path) | load(var<string> path)->() |
 
 ### init
 

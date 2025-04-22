@@ -15,7 +15,7 @@ namespace deepx::tf
         Sin(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "sin";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -68,7 +68,7 @@ namespace deepx::tf
         Cos(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "cos";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -123,7 +123,7 @@ namespace deepx::tf
         Tan(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "tan";
-            this->author = Author::name();
+            this->metadata.author= Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;

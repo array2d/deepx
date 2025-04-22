@@ -16,7 +16,7 @@ namespace deepx::tf
         Sum(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "sum";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "reduce";
             this->args = args;
             this->returns = returns;
@@ -76,7 +76,7 @@ namespace deepx::tf
         Prod(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "prod";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "reduce";
             this->args = args;
             this->returns = returns;
@@ -135,7 +135,7 @@ namespace deepx::tf
         ReduceMax(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "reducemax";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "reduce";
             this->args = args;
             this->returns = returns;
@@ -194,7 +194,7 @@ namespace deepx::tf
         ReduceMin(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "reducemin";
-            this->author = Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "reduce";
             this->args = args;
             this->returns = returns;
