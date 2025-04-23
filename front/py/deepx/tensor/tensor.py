@@ -22,7 +22,7 @@ class Tensor:
                 self.__class__._instance_counter = 0
             count = self.__class__._instance_counter
             self.__class__._instance_counter += 1
-            self._name = count
+            self._name = str(count)
         # dtype
         self._dtype = dtype
 
@@ -49,8 +49,8 @@ class Tensor:
     @property
     def name(self):
         return self._name
-    @name.setter
-    def name(self,name:str):
+    
+    def rtf_rename(self,name:str):
         assert isinstance(name,str) and name != ''
         assert self.name is not None and self.name != ''
 

@@ -1,8 +1,4 @@
-
-from typing import Union
 from deepx import Tensor
-from deepx.nn.functional import sub
-from deepx.nn.functional import newtensor
 
 # 数学公式：softmax(x_i) = e^{x_i} / sum(e^{x_j})
 def softmax(t: Tensor,dim:int=-1)->Tensor:

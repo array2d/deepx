@@ -1,4 +1,3 @@
-from typing import Union
 from deepx.tensor import Tensor
 from deepx.nn.functional import newtensor
 

@@ -26,7 +26,7 @@ import torch.nn as nn
 # 创建输入
 text = "这是一个测试文本，用于演示嵌入层的使用。"
 torch_input = tokenize_text(text, tokenizer)
-from deepx.nn.functional import save_torch
+from deepxutil.torch import save_torch
 save_torch(torch_input,dir+'input')
 print(torch_input)
 # 创建网络
@@ -47,7 +47,6 @@ input=load(dir+'input')
 input.print()
 
 weight=load(dir+'weight')
-weight.name='embedding_0.weight'
 net = Embedding(tokenizer.vocab_size, 4096,weight=weight)
 out=net.forward(input)
 out.print()

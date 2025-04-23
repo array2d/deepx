@@ -1,5 +1,4 @@
-from typing import Union
-from deepx.tensor import Tensor,Number
+from deepx.tensor import Tensor
 from deepx.nn.functional import newtensor
 
 def rsqrt(input:Tensor)->Tensor:

@@ -1,8 +1,5 @@
 from deepx.tensor import Tensor
-from deepx.nn.deepxir import DeepxIR,Param
-from deepx.scheduler import send
 from .rtf import A_b1_b2_op_C
-
 
 def rtf_sum(a:Tensor,dim:tuple[int],keepdim:bool,out: Tensor, author:str='miaobyte')->Tensor:
     A_b1_b2_op_C("sum",a,dim,keepdim,out,author)

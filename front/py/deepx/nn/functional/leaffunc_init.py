@@ -1,4 +1,3 @@
-from typing import Union
 import math
 import time
 import os

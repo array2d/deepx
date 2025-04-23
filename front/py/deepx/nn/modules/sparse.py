@@ -128,7 +128,7 @@ class Embedding(Module):
                 embedding_dim,
             ], "权重形状与num_embeddings和embedding_dim不匹配"
             self.weight = weight
-        
+            self.weight.rtf_rename('embedding_0.weight')
         # self.sparse = sparse
         
         # if padding_idx is not None:

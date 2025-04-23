@@ -17,7 +17,6 @@ class Module:
             self.__class__._instance_counter = 0
         count = self.__class__._instance_counter
         self.__class__._instance_counter += 1
-        return count
         return f"{base_name}_{count}"
  
     @property
@@ -40,9 +39,10 @@ class Module:
             self._parameters.pop(name, None)
         else:
             self._parameters[name] = param
-            param.name=self.full_name + '.' + name
+            param._name=self.full_name + '.' + name
             from deepx.nn.functional.leaffunc_life import rnewtensor
             rnewtensor(param)
+    
 
     def parameters(self, recurse: bool = True) -> Iterator[Tensor]:
         for name, param in self.named_parameters(recurse=recurse):
