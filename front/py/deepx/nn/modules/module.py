@@ -9,7 +9,7 @@ class Module:
         self._parent: Optional[Module] = None
         self._modules: OrderedDict[str, Module] = OrderedDict()
         self._parameters: OrderedDict[str, Tensor] = OrderedDict()
-
+ 
     def _generate_default_name(self) -> str:
         class_name = self.__class__.__name__
         base_name = class_name.lower()
@@ -17,6 +17,7 @@ class Module:
             self.__class__._instance_counter = 0
         count = self.__class__._instance_counter
         self.__class__._instance_counter += 1
+        return count
         return f"{base_name}_{count}"
  
     @property
@@ -25,16 +26,7 @@ class Module:
             return self._name
         else:
             return f"{self._parent.full_name}.{self._name}"
-    
-    # def __setattr__(self, name: str, value: Any) -> None:
-    #     if not name.startswith('_'):
-    #         if isinstance(value, Module):
-    #             self.register_module(name, value)
-    #         elif isinstance(value, Tensor):
-    #             self.register_parameter(name, value)
-    #         # 使用父类方法设置属性，避免递归
-    #     super().__setattr__(name, value)
-        
+
     def register_module(self, name: str, module: Optional['Module']) -> None:
         if module is None:
             self._modules.pop(name, None)

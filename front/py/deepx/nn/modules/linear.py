@@ -21,8 +21,10 @@ class Linear(Module):
         self.in_features = in_features
         self.out_features = out_features
         self.weight = Tensor(shape=(out_features, in_features),dtype=dtype)
+        self.register_parameter("weight",self.weight)
         if bias:
             self.bias = Tensor(shape=(out_features,),dtype=dtype)
+            self.register_parameter("bias",self.bias)
         else:
             self.register_parameter("bias", None)
         self.reset_parameters()
@@ -42,9 +44,9 @@ class Linear(Module):
         y=input @ self.weight.T
         oldshape=y.shape
         if self.bias is not None:
-            y.reshape_(y.shape[1])
+            y.reshape_(tuple(y.shape[1:]))
             y=y+self.bias
-        y.reshape_(*oldshape)
+        y.reshape_(oldshape)
         return y
 
     def extra_repr(self) -> str:

@@ -4,8 +4,7 @@ from .shape import Shape
 
 Number: TypeAlias = Union[int, float, bool]
 
-tensorid=1
-
+ 
 class Tensor:
 
     #life
@@ -19,9 +18,11 @@ class Tensor:
 
         self._name = name
         if name is None or name =='':
-            global tensorid
-            self._name =tensorid
-            tensorid+=1
+            if not hasattr(self.__class__, '_instance_counter'):
+                self.__class__._instance_counter = 0
+            count = self.__class__._instance_counter
+            self.__class__._instance_counter += 1
+            self._name = count
         # dtype
         self._dtype = dtype
 

@@ -43,7 +43,7 @@ def permute(t:Tensor,
 def transpose(t:Tensor,out:Union[Tensor,str]='')->Tensor:
     dimorder = list(range(t.ndim))
     dimorder[-1],dimorder[-2]=dimorder[-2],dimorder[-1]
-    return permute(t,dimorder,out)
+    return permute(t,tuple(dimorder),out)
 
  
 
