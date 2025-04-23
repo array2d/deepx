@@ -44,7 +44,8 @@ namespace deepx
         std::vector<int> shape;
         std::vector<int> strides;
         int dim;
-        int size;
+        int64_t size;
+        int64_t bytes() const;
 
         Shape() = default;
         Shape(const std::vector<int> &shape);

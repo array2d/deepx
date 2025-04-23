@@ -117,21 +117,22 @@ namespace deepx::tensorfunc
         }
     };
 
-    //gather
+    //indexselect
     template <typename T,typename GatherAxisT>
-    struct gatherDispatcher<miaobyte, T,GatherAxisT>
+    struct indexselectDispatcher<miaobyte, T,GatherAxisT>
     {
-        static void gather(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output){
-            vector<int> input_gatherShape = indices.shape.shape;
-            if (input_gatherShape.empty()||input_gatherShape!=output.shape.shape)
-            {
-                throw TensorShapeError("Gather shape mismatch");
-            }
+        static void indexselect(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output){
             int gatherAxis = axis < 0 ? input.shape.dim + axis : axis;
-            launch_gather<T,GatherAxisT>(input.data, input.shape.strides.data(), input.shape.dim,
+            vector<int> gatherShape = indexselectShape(input.shape.shape, indices.shape.shape, gatherAxis);
+            if (gatherShape.empty()||gatherShape!=output.shape.shape)
+            {
+                throw TensorShapeError("Indexselect shape mismatch");
+            }
+            
+            launch_indexselect<T,GatherAxisT>(input.data, input.shape.strides.data(), input.shape.dim,
                             indices.data, indices.shape.strides.data(), indices.shape.dim,
                             gatherAxis,
-                            output.data,output.shape.size);//output和indices的shape相同，共享strides等
+                            output.data,output.shape.strides.data(),output.shape.dim,output.shape.size);
         }
     };
 }

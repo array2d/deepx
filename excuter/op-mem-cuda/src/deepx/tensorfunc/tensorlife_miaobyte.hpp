@@ -52,5 +52,8 @@ namespace deepx::tensorfunc
         dst.shape=src.shape;
         dst.copyer(src.data, dst.data, src.shape.size);
     }
+
+    //rename
+
 }
 #endif // DEEPX_TENSORFUNC_TENSORLIFE_MIAOBYTE_HPP

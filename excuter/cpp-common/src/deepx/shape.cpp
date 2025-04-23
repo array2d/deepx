@@ -13,6 +13,9 @@ namespace deepx
     {
         setshape(shape, dim);
     }
+    int64_t Shape::bytes() const{
+        return size * (precision_bits(dtype) / 8);
+    }
     void Shape::setshape(const int *shape, int dim)
     {
         this->shape.resize(dim);

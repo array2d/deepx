@@ -248,5 +248,39 @@ namespace deepx::tf
             return make_shared<DelTensor>(*this);
         }
     };
+
+    //rename
+    class RenameTensor : public TF
+    {
+    public:
+        RenameTensor(vector<Param> args, vector<Param> returns)
+        {
+            this->name = "renametensor";    
+            this->tftype = "tensorlife";
+            this->args = args;
+            this->returns = returns;
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override    
+        {
+            string old_name = this->args[0].textvalue;
+            if (!checktensors({this->args[0].textvalue}, mem, error) != 0)
+            {
+                return 1;
+            }
+
+            string new_name = this->args[1].textvalue;
+ 
+            mem->rename_tensor(old_name, new_name);
+            return 0;
+        }
+        string math_formula() const override
+        {
+            return "rename T1 to T2";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<RenameTensor>(*this);
+        }
+    };
 }
 #endif // DEEPX_TF_TENSORLIFE_HPP

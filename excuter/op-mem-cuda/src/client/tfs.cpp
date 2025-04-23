@@ -65,6 +65,13 @@ namespace deepx::tf
                                                              Param("t", DataCategory::Tensor, Precision::Any),
                                                          }),
                                                      vector<Param>()));
+        //renametensor
+        tffactory.add_tf(std::make_shared<RenameTensor>(vector<Param>(
+                                                         {
+                                                              Param("t", DataCategory::Tensor, Precision::Any),
+                                                             Param("new_name", DataCategory::Var, Precision::String),
+                                                        }),
+                                                     vector<Param>()));
     }
 
     // init
@@ -479,8 +486,8 @@ namespace deepx::tf
                 {
                     Param("B", DataCategory::Tensor, Precision::Any),
                 })));
-        // gather
-        tffactory.add_tf(std::make_shared<Gather<miaobyte>>(vector<Param>(
+        // indexselect
+        tffactory.add_tf(std::make_shared<IndexSelect<miaobyte>>(vector<Param>(
                 {
                     Param("A", DataCategory::Tensor, Precision::Any),
                     Param("indices", DataCategory::Tensor, Precision::Int64|Precision::Int32),
