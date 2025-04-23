@@ -34,4 +34,10 @@ jobs:
       run: |
         cd tool/deepxctl
         go build -v -o deepxctl
+    
+    # 运行测试
+    - name: 运行测试
+      run: |
+       cd tool/deepxctl
+       ./deepxctl
  
