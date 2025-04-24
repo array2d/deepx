@@ -44,13 +44,14 @@ namespace deepx::tensorfunc
         int64_t total_bytes = size * sizeof(T);
 
         // 统一分配CPU内存
-        auto [host_data, err] = device_offload(tensorData, total_bytes);
+
+        auto [_,host_data] = device_offload(reinterpret_cast<unsigned char*>(tensorData), total_bytes);
         stdutil::save(host_data.get(), total_bytes, path);
     }
 
     // 不做任何转换，直接从内存到文件，或从文件到内存
     template <typename T>
-    static int loadFn(const std::string &path, T *data, int count)
+    static void loadFn(const std::string &path, T *data, int count)
     {
         auto [file_size, hostdata] = stdutil::load(path);
         if (file_size != count * sizeof(T))
@@ -64,7 +65,6 @@ namespace deepx::tensorfunc
         {
             throw std::runtime_error("Failed to copy data from host to device");
         }
-        return count;
     }
 
     template <typename T>
@@ -76,6 +76,9 @@ namespace deepx::tensorfunc
         tensor.deleter = freeFn<T>;
         tensor.copyer = copyFn<T>;
         tensor.newer = newFn<T>;
+        tensor.saver = saveFn<T>;
+        tensor.loader = loadFn<T>;
+
 
         tensor.data = newFn<T>(shape.size);
         return tensor;

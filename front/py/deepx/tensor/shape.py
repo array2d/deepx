@@ -179,4 +179,11 @@ class Shape:
     @classmethod
     def indexselectshape(cls,input_shape:tuple[int,...],index_shape:tuple[int,...],gatheraxis:int)->tuple[int,...]:
         return input_shape[:gatheraxis]+index_shape+input_shape[gatheraxis+1:]
-    
+
+    def save(self,path:str):
+        if path.endswith('.shape'):
+            import yaml
+            with open(path, 'w') as f:
+                yaml.dump({'shape': list(self.shape), 'dtype': self._dtype,'size':self.numel(),'dim':self.ndim,'stride':list(self.stride)}, f)
+        else:
+            raise ValueError("文件名必须以.shape结尾")

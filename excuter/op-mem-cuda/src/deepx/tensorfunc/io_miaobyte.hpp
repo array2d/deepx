@@ -75,22 +75,15 @@ namespace deepx::tensorfunc
         }
     };
 
+     //load
     template <typename T>
-    void save(Tensor<T> &tensor, const std::string &path)
-    {
-        // 统一分配CPU内存
-        unsigned char* device_data=reinterpret_cast<unsigned char*>(tensor.data);
-        auto [size,host_data]= device_offload(device_data,tensor.shape.bytes());
-        stdutil::save(host_data.get(),size,path);
-    };
-
-    template <typename T>
-    pair<std::string, shared_ptr<Tensor<T>>> load(const std::string &path)
+    pair<std::string,shared_ptr<Tensor<T>>> load(const std::string &path)
     {
         // 加载shape
-        pair<std::string, Shape> shape_name = loadShape(path);
-        Shape shape = shape_name.second;
-        std::string tensor_name = shape_name.first;
+        pair<std::string,Shape> shape_name=loadShape(path);
+        Shape shape=shape_name.second;
+        std::string tensor_name=shape_name.first;
+ 
 
         // 检查T 和 shape.dtype 是否匹配
         if (shape.dtype != precision<T>())
@@ -98,23 +91,11 @@ namespace deepx::tensorfunc
             throw std::runtime_error("调用load<" + precision_str(shape.dtype) + "> 不匹配: 需要 " + precision_str(shape.dtype) +
                                      " 类型，但文件为" + precision_str(precision<T>()) + " 类型");
         }
-
-        // 检查file.size，是否是tensor.size*sizeof(T)
-        std::string datapath = path + ".data";
-        auto [fileSize,hostdata]=stdutil::load(datapath);
-        if(fileSize!=shape.bytes()){
-            throw std::runtime_error("数据文件大小不足: 需要 " + std::to_string(shape.bytes()) +
-                                     " 字节，但文件只有 " + std::to_string(fileSize) + " 字节");
-        }
-        T *host_data=reinterpret_cast<T*>(hostdata.get());
+ 
         shared_ptr<Tensor<T>> tensor = make_shared<Tensor<T>>(New<T>(shape.shape));
-        
-        cudaError_t err = cudaMemcpy(tensor->data, host_data, fileSize, cudaMemcpyHostToDevice);
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to copy data from host to device");
-        }
+        tensor->loader(path,tensor->data,tensor->shape.size);
         return std::make_pair(tensor_name, tensor);
-    }
+    };
+
 }
 #endif // DEEPX_TENSORFUNC_IO_MIAOBYTE_HPP

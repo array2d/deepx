@@ -7,7 +7,7 @@ def newtensor():
 
    from deepx.nn.functional import newtensor
    t=newtensor(1,2,3,name='t')
-   print(t)
+   t.print()
 
 if __name__ == "__main__":
    newtensor()

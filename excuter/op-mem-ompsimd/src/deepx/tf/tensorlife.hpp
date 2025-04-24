@@ -137,52 +137,66 @@ namespace deepx::tf
  
          int run(shared_ptr<MemBase> mem, string &error) override
         {
-            if (!checktensors({this->args[0].textvalue, this->args[1].textvalue}, mem, error) != 0)
+            if (!checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error) != 0)
             {
                 return 1;
             }
-            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
-            Precision type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
-            if (input_type != type)
+            Precision src_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            Precision dst_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (src_type != dst_type)
             {
                 error = "copytensor: input type and return type must be the same";
                 return 1;
             }
-            switch (input_type)
+            switch (src_type)
             {
             case Precision::Float64:
             {
-                tensorfunc::copy(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<double>(this->args[1].textvalue));
+                auto src = mem->gettensor<double>(this->args[0].textvalue);
+                auto dst = mem->gettensor<double>(this->returns[0].textvalue);
+                dst->copyer(src->data,dst->data,src->shape.size);
                 break;
             }
             case Precision::Float32:
             {
-                tensorfunc::copy(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->args[1].textvalue));
+                auto src = mem->gettensor<float>(this->args[0].textvalue);
+                auto dst = mem->gettensor<float>(this->returns[0].textvalue);
+                dst->copyer(src->data,dst->data,src->shape.size);
                 break;
             }
             case Precision::Int64:
             {
-                tensorfunc::copy(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue));
+                auto src = mem->gettensor<int64_t>(this->args[0].textvalue);
+                auto dst = mem->gettensor<int64_t>(this->returns[0].textvalue);
+                dst->copyer(src->data,dst->data,src->shape.size);
                 break;
             }
             case Precision::Int32:
             {
-                tensorfunc::copy(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue));
+                auto src = mem->gettensor<int32_t>(this->args[0].textvalue);
+                auto dst = mem->gettensor<int32_t>(this->returns[0].textvalue);
+                dst->copyer(src->data,dst->data,src->shape.size);
                 break;
             }
             case Precision::Int16:
             {
-                tensorfunc::copy(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->args[1].textvalue));
+                auto src = mem->gettensor<int16_t>(this->args[0].textvalue);
+                auto dst = mem->gettensor<int16_t>(this->returns[0].textvalue);
+                dst->copyer(src->data,dst->data,src->shape.size);
                 break;
             }
             case Precision::Int8:
             {
-                tensorfunc::copy(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->args[1].textvalue));
+                auto src = mem->gettensor<int8_t>(this->args[0].textvalue);
+                auto dst = mem->gettensor<int8_t>(this->returns[0].textvalue);
+                dst->copyer(src->data,dst->data,src->shape.size);
                 break;
             }
             case Precision::Bool:
             {
-                tensorfunc::copy(*mem->gettensor<bool>(this->args[0].textvalue), *mem->gettensor<bool>(this->args[1].textvalue));
+                auto src = mem->gettensor<bool>(this->args[0].textvalue);
+                auto dst = mem->gettensor<bool>(this->returns[0].textvalue);
+                dst->copyer(src->data,dst->data,src->shape.size);
                 break;
             }
             default:
@@ -196,7 +210,7 @@ namespace deepx::tf
 
         string math_formula() const override
         {
-            return "T2.data = T1.data";
+            return "T1.data->T2.data";
         }
         shared_ptr<TF> clone() const override
         {
@@ -216,14 +230,14 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            string name = this->args[0].textvalue;
+            string name = this->returns[0].textvalue;
             mem->delete_tensor(name);
             return 0;
         }
 
         string math_formula() const override
         {
-            return "del T1";
+            return "del->T1";
         }
         shared_ptr<TF> clone() const override
         {
@@ -244,18 +258,18 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            string old_name = this->args[0].textvalue;
-            if (!checktensors({this->args[0].textvalue}, mem, error) != 0)
+            string old_name = this->returns[0].textvalue;
+            if (!checktensors({old_name}, mem, error) != 0)
             {
                 return 1;
             }
-            string new_name = this->args[1].textvalue;
+            string new_name = this->args[0].textvalue;
             mem->rename_tensor(old_name, new_name);
             return 0;
         }
         string math_formula() const override
         {
-            return "rename T1 to T2";
+            return "rename(newname)->T1";
         }
         shared_ptr<TF> clone() const override
         {

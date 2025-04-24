@@ -10,19 +10,19 @@ def rtf_newtensor(t:Tensor):
 
 
 def rtf_copytensor(t:Tensor,out:Tensor):
-    args=[Param.tensor(t),Param.tensor(out)]
-    returns=[]
+    args=[Param.tensor(t)]
+    returns=[Param.tensor(out)]
     ir=DeepxIR("copytensor", args, returns,'')
     send(ir)
 
 def rtf_deltensor(t:Tensor):
-    args=[Param.tensor(t)]
-    returns=[]
+    args=[]
+    returns=[Param.tensor(t)]
     ir=DeepxIR("deltensor", args, returns,'')
     send(ir)
 
 def rtf_renametensor(t:Tensor,new_name:str):
-    args=[Param.tensor(t),Param.varstr(new_name)]
-    returns=[]
+    args=[Param.varstr(new_name)]
+    returns=[Param.tensor(t)]
     ir=DeepxIR("renametensor", args, returns,'')
     send(ir)

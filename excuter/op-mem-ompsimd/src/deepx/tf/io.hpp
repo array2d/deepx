@@ -78,16 +78,55 @@ namespace deepx::tf
         {
             string name = this->args[0].textvalue;
             string path = this->args[1].textvalue;
-            if (mem->existstensor(name))
+            if (!mem->existstensor(name))
             {
-                auto t = mem->gettensor(name);
-                tensorfunc::save<void>(*t, path);
-            }
-            else
-            {
+   
                 std::cerr << "save " << name << " not found" << std::endl;
                 error = "save " + name + " not found";
                 return 1;
+            }
+            Precision dtype = mem->gettensor(name)->shape.dtype;
+            tensorfunc::saveShape(mem->gettensor(name)->shape,path);
+            switch (dtype)
+            {   
+            case Precision::Float64:{
+                auto t = mem->gettensor<double>(name);
+                t->saver(t->data,t->shape.size,path);
+                break;
+            }
+            case Precision::Float32:{
+                auto t = mem->gettensor<float>(name);
+                t->saver(t->data,t->shape.size,path);
+                break;
+            }
+
+            case Precision::Int64:{
+                auto t = mem->gettensor<int64_t>(name);
+                t->saver(t->data,t->shape.size,path);
+                break;  
+            }
+            case Precision::Int32:{
+                auto t = mem->gettensor<int32_t>(name);
+                t->saver(t->data,t->shape.size,path);
+                break;
+            }
+            case Precision::Int16:{
+                auto t = mem->gettensor<int16_t>(name);
+                t->saver(t->data,t->shape.size,path);
+                break;  
+            }
+            case Precision::Int8:{
+                auto t = mem->gettensor<int8_t>(name);
+                t->saver(t->data,t->shape.size,path);
+                break;
+            }
+            case Precision::Bool:{
+                auto t = mem->gettensor<bool>(name);
+                t->saver(t->data,t->shape.size,path);
+                break;  
+            }
+            default:
+                break;
             }
             return 0;
         }

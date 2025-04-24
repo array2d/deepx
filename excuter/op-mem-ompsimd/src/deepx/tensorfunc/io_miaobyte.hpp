@@ -36,34 +36,8 @@ namespace deepx::tensorfunc
         }
     };
 
-    template <typename T>
-    void save(Tensor<T> &tensor, const std::string &path)
-    {
-
-        // 保存shape
-        std::string shapepath = path + ".shape";
-        std::string shapedata = tensor.shape.toYaml();
-        std::ofstream shape_fs(shapepath, std::ios::binary);
-        shape_fs.write(shapedata.c_str(), shapedata.size());
-        shape_fs.close();
-
-        // 保存data
-        std::string datapath = path + ".data";
-        std::ofstream data_fs(datapath, std::ios::binary | std::ios::in | std::ios::out);
-
-        if (!data_fs.is_open())
-        {
-            // 如果文件不存在，则创建新文件
-            data_fs.open(datapath, std::ios::binary | std::ios::out);
-        }
-        int data_size = tensor.shape.size * precision_bits(tensor.shape.dtype) / 8;
-        data_fs.write(reinterpret_cast<const char *>(tensor.data), data_size);
-        data_fs.close();
-    }
 
     //load
-
-
     template <typename T>
     pair<std::string,shared_ptr<Tensor<T>>> load(const std::string &path)
     {
@@ -79,25 +53,9 @@ namespace deepx::tensorfunc
             throw std::runtime_error("调用load<" + precision_str(shape.dtype) + "> 不匹配: 需要 " + precision_str(shape.dtype) +
                                      " 类型，但文件为" + precision_str(precision<T>()) + " 类型");
         }
-
-        // 检查file.size，是否是tensor.size*sizeof(T)
-        std::string datapath = path + ".data";
-        std::ifstream data_fs(datapath, std::ios::binary);
-        data_fs.seekg(0, std::ios::end);
-        std::streamsize fileSize = data_fs.tellg();
-        std::streamsize expectedSize = shape.size * (precision_bits(shape.dtype) / 8);
-
-        if (fileSize != expectedSize)
-        {
-            throw std::runtime_error("数据文件大小不足: 需要 " + std::to_string(expectedSize) +
-                                     " 字节，但文件只有 " + std::to_string(fileSize) + " 字节");
-        }
-        data_fs.seekg(0);
-
-        // 创建tensor
+ 
         shared_ptr<Tensor<T>> tensor = make_shared<Tensor<T>>(New<T>(shape.shape));
-        data_fs.read(reinterpret_cast<char *>(tensor->data), fileSize);
-        data_fs.close();
+        tensor->loader(path,tensor->data,tensor->shape.size);
         return std::make_pair(tensor_name, tensor);
     };
 

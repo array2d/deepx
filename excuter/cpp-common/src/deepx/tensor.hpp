@@ -31,7 +31,7 @@ namespace deepx
         using SaveFn = void (*)(T *,size_t,const std::string &);
         SaveFn saver; // 保存内存
 
-        using LoadFn = int (*)(const std::string &, T *,int);
+        using LoadFn = void (*)(const std::string &, T *,int);
         LoadFn loader; // 加载内存
 
         Tensor() = default;

@@ -16,19 +16,24 @@ namespace deepx::tensorfunc{
         printDispatcher<Author,T>::print(t, f);
     }
     
-    template <typename T>
-    void save(const Tensor<T> &tensor,const std::string &path);
-
+ 
+    inline void saveShape(const Shape &shape,const std::string &tensorPath){
+        std::string shapepath = tensorPath + ".shape";
+        std::string shapedata = shape.toYaml();
+        std::ofstream shape_fs(shapepath, std::ios::binary);
+        shape_fs.write(shapedata.c_str(), shapedata.size());
+        shape_fs.close();
+    }
     
-    
-    //load
-    template <typename T>
-    pair<std::string,shared_ptr<Tensor<T>>> load(const std::string &path);
-
+ 
     inline pair<std::string,Shape> loadShape(const std::string &path)
     {
         std::string shapepath = path + ".shape";
         std::ifstream shape_fs(shapepath, std::ios::binary);
+        if (!shape_fs.is_open())
+        {
+            throw std::runtime_error("Failed to open shape file: " + shapepath);
+        }
         std::string shapedata((std::istreambuf_iterator<char>(shape_fs)), std::istreambuf_iterator<char>());
         Shape shape;
         shape.fromYaml(shapedata);
@@ -36,9 +41,7 @@ namespace deepx::tensorfunc{
         std::string tensor_name = filename.substr(0, filename.find_last_of('.'));
         return std::make_pair(tensor_name, shape);
     }
-    //对loaddata，不同excuter的实现不同。gpu具有显存，可以直接从文件到显存。
-    template <typename T>
-    void loadData(const std::string &path,Tensor<T> &tensor);
+ 
 }
 
 #endif // DEEPX_TENSORFUNC_IO_HPP

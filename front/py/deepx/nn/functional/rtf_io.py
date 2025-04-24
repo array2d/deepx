@@ -24,3 +24,10 @@ def rtf_load(path:str)->Tensor:
     shapefile=path+'.shape'
     tensor_name,shape,dtype=loadShape(shapefile)
     return Tensor(shape.shape,dtype,tensor_name)
+
+def rtf_loadtensordata(t:Tensor,path:str)->Tensor:
+    args=[Param.varstr(path)]
+    returns=[Param.tensor(t)]
+    ir=DeepxIR("loadtensordata", args, returns)
+    send(ir)
+    return t

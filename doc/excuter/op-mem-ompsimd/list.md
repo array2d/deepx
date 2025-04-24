@@ -6,36 +6,44 @@
 
 | Operation | Author | Func Def | Math Formula | IR Instruction |
 |-----------|--------|------------|--------------|----------------|
-| vecset |  none  | vecset(vector<any> value)->(vector<any> name) | shape = [3  4  5] | vecset(vector<any> value)->(vector<any> name) |
-| argset |  none  | argset(var<any> value)->(var<any> name) | var argname = argvalue | argset(var<any> value)->(var<any> name) |
+| vecset |  none  | vecset(vector<any> value)->(vector<any> name) | [3  4  5]->shape | vecset(vector<any> value)->(vector<any> name) |
+| argset |  none  | argset(var<any> value)->(var<any> name) | argvalue->argname | argset(var<any> value)->(var<any> name) |
 
 ### tensorlife
 
 | Operation | Author | Func Def | Math Formula | IR Instruction |
 |-----------|--------|------------|--------------|----------------|
-| renametensor |  none  | renametensor(tensor<any> t, var<string> new_name)->() | rename T1 to T2 | renametensor(tensor<any> t, var<string> new_name)->() |
-| newtensor |  none  | newtensor(vector<int32> shape)->(tensor<any> tensor1) | T1 =Tensor(shape=[...]) | newtensor(vector<int32> shape)->(tensor<any> tensor1) |
+| renametensor |  none  | renametensor(var<string> new_name)->(tensor<any> t) | rename(newname)->T1 | renametensor(var<string> new_name)->(tensor<any> t) |
+| newtensor |  none  | newtensor(vector<int32> shape)->(tensor<any> t) | T1 =Tensor(shape=[...]) | newtensor(vector<int32> shape)->(tensor<any> t) |
 | newtensor |  none  | newtensor(var<string> shape)->(tensor<any> t) | T1 =Tensor(shape=[...]) | newtensor(var<string> shape)->(tensor<any> t) |
-| deltensor |  none  | deltensor(tensor<any> t)->() | del T1 | deltensor(tensor<any> t)->() |
-| copytensor |  none  | copytensor(tensor<any> src, tensor<any> dst)->() | T2.data = T1.data | copytensor(tensor<any> src, tensor<any> dst)->() |
+| deltensor |  none  | deltensor()->(tensor<any> t) | del->T1 | deltensor()->(tensor<any> t) |
+| copytensor |  none  | copytensor(tensor<any> src)->(tensor<any> dst) | T1.data->T2.data | copytensor(tensor<any> src)->(tensor<any> dst) |
 
 ### io
 
 | Operation | Author | Func Def | Math Formula | IR Instruction |
 |-----------|--------|------------|--------------|----------------|
+| loadtensordata |  none  | loadtensordata(var<string> path)->(tensor<any> t) | loadtensordata(path)->tensor.data | loadtensordata(var<string> path)->(tensor<any> t) |
 | save |  none  | save(tensor<any> t, var<string> path)->() | save(T1,path) | save(tensor<any> t, var<string> path)->() |
 | print | miaobyte | print(tensor<any> t)->() | print(T1) | print(tensor<any> t)->() |
 | print | miaobyte | print(tensor<any> t, var<string> format)->() | print(T1) | print(tensor<any> t, var<string> format)->() |
 | load |  none  | load(var<string> path)->() | mem.load(path) | load(var<string> path)->() |
 
+### matmul
+
+| Operation | Author | Func Def | Math Formula | IR Instruction |
+|-----------|--------|------------|--------------|----------------|
+| matmul | cblas | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) | T3=T1 @ T2 | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) |
+| matmul | miaobyte | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1 @ T2 | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
+
 ### init
 
 | Operation | Author | Func Def | Math Formula | IR Instruction |
 |-----------|--------|------------|--------------|----------------|
-| normal | miaobyte | normal(tensor<any> t, var<any> mean, var<any> std, var<int32> seed)->() | normal(T1,mean,stddev,seed) | normal(tensor<any> t, var<any> mean, var<any> std, var<int32> seed)->() |
-| uniform | miaobyte | uniform(tensor<any> t, var<any> low, var<any> high, var<int32> seed)->() | uniform(T1,low,high,seed) | uniform(tensor<any> t, var<any> low, var<any> high, var<int32> seed)->() |
-| arange | miaobyte | arange(tensor<any> t, var<any> start, var<any> step)->() | arange(T1,start,step) | arange(tensor<any> t, var<any> start, var<any> step)->() |
-| constant | miaobyte | constant(tensor<any> t, var<any> value)->() | constant(T1,value) | constant(tensor<any> t, var<any> value)->() |
+| normal | miaobyte | normal(var<any> mean, var<any> std, var<int32> seed)->(tensor<any> t) | normal(mean,stddev,seed)->T1 | normal(var<any> mean, var<any> std, var<int32> seed)->(tensor<any> t) |
+| uniform | miaobyte | uniform(var<any> low, var<any> high, var<int32> seed)->(tensor<any> t) | uniform(low,high,seed)->T1 | uniform(var<any> low, var<any> high, var<int32> seed)->(tensor<any> t) |
+| arange | miaobyte | arange(var<any> start, var<any> step)->(tensor<any> t) | arange(start,step)->T1 | arange(var<any> start, var<any> step)->(tensor<any> t) |
+| constant | miaobyte | constant(var<any> value)->(tensor<any> t) | constant(value)->T1 | constant(var<any> value)->(tensor<any> t) |
 
 ### elementwise
 
@@ -61,21 +69,14 @@
 | sub | miaobyte | sub(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1-T2 | sub(tensor<any> a, tensor<any> b)->(tensor<any> c) |
 | sqrt | miaobyte | sqrt(tensor<any> A)->(tensor<any> C) | T3=sqrt(T1) | sqrt(tensor<any> A)->(tensor<any> C) |
 | subscalar | miaobyte | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) | T3=T1-scalar | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
+| exp | miaobyte | exp(tensor<any> A)->(tensor<any> C) | T3=exp(T1) | exp(tensor<any> A)->(tensor<any> C) |
+| mul | miaobyte | mul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1*T2 | mul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | equal | miaobyte | equal(tensor<any> A, tensor<any> B)->(tensor<bool> mask) | mask=equal(T1,T2) | equal(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
 | mulscalar | miaobyte | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) | T3=T1*scalar | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
 | div | miaobyte | div(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1/T2 | div(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | invert | miaobyte | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) | T3=~T1 | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) |
 | max | miaobyte | max(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=max(T1,T2) | max(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | pow | miaobyte | pow(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1^T2 | pow(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| mul | miaobyte | mul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1*T2 | mul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| exp | miaobyte | exp(tensor<any> A)->(tensor<any> C) | T3=exp(T1) | exp(tensor<any> A)->(tensor<any> C) |
-
-### matmul
-
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| matmul | cblas | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) | T3=T1 @ T2 | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) |
-| matmul | miaobyte | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1 @ T2 | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 
 ### reduce
 
