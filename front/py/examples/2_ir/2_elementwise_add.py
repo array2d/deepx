@@ -10,7 +10,7 @@ print(torch_t3)
 
 ############-------DEEPX-------################
 
-from deepx import Tensor,full
+from deepx import  full
 
 print()
 
@@ -18,4 +18,4 @@ t1 = full(2,3,4, value=10,dtype="float32")
 t2 = t1.clone()
 t3 = t1+t2
 t3.add_(0.5)
-print(t3)
+t3.print()

@@ -55,7 +55,7 @@ namespace deepx::tensorfunc
         }
  
         shared_ptr<Tensor<T>> tensor = make_shared<Tensor<T>>(New<T>(shape.shape));
-        tensor->loader(path,tensor->data,tensor->shape.size);
+        tensor->loader(path+".data",tensor->data,tensor->shape.size);
         return std::make_pair(tensor_name, tensor);
     };
 

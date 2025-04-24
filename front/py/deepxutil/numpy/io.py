@@ -1,4 +1,4 @@
-from deepx.tensor import Shape,saveShape
+from deepx.tensor import Shape
  
 def save_numpy(t,tensorpath:str):
     r'''
@@ -10,7 +10,7 @@ def save_numpy(t,tensorpath:str):
     assert isinstance(t,ndarray)
     shape=Shape(t.shape)
     shape._dtype=str(t.dtype)
-    saveShape(shape,tensorpath+".shape")
+    shape.save(tensorpath+".shape")
 
     array = ascontiguousarray(t)
     array.tofile(tensorpath+'.data')

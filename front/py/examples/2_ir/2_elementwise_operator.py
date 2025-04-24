@@ -25,14 +25,14 @@ t2 = deepx.ones([3,4,5],dtype='float32',name="t2")
 t3 = t1.add(t2,out='t3')
 t4=deepx.full([3,4,5],value=0.5,name='t4')
 t5=t4.add(t3,out='t5')
-print(t5)
+t5.print()
 t6=t1.div(t2,out='t6')
-print(t6)
+t6.print()
 t7=t2.rdiv(0.05,out='t7')
 t7.mul_(2.5)
-print(t7)
+t7.print()
 t8=t7.mul(t2,out='t8')
-print(t8)
+t8.print()
 
 
 

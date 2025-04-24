@@ -1,13 +1,13 @@
 benchcnt=100
 
-from deepx.nn.functional import save_npy
+from deepxutil.numpy  import save_numpy
 import numpy as np
 np_T1 = np.random.randn(1024, 1024).astype(np.float32)
 np_T2 = np.random.randn(1024, 1024).astype(np.float32)
 
-npy_path = '/home/lipeng/model/deepxmodel/tester/'
-save_npy(np_T1,npy_path+'t1')
-save_npy(np_T2,npy_path+'t2')
+npy_path = '/home/lipeng/model/deepxmodel/matmul/'
+save_numpy(np_T1,npy_path+'t1')
+save_numpy(np_T2,npy_path+'t2')
 
 ############-------PyTorch-------################
 

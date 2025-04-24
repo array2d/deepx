@@ -87,6 +87,7 @@ namespace deepx::tf
             }
             Precision dtype = mem->gettensor(name)->shape.dtype;
             tensorfunc::saveShape(mem->gettensor(name)->shape,path);
+            path+=".data";
             switch (dtype)
             {   
             case Precision::Float64:{

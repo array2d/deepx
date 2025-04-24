@@ -29,6 +29,7 @@ namespace stdutil
         {
             throw std::runtime_error("Failed to open file: " + path);
         }
+
         ifs.seekg(0, ios::end);
         size_t size = ifs.tellg();
         ifs.seekg(0, ios::beg);

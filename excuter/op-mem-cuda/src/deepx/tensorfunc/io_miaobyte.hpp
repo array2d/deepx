@@ -91,9 +91,9 @@ namespace deepx::tensorfunc
             throw std::runtime_error("调用load<" + precision_str(shape.dtype) + "> 不匹配: 需要 " + precision_str(shape.dtype) +
                                      " 类型，但文件为" + precision_str(precision<T>()) + " 类型");
         }
- 
+
         shared_ptr<Tensor<T>> tensor = make_shared<Tensor<T>>(New<T>(shape.shape));
-        tensor->loader(path,tensor->data,tensor->shape.size);
+        tensor->loader(path+".data",tensor->data,tensor->shape.size);
         return std::make_pair(tensor_name, tensor);
     };
 

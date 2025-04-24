@@ -156,52 +156,69 @@ namespace deepx::tf
                 error = "copytensor: input type and return type must be the same";
                 return 1;
             }
-            auto src = mem->gettensor(this->args[0].textvalue);
-            auto dst = mem->gettensor(this->returns[0].textvalue);
+
             switch (type)
             {
             case Precision::Float64:
             {
+                auto src = mem->gettensor<double>(this->args[0].textvalue);
+                auto dst = mem->gettensor<double>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
             case Precision::Float32:
             {
+                auto src = mem->gettensor<float>(this->args[0].textvalue);
+                auto dst = mem->gettensor<float>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
             case Precision::Float16:
             {
+                auto src = mem->gettensor<half>(this->args[0].textvalue);
+                auto dst = mem->gettensor<half>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
             case Precision::BFloat16:
             {
+                auto src = mem->gettensor<nv_bfloat16>(this->args[0].textvalue);
+                auto dst = mem->gettensor<nv_bfloat16>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
             case Precision::Int64:
             {
+                auto src = mem->gettensor<int64_t>(this->args[0].textvalue);
+                auto dst = mem->gettensor<int64_t>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
             case Precision::Int32:
             {
+                auto src = mem->gettensor<int32_t>(this->args[0].textvalue);
+                auto dst = mem->gettensor<int32_t>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
             case Precision::Int16:
             {
+                auto src = mem->gettensor<int16_t>(this->args[0].textvalue);
+                auto dst = mem->gettensor<int16_t>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
             case Precision::Int8:
             {
+                auto src = mem->gettensor<int8_t>(this->args[0].textvalue);
+                auto dst = mem->gettensor<int8_t>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
             case Precision::Bool:
             {
+                auto src = mem->gettensor<bool>(this->args[0].textvalue);
+                auto dst = mem->gettensor<bool>(this->returns[0].textvalue);
                 dst->copyer(src->data, dst->data, src->shape.size);
                 break;
             }
