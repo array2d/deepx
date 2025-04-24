@@ -168,5 +168,40 @@ namespace deepx::tf
             return 0;
         }
     };
+
+    //loadtensordata
+    class LoadTensorData : public TF
+    {
+    public:
+        LoadTensorData(vector<Param> args, vector<Param> returns)
+        {   
+            this->name = "loadtensordata";
+            this->tftype = "io";
+            this->args = args;
+            this->returns = returns;
+        }   
+        string math_formula() const override
+        {
+            return "loadtensordata(path)->tensor.data";
+        }
+        shared_ptr<TF> clone() const override
+        {   
+            return make_shared<LoadTensorData>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            string path = this->args[0].textvalue;
+            string tensorname = this->returns[0].textvalue;
+            if(!mem->existstensor(tensorname))
+            {
+                error = "loadtensordata " + tensorname + " not found";
+                return 1;
+            }
+            auto t = *mem->gettensor(tensorname);
+            t.loader(path,t.data,t.shape.size);
+            return 0;
+        }
+    };
+    
 }
 #endif // DEEPX_TF_IO_HPP

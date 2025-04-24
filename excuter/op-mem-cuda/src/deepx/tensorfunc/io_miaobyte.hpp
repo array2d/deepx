@@ -13,7 +13,7 @@
 #include <stdutil/print.hpp>
 #include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/io.hpp"
-
+#include "deepx/tensorfunc/cuda.hpp"
 namespace deepx::tensorfunc
 {
     template <typename T>
@@ -24,20 +24,9 @@ namespace deepx::tensorfunc
             int64_t total_bytes = t.shape.bytes();
 
             // 统一分配CPU内存
-            unsigned char *host_data = new unsigned char[total_bytes];
-            if (host_data == nullptr)
-            {
-                throw std::runtime_error("Failed to allocate host memory");
-            }
-            cudaError_t err = cudaMemcpy(host_data, t.data, total_bytes, cudaMemcpyDeviceToHost);
-            if (err != cudaSuccess)
-            {
-                delete[] host_data;
-                throw std::runtime_error("Failed to copy data from device to host");
-            }
-
-            stdutil::print(t.shape.shape, host_data, t.shape.dtype, f);
-            delete[] host_data;
+            unsigned char* device_data=reinterpret_cast<unsigned char*>(t.data);
+            auto [_,host_data]= device_offload(device_data,total_bytes);
+            stdutil::print(t.shape.shape, host_data.get(), t.shape.dtype, f);
         };
     };
 
@@ -50,36 +39,17 @@ namespace deepx::tensorfunc
             int64_t total_bytes = t.shape.bytes();
 
             // 统一分配CPU内存
-            unsigned char *host_data = new unsigned char[total_bytes];
-            if (host_data == nullptr)
-            {
-                throw std::runtime_error("Failed to allocate host memory");
-            }
-
-            // 统一复制数据到CPU
-            cudaError_t err = cudaMemcpy(host_data, t.data, total_bytes, cudaMemcpyDeviceToHost);
-            if (err != cudaSuccess)
-            {
-                delete[] host_data;
-                throw std::runtime_error("Failed to copy data from device to host");
-            }
-
-            float *host_float = new float[t.shape.size];
-            if (host_float == nullptr)
-            {
-                delete[] host_data;
-                throw std::runtime_error("Failed to allocate host memory for float conversion");
-            }
-
+            unsigned char* device_data=reinterpret_cast<unsigned char*>(t.data);
+            auto [_,host_data_]= device_offload(device_data,total_bytes);
+            half* host_data=reinterpret_cast<half*>(host_data_.get());
+            shared_ptr<float[]> host_float(new float[t.shape.size]);
             for (size_t i = 0; i < t.shape.size; i++)
             {
-                host_float[i] = __half2float(((half *)host_data)[i]);
+                host_float[i] = __half2float(host_data[i]);
             }
 
-            delete[] host_data;
             // 打印转换后的float数据
-            stdutil::print(t.shape.shape, host_float, Precision::Float32, f);
-            delete[] host_float;
+            stdutil::print(t.shape.shape, host_float.get(), Precision::Float32, f);
         }
     };
 
@@ -91,79 +61,27 @@ namespace deepx::tensorfunc
             int64_t total_bytes = t.shape.bytes();
 
             // 统一分配CPU内存
-            unsigned char *host_data = new unsigned char[total_bytes];
-            if (host_data == nullptr)
-            {
-                throw std::runtime_error("Failed to allocate host memory");
-            }
-
-            // 统一复制数据到CPU
-            cudaError_t err = cudaMemcpy(host_data, t.data, total_bytes, cudaMemcpyDeviceToHost);
-            if (err != cudaSuccess)
-            {
-                delete[] host_data;
-                throw std::runtime_error("Failed to copy data from device to host");
-            }
-
-            float *host_float = new float[t.shape.size];
-            if (host_float == nullptr)
-            {
-                delete[] host_data;
-                throw std::runtime_error("Failed to allocate host memory for float conversion");
-            }
+            unsigned char* device_data=reinterpret_cast<unsigned char*>(t.data);
+            auto [_,host_data_]= device_offload(device_data,total_bytes);
+            nv_bfloat16* host_data=reinterpret_cast<nv_bfloat16*>(host_data_.get());
+            shared_ptr<float[]> host_float(new float[t.shape.size]);
 
             for (size_t i = 0; i < t.shape.size; i++)
             {
-                host_float[i] = __bfloat162float(((nv_bfloat16 *)host_data)[i]);
-            }
-            delete[] host_data;
+                host_float[i] = __bfloat162float(host_data[i]);
+            }           
             // 打印转换后的float数据
-            stdutil::print(t.shape.shape, host_float, Precision::Float32, f);
-            delete[] host_float;
+            stdutil::print(t.shape.shape, host_float.get(), Precision::Float32, f); 
         }
     };
 
     template <typename T>
     void save(Tensor<T> &tensor, const std::string &path)
     {
-        // 保存shape
-        std::string shapepath = path + ".shape";
-        std::string shapedata = tensor.shape.toYaml();
-        std::ofstream shape_fs(shapepath, std::ios::binary);
-        shape_fs.write(shapedata.c_str(), shapedata.size());
-        shape_fs.close();
-
-        // 保存data
-        int64_t total_bytes = tensor.shape.bytes();
-
         // 统一分配CPU内存
-        unsigned char *host_data = new unsigned char[total_bytes];
-        if (host_data == nullptr)
-        {
-            throw std::runtime_error("Failed to allocate host memory");
-        }
-
-        // 统一复制数据到CPU
-        cudaError_t err = cudaMemcpy(host_data, tensor.data, total_bytes, cudaMemcpyDeviceToHost);
-        if (err != cudaSuccess)
-        {
-            delete[] host_data;
-            throw std::runtime_error("Failed to copy data from device to host");
-        }
-
-        std::string datapath = path + ".data";
-        std::ofstream data_fs(datapath, std::ios::binary | std::ios::in | std::ios::out);
-
-        if (!data_fs.is_open())
-        {
-            // 如果文件不存在，则创建新文件
-            data_fs.open(datapath, std::ios::binary | std::ios::out);
-        }
-        data_fs.seekp(0);
-        data_fs.write(reinterpret_cast<const char *>(host_data), total_bytes);
-        data_fs.close();
-
-        delete[] host_data;
+        unsigned char* device_data=reinterpret_cast<unsigned char*>(tensor.data);
+        auto [size,host_data]= device_offload(device_data,tensor.shape.bytes());
+        stdutil::save(host_data.get(),size,path);
     };
 
     template <typename T>
@@ -183,36 +101,19 @@ namespace deepx::tensorfunc
 
         // 检查file.size，是否是tensor.size*sizeof(T)
         std::string datapath = path + ".data";
-        std::ifstream data_fs(datapath, std::ios::binary);
-        data_fs.seekg(0, std::ios::end);
-        std::streamsize fileSize = data_fs.tellg();
-        std::streamsize expectedSize = shape.bytes();
-
-        if (fileSize != expectedSize)
-        {
-            throw std::runtime_error("数据文件大小不足: 需要 " + std::to_string(expectedSize) +
+        auto [fileSize,hostdata]=stdutil::load(datapath);
+        if(fileSize!=shape.bytes()){
+            throw std::runtime_error("数据文件大小不足: 需要 " + std::to_string(shape.bytes()) +
                                      " 字节，但文件只有 " + std::to_string(fileSize) + " 字节");
         }
-        data_fs.seekg(0);
-
-        // TODO 从文件，到cuda内存（可能是显存）
-
+        T *host_data=reinterpret_cast<T*>(hostdata.get());
         shared_ptr<Tensor<T>> tensor = make_shared<Tensor<T>>(New<T>(shape.shape));
-        unsigned char *host_data = new unsigned char[fileSize];
-        if (host_data == nullptr)
-        {
-            throw std::runtime_error("Failed to allocate host memory");
-        }
-        data_fs.read(reinterpret_cast<char *>(host_data), fileSize);
-        data_fs.close();
-
+        
         cudaError_t err = cudaMemcpy(tensor->data, host_data, fileSize, cudaMemcpyHostToDevice);
         if (err != cudaSuccess)
         {
-            delete[] host_data;
             throw std::runtime_error("Failed to copy data from host to device");
         }
-        delete[] host_data;
         return std::make_pair(tensor_name, tensor);
     }
 }

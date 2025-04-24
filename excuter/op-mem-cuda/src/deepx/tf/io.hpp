@@ -178,5 +178,126 @@ namespace deepx::tf
             return 0;
         }
     };
+
+    //loadtensor
+    class LoadTensor : public TF
+    {
+    public:
+        LoadTensor(vector<Param> args, vector<Param> returns)
+        {
+            this->name = "loadtensor";
+            this->tftype = "io";
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override
+        {
+            return "loadtensor(path)->tensor";
+        }
+        shared_ptr<TF> clone() const override   
+        {
+            return make_shared<LoadTensor>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            string path = this->args[0].textvalue;  
+            string tensorname = this->returns[0].textvalue;
+            if(!mem->existstensor(tensorname))
+            {   
+                error = "loadtensor " + tensorname + " not exists";
+                return 1;
+            }
+            pair<std::string,Shape> shape_name=tensorfunc::loadShape(path);
+            std::string tensor_name=shape_name.first;
+            Shape shape=shape_name.second;
+            switch (shape.dtype)
+            {
+            case Precision::Float64:{
+                pair<std::string,shared_ptr<Tensor<double>>> t = tensorfunc::load<double>(path);
+                mem->gettensor<double>(tensorname)->copyer(t.second->data,mem->gettensor<double>(tensorname)->data,t.second->shape.size);
+                break;
+            }
+            case Precision::Float32:{
+                pair<std::string,shared_ptr<Tensor<float>>> t = tensorfunc::load<float>(path);
+                mem->gettensor<float>(tensorname)->copyer(t.second->data,mem->gettensor<float>(tensorname)->data,t.second->shape.size);
+                break;
+            }
+            case Precision::Float16:{
+                pair<std::string,shared_ptr<Tensor<half>>> t = tensorfunc::load<half>(path);
+                mem->gettensor<half>(tensorname)->copyer(t.second->data,mem->gettensor<half>(tensorname)->data,t.second->shape.size);
+                break;
+            }
+            case Precision::BFloat16:{
+                pair<std::string,shared_ptr<Tensor<nv_bfloat16>>> t = tensorfunc::load<nv_bfloat16>(path);
+                mem->gettensor<nv_bfloat16>(tensorname)->copyer(t.second->data,mem->gettensor<nv_bfloat16>(tensorname)->data,t.second->shape.size);
+                break;
+            }
+            case Precision::Int64:{
+                pair<std::string,shared_ptr<Tensor<int64_t>>> t = tensorfunc::load<int64_t>(path);
+                mem->gettensor<int64_t>(tensorname)->copyer(t.second->data,mem->gettensor<int64_t>(tensorname)->data,t.second->shape.size);
+                break;
+            }
+            case Precision::Int32:{
+                pair<std::string,shared_ptr<Tensor<int32_t>>> t = tensorfunc::load<int32_t>(path);
+                mem->gettensor<int32_t>(tensorname)->copyer(t.second->data,mem->gettensor<int32_t>(tensorname)->data,t.second->shape.size);
+                break;
+            }
+            case Precision::Int16:{
+                pair<std::string,shared_ptr<Tensor<int16_t>>> t = tensorfunc::load<int16_t>(path);
+                mem->gettensor<int16_t>(tensorname)->copyer(t.second->data,mem->gettensor<int16_t>(tensorname)->data,t.second->shape.size);
+                break;
+            }   
+            case Precision::Int8:{
+                pair<std::string,shared_ptr<Tensor<int8_t>>> t = tensorfunc::load<int8_t>(path);
+                mem->gettensor<int8_t>(tensorname)->copyer(t.second->data,mem->gettensor<int8_t>(tensorname)->data,t.second->shape.size);
+                break;
+            }
+            case Precision::Bool:{
+                pair<std::string,shared_ptr<Tensor<bool>>> t = tensorfunc::load<bool>(path);
+                mem->gettensor<bool>(tensorname)->copyer(t.second->data,mem->gettensor<bool>(tensorname)->data,t.second->shape.size);
+                break;
+            }
+            default:
+                break;
+            }
+
+
+            return 0;
+        }
+    };
+
+    //loadtensordata
+    class LoadTensorData : public TF
+    {
+    public:
+        LoadTensorData(vector<Param> args, vector<Param> returns)
+        {   
+            this->name = "loadtensordata";
+            this->tftype = "io";
+            this->args = args;
+            this->returns = returns;
+        }   
+        string math_formula() const override
+        {
+            return "loadtensordata(path)->tensor";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<LoadTensorData>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            string path = this->args[0].textvalue;
+            string tensorname = this->returns[0].textvalue;
+            if(!mem->existstensor(tensorname))
+            {
+                error = "loadtensordata " + tensorname + " not found";
+                return 1;
+            }
+            auto t = *mem->gettensor(tensorname);
+            t.loader(path,t.data,t.shape.size);
+            return 0;
+        }   
+    };
 }
 #endif

@@ -21,11 +21,11 @@ namespace deepx::tf
  
         string math_formula() const override
         {
-            return "var argname = argvalue";
+            return "argvalue->argname";
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            string name = this->args[0].textvalue;
+            string name = this->returns[0].textvalue;
             if (this->args.size() != 1)
             {
                 error = "argset(int32) must have 1 argument";
@@ -82,7 +82,7 @@ namespace deepx::tf
  
         string math_formula() const override
         {
-            return "shape = [3  4  5]";
+            return "[3  4  5]->shape";
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {

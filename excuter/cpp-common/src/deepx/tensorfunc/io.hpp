@@ -15,10 +15,13 @@ namespace deepx::tensorfunc{
     void print(const Tensor<T> &t, const std::string &f=""){
         printDispatcher<Author,T>::print(t, f);
     }
-
+    
     template <typename T>
-    void save(Tensor<T> &tensor,const std::string &path);
+    void save(const Tensor<T> &tensor,const std::string &path);
 
+    
+    
+    //load
     template <typename T>
     pair<std::string,shared_ptr<Tensor<T>>> load(const std::string &path);
 
@@ -33,7 +36,9 @@ namespace deepx::tensorfunc{
         std::string tensor_name = filename.substr(0, filename.find_last_of('.'));
         return std::make_pair(tensor_name, shape);
     }
-    
+    //对loaddata，不同excuter的实现不同。gpu具有显存，可以直接从文件到显存。
+    template <typename T>
+    void loadData(const std::string &path,Tensor<T> &tensor);
 }
 
 #endif // DEEPX_TENSORFUNC_IO_HPP

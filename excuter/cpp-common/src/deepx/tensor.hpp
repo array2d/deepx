@@ -28,6 +28,12 @@ namespace deepx
         using CopyFn = void (*)(T *, T *, int);
         CopyFn copyer; // 拷贝内存
 
+        using SaveFn = void (*)(T *,size_t,const std::string &);
+        SaveFn saver; // 保存内存
+
+        using LoadFn = int (*)(const std::string &, T *,int);
+        LoadFn loader; // 加载内存
+
         Tensor() = default;
         Tensor(const vector<int> &s)
         {
@@ -57,6 +63,8 @@ namespace deepx
             newer = tensor.newer;
             deleter = tensor.deleter;
             copyer = tensor.copyer;
+            loader = tensor.loader;
+            saver = tensor.saver;
 
             data = newer(shape.size);
             copyer(tensor.data, data, tensor.shape.size);
@@ -76,6 +84,8 @@ namespace deepx
             deleter = other.deleter;
             copyer = other.copyer;
             newer = other.newer;
+            loader = other.loader;
+            saver = other.saver;
 
             data = other.data;
 
@@ -84,6 +94,8 @@ namespace deepx
             other.deleter = nullptr;
             other.copyer = nullptr;
             other.newer = nullptr;
+            other.loader = nullptr;
+            other.saver = nullptr;
         }
 
         /**
@@ -102,7 +114,8 @@ namespace deepx
             deleter = tensor.deleter;
             copyer = tensor.copyer;
             newer = tensor.newer;
-
+            loader = tensor.loader;
+            saver = tensor.saver;
             data = newer(shape.size);
             if (data != nullptr)
             {
@@ -126,6 +139,10 @@ namespace deepx
             newer = tensor.newer;
             deleter = tensor.deleter;
             copyer = tensor.copyer;
+            loader = tensor.loader;
+            saver = tensor.saver;
+
+
             if (data != nullptr)
             {
                 deleter(data);
@@ -135,6 +152,8 @@ namespace deepx
             tensor.deleter = nullptr;
             tensor.copyer = nullptr;
             tensor.newer = nullptr;
+            tensor.loader = nullptr;
+            tensor.saver = nullptr;
             return *this;
         }
     }; 

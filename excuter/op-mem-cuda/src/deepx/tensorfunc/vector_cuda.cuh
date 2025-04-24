@@ -3,6 +3,7 @@
 
 namespace deepx::tensorfunc
 {
+    //TODO 待验证
     template <typename T>
     __device__ void GridStrideLoopCopy(const T* src, T* dst, int size) {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -12,7 +13,7 @@ namespace deepx::tensorfunc
             dst[i] = src[i];
         }
     }
-    
+     //TODO 待验证
     // 全局复制函数，可从主机调用
     template <typename T>
     __global__ void GridStrideLoopCopyKernel(const T* src, T* dst, int size) {

@@ -20,10 +20,17 @@ namespace deepx::tf
             this->args = args;
             this->returns = returns;
         }
- 
+        string math_formula() const override
+        {
+            return "constant(value)->T1";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Constant<Author>>(*this);
+        }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            string name = this->args[0].textvalue;
+            string name = this->returns[0].textvalue;
             auto tensor = mem->gettensor(name).get();
             if (tensor == nullptr)
             {
@@ -36,38 +43,38 @@ namespace deepx::tf
             case Precision::Float64:
             {
                 auto output = mem->gettensor<double>(name).get();
-                tensorfunc::constant<Author, double>(*output, this->getvar<double>(1, mem));
+                tensorfunc::constant<Author, double>(*output, this->getvar<double>(0, mem));
                 break;
             }
             case Precision::Float32:
             {
                 auto output = mem->gettensor<float>(name).get();
-                tensorfunc::constant<Author, float>(*output, this->getvar<float>(1, mem));
+                tensorfunc::constant<Author, float>(*output, this->getvar<float>(0, mem));
                 break;
             }
 
             case Precision::Int64:
             {
                 auto output = mem->gettensor<int64_t>(name).get();
-                tensorfunc::constant<Author, int64_t>(*output, this->getvar<int64_t>(1, mem));
+                tensorfunc::constant<Author, int64_t>(*output, this->getvar<int64_t>(0, mem));
                 break;
             }
             case Precision::Int32:
             {
                 auto output = mem->gettensor<int32_t>(name).get();
-                tensorfunc::constant<Author, int32_t>(*output, this->getvar<int32_t>(1, mem));
+                tensorfunc::constant<Author, int32_t>(*output, this->getvar<int32_t>(0, mem));
                 break;
             }
             case Precision::Int16:
             {
                 auto output = mem->gettensor<int16_t>(name).get();
-                tensorfunc::constant<Author, int16_t>(*output, this->getvar<int16_t>(1, mem));
+                tensorfunc::constant<Author, int16_t>(*output, this->getvar<int16_t>(0, mem));
                 break;
             }
             case Precision::Int8:
             {
                 auto output = mem->gettensor<int8_t>(name).get();
-                tensorfunc::constant<Author, int8_t>(*output, this->getvar<int8_t>(1, mem));
+                tensorfunc::constant<Author, int8_t>(*output, this->getvar<int8_t>(0, mem));
                 break;
             }
             default:
@@ -78,14 +85,6 @@ namespace deepx::tf
             }
             return 0;
         };
-        string math_formula() const override
-        {
-            return "constant(T1,value)";
-        }
-        shared_ptr<TF> clone() const override
-        {
-            return make_shared<Constant<Author>>(*this);
-        }
     };
 
     // arange
@@ -101,9 +100,17 @@ namespace deepx::tf
             this->args = args;
             this->returns = returns;
         }
+         string math_formula() const override
+        {
+            return "arange(start,step)->T1";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Arange<Author>>(*this);
+        }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            string name = this->args[0].textvalue;
+            string name = this->returns[0].textvalue;
             auto tensor = mem->gettensor(name).get();
             auto type = tensor->shape.dtype;
             switch (type)
@@ -111,38 +118,38 @@ namespace deepx::tf
             case Precision::Float64:
             {
                 auto output = mem->gettensor<double>(name).get();
-                tensorfunc::arange<Author, double>(*output, this->getvar<double>(1, mem), this->getvar<double>(2, mem));
+                tensorfunc::arange<Author, double>(*output, this->getvar<double>(0, mem), this->getvar<double>(1, mem));
                 break;
             }
             case Precision::Float32:
             {
                 auto output = mem->gettensor<float>(name).get();
-                tensorfunc::arange<Author, float>(*output, this->getvar<float>(1, mem), this->getvar<float>(2, mem));
+                tensorfunc::arange<Author, float>(*output, this->getvar<float>(0, mem), this->getvar<float>(1, mem));
                 break;
             }
 
             case Precision::Int64:
             {
                 auto output = mem->gettensor<int64_t>(name).get();
-                tensorfunc::arange<Author, int64_t>(*output, this->getvar<int64_t>(1, mem), this->getvar<int64_t>(2, mem));
+                tensorfunc::arange<Author, int64_t>(*output, this->getvar<int64_t>(0, mem), this->getvar<int64_t>(1, mem));
                 break;
             }
             case Precision::Int32:
             {
                 auto output = mem->gettensor<int32_t>(name).get();
-                tensorfunc::arange<Author, int32_t>(*output, this->getvar<int32_t>(1, mem), this->getvar<int32_t>(2, mem));
+                tensorfunc::arange<Author, int32_t>(*output, this->getvar<int32_t>(0, mem), this->getvar<int32_t>(1, mem));
                 break;
             }
             case Precision::Int16:
             {
                 auto output = mem->gettensor<int16_t>(name).get();
-                tensorfunc::arange<Author, int16_t>(*output, this->getvar<int16_t>(1, mem), this->getvar<int16_t>(2, mem));
+                tensorfunc::arange<Author, int16_t>(*output, this->getvar<int16_t>(0, mem), this->getvar<int16_t>(1, mem));
                 break;
             }
             case Precision::Int8:
             {
                 auto output = mem->gettensor<int8_t>(name).get();
-                tensorfunc::arange<Author, int8_t>(*output, this->getvar<int8_t>(1, mem), this->getvar<int8_t>(2, mem));
+                tensorfunc::arange<Author, int8_t>(*output, this->getvar<int8_t>(0, mem), this->getvar<int8_t>(1, mem));
                 break;
             }
             default:
@@ -153,14 +160,7 @@ namespace deepx::tf
             }
             return 0;
         }
-        string math_formula() const override
-        {
-            return "arange(T1,start,step)";
-        }
-        shared_ptr<TF> clone() const override
-        {
-            return make_shared<Arange<Author>>(*this);
-        }
+       
     };
 
     // uniform
@@ -176,48 +176,59 @@ namespace deepx::tf
             this->args = args;
             this->returns = returns;
         }
+        string math_formula() const override
+        {
+            return "uniform(low,high,seed)->T1";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Uniform<Author>>(*this);
+        }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            string name = this->args[0].textvalue;
+            string name = this->returns[0].textvalue;
             auto tensor = mem->gettensor(name).get();
             auto type = tensor->shape.dtype;
+            int low_pos=0;
+            int high_pos=1;
+            unsigned int seed = static_cast<unsigned int>(this->getvar<int>(2, mem));
             switch (type)
             {
             case Precision::Float64:
             {
                 auto output = mem->gettensor<double>(name).get();
-                tensorfunc::uniform<Author, double>(*output, this->getvar<double>(1, mem), this->getvar<double>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::uniform<Author, double>(*output, this->getvar<double>(low_pos, mem), this->getvar<double>(high_pos, mem), seed);
                 break;
             }
             case Precision::Float32:
             {
                 auto output = mem->gettensor<float>(name).get();
-                tensorfunc::uniform<Author, float>(*output, this->getvar<float>(1, mem), this->getvar<float>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::uniform<Author, float>(*output, this->getvar<float>(low_pos, mem), this->getvar<float>(high_pos, mem), seed);
                 break;
             }
 
             case Precision::Int64:
             {
                 auto output = mem->gettensor<int64_t>(name).get();
-                tensorfunc::uniform<Author, int64_t>(*output, this->getvar<int64_t>(1, mem), this->getvar<int64_t>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::uniform<Author, int64_t>(*output, this->getvar<int64_t>(low_pos, mem), this->getvar<int64_t>(high_pos, mem), seed);
                 break;
             }
             case Precision::Int32:
             {
                 auto output = mem->gettensor<int32_t>(name).get();
-                tensorfunc::uniform<Author, int32_t>(*output, this->getvar<int32_t>(1, mem), this->getvar<int32_t>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::uniform<Author, int32_t>(*output, this->getvar<int32_t>(low_pos, mem), this->getvar<int32_t>(high_pos, mem), seed);
                 break;
             }
             case Precision::Int16:
             {
                 auto output = mem->gettensor<int16_t>(name).get();
-                tensorfunc::uniform<Author, int16_t>(*output, this->getvar<int16_t>(1, mem), this->getvar<int16_t>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::uniform<Author, int16_t>(*output, this->getvar<int16_t>(low_pos, mem), this->getvar<int16_t>(high_pos, mem), seed);
                 break;
             }
             case Precision::Int8:
             {
                 auto output = mem->gettensor<int8_t>(name).get();
-                tensorfunc::uniform<Author, int8_t>(*output, this->getvar<int8_t>(1, mem), this->getvar<int8_t>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::uniform<Author, int8_t>(*output, this->getvar<int8_t>(low_pos, mem), this->getvar<int8_t>(high_pos, mem), seed);
                 break;
             }
             default:
@@ -228,14 +239,7 @@ namespace deepx::tf
             }
             return 0;
         }
-        string math_formula() const override
-        {
-            return "uniform(T1,low,high,seed)";
-        }
-        shared_ptr<TF> clone() const override
-        {
-            return make_shared<Uniform<Author>>(*this);
-        }
+        
     };
 
     // normal
@@ -254,7 +258,7 @@ namespace deepx::tf
 
         string math_formula() const override
         {
-            return "normal(T1,mean,stddev,seed)";
+            return "normal(mean,stddev,seed)->T1";
         }
         shared_ptr<TF> clone() const override
         {
@@ -262,28 +266,31 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            string name = this->args[0].textvalue;
+            string name = this->returns[0].textvalue;
             auto tensor = mem->gettensor(name).get();
             auto type = tensor->shape.dtype;
+            int mean_pos=0;
+            int stddev_pos=1;
+            unsigned int seed = static_cast<unsigned int>(this->getvar<int>(2, mem));
             switch (type)
             {
             case Precision::Float64:
-                tensorfunc::normal<Author, double>(*mem->gettensor<double>(name).get(), this->getvar<double>(1, mem), this->getvar<double>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::normal<Author, double>(*mem->gettensor<double>(name).get(), this->getvar<double>(mean_pos, mem), this->getvar<double>(stddev_pos, mem), seed);
                 break;
             case Precision::Float32:
-                tensorfunc::normal<Author, float>(*mem->gettensor<float>(name).get(), this->getvar<float>(1, mem), this->getvar<float>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::normal<Author, float>(*mem->gettensor<float>(name).get(), this->getvar<float>(mean_pos, mem), this->getvar<float>(stddev_pos, mem), seed);
                 break;
             case Precision::Int64:
-                tensorfunc::normal<Author, int64_t>(*mem->gettensor<int64_t>(name).get(), this->getvar<int64_t>(1, mem), this->getvar<int64_t>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::normal<Author, int64_t>(*mem->gettensor<int64_t>(name).get(), this->getvar<int64_t>(mean_pos, mem), this->getvar<int64_t>(stddev_pos, mem), seed);
                 break;
             case Precision::Int32:
-                tensorfunc::normal<Author, int32_t>(*mem->gettensor<int32_t>(name).get(), this->getvar<int32_t>(1, mem), this->getvar<int32_t>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::normal<Author, int32_t>(*mem->gettensor<int32_t>(name).get(), this->getvar<int32_t>(mean_pos, mem), this->getvar<int32_t>(stddev_pos, mem), seed);
                 break;
             case Precision::Int16:
-                tensorfunc::normal<Author, int16_t>(*mem->gettensor<int16_t>(name).get(), this->getvar<int16_t>(1, mem), this->getvar<int16_t>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::normal<Author, int16_t>(*mem->gettensor<int16_t>(name).get(), this->getvar<int16_t>(mean_pos, mem), this->getvar<int16_t>(stddev_pos, mem), seed);
                 break;
             case Precision::Int8:
-                tensorfunc::normal<Author, int8_t>(*mem->gettensor<int8_t>(name).get(), this->getvar<int8_t>(1, mem), this->getvar<int8_t>(2, mem), this->getvar<unsigned int>(3, mem));
+                tensorfunc::normal<Author, int8_t>(*mem->gettensor<int8_t>(name).get(), this->getvar<int8_t>(mean_pos, mem), this->getvar<int8_t>(stddev_pos, mem), seed);
                 break;
             default:
             {

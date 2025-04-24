@@ -43,7 +43,7 @@ namespace deepx::tf
                 return 1;
             }
             Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
-            vector<int> shape = this->getvector<int>(1, -1);
+            vector<int> shape = this->getvector<int>(1, true);
             Precision output_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
             if (input_type != output_type)
             {
@@ -109,7 +109,7 @@ namespace deepx::tf
                 return 1;
             }
             Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
-            vector<int> dim_order = this->getvector<int>(1, -1);
+            vector<int> dim_order = this->getvector<int>(1,true);
             Precision output_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
             if (input_type != output_type)
             {

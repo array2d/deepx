@@ -12,7 +12,7 @@ namespace deepx::tensorfunc
 {
 
     template <typename T>
-    static T *dataNew(int size)
+    static T *newFn(int size)
     {
         return static_cast<T *>(MemoryPool::Malloc(size * sizeof(T)));
     }
@@ -39,8 +39,8 @@ namespace deepx::tensorfunc
         Tensor<T> tensor(shape);
         tensor.deleter = dataFree<T>;
         tensor.copyer = dataCopy<T>;
-        tensor.newer = dataNew<T>;
-        tensor.data = dataNew<T>(shape.size);
+        tensor.newer = newFn<T>;
+        tensor.data = newFn<T>(shape.size);
         return tensor;
     };
 

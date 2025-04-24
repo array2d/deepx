@@ -1,12 +1,17 @@
 #ifndef DEEPX_TENSORFUNC_CUDA_HPP
 #define DEEPX_TENSORFUNC_CUDA_HPP
 
-#include <cublas_v2.h>
 #include <cstdint>
 #include <stdexcept>
+#include <memory>
 
+
+#include <cublas_v2.h>
+
+ 
 namespace deepx::tensorfunc
 {
+    
     class CublasHandle
     {
     public:
@@ -60,6 +65,20 @@ namespace deepx::tensorfunc
         blocks = std::min(blocks, optimal_blocks);
         return {blocks, blocksize};
     };
+
+    using std::shared_ptr;
+    
+    inline std::pair<int, std::shared_ptr<unsigned char[]>> device_offload(unsigned char *data,int size)
+    {
+        shared_ptr<unsigned char[]> host_data(new unsigned char[size]);
+        cudaMemcpy(host_data.get(), data, size, cudaMemcpyDeviceToHost);
+        cudaError_t err=cudaGetLastError();
+        if(err!=cudaSuccess){
+            throw std::runtime_error("Failed to copy data from device to host");
+            
+        }
+        return {size, host_data};
+    }
 
     
 }
