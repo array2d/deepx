@@ -10,10 +10,10 @@ print(bb_torch)
 ########====DEEPX====########
 from deepx import Tensor,arange,broadcastTo
 
-a=arange(4,2,3,name="a")
-b=arange(2,1,name='b')
+a=arange(start=0,end=4*2*3,name="a").reshape_((4,2,3))
+b=arange(start=0,end=2,name='b').reshape((2,1))
 bb=b.broadcastTo( a.shape,out="b.broadcasted")
-print(bb)
+bb.print()
 
 
  

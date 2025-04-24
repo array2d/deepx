@@ -20,4 +20,4 @@ t2=ones([3,4,5],dtype='float32',name='t2')
 t3=ones([3,4,5],dtype='float32',name='t3')
  
 t=concat([t1,t2,t3],dim=1,out='t')
-print(t)
+t.print()

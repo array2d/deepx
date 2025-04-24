@@ -1,5 +1,5 @@
 ############-------PyTorch-------################
-
+print()
 import torch
 torch_t1 = torch.ones(3, 4, dtype=torch.float32)
 print(torch_t1)
@@ -12,15 +12,15 @@ print(torch_t4)
 
 ############-------DEEPX-------################
 
-from deepx import Tensor,zeros, ones, full, arange
+from deepx import  ones
 
-print()
 
-t1 = ones([3,4],dtype='float32',name='t1')
-print(t1)
+
+t1 = ones((3,4),dtype='float32',name='t1')
+t1.print()
 t2=t1.transpose(out='t2')
-print(t2)
+t2.print()
 
-t3=ones([2,3,4],dtype='float32',name='t3')
+t3=ones((2,3,4),dtype='float32',name='t3')
 t4=t3.transpose(out='t4')
-print(t4)
+t4.print()
