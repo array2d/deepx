@@ -43,12 +43,6 @@ def transpose_(self):
     return self
 
 @tensor_method
-def broadcastshape(self,other:Tensor)->tuple[int,...]:
-    from deepx.nn.functional import broadcastshape as broadcastshape_func
-    result=broadcastshape_func(self.shape,other.shape)
-    return result
-
-@tensor_method
 def broadcastTo(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import broadcastTo as broadcastTo_func
     result=broadcastTo_func(self,shape,out)

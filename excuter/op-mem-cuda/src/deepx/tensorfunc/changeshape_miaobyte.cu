@@ -369,33 +369,38 @@ namespace deepx::tensorfunc
     // indexselect
     template <typename GatherAxisT>
     __host__ __device__ void fromIndexselectIndices(
-    const int *output_indices,const int outputDim,  // 输出张量的索引
-    const GatherAxisT *indices,const int *indicesStrides,const int indicesDim, //indices是tensor
-    int *index_indices,
-    const int gatherAxis,      // gather操作的轴
-    int *input_indices,const int inputDim){
+        const int *output_indices, const int outputDim,                              // 输出张量的索引
+        const GatherAxisT *index, const int *indexStrides, const int indexDim, // index是tensor
+        int *index_indices,
+        const int gatherAxis, // gather操作的轴
+        int *input_indices, const int inputDim)
+    {
 
         for (int i = 0; i < gatherAxis; ++i)
         {
             input_indices[i] = output_indices[i];
         }
-        for (int i = gatherAxis; i < gatherAxis + indicesDim; ++i)
+        for (int i = gatherAxis; i < gatherAxis + indexDim; ++i)
         {
             index_indices[i - gatherAxis] = output_indices[i];
         }
         // 使用indices张量中对应位置的值来替换gatherAxis维度的索引
-        int indices_idx = linearAt(indicesStrides, indicesDim, index_indices);
-        input_indices[gatherAxis] = indices[indices_idx];
-        for (int i = gatherAxis +indicesDim; i < outputDim; ++i)
+        int index_idx = linearAt(indexStrides, indexDim, index_indices);
+        input_indices[gatherAxis] = index[index_idx];
+        // for (int i = gatherAxis +indicesDim; i < outputDim; ++i)
+        // {
+        //     input_indices[gatherAxis+1+i] = output_indices[i];
+        // }
+        for (int i = 0; i < outputDim - (gatherAxis + indexDim); ++i)
         {
-            input_indices[gatherAxis+1+i] = output_indices[i];
+            input_indices[gatherAxis + 1 + i] = output_indices[gatherAxis + indexDim + i];
         }
     }
 
     template <int DIM, typename T, typename GatherAxisT>
     __global__ void indexselect_kernel(
         const T *input, const int *inputStrides, const int inputDim,
-        const GatherAxisT *indices, const int *indicesStrides, const int indicesDim,
+        const GatherAxisT *index, const int *indexStrides, const int indexDim,
         const int gatherAxis,
         T *output, const int *outputStrides, const int outputDim, const int outputlen)
     {
@@ -410,11 +415,11 @@ namespace deepx::tensorfunc
             // 输入索引
             int index_indices[DIM];
             int input_indices[DIM];
-            fromIndexselectIndices(output_indices,outputDim,
-                              indices, indicesStrides, indicesDim,
-                              index_indices,
-                              gatherAxis,
-                              input_indices, inputDim);
+            fromIndexselectIndices(output_indices, outputDim,
+                                   index, indexStrides, indexDim,
+                                   index_indices,
+                                   gatherAxis,
+                                   input_indices, inputDim);
             int inputIdx = linearAt(inputStrides, inputDim, input_indices);
             int outputIdx = linearAt(outputStrides, outputDim, output_indices);
             output[outputIdx] = input[inputIdx];
@@ -424,7 +429,7 @@ namespace deepx::tensorfunc
     template <typename T, typename GatherAxisT>
     void launch_indexselect(
         const T *input, const int *inputStrides, const int inputDim,
-        const GatherAxisT *indices, const int *indicesStrides, const int indicesDim,
+        const GatherAxisT *index, const int *indexStrides, const int indexDim,
         const int gatherAxis,
         T *output, const int *outputStrides, const int outputDim, const int outputlen)
     {
@@ -432,7 +437,7 @@ namespace deepx::tensorfunc
         auto [numBlocks, blockSize] = BestDims(outputlen);
 
         // indices
-        cudaVector<int> indicesStrides_d(indicesStrides, indicesDim, cudaMemcpyHostToDevice);
+        cudaVector<int> indexStrides_d(indexStrides, indexDim, cudaMemcpyHostToDevice);
 
         // input
         cudaVector<int> inputStrides_d(inputStrides, inputDim, cudaMemcpyHostToDevice);
@@ -440,46 +445,46 @@ namespace deepx::tensorfunc
         // output
         cudaVector<int> outputStrides_d(outputStrides, outputDim, cudaMemcpyHostToDevice);
 
-        //TODO 这里可能会导致寄存器浪费，但是，搞太多模板T，模板实例化不好搞
-        int dim=std::max(inputDim,indicesDim);
-        dim=std::max(dim,outputDim);
+        // TODO 这里可能会导致寄存器浪费，但是，搞太多模板T，模板实例化不好搞
+        int dim = std::max(inputDim, indexDim);
+        dim = std::max(dim, outputDim);
         switch (dim)
         {
         case 1:
-            indexselect_kernel<1, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<1, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 2:
-            indexselect_kernel<2, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<2, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 3:
-            indexselect_kernel<3, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<3, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 4:
-            indexselect_kernel<4, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<4, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 5:
-            indexselect_kernel<5, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<5, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 6:
-            indexselect_kernel<6, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<6, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 7:
-            indexselect_kernel<7, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<7, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 8:
-            indexselect_kernel<8, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<8, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 9:
-            indexselect_kernel<9, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<9, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 10:
-            indexselect_kernel<10, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<10, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 11:
-            indexselect_kernel<11, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<11, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         case 12:
-            indexselect_kernel<12, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, indices, indicesStrides_d.data, indicesDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
+            indexselect_kernel<12, T, GatherAxisT><<<numBlocks, blockSize>>>(input, inputStrides_d.data, inputDim, index, indexStrides_d.data, indexDim, gatherAxis, output, outputStrides_d.data, outputDim, outputlen);
             break;
         default:
             throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
@@ -491,71 +496,70 @@ namespace deepx::tensorfunc
         }
     }
     template void launch_indexselect<double, int64_t>(const double *input, const int *inputStrides, const int inputDim,
-                                                 const int64_t *indices, const int *indicesStrides, const int indicesDim,
-                                                 const int gatherAxis,
-                                                 double *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_indexselect<float, int64_t>(const float *input, const int *inputStrides, const int inputDim,
-                                                const int64_t *indices, const int *indicesStrides, const int indicesDim,
-                                                const int gatherAxis,
-                                                float *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_indexselect<nv_bfloat16, int64_t>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
-                                                      const int64_t *indices, const int *indicesStrides, const int indicesDim,
+                                                      const int64_t *index, const int *indexStrides, const int indexDim,
                                                       const int gatherAxis,
-                                                      nv_bfloat16 *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                      double *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_indexselect<float, int64_t>(const float *input, const int *inputStrides, const int inputDim,
+                                                     const int64_t *index, const int *indexStrides, const int indexDim,
+                                                     const int gatherAxis,
+                                                     float *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_indexselect<nv_bfloat16, int64_t>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
+                                                           const int64_t *index, const int *indexStrides, const int indexDim,
+                                                           const int gatherAxis,
+                                                           nv_bfloat16 *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<__half, int64_t>(const __half *input, const int *inputStrides, const int inputDim,
-                                                 const int64_t *indices, const int *indicesStrides, const int indicesDim,
-                                                 const int gatherAxis,
-                                                 __half *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                      const int64_t *index, const int *indexStrides, const int indexDim,
+                                                      const int gatherAxis,
+                                                      __half *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<int64_t, int64_t>(const int64_t *input, const int *inputStrides, const int inputDim,
-                                                  const int64_t *indices, const int *indicesStrides, const int indicesDim,
-                                                  const int gatherAxis,
-                                                  int64_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                       const int64_t *index, const int *indexStrides, const int indexDim,
+                                                       const int gatherAxis,
+                                                       int64_t *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<int32_t, int64_t>(const int32_t *input, const int *inputStrides, const int inputDim,
-                                                  const int64_t *indices, const int *indicesStrides, const int indicesDim,
-                                                  const int gatherAxis,
-                                                  int32_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                       const int64_t *index, const int *indexStrides, const int indexDim,
+                                                       const int gatherAxis,
+                                                       int32_t *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<int16_t, int64_t>(const int16_t *input, const int *inputStrides, const int inputDim,
-                                                  const int64_t *indices, const int *indicesStrides, const int indicesDim,
-                                                  const int gatherAxis,
-                                                  int16_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                       const int64_t *index, const int *indexStrides, const int indexDim,
+                                                       const int gatherAxis,
+                                                       int16_t *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<int8_t, int64_t>(const int8_t *input, const int *inputStrides, const int inputDim,
-                                                 const int64_t *indices, const int *indicesStrides, const int indicesDim,
-                                                 const int gatherAxis,
-                                                 int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                      const int64_t *index, const int *indexStrides, const int indexDim,
+                                                      const int gatherAxis,
+                                                      int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
 
     template void launch_indexselect<double, int32_t>(const double *input, const int *inputStrides, const int inputDim,
-                                                 const int32_t *indices, const int *indicesStrides, const int indicesDim,
-                                                 const int gatherAxis,
-                                                 double *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_indexselect<float, int32_t>(const float *input, const int *inputStrides, const int inputDim,
-                                                const int32_t *indices, const int *indicesStrides, const int indicesDim,
-                                                const int gatherAxis,
-                                                float *output, const int *outputStrides, const int outputDim, const int outputlen);
-    template void launch_indexselect<nv_bfloat16, int32_t>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
-                                                      const int32_t *indices, const int *indicesStrides, const int indicesDim,
+                                                        const int32_t *index, const int *indexStrides, const int indexDim,
                                                       const int gatherAxis,
-                                                      nv_bfloat16 *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                      double *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_indexselect<float, int32_t>(const float *input, const int *inputStrides, const int inputDim,
+                                                     const int32_t *index, const int *indexStrides, const int indexDim,
+                                                     const int gatherAxis,
+                                                     float *output, const int *outputStrides, const int outputDim, const int outputlen);
+    template void launch_indexselect<nv_bfloat16, int32_t>(const nv_bfloat16 *input, const int *inputStrides, const int inputDim,
+                                                           const int32_t *index, const int *indexStrides, const int indexDim,
+                                                           const int gatherAxis,
+                                                           nv_bfloat16 *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<__half, int32_t>(const __half *input, const int *inputStrides, const int inputDim,
-                                                 const int32_t *indices, const int *indicesStrides, const int indicesDim,
-                                                 const int gatherAxis,
-                                                 __half *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                      const int32_t *index, const int *indexStrides, const int indexDim,
+                                                      const int gatherAxis,
+                                                      __half *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<int64_t, int32_t>(const int64_t *input, const int *inputStrides, const int inputDim,
-                                                  const int32_t *indices, const int *indicesStrides, const int indicesDim,
-                                                  const int gatherAxis,
-                                                  int64_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                       const int32_t *index, const int *indexStrides, const int indexDim,
+                                                       const int gatherAxis,
+                                                       int64_t *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<int32_t, int32_t>(const int32_t *input, const int *inputStrides, const int inputDim,
-                                                  const int32_t *indices, const int *indicesStrides, const int indicesDim,
-                                                  const int gatherAxis,
-                                                  int32_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                       const int32_t *index, const int *indexStrides, const int indexDim,
+                                                       const int gatherAxis,
+                                                       int32_t *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<int16_t, int32_t>(const int16_t *input, const int *inputStrides, const int inputDim,
-                                                  const int32_t *indices, const int *indicesStrides, const int indicesDim,
-                                                  const int gatherAxis,
-                                                  int16_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                       const int32_t *index, const int *indexStrides, const int indexDim,
+                                                       const int gatherAxis,
+                                                       int16_t *output, const int *outputStrides, const int outputDim, const int outputlen);
     template void launch_indexselect<int8_t, int32_t>(const int8_t *input, const int *inputStrides, const int inputDim,
-                                                 const int32_t *indices, const int *indicesStrides, const int indicesDim,
-                                                 const int gatherAxis,
-                                                 int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
+                                                      const int32_t *index, const int *indexStrides, const int indexDim,
+                                                      const int gatherAxis,
+                                                      int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
 }
 
- 
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_HPP

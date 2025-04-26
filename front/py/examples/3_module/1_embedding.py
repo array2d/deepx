@@ -28,13 +28,14 @@ text = "这是一个测试文本，用于演示嵌入层的使用。"
 torch_input = tokenize_text(text, tokenizer)
 from deepxutil.torch import save_torch
 save_torch(torch_input,dir+'input')
+print(torch_input.shape)
 print(torch_input)
 # 创建网络
 torch_net = nn.Embedding(tokenizer.vocab_size, 4096)
 save_torch(torch_net.weight,dir+'weight')
 # 前向传播
 torch_output = torch_net(torch_input)
-print()
+
 print(torch_output.shape)
 print(torch_output)
 
