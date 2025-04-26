@@ -32,11 +32,11 @@ namespace deepx
 
     Shape concatShape(const std::vector<Shape> &shapes, const int axis)
     {
-        std::vector<int> outputShape(shapes[0].dim);
+        std::vector<int> outputShape(shapes[0].dim());
         outputShape = shapes[0].shape;
         for (int i = 1; i < shapes.size(); ++i)
         {
-            if (shapes[i].dim != outputShape.size())
+            if (shapes[i].dim() != outputShape.size())
             {
                 throw std::invalid_argument("All tensors must have the same number of dimensions.");
             }

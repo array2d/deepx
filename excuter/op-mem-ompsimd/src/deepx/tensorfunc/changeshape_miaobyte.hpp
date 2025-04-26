@@ -48,7 +48,7 @@ namespace deepx::tensorfunc
         static void transpose(const Tensor<T> &tensor, const std::vector<int> &dim_order, Tensor<T> &output)
         {
 
-            if (dim_order.size() != tensor.shape.dim)
+            if (dim_order.size() != tensor.shape.dim()) 
             {
                 throw std::invalid_argument("dimOrder size does not match the number of dimensions in the TensorCPU.");
             }
@@ -62,7 +62,7 @@ namespace deepx::tensorfunc
                             for (size_t i = 0; i < dim_order.size(); ++i) {
                                 tlv.get(0)[dim_order[i]] = indices[i];
                             }
-                            output.data[idx_linear]= tensor.data[tensor.shape.linearat(tlv.get(0))]; }, {tensor.shape.dim});
+                            output.data[idx_linear]= tensor.data[tensor.shape.linearat(tlv.get(0))]; }, {tensor.shape.dim()});
         }
     };
     // concat
@@ -131,7 +131,7 @@ namespace deepx::tensorfunc
             }
             auto bmap = broadcastMap(A.shape.shape, new_shape);
 
-            B.shape.rangeParallel(B.shape.dim, [&](const int idx, const std::vector<int> &bindices)
+            B.shape.rangeParallel(B.shape.dim(), [&](const int idx, const std::vector<int> &bindices)
                                   {
                         vector<int> aindices=fromBroadcastIndices(bmap, bindices);
                         B.data[idx] = A.data[A.shape.linearat(aindices)]; });
@@ -157,8 +157,8 @@ namespace deepx::tensorfunc
     {
         static void indexselect(const Tensor<T> &input, const Tensor<GatherAxisT> &index, const int axis, Tensor<T> &output)
         {
-            int gatherAxis = axis < 0 ? input.shape.dim + axis : axis;
-            if (gatherAxis < 0 || gatherAxis >= input.shape.dim)
+            int gatherAxis = axis < 0 ? input.shape.dim() + axis : axis;
+            if (gatherAxis < 0 || gatherAxis >= input.shape.dim()) 
             {
                 throw std::invalid_argument("Axis is out of bounds");
             }
@@ -168,12 +168,12 @@ namespace deepx::tensorfunc
             {
                 throw TensorShapeError("Indexselect shape mismatch");
             }
-            output.shape.rangeParallel(output.shape.dim, [&](const int idx, const std::vector<int> &output_indices, ThreadLocalVectors &tlv)
+            output.shape.rangeParallel(output.shape.dim(), [&](const int idx, const std::vector<int> &output_indices, ThreadLocalVectors &tlv)
                                        {  
                             fromIndexselectIndices(output_indices, index,tlv.get(1), gatherAxis, tlv.get(0));
                             output.data[idx] = input.data[input.shape.linearat(tlv.get(0))]; 
                         },
-                    {input.shape.dim,index.shape.dim});
+                    {input.shape.dim(),index.shape.dim()});
         }
     };
 
@@ -205,12 +205,12 @@ namespace deepx::tensorfunc
     // void expand(const Tensor<T> &input, Tensor<T> &output)
     // {
     //     // 检查输入和目标形状的兼容性
-    //     if (input.shape.dim != output.shape.dim)
+    //     if (input.shape.dim() != output.shape.dim()) 
     //     {
     //         throw std::invalid_argument("expand维度不匹配: 输入维度 " +
-    //                                     std::to_string(input.shape.dim) +
+    //                                     std::to_string(input.shape.dim())  +
     //                                     ", 目标维度 " +
-    //                                     std::to_string(output.shape.dim) +
+    //                                     std::to_string(output.shape.dim())  +
     //                                     "请先前dim补1的方式reshape");
     //     }
 
@@ -231,7 +231,7 @@ namespace deepx::tensorfunc
 
     //     // 找到最后一个需要扩展的维度
     //     int last_expand_dim = -1;
-    //     for (int i = input.shape.dim - 1; i >= 0; --i)
+    //     for (int i = input.shape.dim() - 1; i >= 0; --i)
     //     {
     //         if (input.shape[i] != output.shape.shape[i])
     //         {
@@ -241,7 +241,7 @@ namespace deepx::tensorfunc
     //     }
 
     //     // 如果最后几个维度不需要扩展，可以连续复制
-    //     if (last_expand_dim < output.shape.dim - 1)
+    //     if (last_expand_dim < output.shape.dim() - 1)
     //     {
     //         int copy_len = output.shape.strides[last_expand_dim + 1];
     //         output.shape.rangeParallel(last_expand_dim + 1, [&bm, &output, &input, copy_len](int idx_linear, const std::vector<int> &indices, std::vector<int> &oldIndices)
@@ -250,15 +250,15 @@ namespace deepx::tensorfunc
     //                 int idx_old = input.shape.linearat(oldIndices);
     //                 std::copy(input.data + idx_old,
     //                          input.data + idx_old + copy_len,
-    //                          output.data + idx_linear); }, input.shape.dim);
+    //                          output.data + idx_linear); }, input.shape.dim()) ;
     //     }
     //     else
     //     {
-    //         output.shape.rangeParallel(output.shape.dim, [&bm, &output, &input](int idx_linear, const std::vector<int> &indices, std::vector<int> &oldIndices)
+    //         output.shape.rangeParallel(output.shape.dim(), [&bm, &output, &input](int idx_linear, const std::vector<int> &indices, std::vector<int> &oldIndices)
     //                                    {
     //                 fromBroadcastIndices(bm, indices, oldIndices);
     //                 int idx_old = input.shape.linearat(oldIndices);
-    //                 output.data[idx_linear] = input.data[idx_old]; }, input.shape.dim);
+    //                 output.data[idx_linear] = input.data[idx_old]; }, input.shape.dim()) ;
     //     }
     // }
 }

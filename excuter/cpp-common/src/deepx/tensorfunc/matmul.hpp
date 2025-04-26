@@ -12,11 +12,11 @@ namespace deepx::tensorfunc
         {
             return false;
         }
-        if (a.dim != b.dim)
+        if (a.dim() != b.dim())
         {
             return false;
         }
-        for (int i = 0; i < a.dim - 2; ++i)
+        for (int i = 0; i < a.dim() - 2; ++i)
         {
             if (a[i] != b[i])
             {

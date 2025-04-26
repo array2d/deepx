@@ -22,9 +22,9 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, T(0));
             std::vector<int> checkeddims = checkedDims(tensor.shape.shape, dims);
             std::vector<int> reduced_dims = reducedDim(tensor.shape.shape, checkeddims);
-            launch_sum<T>(tensor.data, tensor.shape.strides.data(), tensor.shape.dim, tensor.shape.size,
+            launch_sum<T>(tensor.data, tensor.shape.strides.data(), tensor.shape.dim(), tensor.shape.size,
                           reduced_dims.data(), keepdims,
-                          result.data, result.shape.strides.data(), result.shape.dim);
+                          result.data, result.shape.strides.data(), result.shape.dim()) ;
         }
     };
 
@@ -36,9 +36,9 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, T(1));
             std::vector<int> checkeddims = checkedDims(tensor.shape.shape, dims);
             std::vector<int> reduced_dims = reducedDim(tensor.shape.shape, checkeddims);
-            launch_prod<T>(tensor.data, tensor.shape.strides.data(), tensor.shape.dim, tensor.shape.size,
+            launch_prod<T>(tensor.data, tensor.shape.strides.data(), tensor.shape.dim(), tensor.shape.size,
                            reduced_dims.data(), keepdims,
-                           result.data, result.shape.strides.data(), result.shape.dim);
+                           result.data, result.shape.strides.data(), result.shape.dim()) ;
         }
     };
     template <typename T>
@@ -49,9 +49,9 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, std::numeric_limits<T>::lowest());
             std::vector<int> checkeddims = checkedDims(tensor.shape.shape, dims);
             std::vector<int> reduced_dims = reducedDim(tensor.shape.shape, checkeddims);
-            launch_reducemax<T>(tensor.data, tensor.shape.strides.data(), tensor.shape.dim, tensor.shape.size,
+            launch_reducemax<T>(tensor.data, tensor.shape.strides.data(), tensor.shape.dim(), tensor.shape.size,
                                 reduced_dims.data(), keepdims,
-                                result.data, result.shape.strides.data(), result.shape.dim);
+                                result.data, result.shape.strides.data(), result.shape.dim()) ;
         }
     };
 
@@ -63,9 +63,9 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, std::numeric_limits<T>::max());
             std::vector<int> checkeddims = checkedDims(tensor.shape.shape, dims);
             std::vector<int> reduced_dims = reducedDim(tensor.shape.shape, checkeddims);
-            launch_reducemin<T>(tensor.data, tensor.shape.strides.data(), tensor.shape.dim, tensor.shape.size,
+            launch_reducemin<T>(tensor.data, tensor.shape.strides.data(), tensor.shape.dim(), tensor.shape.size,
                                 reduced_dims.data(), keepdims,
-                                result.data, result.shape.strides.data(), result.shape.dim);
+                                result.data, result.shape.strides.data(), result.shape.dim()) ;
         }
     };
 }

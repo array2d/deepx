@@ -42,7 +42,7 @@ namespace deepx
     }
     void Shape::range(int dimCount, std::function<void(const std::vector<int> &indices)> func) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);
 
         std::vector<int> indices(dimCount, 0);
@@ -61,7 +61,7 @@ namespace deepx
     }
     void Shape::range(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices)> func) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);
 
         int stride = checkStride(dimCount, shape);
@@ -82,7 +82,7 @@ namespace deepx
 
     void Shape::range(int dimCount, std::function<void(const int idx_linear)> func) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);
         int stride = checkStride(dimCount, shape);
         for (int idx = 0; idx < totalSize; idx++)
@@ -93,7 +93,7 @@ namespace deepx
 
     void Shape::rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices)> func) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);
 
 #pragma omp parallel
@@ -115,7 +115,7 @@ namespace deepx
     }
     void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear)> func) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int stride = checkStride(dimCount, shape);
 
         // 计算总循环次数
@@ -130,7 +130,7 @@ namespace deepx
 
     void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices)> func) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);
         int stride = checkStride(dimCount, shape);
 
@@ -154,7 +154,7 @@ namespace deepx
 
     void Shape::rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);
 
 #pragma omp parallel
@@ -177,7 +177,7 @@ namespace deepx
     }
     void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int stride = checkStride(dimCount, shape);
 
         // 计算总循环次数
@@ -196,7 +196,7 @@ namespace deepx
 
     void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
     {
-        dimCount = checkdim(dimCount, dim);
+        dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);
         int stride = checkStride(dimCount, shape);
 

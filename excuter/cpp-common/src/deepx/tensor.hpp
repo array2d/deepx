@@ -156,6 +156,17 @@ namespace deepx
             tensor.saver = nullptr;
             return *this;
         }
+
+        //io
+
+        void save(const string &path)
+        {
+            if (saver)
+            {
+                shape.saveShape(path);
+                saver(data, shape.size, path+".data");
+            }
+        }
     }; 
 }
 #endif

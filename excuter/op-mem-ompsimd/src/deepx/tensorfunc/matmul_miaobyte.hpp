@@ -15,8 +15,8 @@ namespace deepx::tensorfunc
                 throw std::invalid_argument("A.shape could matmul with B.shape");
             }
             //TODO
-            //这里如果对二维矩阵运算，则omp并行不起来，因为C.shape.dim - 2刚好=0
-            C.shape.rangeParallel(C.shape.dim - 2, [&](const std::vector<int> &indices)
+            //这里如果对二维矩阵运算，则omp并行不起来，因为C.shape.dim() - 2刚好=0
+            C.shape.rangeParallel(C.shape.dim() - 2, [&](const std::vector<int> &indices)
                                   {
                         int aIdx=A.shape.linearat(indices);
                         int bIdx=B.shape.linearat(indices);

@@ -37,7 +37,7 @@ void test_concat(){
  
      
     std::cout<<"================"<<std::endl;
-    for (int i=0;i<tensors[0]->shape.dim;i++){
+    for (int i=0;i<tensors[0]->shape.dim();i++){
         Shape shape=concatShape(tensors,i);
         Tensor<float> result=New<float>(shape.shape);
         concat<miaobyte,float>(tensors,i,result);

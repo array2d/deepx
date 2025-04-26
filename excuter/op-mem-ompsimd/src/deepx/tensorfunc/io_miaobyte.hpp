@@ -42,7 +42,7 @@ namespace deepx::tensorfunc
     pair<std::string,shared_ptr<Tensor<T>>> load(const std::string &path)
     {
         // 加载shape
-        pair<std::string,Shape> shape_name=loadShape(path);
+        pair<std::string,Shape> shape_name=Shape::loadShape(path);
         Shape shape=shape_name.second;
         std::string tensor_name=shape_name.first;
  

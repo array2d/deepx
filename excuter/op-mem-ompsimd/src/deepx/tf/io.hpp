@@ -86,7 +86,7 @@ namespace deepx::tf
                 return 1;
             }
             Precision dtype = mem->gettensor(name)->shape.dtype;
-            tensorfunc::saveShape(mem->gettensor(name)->shape,path);
+            mem->gettensor(name)->shape.saveShape(path);
             path+=".data";
             switch (dtype)
             {   
@@ -156,7 +156,7 @@ namespace deepx::tf
         {
             string path = this->args[0].textvalue;
             
-            pair<std::string,Shape> shape_name=tensorfunc::loadShape(path);
+            pair<std::string,Shape> shape_name=Shape::loadShape(path);
             std::string tensor_name=shape_name.first;
             Shape shape=shape_name.second;
 

@@ -14,11 +14,11 @@ void test_tensor_new(){
     Tensor<float> tensor=New<float>({2, 3});
     constant<miaobyte,float>(tensor,1);
     print<miaobyte>(tensor);
-    save(tensor,"tensor");
+    tensor.save("tensor");
     Tensor<float> tensor2=New<float>({2, 3});
     constant<miaobyte,float>(tensor2,2);
     print<miaobyte>(tensor2);
-    save(tensor2,"tensor2");
+    tensor2.save("tensor2");
 }
 
 void test_arange() {

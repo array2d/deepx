@@ -19,7 +19,7 @@ namespace deepx::tensorfunc
       }
       // 计算batch size (将除最后两维外的所有维度展平)
       int64_t batch_size = 1;
-      for (int i = 0; i < a.shape.dim - 2; ++i)
+      for (int i = 0; i < a.shape.dim() - 2; ++i)
       {
         batch_size *= a.shape[i];
       }
@@ -70,7 +70,7 @@ namespace deepx::tensorfunc
       }
       // 计算batch size (将除最后两维外的所有维度展平)
       int64_t batch_size = 1;
-      for (int i = 0; i < a.shape.dim - 2; ++i)
+      for (int i = 0; i < a.shape.dim() - 2; ++i)
       {
         batch_size *= a.shape[i];
       }

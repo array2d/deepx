@@ -73,14 +73,14 @@ namespace deepx
         return outputShape;
     }
 
+    // 创建一个(map映射)数组，标记哪些维度需要求和
     std::vector<int> reducedDim(const std::vector<int> &shape, const std::vector<int> &dims)
     {
-        // 创建一个映射数组，标记哪些维度需要求和
-        std::vector<int> sumMap(shape.size(), 0);
+        std::vector<int> reducdMap(shape.size(), 0);
         for (int dim : dims)
         {
-            sumMap[dim] = 1;
+            reducdMap[dim] = 1;
         }
-        return sumMap;
+        return reducdMap;
     }
 }

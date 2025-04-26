@@ -90,7 +90,7 @@ namespace stdutil
         shape.dtype = dtype;
 
         shape.print();
-        if (shape.dim == 1)
+        if (shape.dim() == 1)
         {
             std::cout << "[";
             for (int i = 0; i < shape[0]; ++i)

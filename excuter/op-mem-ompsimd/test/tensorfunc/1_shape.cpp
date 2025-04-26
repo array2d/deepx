@@ -13,7 +13,7 @@ void test_tensor_shape() {
     
     Shape shape2;
     shape2.fromYaml(yaml);
-    std::cout<<"shape2: "<<shape2.size<<" "<<shape2.shape<<shape2.dim<<shape2.strides<<std::endl;
+    std::cout<<"shape2: "<<shape2.size<<" "<<shape2.shape<<" "<<shape2.dim()<<" "<<shape2.strides<<std::endl;
     
 }
 

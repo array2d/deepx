@@ -187,7 +187,7 @@ namespace deepx::tf
         }
     };
 
-        template <typename Author>
+    template <typename Author>
     class ReduceMin : public TF
     {
     public:

@@ -50,14 +50,14 @@ namespace deepx::tensorfunc
     {
         static void transpose(const Tensor<T> &tensor, const std::vector<int> &dim_order, Tensor<T> &output)
         {
-            if (dim_order.size() != tensor.shape.dim)
+            if (dim_order.size() != tensor.shape.dim())
             {
                 throw std::runtime_error("Dimension order size must match tensor dimension size for transpose");
             }
            
             launch_transpose<T>(tensor.data, tensor.shape.strides.data(),
                                 output.data, output.shape.strides.data(),
-                                tensor.shape.dim, tensor.shape.size, dim_order.data());
+                                tensor.shape.dim(), tensor.shape.size, dim_order.data());
         }
     };
 
@@ -82,7 +82,7 @@ namespace deepx::tensorfunc
             vector<int> inputStrides;
             for (int i = 0; i < tensors.size(); i++)
             {
-                std::copy(tensors[i]->shape.strides.data(), tensors[i]->shape.strides.data() + tensors[i]->shape.dim, std::back_inserter(inputStrides));
+                std::copy(tensors[i]->shape.strides.data(), tensors[i]->shape.strides.data() + tensors[i]->shape.dim(), std::back_inserter(inputStrides));
             }
 
             vector<int> shapeAtAxis(tensors.size());
@@ -93,7 +93,7 @@ namespace deepx::tensorfunc
 
             launch_concat<T>(tensorsData.data(), inputStrides.data(),
                              C.data, C.shape.strides.data(),
-                             C.shape.dim,
+                             C.shape.dim(),
                              C.shape.size,
                              axis, tensors.size(), shapeAtAxis.data());
         };
@@ -111,9 +111,9 @@ namespace deepx::tensorfunc
                 throw TensorShapeError("Broadcast shape mismatch");
             }
             auto bmap = broadcastMap(A.shape.shape, new_shape);
-            launch_broadcastTo<T>(A.data, A.shape.strides.data(), A.shape.dim,
+            launch_broadcastTo<T>(A.data, A.shape.strides.data(), A.shape.dim(),
             bmap.data(),
-            B.data, B.shape.strides.data(), B.shape.dim, B.shape.size);
+            B.data, B.shape.strides.data(), B.shape.dim(), B.shape.size);
         }
     };
 
@@ -122,17 +122,17 @@ namespace deepx::tensorfunc
     struct indexselectDispatcher<miaobyte, T,GatherAxisT>
     {
         static void indexselect(const Tensor<T> &input, const Tensor<GatherAxisT> &indices, const int axis, Tensor<T> &output){
-            int gatherAxis = axis < 0 ? input.shape.dim + axis : axis;
+            int gatherAxis = axis < 0 ? input.shape.dim() + axis : axis;
             vector<int> gatherShape = indexselectShape(input.shape.shape, indices.shape.shape, gatherAxis);
             if (gatherShape.empty()||gatherShape!=output.shape.shape)
             {
                 throw TensorShapeError("Indexselect shape mismatch");
             }
             
-            launch_indexselect<T,GatherAxisT>(input.data, input.shape.strides.data(), input.shape.dim,
-                            indices.data, indices.shape.strides.data(), indices.shape.dim,
+            launch_indexselect<T,GatherAxisT>(input.data, input.shape.strides.data(), input.shape.dim(),
+                            indices.data, indices.shape.strides.data(), indices.shape.dim(),
                             gatherAxis,
-                            output.data,output.shape.strides.data(),output.shape.dim,output.shape.size);
+                            output.data,output.shape.strides.data(),output.shape.dim(),output.shape.size);
         }
     };
 }

@@ -22,9 +22,9 @@ void test_sum()
 {
     omp_set_num_threads(1); 
 
-    std::vector<int> shape={2, 3, 4};
+    std::vector<int> shape={3, 4,5};
     Tensor<float> tensor= New<float>(shape);
-    constant<miaobyte,float>(tensor,float(1));
+    arange<miaobyte,float>(tensor,float(0),float(1));
     print<miaobyte>(tensor,"%.0f");
     cout<<""<<endl;
     std::vector<std::vector<int>> result = combination(3);

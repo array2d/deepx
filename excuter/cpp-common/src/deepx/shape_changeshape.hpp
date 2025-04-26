@@ -38,11 +38,11 @@ namespace deepx
         int axisDim = 0;
         for (int i = 0; i < tensors.size(); i++)
         {
-            if (tensors[i]->shape.dim != output.shape.dim)
+            if (tensors[i]->shape.dim() != output.shape.dim())
             {
                 throw TensorShapeError("All input tensors must have the same dimension size for concat");
             }
-            for (int j = 0; j < tensors[i]->shape.dim; j++)
+            for (int j = 0; j < tensors[i]->shape.dim(); j++)
             {
                 if (j != axis)
                 {
