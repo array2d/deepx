@@ -23,9 +23,9 @@ print(torch_t7)
 import deepx
 print()
 
-t1 = deepx.zeros([3,4,5],dtype='float32')
-t2 = deepx.ones([3,4,5],dtype='float32')
-t4=deepx.full([3,4,5],value=0.5)
+t1 = deepx.zeros((3,4,5),dtype='float32')
+t2 = deepx.ones((3,4,5),dtype='float32')
+t4=deepx.full((3,4,5),value=0.5)
 t4.print()
 t5=deepx.uniform((3,4,5),low=0,high=1)
 t5.print()

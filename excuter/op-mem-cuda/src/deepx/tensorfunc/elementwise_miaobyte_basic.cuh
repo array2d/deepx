@@ -7,6 +7,15 @@
 
 namespace deepx::tensorfunc
 {
+
+    //todtype
+    template <typename T,typename Dtype>
+    __global__ void todtype_kernel(const T* A, Dtype* C,const int size);
+
+    template <typename T,typename Dtype>
+    void launch_todtype(const T* a, Dtype* c,const int size);
+
+    //add
      template <typename T>
     __global__ void add_kernel(const T* A, const T* B, T* C,const int size);
 

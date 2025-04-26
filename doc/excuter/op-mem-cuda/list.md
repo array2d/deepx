@@ -66,6 +66,7 @@
 | minscalar | miaobyte | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=min(T1, scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | rdivscalar | miaobyte | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
 | rpowscalar | miaobyte | rpowscalar(var<float64|int32> scalar, tensor<float64|float32> A)->(tensor<float64|float32> C) | T3=pow(scalar, T1) | rpowscalar(var<float64|int32> scalar, tensor<float64|float32> A)->(tensor<float64|float32> C) |
+| todtype |  none  | todtype(tensor<any> a)->(tensor<any> b) | T3(dtypeA)->T1(dtypeB) | todtype(tensor<any> a)->(tensor<any> b) |
 | add | cublas | add(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |
 | add | miaobyte | add(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |
 | sub | miaobyte | sub(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1-T2 | sub(tensor<any> A, tensor<any> B)->(tensor<any> C) |

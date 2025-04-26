@@ -2,6 +2,13 @@ from typing import Union
 from deepx  import Tensor,ones
 from .module import Module
 
+
+class Glu(Module):
+    def __init__(self):
+        super().__init__()
+        self.W = ones(shape=(1,1),name=self.full_name+"_W")
+        self.V = ones(shape=(1,1),name=self.full_name+"_V")
+
 class Swiglu(Module):
     def __init__(self):
         super().__init__()

@@ -14,3 +14,5 @@ def sigmoid(t: Tensor)->Tensor:
 # 数学公式：swish(x) = x * σ(βx)
 def swish(x: Tensor,beta: float = 1.0) -> Tensor:
     return x*sigmoid(x*beta)
+
+silu=swish

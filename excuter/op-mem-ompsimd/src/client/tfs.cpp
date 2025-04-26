@@ -174,7 +174,19 @@ namespace deepx::tf
 
     // elementwise
     void register_elementwise(TfFactory &tffactory)
-    {
+    {   
+        // todtype 
+        tffactory.add_tf(std::make_shared<Todtype>(vector<Param>(
+                                                                 {
+                                                                     Param("A", DataCategory::Tensor, Precision::Any),
+                                                                 }),
+                                                             vector<Param>(
+                                                                 {
+                                                                     Param("C", DataCategory::Tensor, Precision::Any),
+                                                                 })));
+
+
+        // add author=miaobyte
         tffactory.add_tf(std::make_shared<Add<miaobyte>>(vector<Param>(
                                                              {
                                                                  Param("a", DataCategory::Tensor, Precision::Any),

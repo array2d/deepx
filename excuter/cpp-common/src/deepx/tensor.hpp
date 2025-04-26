@@ -26,6 +26,7 @@ namespace deepx
         DeleteFn deleter; // 释放内存
 
         using CopyFn = void (*)(T *, T *, int);
+        //copyer(src, dest, size)
         CopyFn copyer; // 拷贝内存
 
         using SaveFn = void (*)(T *,size_t,const std::string &);

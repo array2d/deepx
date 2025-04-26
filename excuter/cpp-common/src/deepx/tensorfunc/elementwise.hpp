@@ -6,6 +6,10 @@
 
 namespace deepx::tensorfunc
 {
+    //todtype
+    template <typename T,typename Dtype>
+    void todtype(const Tensor<T> &input, Tensor<Dtype> &output);
+ 
     template <typename Author, typename T>
     struct addDispatcher
     {

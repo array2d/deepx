@@ -5,9 +5,96 @@
 #include <cuda_fp16.h>
 #include "deepx/tensorfunc/cuda.hpp"
 #include "deepx/tensorfunc/authors.hpp"
+#include "deepx/tensorfunc/cuda_math.cuh"
 
 namespace deepx::tensorfunc
 {
+
+    //todtype
+
+    template <typename T,typename Dtype>
+    __global__ void todtype_kernel(const T* A, Dtype* C,const int size){
+        int stride = blockDim.x * gridDim.x;
+        for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride){
+            C[idx] = deepx_todtype<T,Dtype>(A[idx]);
+        }
+    }
+
+    template <typename T,typename Dtype>
+    void launch_todtype(const T* a, Dtype* c,const int size){
+        auto [numBlocks, blockSize] = BestDims(size);
+        todtype_kernel<<<numBlocks, blockSize>>>(a, c, size);
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("Failed to launch todtype kernel: " +
+                                     std::string(cudaGetErrorString(err)));
+        }
+    }
+    template void launch_todtype<double, float>(const double *a, float *c, const int size);
+    template void launch_todtype<double, half>(const double *a, half *c, const int size);
+    template void launch_todtype<double, nv_bfloat16>(const double *a, nv_bfloat16 *c, const int size);
+    template void launch_todtype<double, int64_t>(const double *a, int64_t *c, const int size);
+    template void launch_todtype<double, int32_t>(const double *a, int32_t *c, const int size);
+    template void launch_todtype<double, int16_t>(const double *a, int16_t *c, const int size);
+    template void launch_todtype<double, int8_t>(const double *a, int8_t *c, const int size);
+
+    template void launch_todtype<float, double>(const float *a, double *c, const int size);
+    template void launch_todtype<float, half>(const float *a, half *c, const int size);
+    template void launch_todtype<float, nv_bfloat16>(const float *a, nv_bfloat16 *c, const int size);
+    template void launch_todtype<float, int64_t>(const float *a, int64_t *c, const int size);
+    template void launch_todtype<float, int32_t>(const float *a, int32_t *c, const int size);
+    template void launch_todtype<float, int16_t>(const float *a, int16_t *c, const int size);
+    template void launch_todtype<float, int8_t>(const float *a, int8_t *c, const int size);
+
+    template void launch_todtype<nv_bfloat16, double>(const nv_bfloat16 *a, double *c, const int size);
+    template void launch_todtype<nv_bfloat16, float>(const nv_bfloat16 *a, float *c, const int size);
+    template void launch_todtype<nv_bfloat16, half>(const nv_bfloat16 *a, half *c, const int size);
+    template void launch_todtype<nv_bfloat16, int64_t>(const nv_bfloat16 *a, int64_t *c, const int size);
+    template void launch_todtype<nv_bfloat16, int32_t>(const nv_bfloat16 *a, int32_t *c, const int size);
+    template void launch_todtype<nv_bfloat16, int16_t>(const nv_bfloat16 *a, int16_t *c, const int size);
+    template void launch_todtype<nv_bfloat16, int8_t>(const nv_bfloat16 *a, int8_t *c, const int size);
+
+    template void launch_todtype<half, double>(const half *a, double *c, const int size);
+    template void launch_todtype<half, float>(const half *a, float *c, const int size);
+    template void launch_todtype<half, nv_bfloat16>(const half *a, nv_bfloat16 *c, const int size);
+    template void launch_todtype<half, int64_t>(const half *a, int64_t *c, const int size);
+    template void launch_todtype<half, int32_t>(const half *a, int32_t *c, const int size);
+    template void launch_todtype<half, int16_t>(const half *a, int16_t *c, const int size);
+    template void launch_todtype<half, int8_t>(const half *a, int8_t *c, const int size);
+ 
+    template void launch_todtype<int64_t, double>(const int64_t *a, double *c, const int size);
+    template void launch_todtype<int64_t, float>(const int64_t *a, float *c, const int size);
+    template void launch_todtype<int64_t, half>(const int64_t *a, half *c, const int size);
+    template void launch_todtype<int64_t, nv_bfloat16>(const int64_t *a, nv_bfloat16 *c, const int size); 
+    template void launch_todtype<int64_t, int32_t>(const int64_t *a, int32_t *c, const int size);
+    template void launch_todtype<int64_t, int16_t>(const int64_t *a, int16_t *c, const int size);
+    template void launch_todtype<int64_t, int8_t>(const int64_t *a, int8_t *c, const int size);
+
+    template void launch_todtype<int32_t, double>(const int32_t *a, double *c, const int size);
+    template void launch_todtype<int32_t, float>(const int32_t *a, float *c, const int size);
+    template void launch_todtype<int32_t, half>(const int32_t *a, half *c, const int size);
+    template void launch_todtype<int32_t, nv_bfloat16>(const int32_t *a, nv_bfloat16 *c, const int size);
+    template void launch_todtype<int32_t, int64_t>(const int32_t *a, int64_t *c, const int size);
+    template void launch_todtype<int32_t, int16_t>(const int32_t *a, int16_t *c, const int size);
+    template void launch_todtype<int32_t, int8_t>(const int32_t *a, int8_t *c, const int size);
+
+    template void launch_todtype<int16_t, double>(const int16_t *a, double *c, const int size);
+    template void launch_todtype<int16_t, float>(const int16_t *a, float *c, const int size);
+    template void launch_todtype<int16_t, half>(const int16_t *a, half *c, const int size);
+    template void launch_todtype<int16_t, nv_bfloat16>(const int16_t *a, nv_bfloat16 *c, const int size);
+    template void launch_todtype<int16_t, int64_t>(const int16_t *a, int64_t *c, const int size);
+    template void launch_todtype<int16_t, int32_t>(const int16_t *a, int32_t *c, const int size);
+    template void launch_todtype<int16_t, int8_t>(const int16_t *a, int8_t *c, const int size);
+    
+    template void launch_todtype<int8_t, double>(const int8_t *a, double *c, const int size);
+    template void launch_todtype<int8_t, float>(const int8_t *a, float *c, const int size);
+    template void launch_todtype<int8_t, half>(const int8_t *a, half *c, const int size);
+    template void launch_todtype<int8_t, nv_bfloat16>(const int8_t *a, nv_bfloat16 *c, const int size);
+    template void launch_todtype<int8_t, int64_t>(const int8_t *a, int64_t *c, const int size);
+    template void launch_todtype<int8_t, int32_t>(const int8_t *a, int32_t *c, const int size);
+    template void launch_todtype<int8_t, int16_t>(const int8_t *a, int16_t *c, const int size);
+   
     // add
     template <typename T>
     __global__ void add_kernel(const T *A, const T *B, T *C, const int size)

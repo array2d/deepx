@@ -80,7 +80,6 @@ namespace deepx::tensorfunc
         return {size, host_data};
     }
 
-    
 }
 
 #endif

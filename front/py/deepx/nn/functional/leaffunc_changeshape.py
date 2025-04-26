@@ -48,6 +48,11 @@ def transpose(t:Tensor,out:Union[Tensor,str]='')->Tensor:
  
 
 def concat(tensors:Union[list[Tensor],tuple[Tensor]],dim:int,out:Union[Tensor,str]='')->Tensor:
+    assert isinstance(dim,int)
+    assert isinstance(tensors,list) or isinstance(tensors,tuple)
+    for t in tensors:
+        assert isinstance(t,Tensor)
+
     outtensor=out
     if isinstance(out,str) or out is None:
         outshape=list(tensors[0].shape)

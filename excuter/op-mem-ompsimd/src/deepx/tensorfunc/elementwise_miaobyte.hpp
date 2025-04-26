@@ -18,15 +18,15 @@ namespace deepx::tensorfunc
     {
         if (A.shape == B.shape && A.shape == C.shape)
         {
-            C.shape.rangeParallel(C.shape.dim() - 1, [&A, &B, &C, &scalar_op, &simd_op](int i)
+            C.shape.rangeElementwiseParallel([&A, &B, &C, &scalar_op, &simd_op](int i,int i_end)
                                   {
-                                      int shape_last = C.shape[-1];
+                                      
                                       const ScalableTag<T> tag;
                                       const size_t lanes = Lanes(tag);
                                       size_t j = 0;
 
                                       // 1. 处理前置未对齐部分
-                                      while (j < shape_last && !IsAligned(tag, A.data + i + j))
+                                      while (j < i_end && !IsAligned(tag, A.data + i + j))
                                       {
                                           T c;
                                           scalar_op(A.data[i + j], B.data[i + j], c);
@@ -35,14 +35,14 @@ namespace deepx::tensorfunc
                                       }
 
                                       // 2. 处理中间对齐部分
-                                      size_t aligned_end = shape_last - (shape_last % lanes);
+                                      size_t aligned_end = i_end - (i_end % lanes);
                                       for (; j + lanes <= aligned_end; j += lanes)
                                       {
                                           simd_op(A.data + i + j, B.data + i + j, C.data + i + j, lanes);
                                       }
 
                                       // 3. 处理尾部剩余元素
-                                      for (; j < shape_last; j++)
+                                      for (; j < i_end; j++)
                                       {
                                           T c;
                                           scalar_op(A.data[i + j], B.data[i + j], c);
@@ -62,15 +62,14 @@ namespace deepx::tensorfunc
     {
         if (A.shape == C.shape)
         {
-            C.shape.rangeParallel(C.shape.dim() - 1, [&A, &b, &C, &scalar_op, &simd_op](int i)
+            C.shape.rangeElementwiseParallel([&A, &b, &C, &scalar_op, &simd_op](int i,int i_end)
                                   {
-                                      int shape_last = C.shape[-1];
                                       const ScalableTag<T> tag;
                                       const size_t lanes = Lanes(tag);
                                       size_t j = 0;
 
                                       // 1. 处理前置未对齐部分
-                                      while (j < shape_last && !IsAligned(tag, A.data + i + j))
+                                      while (j < i_end && !IsAligned(tag, A.data + i + j))
                                       {
                                           T c;
                                           scalar_op(A.data[i + j], b, c);
@@ -79,14 +78,14 @@ namespace deepx::tensorfunc
                                       }
 
                                       // 2. 处理中间对齐部分
-                                      size_t aligned_end = shape_last - (shape_last % lanes);
+                                      size_t aligned_end = i_end - (i_end % lanes);
                                       for (; j + lanes <= aligned_end; j += lanes)
                                       {
                                           simd_op(A.data + i + j, b, C.data + i + j, lanes);
                                       }
 
                                       // 3. 处理尾部剩余元素
-                                      for (; j < shape_last; j++)
+                                      for (; j < i_end; j++)
                                       {
                                           T c;
                                           scalar_op(A.data[i + j], b, c);
@@ -99,7 +98,21 @@ namespace deepx::tensorfunc
         }
     }
 
-    // 通用实现
+    //todtype
+    template <typename T,typename Dtype>
+    static void todtype(const Tensor<T> &A, Tensor<Dtype> &C)
+    {
+        C.shape.rangeElementwiseParallel([&A, &C](int i,int i_end)
+        {
+            for (int j = 0; j < i_end; j++)
+            {
+                C.data[i + j] = static_cast<Dtype>(A.data[i + j]);
+            }
+        });
+    }
+
+
+    // add
     template <typename T>
     struct addDispatcher<miaobyte, T>
     {
@@ -292,9 +305,9 @@ namespace deepx::tensorfunc
         {   
             if (A.shape == C.shape)
             {
-                A.shape.rangeParallel(A.shape.dim()-1, [&A, &C](int idx)
+                A.shape.rangeElementwiseParallel([&A, &C](int idx,int idx_end)
                                       {
-                                           for (int j=0;j<A.shape[-1];j++)
+                                           for (int j=0;j<idx_end;j++)
                                            {
                                                 C.data[idx+j]=~A.data[idx+j];
                                            } 
@@ -314,21 +327,20 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output](int i)
+                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
                                            {
-                int shape_last=output.shape[-1];
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
 
                 // 1. 处理前置未对齐部分
-                while (j < shape_last && !IsAligned(tag,input.data + i + j)) {
+                while (j < i_end && !IsAligned(tag,input.data + i + j)) {
                     output.data[i+j] = std::sqrt(input.data[i+j]);
                     ++j;
                 }
 
                 // 2. 处理中间对齐部分
-                size_t aligned_end=shape_last-(shape_last%lanes);
+                size_t aligned_end=i_end-(i_end%lanes);
                 for (; j+lanes<=aligned_end; j +=  lanes  )
                 {
                     auto vec = Load(tag, input.data + i + j);
@@ -337,7 +349,7 @@ namespace deepx::tensorfunc
                 }
 
                 // 3. 处理尾部剩余元素
-                for (;j<shape_last;j++)
+                for (;j<i_end;j++)
                 {
                     output.data[i+j] = std::sqrt(input.data[i+j]);
                 } });
@@ -355,13 +367,11 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output](int i)
+                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
                                            {
-                                               int shape_last = output.shape[-1];
-
                                                size_t j = 0;
 
-                                               while (j < shape_last)
+                                               while (j < i_end)
                                                {
                                                    output.data[i + j] = std::sqrt(input.data[i + j]);
                                                    ++j;
@@ -382,9 +392,9 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeParallel(C.shape.dim() - 1, [&A, &B, &C](int i)
+                C.shape.rangeElementwiseParallel([&A, &B, &C](int i,int i_end)
                                       {
-                                         for (int j = 0; j < C.shape[-1]; j++)
+                                         for (int j = 0; j < i_end; j++)
                                          C.data[i+j] = std::pow(A.data[i+j], B.data[i+j]); });
             }
             else
@@ -403,10 +413,11 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output, &value](int i)
+                output.shape.rangeElementwiseParallel([&input, &output, &value](int i,int i_end)
                                            {
-                                             for (int j = 0; j < output.shape[-1]; j++)
-                                                output.data[i+j] = std::pow(input.data[i+j], value); });
+                                             for (int j = 0; j < i_end; j++)
+                                                output.data[i+j] = std::pow(input.data[i+j], value);
+                                            });
             }
             else
             {
@@ -423,10 +434,11 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output, &value](int i)
+                output.shape.rangeElementwiseParallel([&input, &output, &value](int i,int i_end)
                                            {
-                                                for (int j = 0; j < output.shape[-1]; j++)
-                                                output.data[i+j] = std::pow(value, input.data[i+j]); });
+                                                for (int j = 0; j < i_end; j++)
+                                                output.data[i+j] = std::pow(value, input.data[i+j]);
+                                           });
             }
             else
             {
@@ -443,9 +455,10 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output](int i)
-                                           { for (int j = 0; j < output.shape[-1]; j++)
-                                                output.data[i+j] = std::log(input.data[i+j]); });
+                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
+                                           { for (int j = 0; j < i_end; j++)
+                                                output.data[i+j] = std::log(input.data[i+j]);
+                                           });
             }
             else
             {
@@ -462,9 +475,10 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output](int i)
-                                           { for (int j = 0; j < output.shape[-1]; j++)
-                                                output.data[i+j] = std::exp(input.data[i+j]); });
+                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
+                                           { for (int j = 0; j < i_end; j++)
+                                                output.data[i+j] = std::exp(input.data[i+j]);
+                                           });
             }
             else
             {
@@ -481,21 +495,20 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output](int i)
+                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
                                            {
-                int shape_last=output.shape[-1];
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
 
                 // 1. 处理前置未对齐部分
-                while (j < shape_last && !IsAligned(tag,input.data + i + j)) {
+                while (j < i_end && !IsAligned(tag,input.data + i + j)) {
                     output.data[i+j] = std::sin(input.data[i+j]);
                     ++j;
                 }
 
                 // 2. 处理中间对齐部分
-                size_t aligned_end=shape_last-(shape_last%lanes);
+                size_t aligned_end=i_end-(i_end%lanes);
                 for (; j+lanes<=aligned_end; j +=  lanes  )
                 {
                     auto vec = Load(tag, input.data + i + j);
@@ -504,7 +517,7 @@ namespace deepx::tensorfunc
                 }
 
                 // 3. 处理尾部剩余元素
-                for (;j<shape_last;j++)
+                for (;j<i_end;j++)
                 {
                     output.data[i+j] = std::sin(input.data[i+j]);
                 } });
@@ -524,21 +537,20 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output](int i)
+                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
                                            {
-                int shape_last=output.shape[-1];
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
 
                 // 1. 处理前置未对齐部分
-                while (j < shape_last && !IsAligned(tag,input.data + i + j)) {
+                while (j < i_end && !IsAligned(tag,input.data + i + j)) {
                     output.data[i+j] = std::cos(input.data[i+j]);
                     ++j;
                 }
 
                 // 2. 处理中间对齐部分
-                size_t aligned_end=shape_last-(shape_last%lanes);
+                size_t aligned_end=i_end-(i_end%lanes);
                 for (; j+lanes<=aligned_end; j +=  lanes  )
                 {
                     auto vec = Load(tag, input.data + i + j);
@@ -547,7 +559,7 @@ namespace deepx::tensorfunc
                 }
 
                 // 3. 处理尾部剩余元素
-                for (;j<shape_last;j++)
+                for (;j<i_end;j++)
                 {
                     output.data[i+j] = std::cos(input.data[i+j]);
                 } });
@@ -567,21 +579,20 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeParallel(output.shape.dim() - 1, [&input, &output](int i)
+                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
                                            {
-                int shape_last=output.shape[-1];
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
 
                 // 1. 处理前置未对齐部分
-                while (j < shape_last && !IsAligned(tag,input.data + i + j)) {
+                while (j < i_end && !IsAligned(tag,input.data + i + j)) {
                     output.data[i+j] = std::tan(input.data[i+j]);
                     ++j;
                 }
 
                 // 2. 处理中间对齐部分
-                size_t aligned_end=shape_last-(shape_last%lanes);
+                size_t aligned_end=i_end-(i_end%lanes);
                 for (; j+lanes<=aligned_end; j +=  lanes  )
                 {
                     auto vec = Load(tag, input.data + i + j);
@@ -590,7 +601,7 @@ namespace deepx::tensorfunc
                 }
 
                 // 3. 处理尾部剩余元素
-                for (;j<shape_last;j++)
+                for (;j<i_end;j++)
                 {
                     output.data[i+j] = std::tan(input.data[i+j]);
                 } });
@@ -609,33 +620,32 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeParallel(C.shape.dim() - 1, [&A, &B, &C](int idx)
+                C.shape.rangeElementwiseParallel([&A, &B, &C](int i,int i_end)
                                       {
-                int shape_last=C.shape[-1];
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
  
                 // 1. 处理前置未对齐部分
-                while (j < shape_last && !IsAligned(tag,A.data + idx+j)) {
-                    C.data[idx+j]=std::max(A.data[idx+j],B.data[idx+j]);
+                while (j < i_end && !IsAligned(tag,A.data + i + j)) {
+                    C.data[i+j]=std::max(A.data[i+j],B.data[i+j]);
                     ++j;
                 }
 
                 // 2. 处理中间对齐部分
-                size_t aligned_end=shape_last-(shape_last%lanes);
+                size_t aligned_end=i_end-(i_end%lanes);
                 for (; j+lanes<=aligned_end; j +=  lanes  )
                 {
-                    auto vec1 = Load(tag, A.data + idx+j);  // 加载数组1的向量
-                    auto vec2 = Load(tag, B.data + idx+j);  // 加载数组2的向量
+                    auto vec1 = Load(tag, A.data + i + j);  // 加载数组1的向量
+                    auto vec2 = Load(tag, B.data + i + j);  // 加载数组2的向量
                     auto vec_result = Max(vec1, vec2);  // 向量比较
-                    Store(vec_result, tag, C.data + idx+j); // 存储结果向量
+                    Store(vec_result, tag, C.data + i + j); // 存储结果向量
                 }  
 
                 // 3. 处理尾部剩余元素
-                for (;j<shape_last;j++)
+                for (;j<i_end;j++)
                 {
-                    C.data[idx+j]=std::max(A.data[idx+j],B.data[idx+j]);
+                    C.data[i+j]=std::max(A.data[i+j],B.data[i+j]);
                 } });
             }
             else
@@ -652,33 +662,32 @@ namespace deepx::tensorfunc
         {
             if (A.shape == C.shape)
             {
-                C.shape.rangeParallel(C.shape.dim() - 1, [&A, b, &C](int idx)
+                C.shape.rangeElementwiseParallel([&A, b, &C](int i,int i_end)
                                       {
-                int shape_last=C.shape[-1];
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
 
                 // 1. 处理前置未对齐部分
-                while (j < shape_last && !IsAligned(tag,A.data + idx+j)) {
-                    C.data[idx+j]=std::max(A.data[idx+j],b);
+                while (j < i_end && !IsAligned(tag,A.data + i + j)) {
+                    C.data[i+j]=std::max(A.data[i+j],b);
                     ++j;
                 }   
 
                 // 2. 处理中间对齐部分
-                size_t aligned_end=shape_last-(shape_last%lanes);
+                size_t aligned_end=i_end-(i_end%lanes);
                 for (; j+lanes<=aligned_end; j +=  lanes  )
                 {
-                    auto vec1 = Load(tag, A.data + idx+j);  // 加载数组1的向量
+                    auto vec1 = Load(tag, A.data + i + j);  // 加载数组1的向量
                     auto vec2=Set(tag,b);   
                     auto vec_result = Max(vec1, vec2);  // 向量比较
-                    Store(vec_result, tag, C.data + idx+j); // 存储结果向量
+                    Store(vec_result, tag, C.data + i + j); // 存储结果向量
                 }   
 
                 // 3. 处理尾部剩余元素
-                for (;j<shape_last;j++)
+                for (;j<i_end;j++)
                 {
-                    C.data[idx+j]=std::max(A.data[idx+j],b);
+                    C.data[i+j]=std::max(A.data[i+j],b);
                 } });
             }
             else
@@ -695,33 +704,32 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeParallel(C.shape.dim() - 1, [&A, &B, &C](int idx)
+                C.shape.rangeElementwiseParallel([&A, &B, &C](int i,int i_end)
                                       {
-                int shape_last=C.shape[-1];
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
 
                 // 1. 处理前置未对齐部分    
-                while (j < shape_last && !IsAligned(tag,A.data + idx+j)) {
-                    C.data[idx+j]=std::min(A.data[idx+j],B.data[idx+j]);
+                while (j < i_end && !IsAligned(tag,A.data + i + j)) {
+                    C.data[i+j]=std::min(A.data[i+j],B.data[i+j]);
                     ++j;
                 }
 
                 // 2. 处理中间对齐部分  
-                size_t aligned_end=shape_last-(shape_last%lanes);
+                size_t aligned_end=i_end-(i_end%lanes);
                 for (; j+lanes<=aligned_end; j +=  lanes  )
                 {
-                    auto vec1 = Load(tag, A.data + idx+j);  // 加载数组1的向量
-                    auto vec2 = Load(tag, B.data + idx+j);  // 加载数组2的向量
+                    auto vec1 = Load(tag, A.data + i + j);  // 加载数组1的向量
+                    auto vec2 = Load(tag, B.data + i + j);  // 加载数组2的向量
                     auto vec_result = Min(vec1, vec2);  // 向量比较 
-                    Store(vec_result, tag, C.data + idx+j); // 存储结果向量
+                    Store(vec_result, tag, C.data + i + j); // 存储结果向量
                 }
 
                 // 3. 处理尾部剩余元素
-                for (;j<shape_last;j++)
+                for (;j<i_end;j++)
                 {
-                    C.data[idx+j]=std::min(A.data[idx+j],B.data[idx+j]);
+                    C.data[i+j]=std::min(A.data[i+j],B.data[i+j]);
                 } });
             }
             else
@@ -738,32 +746,31 @@ namespace deepx::tensorfunc
         {
             if (A.shape == C.shape)
             {
-                C.shape.rangeParallel(C.shape.dim() - 1, [&A, b, &C](int idx)
+                C.shape.rangeElementwiseParallel([&A, b, &C](int i,int i_end)
                                       {   
-                int shape_last=C.shape[-1];
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
 
                 // 1. 处理前置未对齐部分        
-                while (j < shape_last && !IsAligned(tag,A.data + idx+j)) {
-                    C.data[idx+j]=std::min(A.data[idx+j],b);
+                while (j < i_end && !IsAligned(tag,A.data + i + j)) {
+                    C.data[i+j]=std::min(A.data[i+j],b);
                     ++j;
                 }
 
                 // 2. 处理中间对齐部分  
-                size_t aligned_end=shape_last-(shape_last%lanes);
+                size_t aligned_end=i_end-(i_end%lanes);
                 for (; j+lanes<=aligned_end; j +=  lanes  )
                 {
-                    auto vec1 = Load(tag, A.data + idx+j);  // 加载数组1的向量
+                    auto vec1 = Load(tag, A.data + i + j);  // 加载数组1的向量
                     auto vec2=Set(tag,b);       
                     auto vec_result = Min(vec1, vec2);  // 向量比较
-                    Store(vec_result, tag, C.data + idx+j); // 存储结果向量
+                    Store(vec_result, tag, C.data + i + j); // 存储结果向量
                 }
 
                 // 3. 处理尾部剩余元素
-                for (;j<shape_last;j++){
-                    C.data[idx+j]=std::min(A.data[idx+j],b);
+                for (;j<i_end;j++){
+                    C.data[i+j]=std::min(A.data[i+j],b);
                 } });
             }
             else
@@ -781,16 +788,16 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {   
-                A.shape.rangeParallel(A.shape.dim()-1, [&A, &B, &mask,epsilon](int idx)
+                A.shape.rangeElementwiseParallel([&A, &B, &mask,epsilon](int i,int i_end)
                                       {
-                                            for (int i = 0; i < A.shape[-1]; i++)
+                                            for (int j = 0; j < i_end; j++)
                                             {
                                                 if (epsilon == 0)
                                                 {
-                                                    mask.data[idx+i]=A.data[idx+i]==B.data[idx+i];
+                                                    mask.data[i+j]=A.data[i+j]==B.data[i+j];
                                                 }
                                                 else{
-                                                    mask.data[idx+i]=std::abs(A.data[idx+i]-B.data[idx+i])<=epsilon;
+                                                    mask.data[i+j]=std::abs(A.data[i+j]-B.data[i+j])<=epsilon;
                                                 }
                                             }
                                             });
@@ -810,16 +817,16 @@ namespace deepx::tensorfunc
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeParallel(A.shape.dim()-1, [&A, &mask, &scalar,epsilon](int idx)
+                A.shape.rangeElementwiseParallel([&A, &mask, &scalar,epsilon](int i,int i_end)
                                       {
-                for (int i = 0; i < A.shape[-1]; i++)
+                for (int j = 0; j < i_end; j++)
                 {
                     if (epsilon == 0)
                     {
-                        mask.data[idx+i]=A.data[idx+i]==scalar;
+                        mask.data[i+j]=A.data[i+j]==scalar;
                     }
                     else{
-                        mask.data[idx+i]=std::abs(A.data[idx+i]-scalar)<=epsilon;
+                        mask.data[i+j]=std::abs(A.data[i+j]-scalar)<=epsilon;
                     }
                 }
                 });
@@ -839,11 +846,11 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {
-                A.shape.rangeParallel(A.shape.dim()-1, [&A, &B, &mask](int idx)
+                A.shape.rangeElementwiseParallel([&A, &B, &mask](int i,int i_end)
                                       {
-                for (int i = 0; i < A.shape[-1]; i++)
+                for (int j = 0; j < i_end; j++)
                 {
-                    mask.data[idx+i]=A.data[idx+i]<B.data[idx+i];
+                    mask.data[i+j]=A.data[i+j]<B.data[i+j];
                 }   
                 });
             }
@@ -862,11 +869,11 @@ namespace deepx::tensorfunc
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeParallel(A.shape.dim()-1, [&A, &mask, &scalar](int idx)
+                A.shape.rangeElementwiseParallel([&A, &mask, &scalar](int i,int i_end)
                                       {
-                for (int i = 0; i < A.shape[-1]; i++)
+                for (int j = 0; j < i_end; j++)
                 {
-                    mask.data[idx+i]=A.data[idx+i]<scalar;
+                    mask.data[i+j]=A.data[i+j]<scalar;
                 }
                 });
             }
@@ -885,11 +892,11 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {
-                A.shape.rangeParallel(A.shape.dim()-1, [&A, &B, &mask](int idx)
+                A.shape.rangeElementwiseParallel([&A, &B, &mask](int i,int i_end)
                                       {
-                for (int i = 0; i < A.shape[-1]; i++)
+                for (int j = 0; j < i_end; j++)
                 {
-                    mask.data[idx+i]=A.data[idx+i]>B.data[idx+i];
+                    mask.data[i+j]=A.data[i+j]>B.data[i+j];
                 }
                 });
             }
@@ -908,11 +915,11 @@ namespace deepx::tensorfunc
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeParallel(A.shape.dim()-1, [&A, &mask, &scalar](int idx)
+                A.shape.rangeElementwiseParallel([&A, &mask, &scalar](int i,int i_end)
                                       {
-                for (int i = 0; i < A.shape[-1]; i++)
+                for (int j = 0; j < i_end; j++)
                 {
-                    mask.data[idx+i]=A.data[idx+i]>scalar;
+                    mask.data[i+j]=A.data[i+j]>scalar;
                 }
                 });
             }
@@ -931,12 +938,12 @@ namespace deepx::tensorfunc
         {
             if (cases.shape == C.shape)
             {
-                C.shape.rangeParallel(C.shape.dim()-1, [&tensors, &cases, &C](int idx)
+                C.shape.rangeElementwiseParallel([&tensors, &cases, &C](int i,int i_end)
                                       {
-                for (int i = 0; i < C.shape[-1]; i++)
+                for (int j = 0; j < i_end; j++)
                 {   
-                    int which_tensor=cases.data[idx];
-                    C.data[idx+i]=tensors[which_tensor]->data[idx];
+                    int which_tensor=cases.data[i];
+                    C.data[i+j]=tensors[which_tensor]->data[i];
                 }
                 });
             }

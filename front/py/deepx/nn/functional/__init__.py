@@ -27,7 +27,7 @@ __all__ = [
     "reshape","permute","transpose","concat","broadcastTo","indexselect",
 
     #functional
-    "relu","sigmoid","swish",
+    "relu","sigmoid","swish","silu",
     "mean",
     "rsqrt",
     "softmax",

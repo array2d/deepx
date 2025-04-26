@@ -2,6 +2,7 @@
 #include <vector>
 #include <functional>
 #include <any>
+#include <thread>
 
 #include <omp.h>
 #include "deepx/shape.hpp"
@@ -113,18 +114,24 @@ namespace deepx
             }
         }
     }
-    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear)> func) const
-    {
-        dimCount = checkdim(dimCount, dim());
-        int stride = checkStride(dimCount, shape);
-
-        // 计算总循环次数
-        int total = size / stride;
-
-#pragma omp parallel for
-        for (int idx = 0; idx < total; idx++)
+    void Shape::rangeElementwiseParallel(std::function<void(const int idx_linear,const int idx_linear_end)> func) const
+    {   
+        int num_threads =  std::thread::hardware_concurrency();
+        int alignblock=size/num_threads;
+        const int minblock=256;
+        if (alignblock<minblock)
         {
-            func(idx * stride);
+            alignblock=minblock;
+            num_threads=size/alignblock;
+        }
+        #pragma omp parallel for num_threads(num_threads)
+        for (int idx = 0; idx < size; idx+=alignblock)
+        {
+            int end = idx + alignblock;
+            if (end > size) {
+                end = size;
+            }
+            func(idx,end);
         }
     }
 

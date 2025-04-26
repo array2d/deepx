@@ -66,7 +66,7 @@ namespace deepx
 
         // rangeParallel 支持omp,但omp内无需线程local变量
         void rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices)> func) const;
-        void rangeParallel(int dimCount, std::function<void(const int idx_linear)> func) const;
+        void rangeElementwiseParallel( std::function<void(const int idx_linear,const int idx_linear_end)> func) const;
         void rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices)> func) const;
 
         // 支持omp,但omp内需要线程local变量

@@ -9,6 +9,359 @@
 
 namespace deepx::tf
 {
+
+    // todtype
+    class Todtype : public TF
+    {
+    public:
+        Todtype(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "todtype";
+            this->tftype = "elementwise";
+            this->args = args;
+            this->returns = returns;
+        }
+
+        string math_formula() const override
+        {
+            return "T3(dtypeA)->T1(dtypeB)";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Todtype>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            if (!checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error))
+            {
+                return 1;
+            }
+            auto a_shape = mem->gettensor(this->args[0].textvalue).get()->shape;
+            auto c_shape = mem->gettensor(this->returns[0].textvalue).get()->shape;
+            if (a_shape.size != c_shape.size)
+            {
+                error = "Shape mismatch: " +  to_string(a_shape.size)  + " != " +  to_string(c_shape.size);
+                return 1;
+            }
+            Precision a_type = a_shape.dtype;
+            Precision c_type = c_shape.dtype;
+            switch (a_type)
+            {
+            case Precision::Float64:
+            {
+                switch (c_type)
+                {
+                case Precision::Float64:
+                {
+                    auto a = mem->gettensor<double>(this->args[0].textvalue);
+                    auto b = mem->gettensor<double>(this->returns[0].textvalue);
+                    b->copyer(a->data, b->data, a->shape.size);
+                    break;
+                }
+                case Precision::Float32:
+                    tensorfunc::todtype<double, float>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float16:
+                    tensorfunc::todtype<double, half>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                    break;
+                case Precision::BFloat16:
+                    tensorfunc::todtype<double, nv_bfloat16>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int64:
+                    tensorfunc::todtype<double, int64_t>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int32:
+                    tensorfunc::todtype<double, int32_t>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int16:
+                    tensorfunc::todtype<double, int16_t>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int8:
+                    tensorfunc::todtype<double, int8_t>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    break;
+                default:
+                    error = "Unsupported dtype: " + precision_str(c_type);
+                    return 1;
+                }
+                break;
+            }
+            case Precision::Float32:
+            {
+                switch (c_type)
+                {
+                case Precision::Float64:
+                    tensorfunc::todtype<float, double>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float32:
+                {
+                    auto a = mem->gettensor<float>(this->args[0].textvalue);
+                    auto b = mem->gettensor<float>(this->returns[0].textvalue);
+                    b->copyer(a->data,b->data, a->shape.size);
+                    break;
+                }
+                case Precision::Float16:
+                    tensorfunc::todtype<float, half>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                    break;
+                case Precision::BFloat16:
+                    tensorfunc::todtype<float, nv_bfloat16>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int64:
+                    tensorfunc::todtype<float, int64_t>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int32:
+                    tensorfunc::todtype<float, int32_t>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int16:
+                    tensorfunc::todtype<float, int16_t>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int8:
+                    tensorfunc::todtype<float, int8_t>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    break;
+                default:
+                    error = "Unsupported dtype: " + precision_str(c_type);
+                    return 1;
+                }
+            }
+            break;
+            case Precision::Float16:
+            {
+                switch (c_type)
+                {
+                case Precision::Float64:
+                    tensorfunc::todtype<half, double>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float32:
+                    tensorfunc::todtype<half, float>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float16:
+                {
+                    auto a = mem->gettensor<half>(this->args[0].textvalue);
+                    auto b = mem->gettensor<half>(this->returns[0].textvalue);
+                    b->copyer(a->data, b->data, a->shape.size);
+                    break;
+                }
+
+                case Precision::BFloat16:
+                    tensorfunc::todtype<half, nv_bfloat16>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int64:
+                    tensorfunc::todtype<half, int64_t>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int32:
+                    tensorfunc::todtype<half, int32_t>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int16:
+                    tensorfunc::todtype<half, int16_t>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int8:
+                    tensorfunc::todtype<half, int8_t>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    break;
+                default:
+                    error = "Unsupported dtype: " + precision_str(c_type);
+                    return 1;
+                }
+            }
+            break;
+            case Precision::BFloat16:
+            {
+                switch (c_type)
+                {
+                case Precision::Float64:
+                    tensorfunc::todtype<nv_bfloat16, double>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float32:
+                    tensorfunc::todtype<nv_bfloat16, float>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float16:
+                    tensorfunc::todtype<nv_bfloat16, half>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                    break;
+                case Precision::BFloat16:
+                {
+                    auto a = mem->gettensor<nv_bfloat16>(this->args[0].textvalue);
+                    auto b = mem->gettensor<nv_bfloat16>(this->returns[0].textvalue);
+                    b->copyer(a->data, b->data, a->shape.size);
+                    break;
+                }
+                case Precision::Int64:
+                    tensorfunc::todtype<nv_bfloat16, int64_t>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int32:
+                    tensorfunc::todtype<nv_bfloat16, int32_t>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int16:
+                    tensorfunc::todtype<nv_bfloat16, int16_t>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int8:
+                    tensorfunc::todtype<nv_bfloat16, int8_t>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    break;
+                default:
+                    error = "Unsupported dtype: " + precision_str(c_type);
+                    return 1;
+                }
+            }
+            break;
+            case Precision::Int64:
+            {
+                switch (c_type)
+                {
+                case Precision::Float64:
+                    tensorfunc::todtype<int64_t, double>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float32:
+                    tensorfunc::todtype<int64_t, float>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float16:
+                    tensorfunc::todtype<int64_t, half>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                    break;
+                case Precision::BFloat16:
+                    tensorfunc::todtype<int64_t, nv_bfloat16>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int64:
+                {
+                    auto a = mem->gettensor<int64_t>(this->args[0].textvalue);
+                    auto b = mem->gettensor<int64_t>(this->returns[0].textvalue);
+                    b->copyer(a->data, b->data, a->shape.size);
+                    break;
+                }
+                case Precision::Int32:
+                    tensorfunc::todtype<int64_t, int32_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int16:
+                    tensorfunc::todtype<int64_t, int16_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int8:
+                    tensorfunc::todtype<int64_t, int8_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    break;
+                default:
+                    error = "Unsupported dtype: " + precision_str(c_type);
+                    return 1;
+                }
+            }
+            break;
+            case Precision::Int32:
+            {
+                switch (c_type)
+                {
+                case Precision::Float64:
+                    tensorfunc::todtype<int32_t, double>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float32:
+                    tensorfunc::todtype<int32_t, float>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float16:
+                    tensorfunc::todtype<int32_t, half>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                    break;
+                case Precision::BFloat16:
+                    tensorfunc::todtype<int32_t, nv_bfloat16>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int64:
+                    tensorfunc::todtype<int32_t, int64_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int32:
+                {
+                    auto a = mem->gettensor<int32_t>(this->args[0].textvalue);
+                    auto b = mem->gettensor<int32_t>(this->returns[0].textvalue);
+                    b->copyer(a->data, b->data, a->shape.size);
+                    break;
+                }
+                case Precision::Int16:
+                    tensorfunc::todtype<int32_t, int16_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int8:
+                    tensorfunc::todtype<int32_t, int8_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    break;
+                default:
+                    error = "Unsupported dtype: " + precision_str(c_type);
+                    return 1;
+                }
+            }
+            break;
+            case Precision::Int16:
+            {
+                switch (c_type)
+                {
+                case Precision::Float64:
+                    tensorfunc::todtype<int16_t, double>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float32:
+                    tensorfunc::todtype<int16_t, float>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float16:
+                    tensorfunc::todtype<int16_t, half>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                    break;
+                case Precision::BFloat16:
+                    tensorfunc::todtype<int16_t, nv_bfloat16>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int64:
+                    tensorfunc::todtype<int16_t, int64_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int32:
+                    tensorfunc::todtype<int16_t, int32_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int16:
+                {
+                    auto a = mem->gettensor<int16_t>(this->args[0].textvalue);
+                    auto b = mem->gettensor<int16_t>(this->returns[0].textvalue);
+                    b->copyer(a->data, b->data, a->shape.size);
+                    break;
+                }
+                case Precision::Int8:
+                    tensorfunc::todtype<int16_t, int8_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    break;
+                default:
+                    error = "Unsupported dtype: " + precision_str(c_type);
+                    return 1;
+                }
+            }
+            break;
+            case Precision::Int8:
+            {
+                switch (c_type)
+                {
+                case Precision::Float64:
+                    tensorfunc::todtype<int8_t, double>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float32:
+                    tensorfunc::todtype<int8_t, float>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                    break;
+                case Precision::Float16:
+                    tensorfunc::todtype<int8_t, half>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                    break;
+                case Precision::BFloat16:
+                    tensorfunc::todtype<int8_t, nv_bfloat16>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int64:
+                    tensorfunc::todtype<int8_t, int64_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int32:
+                    tensorfunc::todtype<int8_t, int32_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int16:
+                    tensorfunc::todtype<int8_t, int16_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                    break;
+                case Precision::Int8:
+                {
+                    auto a = mem->gettensor<int8_t>(this->args[0].textvalue);
+                    auto b = mem->gettensor<int8_t>(this->returns[0].textvalue);
+                    b->copyer(a->data, b->data, a->shape.size);
+                    break;
+                }
+                default:
+                    error = "Unsupported dtype: " + precision_str(c_type);
+                    return 1;
+                }
+            }
+            break;
+            default:
+                error = "Unsupported dtype: " + precision_str(c_type);
+                return 1;
+            }
+            return 0;
+        };
+        
+    };
+
+    // add
     template <typename Author>
     class Add : public TF
     {
@@ -16,7 +369,7 @@ namespace deepx::tf
         Add(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "add";
-            this->metadata.author = Author::name();  
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -32,7 +385,7 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            if(!checktensors({this->args[0].textvalue,this->args[1].textvalue,this->returns[0].textvalue},mem, error))
+            if (!checktensors({this->args[0].textvalue, this->args[1].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -90,7 +443,7 @@ namespace deepx::tf
             this->args = args;
             this->returns = returns;
         }
- 
+
         string math_formula() const override
         {
             return "T3=T1+scalar";
@@ -100,8 +453,8 @@ namespace deepx::tf
             return make_shared<AddScalar<Author>>(*this);
         }
         int run(shared_ptr<MemBase> mem, string &error) override
-        {   
-            if(!checktensors({this->args[0].textvalue,this->returns[0].textvalue},mem, error))
+        {
+            if (!checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -158,7 +511,7 @@ namespace deepx::tf
             this->args = args;
             this->returns = returns;
         }
- 
+
         string math_formula() const override
         {
             return "T3=T1-T2";
@@ -168,8 +521,8 @@ namespace deepx::tf
             return make_shared<Sub<Author>>(*this);
         }
         int run(shared_ptr<MemBase> mem, string &error) override
-        {   
-            if(!checktensors({this->args[0].textvalue,this->args[1].textvalue,this->returns[0].textvalue},mem, error))  
+        {
+            if (!checktensors({this->args[0].textvalue, this->args[1].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -222,12 +575,12 @@ namespace deepx::tf
         SubScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "subscalar";
-            this->metadata.author=Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
- 
+
         string math_formula() const override
         {
             return "T3=T1-scalar";
@@ -238,7 +591,7 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            if(!checktensors({this->args[0].textvalue,this->returns[0].textvalue},mem, error))
+            if (!checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -290,12 +643,12 @@ namespace deepx::tf
         Mul(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "mul";
-            this->metadata.author=Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
- 
+
         string math_formula() const override
         {
             return "T3=T1*T2";
@@ -305,8 +658,8 @@ namespace deepx::tf
             return make_shared<Mul<Author>>(*this);
         }
         int run(shared_ptr<MemBase> mem, string &error) override
-        {   
-            if(!checktensors({this->args[0].textvalue,this->args[1].textvalue,this->returns[0].textvalue},mem, error))
+        {
+            if (!checktensors({this->args[0].textvalue, this->args[1].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -359,12 +712,12 @@ namespace deepx::tf
         MulScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "mulscalar";
-            this->metadata.author=Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
- 
+
         string math_formula() const override
         {
             return "T3=T1*scalar";
@@ -374,8 +727,8 @@ namespace deepx::tf
             return make_shared<MulScalar<Author>>(*this);
         }
         int run(shared_ptr<MemBase> mem, string &error) override
-        {   
-            if(!checktensors({this->args[0].textvalue,this->returns[0].textvalue},mem, error))
+        {
+            if (!checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -427,12 +780,12 @@ namespace deepx::tf
         Div(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "div";
-            this->metadata.author=Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
- 
+
         string math_formula() const override
         {
             return "T3=T1/T2";
@@ -442,8 +795,8 @@ namespace deepx::tf
             return make_shared<Div<Author>>(*this);
         }
         int run(shared_ptr<MemBase> mem, string &error) override
-        {   
-            if(!checktensors({this->args[0].textvalue,this->args[1].textvalue,this->returns[0].textvalue},mem, error))
+        {
+            if (!checktensors({this->args[0].textvalue, this->args[1].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -496,12 +849,12 @@ namespace deepx::tf
         DivScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "divscalar";
-            this->metadata.author=Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
- 
+
         string math_formula() const override
         {
             return "T3=scalar/T1";
@@ -511,8 +864,8 @@ namespace deepx::tf
             return make_shared<DivScalar<Author>>(*this);
         }
         int run(shared_ptr<MemBase> mem, string &error) override
-        {   
-            if(!checktensors({this->args[0].textvalue,this->returns[0].textvalue},mem, error))
+        {
+            if (!checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -564,12 +917,12 @@ namespace deepx::tf
         RDivScalar(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "rdivscalar";
-            this->metadata.author=Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
         }
- 
+
         string math_formula() const override
         {
             return "T3=scalar/T1";
@@ -580,7 +933,7 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            if(!checktensors({this->args[1].textvalue,this->returns[0].textvalue},mem, error))
+            if (!checktensors({this->args[1].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -633,7 +986,7 @@ namespace deepx::tf
         Invert(const vector<Param> &args, const vector<Param> &returns)
         {
             this->name = "invert";
-            this->metadata.author=Author::name();
+            this->metadata.author = Author::name();
             this->tftype = "elementwise";
             this->args = args;
             this->returns = returns;
@@ -648,7 +1001,7 @@ namespace deepx::tf
         }
         int run(shared_ptr<MemBase> mem, string &error) override
         {
-            if(!checktensors({this->args[0].textvalue,this->returns[0].textvalue},mem, error))
+            if (!checktensors({this->args[0].textvalue, this->returns[0].textvalue}, mem, error))
             {
                 return 1;
             }
@@ -680,7 +1033,6 @@ namespace deepx::tf
             return 0;
         }
     };
-
 };
 
 #endif // DEEPX_TF_ELEMENTWISE_BASIC_HPP

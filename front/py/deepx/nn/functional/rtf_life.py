@@ -3,6 +3,7 @@ from deepx.nn.deepxir import DeepxIR,Param
 from deepx.scheduler import send
 
 def rtf_newtensor(t:Tensor):
+    assert isinstance(t,Tensor)
     args=[Param.vector(t.shape,'int32')]
     returns=[Param.tensor(t)]
     ir=DeepxIR("newtensor", args, returns,'')
@@ -10,12 +11,28 @@ def rtf_newtensor(t:Tensor):
 
 
 def rtf_copytensor(t:Tensor,out:Tensor):
+    assert isinstance(t,Tensor)
+    assert isinstance(out,Tensor)
+    assert t.shape==out.shape
+    assert t.dtype==out.dtype
+
     args=[Param.tensor(t)]
     returns=[Param.tensor(out)]
     ir=DeepxIR("copytensor", args, returns,'')
     send(ir)
 
+def rtf_todtype(t:Tensor,dest:Tensor):
+    assert isinstance(t,Tensor)
+    assert isinstance(dest,Tensor)
+    assert t.shape==dest.shape
+
+    args=[Param.tensor(t)]
+    returns=[Param.tensor(dest)]
+    ir=DeepxIR("todtype", args, returns,'')
+    send(ir)
+
 def rtf_deltensor(t:Tensor):
+    assert isinstance(t,Tensor)
     args=[]
     returns=[Param.tensor(t)]
     ir=DeepxIR("deltensor", args, returns,'')

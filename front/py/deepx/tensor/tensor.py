@@ -1,4 +1,7 @@
 from typing import Optional,Union,TypeAlias
+
+from triton.language.semantic import equal
+
 from .shape import Shape
 
 
@@ -36,6 +39,8 @@ class Tensor:
             raise ValueError("Invalid shape")
 
     def copy_to(self,t:'Tensor'):
+        assert isinstance(t,Tensor)
+        assert t.name != self._name
         from deepx.nn.functional import copytensor
         copytensor(self,t)
 
@@ -44,7 +49,12 @@ class Tensor:
         t=newtensor(self.shape,dtype=self.dtype,name=name)
         copytensor(self,t)
         return t
-    
+    def to(self,dtype:str,name:str=None):
+        assert isinstance(dtype,str) and dtype != ''
+        from deepx.nn.functional import todtype as todtype_func,newtensor
+        dest=newtensor(self.shape,dtype=dtype,name=name)
+        todtype_func(self,dest)
+        return dest
     # name
     @property
     def name(self):

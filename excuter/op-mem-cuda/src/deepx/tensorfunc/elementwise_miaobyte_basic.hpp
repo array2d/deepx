@@ -9,10 +9,17 @@
 #include "stdutil/error.hpp"
 
 namespace deepx::tensorfunc
-{
-    // CUDA kernel函数声明
-   
-
+{   
+    //todtype
+    template <typename T,typename Dtype>
+    void todtype(const Tensor<T> &input, Tensor<Dtype> &output){
+        if (input.shape.size != output.shape.size || input.shape.size != output.shape.size) {
+            throw TensorShapeError("todtype");
+        }
+        launch_todtype(input.data, output.data, input.shape.size);
+    };
+ 
+    //add
     template <typename T>
     struct addDispatcher<miaobyte, T>
     {
