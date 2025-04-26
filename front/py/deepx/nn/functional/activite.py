@@ -13,10 +13,4 @@ def sigmoid(t: Tensor)->Tensor:
 
 # 数学公式：swish(x) = x * σ(βx)
 def swish(x: Tensor,beta: float = 1.0) -> Tensor:
-    outtensor=x
-    if x.name is not None:
-        outtensor=newtensor(x.shape, dtype=x.dtype)
-    x.mul(beta,out=outtensor)
-    outtensor=sigmoid(outtensor)
-    outtensor.mul_(x)
-    return outtensor
+    return x*sigmoid(x*beta)

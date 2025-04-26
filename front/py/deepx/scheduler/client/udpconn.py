@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import select
 
 class UDPConn:
-    def __init__(self, endpoint: str = "localhost:8080"):
+    def __init__(self, endpoint: str = "localhost:9090"):
         # 解析endpoint
         self._host, port_str = endpoint.split(':')
         self._port = int(port_str)
