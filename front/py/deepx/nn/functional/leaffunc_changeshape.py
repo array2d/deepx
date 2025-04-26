@@ -10,7 +10,7 @@ def reshape(t:Tensor,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
         assert isinstance(i,int) and i>0
 
     outtensor=out
-    if isinstance(out,str):
+    if isinstance(out,str) or out is None:
         outshape=shape
         outtensor=newtensor(outshape,dtype=t.dtype,name=out)
     else:
@@ -32,7 +32,7 @@ def permute(t:Tensor,
         raise ValueError(f"shape参数不合法,当前输入维度数：{len(dimorder)}，张量维度数：{t.ndim}")
     dimorder = [d % t.ndim for d in dimorder]
     outtensor=out
-    if isinstance(out,str):
+    if isinstance(out,str) or out is None:
         outshape = [t.shape[dim] for dim in dimorder]
         outtensor=newtensor(outshape,dtype=t.dtype,name=out)
 
@@ -49,7 +49,7 @@ def transpose(t:Tensor,out:Union[Tensor,str]='')->Tensor:
 
 def concat(tensors:Union[list[Tensor],tuple[Tensor]],dim:int,out:Union[Tensor,str]='')->Tensor:
     outtensor=out
-    if isinstance(out,str):
+    if isinstance(out,str) or out is None:
         outshape=list(tensors[0].shape)
         outshape[dim]=sum(t.shape[dim] for t in tensors)
         outtensor=newtensor(outshape,dtype=tensors[0].dtype,name=out)
@@ -68,7 +68,7 @@ def broadcastTo(t:Tensor,new_shape:tuple[int,...],out:Union[Tensor,str]='',requi
     if bshape!=tuple(new_shape):
         raise ValueError(f"广播失败：{t.shape} 无法广播为 {new_shape} ")
     outtensor=out
-    if isinstance(out,str):
+    if isinstance(out,str) or out is None:
         outshape=new_shape
         outtensor=newtensor(outshape,dtype=t.dtype,name=out)
     from .rtf_changeshape import rtf_broadcastTo
@@ -80,7 +80,7 @@ def indexselect(input:Tensor,indices:Tensor,gatheraxis:int,out:Union[Tensor,str]
     assert gatheraxis>=0 and gatheraxis<input.ndim
 
     outtensor=out
-    if isinstance(out,str):
+    if isinstance(out,str) or out is None:
         outshape=Shape.indexselectshape(input.shape,indices.shape,gatheraxis)
         outtensor=newtensor(outshape,dtype=input.dtype,name=out)
     assert outtensor.shape==outshape
@@ -106,7 +106,7 @@ def indexselect(input:Tensor,indices:Tensor,gatheraxis:int,out:Union[Tensor,str]
 # OpNode.register("expand")
 # def expand(t:Tensor,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
 #     outtensor=None
-#     if isinstance(out,str):
+#     if isinstance(out,str) or out is None:
 #         outtensor=Tensor(shape=shape, dtype=t.dtype, device=t.device)
 #         outtensor.addtograph(out)
 #     else:

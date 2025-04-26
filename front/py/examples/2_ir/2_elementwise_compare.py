@@ -17,10 +17,10 @@ from deepx import Tensor,full
 
 print()
 
-t1 = full(2,3,4, value=10,dtype="int8")
+t1 = full((2,3,4), value=10,dtype="int8")
 t2 = ~t1
 t2.print()
 
-t3 = full(2,3,4, value=2,dtype="int64")
+t3 = full((2,3,4), value=2,dtype="int64")
 t4 = ~t3
 t4.print()

@@ -33,7 +33,7 @@ print()
 
 t1 = load(npy_path+'t1')
 t2 = load(npy_path+'t2')
-t3= zeros(1024,1024,dtype='float32',name="t3")
+t3= zeros((1024,1024),dtype='float32',name="t3")
 from deepx.nn.functional import defaultauthor
 defaultauthor['matmul']='miaobyte'
 # warmup

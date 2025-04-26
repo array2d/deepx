@@ -28,7 +28,7 @@ def rdiv(
         b: Tensor, 
         out:Union[Tensor,str]=None)->Tensor:
     outtensor=out
-    if isinstance(out,str):
+    if isinstance(out,str) or out is None:
         outtensor=newtensor(b.shape,dtype=b.dtype,name=out)
     from .rtf_elementwise import rtf_rdivscalar
     rtf_rdivscalar(a,b,outtensor,defaultauthor['rdivscalar'])
@@ -41,7 +41,7 @@ min=create_A_B_tf_C('min')
 pow=create_A_B_tf_C('pow')
 def rpow(a:Number,b:Tensor,out:Union[Tensor,str]=None)->Tensor:
     outtensor=out
-    if isinstance(out,str):
+    if isinstance(out,str) or out is None:
         outtensor=newtensor(b.shape,dtype=b.dtype,name=out)
     from .rtf_elementwise import rtf_rpowscalar
     rtf_rpowscalar(a,b,outtensor,defaultauthor['rpowscalar'])

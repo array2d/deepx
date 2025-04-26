@@ -25,15 +25,15 @@ def create_A_B_tf_C(op_name):
                 newshape = Shape.broadcast_shape(a.shape, b.shape)
                 an = a.broadcastTo(newshape)
                 bn = b.broadcastTo(newshape)
-                if isinstance(out,str):
+                if isinstance(out,str) or out is None:
                     outtensor=newtensor(newshape,dtype=a.dtype,name=out)
             else:
-                if isinstance(out,str):
+                if isinstance(out,str) or out is None:
                     outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
             rtf_func = getattr(rtf_module, f'rtf_{op_name}')
             rtf_func(an, bn, outtensor, defaultauthor[op_name])
         else:
-            if isinstance(out,str):
+            if isinstance(out,str) or out is None:
                 outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
             rtf_func = getattr(rtf_module, f'rtf_{op_name}scalar')
             rtf_func(a, b, outtensor, defaultauthor[f'{op_name}scalar'])
@@ -47,7 +47,7 @@ def create_A_tf_C(op_name):
             a:Tensor,
             out:Union[Tensor,str]=None)->Tensor:
         outtensor=out
-        if isinstance(out,str):
+        if isinstance(out,str) or out is None:
             outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
         rtf_module = importlib.import_module('deepx.nn.functional.rtf_elementwise')
         rtf_func = getattr(rtf_module, f'rtf_{op_name}')
@@ -69,7 +69,7 @@ def create_A_dim_keepdim_tf_C(op_name):
         if dim is None:
             dim=tuple(range(a.ndim))
         result=out
-        if isinstance(out,str):
+        if isinstance(out,str) or out is None:
             resultshape=Shape.reduceshape(a.shape,dim,keepdim)
             result=newtensor(resultshape, dtype=a.dtype,name=out)
         rtf_module = importlib.import_module('deepx.nn.functional.rtf_reduce')

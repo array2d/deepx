@@ -1,5 +1,6 @@
 ############-------PyTorch-------################
 
+print()
 import torch
 torch_t1 = torch.ones(3, 4,5, dtype=torch.float32)
 torch_t2 = torch.ones(3, 4,5, dtype=torch.float32)
@@ -13,7 +14,6 @@ print(torch_t)
 
 from deepx import Tensor,zeros, ones, concat
 
-print()
 
 t1 = ones([3,4,5],dtype='float32',name='t1')
 t2=ones([3,4,5],dtype='float32',name='t2')

@@ -1,6 +1,6 @@
 #######====PYTORCH======########
 
-
+print()
 import torch
 a=torch.arange(4*2*3).reshape(4,2,3)
 b=torch.arange(2*1).reshape(2,1)

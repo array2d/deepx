@@ -1,4 +1,4 @@
-
+print()
 ############-------PyTorch-------################
 
 import torch
@@ -13,7 +13,7 @@ print(torch_t3)
 ############-------DEEPX-------################
 
 from deepx import Tensor,zeros, ones, full, arange
-print()
+
 t1 = ones((3,4),dtype='float32',name='t1')
 t1.print()
 t2=t1.reshape((3,2,2))

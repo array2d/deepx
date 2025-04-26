@@ -104,13 +104,17 @@ class Tensor:
     #elementwise
     def __add__(self, other:Union[Number,'Tensor']):
         return self.add(other)
-    
+    def __radd__(self, other:Union[Number,'Tensor']):
+        return self.add(other)
     def __sub__(self, other:Union[Number,'Tensor']):
+        return self.sub(other)
+    def __rsub__(self, other:Union[Number,'Tensor']):
         return self.sub(other)
     
     def __mul__(self, other:Union[Number,'Tensor']):
         return self.mul(other)
-    
+    def __rmul__(self, other:Union[Number,'Tensor']):
+        return self.mul(other)
     def __truediv__(self, other:Union[Number,'Tensor']):
         return self.div(other)
     
@@ -126,9 +130,10 @@ class Tensor:
     def __invert__(self):
         return self.invert()
     #矩阵乘法
-    def __matmul__(self, other:Union[Number,'Tensor']):
+    def __matmul__(self, other:'Tensor'):
         return self.matmul(other)
-
+    def __rmatmul__(self, other:'Tensor'):
+        return other.matmul(self)
     #gather
     def __getitem__(self, index:'Tensor'):
         return self.indexselect(index)
