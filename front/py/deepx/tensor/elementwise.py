@@ -163,3 +163,8 @@ def invert(self,out:Union[Tensor,str]='')->Tensor:
     return invert_func(self,out)
 
 
+@tensor_method
+def dropout(self,p:float,out:Union[Tensor,str]=''):
+    from deepx.nn.functional import dropout as dropout_func
+    return dropout_func(self,p,out)
+

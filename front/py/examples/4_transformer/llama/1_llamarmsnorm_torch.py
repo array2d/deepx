@@ -30,7 +30,7 @@ print(pt_output)
  
 ############### DeepX 实现部分 ###############
 from deepx import  constant_,load
-from deepx.transformer.models.llama.modeling_llama import LlamaRMSNorm
+from deepx.transformer.models.llama.normalization import LlamaRMSNorm
 
 input=load(dir+'rmsnorm_input')
 

@@ -21,14 +21,7 @@ def rnewtensor(t:Tensor):
 def copytensor(t:Tensor,out:Tensor):
     from .rtf_life import rtf_copytensor
     rtf_copytensor(t,out)
-    
-def todtype(t:Tensor,dest:Tensor):
-    assert isinstance(t,Tensor)
-    assert isinstance(dest,Tensor)
-    assert t.shape==dest.shape
 
-    from .rtf_life import rtf_todtype
-    rtf_todtype(t,dest)
 
 def deltensor(t:Tensor):
     from .rtf_life import rtf_deltensor

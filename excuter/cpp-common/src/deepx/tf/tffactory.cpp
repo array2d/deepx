@@ -103,15 +103,14 @@ namespace deepx::tf
         // 为每个tftype生成一个表格
         for (const auto &[tftype, tfs] : tf_by_type) {
             ss << "### " << tftype << "\n\n";
-            ss << "| Operation | Author | Func Def | Math Formula | IR Instruction |\n";
-            ss << "|-----------|--------|------------|--------------|----------------|\n";
+            ss << "| Operation | Author |  Math Formula | IR Instruction |\n";
+            ss << "|-----------|--------|--------------|----------------|\n";
             
             for (const auto &tf : tfs) {
                 ss << "| " << tf->name << " | ";
                 ss << (tf->metadata.author.empty() ? " none " : tf->metadata.author) << " | ";
-                ss << tf->to_string(false, true) << " | ";
                 ss << tf->math_formula() << " | ";
-                ss << tf->to_string(false, true) << " |\n";
+                ss << stdutil::escape_markdown(tf->to_string(false, true)) << " |\n";
             }
             
             ss << "\n";

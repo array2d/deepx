@@ -11,7 +11,7 @@ class LlamaMLP(Module):
         # 输入层大小
         self.hidden_size = config.hidden_size  
         # 中间层大小
-        self.intermediate_size = config.intermediate_size  
+        self.intermediate_size = config["intermediate_size"]
         #门控投影层
         self.gate_proj = Linear(self.hidden_size, self.intermediate_size, bias=config.mlp_bias)
         #上投影层

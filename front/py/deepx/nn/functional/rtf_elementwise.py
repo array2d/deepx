@@ -3,6 +3,7 @@ from deepx.nn.deepxir import DeepxIR,Param
 from deepx.scheduler import send
 from .rtf import A_B_op_C,A_scalar_op_C,A_op_C
 
+
 def rtf_add(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("add",a,b,out,author)
     return out
@@ -107,4 +108,18 @@ def rtf_minscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
 
 def rtf_invert(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("invert",a,out,author)
+    return out
+
+def rtf_todtype(t:Tensor,dest:Tensor):
+    assert isinstance(t,Tensor)
+    assert isinstance(dest,Tensor)
+    assert t.shape==dest.shape
+
+    args=[Param.tensor(t)]
+    returns=[Param.tensor(dest)]
+    ir=DeepxIR("todtype", args, returns,'')
+    send(ir)
+
+def rtf_dropout(a:Tensor, p:float, out:Tensor, author='miaobyte')->Tensor:
+    A_B_op_C("dropout",a,p,out,author)
     return out

@@ -1,5 +1,5 @@
 from typing import Optional,Tuple
-from deepx.nn.modules import Module,Linear,Embedding,ModuleList
+from deepx.nn.modules import Module,Linear,Embedding
 from deepx import Tensor
 from deepx.transformer.modeling_rope_utils import ROPE_INIT_FUNCTIONS
 from deepx.transformer.models.llama.attention import LlamaAttention

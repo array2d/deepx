@@ -10,6 +10,7 @@ namespace stdutil
     void trimspace(string &str);
     void trim(string &str,const string &chars=" \t\n\r\f\v");
 
+    string escape_markdown(const string &str);
 }
 
 

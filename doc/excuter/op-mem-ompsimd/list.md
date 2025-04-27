@@ -4,97 +4,97 @@
 
 ### arg
 
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| vecset |  none  | vecset(vector<any> value)->(vector<any> name) | [3  4  5]->shape | vecset(vector<any> value)->(vector<any> name) |
-| argset |  none  | argset(var<any> value)->(var<any> name) | argvalue->argname | argset(var<any> value)->(var<any> name) |
+| Operation | Author |  Math Formula | IR Instruction |
+|-----------|--------|--------------|----------------|
+| vecset |  none  | [3  4  5]->shape | vecset(vector<any> value)->(vector<any> name) |
+| argset |  none  | argvalue->argname | argset(var<any> value)->(var<any> name) |
 
 ### tensorlife
 
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| renametensor |  none  | renametensor(var<string> new_name)->(tensor<any> t) | rename(newname)->T1 | renametensor(var<string> new_name)->(tensor<any> t) |
-| newtensor |  none  | newtensor(vector<int32> shape)->(tensor<any> t) | T1 =Tensor(shape=[...]) | newtensor(vector<int32> shape)->(tensor<any> t) |
-| newtensor |  none  | newtensor(var<string> shape)->(tensor<any> t) | T1 =Tensor(shape=[...]) | newtensor(var<string> shape)->(tensor<any> t) |
-| deltensor |  none  | deltensor()->(tensor<any> t) | del->T1 | deltensor()->(tensor<any> t) |
-| copytensor |  none  | copytensor(tensor<any> src)->(tensor<any> dst) | T1.data->T2.data | copytensor(tensor<any> src)->(tensor<any> dst) |
+| Operation | Author |  Math Formula | IR Instruction |
+|-----------|--------|--------------|----------------|
+| renametensor |  none  | rename(newname)->T1 | renametensor(var<string> new_name)->(tensor<any> t) |
+| newtensor |  none  | T1 =Tensor(shape=[...]) | newtensor(vector<int32> shape)->(tensor<any> t) |
+| newtensor |  none  | T1 =Tensor(shape=[...]) | newtensor(var<string> shape)->(tensor<any> t) |
+| deltensor |  none  | del->T1 | deltensor()->(tensor<any> t) |
+| copytensor |  none  | T1.data->T2.data | copytensor(tensor<any> src)->(tensor<any> dst) |
 
 ### io
 
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| loadtensordata |  none  | loadtensordata(var<string> path)->(tensor<any> t) | loadtensordata(path)->tensor.data | loadtensordata(var<string> path)->(tensor<any> t) |
-| save |  none  | save(tensor<any> t, var<string> path)->() | save(T1,path) | save(tensor<any> t, var<string> path)->() |
-| print | miaobyte | print(tensor<any> t)->() | print(T1) | print(tensor<any> t)->() |
-| print | miaobyte | print(tensor<any> t, var<string> format)->() | print(T1) | print(tensor<any> t, var<string> format)->() |
-| load |  none  | load(var<string> path)->() | mem.load(path) | load(var<string> path)->() |
+| Operation | Author |  Math Formula | IR Instruction |
+|-----------|--------|--------------|----------------|
+| loadtensordata |  none  | loadtensordata(path)->tensor.data | loadtensordata(var<string> path)->(tensor<any> t) |
+| save |  none  | save(T1,path) | save(tensor<any> t, var<string> path)->() |
+| print | miaobyte | print(T1) | print(tensor<any> t)->() |
+| print | miaobyte | print(T1) | print(tensor<any> t, var<string> format)->() |
+| load |  none  | mem.load(path) | load(var<string> path)->() |
 
 ### matmul
 
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| matmul | cblas | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) | T3=T1 @ T2 | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) |
-| matmul | miaobyte | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1 @ T2 | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
+| Operation | Author |  Math Formula | IR Instruction |
+|-----------|--------|--------------|----------------|
+| matmul | cblas | T3=T1 @ T2 | matmul(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) |
+| matmul | miaobyte | T3=T1 @ T2 | matmul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 
 ### init
 
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| normal | miaobyte | normal(var<any> mean, var<any> std, var<int32> seed)->(tensor<any> t) | normal(mean,stddev,seed)->T1 | normal(var<any> mean, var<any> std, var<int32> seed)->(tensor<any> t) |
-| uniform | miaobyte | uniform(var<any> low, var<any> high, var<int32> seed)->(tensor<any> t) | uniform(low,high,seed)->T1 | uniform(var<any> low, var<any> high, var<int32> seed)->(tensor<any> t) |
-| arange | miaobyte | arange(var<any> start, var<any> step)->(tensor<any> t) | arange(start,step)->T1 | arange(var<any> start, var<any> step)->(tensor<any> t) |
-| constant | miaobyte | constant(var<any> value)->(tensor<any> t) | constant(value)->T1 | constant(var<any> value)->(tensor<any> t) |
+| Operation | Author |  Math Formula | IR Instruction |
+|-----------|--------|--------------|----------------|
+| normal | miaobyte | normal(mean,stddev,seed)->T1 | normal(var<any> mean, var<any> std, var<int32> seed)->(tensor<any> t) |
+| uniform | miaobyte | uniform(low,high,seed)->T1 | uniform(var<any> low, var<any> high, var<int32> seed)->(tensor<any> t) |
+| arange | miaobyte | arange(start,step)->T1 | arange(var<any> start, var<any> step)->(tensor<any> t) |
+| constant | miaobyte | constant(value)->T1 | constant(var<any> value)->(tensor<any> t) |
 
 ### elementwise
 
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| switch | miaobyte | switch(listtensor<any> tensors, tensor<int8> cases)->(tensor<any> C) | C=switch([tensors],case) | switch(listtensor<any> tensors, tensor<int8> cases)->(tensor<any> C) |
-| greaterscalar | miaobyte | greaterscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) | mask=greater(T1,scalar) | greaterscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
-| equalscalar | miaobyte | equalscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) | mask=equal(T1,scalar) | equalscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
-| min | miaobyte | min(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=min(T1,T2) | min(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| maxscalar | miaobyte | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=max(T1,scalar) | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
-| divscalar | miaobyte | divscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=T1/scalar | divscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
-| log | miaobyte | log(tensor<any> A)->(tensor<any> C) | T3=log(T1) | log(tensor<any> A)->(tensor<any> C) |
-| addscalar | miaobyte | addscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) | T3=T1+scalar | addscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
-| greater | miaobyte | greater(tensor<any> A, tensor<any> B)->(tensor<bool> mask) | mask=greater(T1,T2) | greater(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
-| lessscalar | miaobyte | lessscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) | mask=less(T1,scalar) | lessscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
-| less | miaobyte | less(tensor<any> A, tensor<any> B)->(tensor<bool> mask) | mask=less(T1,T2) | less(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
-| powscalar | miaobyte | powscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=T1^scalar | powscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
-| minscalar | miaobyte | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) | T3=min(T1,scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
-| rdivscalar | miaobyte | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
-| rpowscalar | miaobyte | rpowscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) | T3=scalar^T1 | rpowscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
-| todtype |  none  | todtype(tensor<any> A)->(tensor<any> C) | T3(dtypeA)->T1(dtypeB) | todtype(tensor<any> A)->(tensor<any> C) |
-| add | cblas | add(tensor<float64|float32> a, tensor<float64|float32> b)->(tensor<float64|float32> c) | T3=T1+T2 | add(tensor<float64|float32> a, tensor<float64|float32> b)->(tensor<float64|float32> c) |
-| add | miaobyte | add(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |
-| sub | miaobyte | sub(tensor<any> a, tensor<any> b)->(tensor<any> c) | T3=T1-T2 | sub(tensor<any> a, tensor<any> b)->(tensor<any> c) |
-| sqrt | miaobyte | sqrt(tensor<any> A)->(tensor<any> C) | T3=sqrt(T1) | sqrt(tensor<any> A)->(tensor<any> C) |
-| subscalar | miaobyte | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) | T3=T1-scalar | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
-| exp | miaobyte | exp(tensor<any> A)->(tensor<any> C) | T3=exp(T1) | exp(tensor<any> A)->(tensor<any> C) |
-| mul | miaobyte | mul(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1*T2 | mul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| equal | miaobyte | equal(tensor<any> A, tensor<any> B)->(tensor<bool> mask) | mask=equal(T1,T2) | equal(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
-| mulscalar | miaobyte | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) | T3=T1*scalar | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
-| div | miaobyte | div(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1/T2 | div(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| invert | miaobyte | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) | T3=~T1 | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) |
-| max | miaobyte | max(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=max(T1,T2) | max(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| pow | miaobyte | pow(tensor<any> A, tensor<any> B)->(tensor<any> C) | T3=T1^T2 | pow(tensor<any> A, tensor<any> B)->(tensor<any> C) |
+| Operation | Author |  Math Formula | IR Instruction |
+|-----------|--------|--------------|----------------|
+| switch | miaobyte | C=switch([tensors],case) | switch(listtensor<any> tensors, tensor<int8> cases)->(tensor<any> C) |
+| greaterscalar | miaobyte | mask=greater(T1,scalar) | greaterscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
+| equalscalar | miaobyte | mask=equal(T1,scalar) | equalscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
+| min | miaobyte | T3=min(T1,T2) | min(tensor<any> A, tensor<any> B)->(tensor<any> C) |
+| maxscalar | miaobyte | T3=max(T1,scalar) | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
+| divscalar | miaobyte | T3=T1/scalar | divscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
+| log | miaobyte | T3=log(T1) | log(tensor<any> A)->(tensor<any> C) |
+| addscalar | miaobyte | T3=T1+scalar | addscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
+| greater | miaobyte | mask=greater(T1,T2) | greater(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
+| lessscalar | miaobyte | mask=less(T1,scalar) | lessscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
+| less | miaobyte | mask=less(T1,T2) | less(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
+| powscalar | miaobyte | T3=T1^scalar | powscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
+| minscalar | miaobyte | T3=min(T1,scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
+| rdivscalar | miaobyte | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
+| rpowscalar | miaobyte | T3=scalar^T1 | rpowscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
+| todtype |  none  | T3(dtypeA)->T1(dtypeB) | todtype(tensor<any> A)->(tensor<any> C) |
+| add | cblas | T3=T1+T2 | add(tensor<float64|float32> a, tensor<float64|float32> b)->(tensor<float64|float32> c) |
+| add | miaobyte | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |
+| sub | miaobyte | T3=T1-T2 | sub(tensor<any> a, tensor<any> b)->(tensor<any> c) |
+| sqrt | miaobyte | T3=sqrt(T1) | sqrt(tensor<any> A)->(tensor<any> C) |
+| subscalar | miaobyte | T3=T1-scalar | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
+| exp | miaobyte | T3=exp(T1) | exp(tensor<any> A)->(tensor<any> C) |
+| mul | miaobyte | T3=T1*T2 | mul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
+| equal | miaobyte | mask=equal(T1,T2) | equal(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
+| mulscalar | miaobyte | T3=T1*scalar | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
+| div | miaobyte | T3=T1/T2 | div(tensor<any> A, tensor<any> B)->(tensor<any> C) |
+| invert | miaobyte | T3=~T1 | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) |
+| max | miaobyte | T3=max(T1,T2) | max(tensor<any> A, tensor<any> B)->(tensor<any> C) |
+| pow | miaobyte | T3=T1^T2 | pow(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 
 ### reduce
 
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| prod | miaobyte | prod(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) | B = prod(A, axis=[1 2], keepdims=false) | prod(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
-| reducemax | miaobyte | reducemax(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) | B = reducemax(A, axis=[1 2], keepdims=false) | reducemax(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
-| sum | miaobyte | sum(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) | B = sum(A, axis=[1 2], keepdims=false) | sum(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
-| reducemin | miaobyte | reducemin(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) | B = reducemin(A, axis=[1 2], keepdims=false) | reducemin(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
+| Operation | Author |  Math Formula | IR Instruction |
+|-----------|--------|--------------|----------------|
+| prod | miaobyte | B = prod(A, axis=[1 2], keepdims=false) | prod(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
+| reducemax | miaobyte | B = reducemax(A, axis=[1 2], keepdims=false) | reducemax(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
+| sum | miaobyte | B = sum(A, axis=[1 2], keepdims=false) | sum(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
+| reducemin | miaobyte | B = reducemin(A, axis=[1 2], keepdims=false) | reducemin(tensor<any> A, vector<int32> axis, var<bool> keepdims)->(tensor<any> B) |
 
 ### changeshape
 
-| Operation | Author | Func Def | Math Formula | IR Instruction |
-|-----------|--------|------------|--------------|----------------|
-| indexselect | miaobyte | indexselect(tensor<any> A, tensor<int64|int32> index, var<int32> axis)->(tensor<any> B) | T2 = T1.indexselect(index=T3, axis=3) | indexselect(tensor<any> A, tensor<int64|int32> index, var<int32> axis)->(tensor<any> B) |
-| broadcastTo | miaobyte | broadcastTo(tensor<any> A, vector<int32> new_shape)->(tensor<any> B) | T2 = T1.broadcastTo(new_shape=[4,3,2]) | broadcastTo(tensor<any> A, vector<int32> new_shape)->(tensor<any> B) |
-| concat | miaobyte | concat(listtensor<any> tensors, var<int32> dim)->(tensor<any> result) | Tresult = concat([T1, T2...], axis=3) | concat(listtensor<any> tensors, var<int32> dim)->(tensor<any> result) |
-| transpose | miaobyte | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) | T1.transpose(dimorder=[1,0])->T2 | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) |
-| reshape | miaobyte | reshape(tensor<any> A, vector<int32> shape)->(tensor<any> B) | T1.reshape(shape)->T2 | reshape(tensor<any> A, vector<int32> shape)->(tensor<any> B) |
+| Operation | Author |  Math Formula | IR Instruction |
+|-----------|--------|--------------|----------------|
+| indexselect | miaobyte | T2 = T1.indexselect(index=T3, axis=3) | indexselect(tensor<any> A, tensor<int64|int32> index, var<int32> axis)->(tensor<any> B) |
+| broadcastTo | miaobyte | T2 = T1.broadcastTo(new_shape=[4,3,2]) | broadcastTo(tensor<any> A, vector<int32> new_shape)->(tensor<any> B) |
+| concat | miaobyte | Tresult = concat([T1, T2...], axis=3) | concat(listtensor<any> tensors, var<int32> dim)->(tensor<any> result) |
+| transpose | miaobyte | T1.transpose(dimorder=[1,0])->T2 | transpose(tensor<any> A, vector<int32> dim_order)->(tensor<any> C) |
+| reshape | miaobyte | T1.reshape(shape)->T2 | reshape(tensor<any> A, vector<int32> shape)->(tensor<any> B) |
 

@@ -29,6 +29,7 @@ defaultauthor=dict({
         'powscalar':'miaobyte',
         'rpowscalar':'miaobyte',
         'sqrt':'miaobyte',
+        'dropout':'miaobyte',
         #changeshape
         'reshape':'miaobyte',
         'transpose':'miaobyte',

@@ -21,15 +21,7 @@ def rtf_copytensor(t:Tensor,out:Tensor):
     ir=DeepxIR("copytensor", args, returns,'')
     send(ir)
 
-def rtf_todtype(t:Tensor,dest:Tensor):
-    assert isinstance(t,Tensor)
-    assert isinstance(dest,Tensor)
-    assert t.shape==dest.shape
 
-    args=[Param.tensor(t)]
-    returns=[Param.tensor(dest)]
-    ir=DeepxIR("todtype", args, returns,'')
-    send(ir)
 
 def rtf_deltensor(t:Tensor):
     assert isinstance(t,Tensor)

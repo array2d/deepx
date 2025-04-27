@@ -9,7 +9,7 @@ class LlamaRMSNorm(Module):
         LlamaRMSNorm is equivalent to T5LayerNorm
         """
         super().__init__()
-        self.weight=ones(hidden_size)
+        self.weight=ones((hidden_size,))
         self.register_parameter("weight",self.weight)
         self.variance_epsilon = eps
     def forward(self, hidden_states:Tensor):
