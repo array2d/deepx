@@ -410,20 +410,7 @@ namespace deepx::tensorfunc
     void invert(const Tensor<T> &input, Tensor<T> &output)
     {
         invertDispatcher<Author, T>::invert(input, output);
-    }
-
-    //dropout(A,p)=>C
-    template <typename Author, typename T>
-    struct dropoutDispatcher
-    {
-        static void dropout(const Tensor<T> &input, const float p,const unsigned int seed, Tensor<T> &output) = delete;
     };
-
-    template <typename Author, typename T>
-    void dropout(const Tensor<T> &input, const float p,const unsigned int seed, Tensor<T> &output)
-    {
-        dropoutDispatcher<Author, T>::dropout(input, p, seed, output);
-    }
     
 } // namespace deepx::tensorfunc
 

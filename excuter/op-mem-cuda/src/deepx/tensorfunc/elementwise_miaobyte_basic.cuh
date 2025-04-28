@@ -89,12 +89,6 @@ namespace deepx::tensorfunc
     template <typename T>
     void launch_invert(const T* a, T* c,const int size);
 
-    //dropout
-    template <typename T>
-    __global__ void dropout_kernel(const T* A, const float p,const unsigned int seed, T* C,const int size);
-
-    template <typename T>
-    void launch_dropout(const T* a, const float p,const unsigned int seed, T* c,const int size);
 }
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_BASIC_CUH

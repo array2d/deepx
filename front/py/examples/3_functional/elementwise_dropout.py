@@ -13,5 +13,6 @@ print(torch_dropout_t)
 
 from deepx import uniform
 t = uniform((10, 10), -1, 1)
-dropout_t = t.dropout(0.5)
+dropout_t = t.clone()
+dropout_t.dropout_(0.5)
 dropout_t.print()

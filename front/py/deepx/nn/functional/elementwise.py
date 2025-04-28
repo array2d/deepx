@@ -5,4 +5,3 @@ def rsqrt(input:Tensor)->Tensor:
     from .leaffunc_elementwise import sqrt
     return 1/sqrt(input)
  
-

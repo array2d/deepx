@@ -11,6 +11,7 @@
 
 namespace deepx::tensorfunc
 {   
+    //填充
     //constant
     template <typename T>
     struct constantDispatcher<miaobyte, T>
@@ -18,6 +19,40 @@ namespace deepx::tensorfunc
         static void constant(Tensor<T> &tensor, const T value)
         {
             std::fill(tensor.data, tensor.data + tensor.shape.size, value);
+        }
+    };
+
+      // dropout
+    template <typename T>
+    struct dropoutDispatcher<miaobyte, T>
+    {
+        static void dropout(Tensor<T> &A, const float p, const unsigned int seed)
+        {
+
+                std::uniform_real_distribution<double> distribution(0, 1);
+                std::default_random_engine generator;
+                if (seed != 0)
+                {
+                    generator.seed(seed);
+                }
+                else
+                {
+                    std::random_device rd;
+                    generator.seed(rd());
+                }
+
+                A.shape.rangeElementwiseParallel([&A, &p, &distribution, &generator](int i, int i_end)
+                                                 {
+                                        for (int j = 0; j < i_end; j++)
+                                        {
+                                            double rand = distribution(generator);
+                                            if (rand < p)
+                                            {
+                                                A.data[i+j]=0;
+                                            }
+
+                                        } });
+
         }
     };
 

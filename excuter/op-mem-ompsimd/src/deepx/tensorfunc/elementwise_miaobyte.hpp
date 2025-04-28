@@ -941,46 +941,6 @@ namespace deepx::tensorfunc
         }
     };
 
-    // dropout
-    template <typename T>
-    struct dropoutDispatcher<miaobyte, T>
-    {
-        static void dropout(const Tensor<T> &A, const float p, const unsigned int seed, Tensor<T> &C)
-        {
-            if (A.shape == C.shape)
-            {
-                std::uniform_real_distribution<double> distribution(0, 1);
-                std::default_random_engine generator;
-                if (seed != 0)
-                {
-                    generator.seed(seed);
-                }
-                else
-                {
-                    std::random_device rd;
-                    generator.seed(rd());
-                }
-
-                A.shape.rangeElementwiseParallel([&A, &C, &p, &distribution, &generator](int i, int i_end)
-                                                 {
-                                        for (int j = 0; j < i_end; j++)
-                                        {
-                                            double rand = distribution(generator);
-                                            if (rand < p)
-                                            {
-                                                C.data[i+j]=0;
-                                            }
-                                            else
-                                            {
-                                                C.data[i+j]=A.data[i+j];
-                                            }
-                                        } });
-            }
-            else
-            {
-                throw std::invalid_argument("shape mismatch");
-            }
-        }
-    };
+  
 };
 #endif // DEEPX_OP_CPU_ELEMENTWISE_HPP

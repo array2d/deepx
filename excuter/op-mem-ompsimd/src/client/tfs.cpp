@@ -59,28 +59,28 @@ namespace deepx::tf
         tffactory.add_tf(std::make_shared<CopyTensor>(vector<Param>(
                                                           {
                                                               Param("src", DataCategory::Tensor, Precision::Any),
-                                                             }),
+                                                          }),
                                                       vector<Param>({
                                                           Param("dst", DataCategory::Tensor, Precision::Any),
-                                                          
+
                                                       })));
         // deltensor
         tffactory.add_tf(std::make_shared<DelTensor>(vector<Param>(
                                                          {
-                                                           
+
                                                          }),
                                                      vector<Param>({
-                                                          Param("t", DataCategory::Tensor, Precision::Any),
+                                                         Param("t", DataCategory::Tensor, Precision::Any),
                                                      })));
-        //renametensor
+        // renametensor
         tffactory.add_tf(std::make_shared<RenameTensor>(vector<Param>(
-                                                         {
-                                                           
-                                                             Param("new_name", DataCategory::Var, Precision::String),
-                                                         }),
-                                                     vector<Param>({
-                                                          Param("t", DataCategory::Tensor, Precision::Any),
-                                                     })));
+                                                            {
+
+                                                                Param("new_name", DataCategory::Var, Precision::String),
+                                                            }),
+                                                        vector<Param>({
+                                                            Param("t", DataCategory::Tensor, Precision::Any),
+                                                        })));
     }
 
     // init
@@ -89,16 +89,27 @@ namespace deepx::tf
         // constant author=miaobyte
         tffactory.add_tf(std::make_shared<Constant<miaobyte>>(vector<Param>(
                                                                   {
-                                                                     
+
                                                                       Param("value", DataCategory::Var, Precision::Any),
                                                                   }),
                                                               vector<Param>({
-                                                                 Param("t", DataCategory::Tensor, Precision::Any),
+                                                                  Param("t", DataCategory::Tensor, Precision::Any),
                                                               })));
+        // dropout author=miaobyte
+        tffactory.add_tf(std::make_shared<Dropout<miaobyte>>(vector<Param>(
+                                                                 {
+                                                                    
+                                                                     Param("p", DataCategory::Var, Precision::Float32),
+                                                                     Param("seed", DataCategory::Var, Precision::Int32),
+                                                                 }),
+                                                                 vector<Param>(
+                                                                     {
+                                                                         Param("A", DataCategory::Tensor, Precision::Any),
+                                                                     })));
         // arange author=miaobyte
         tffactory.add_tf(std::make_shared<Arange<miaobyte>>(vector<Param>(
                                                                 {
-                                                                    
+
                                                                     Param("start", DataCategory::Var, Precision::Any),
                                                                     Param("step", DataCategory::Var, Precision::Any),
                                                                 }),
@@ -108,27 +119,26 @@ namespace deepx::tf
         // uniform author=miaobyte
         tffactory.add_tf(std::make_shared<Uniform<miaobyte>>(vector<Param>(
                                                                  {
-                                                                    
+
                                                                      Param("low", DataCategory::Var, Precision::Any),
                                                                      Param("high", DataCategory::Var, Precision::Any),
                                                                      Param("seed", DataCategory::Var, Precision::Int32),
                                                                  }),
                                                              vector<Param>(
-                                                                {
+                                                                 {
                                                                      Param("t", DataCategory::Tensor, Precision::Any),
-                                                                }
-                                                             )));
+                                                                 })));
         // normal author=miaobyte
         tffactory.add_tf(std::make_shared<Normal<miaobyte>>(vector<Param>(
                                                                 {
-                                                                    
+
                                                                     Param("mean", DataCategory::Var, Precision::Any),
                                                                     Param("std", DataCategory::Var, Precision::Any),
                                                                     Param("seed", DataCategory::Var, Precision::Int32),
                                                                 }),
                                                             vector<Param>(
                                                                 {
-                                                                     Param("t", DataCategory::Tensor, Precision::Any),
+                                                                    Param("t", DataCategory::Tensor, Precision::Any),
                                                                 })));
     }
     // io
@@ -147,44 +157,43 @@ namespace deepx::tf
                                                                    Param("format", DataCategory::Var, Precision::String),
                                                                }),
                                                            vector<Param>()));
-        //save
+        // save
         opfactory.add_tf(std::make_shared<Save>(vector<Param>(
-                                                               {
-                                                                   Param("t", DataCategory::Tensor, Precision::Any),
-                                                                   Param("path", DataCategory::Var, Precision::String),
-                                                               }),
-                                                           vector<Param>()));
+                                                    {
+                                                        Param("t", DataCategory::Tensor, Precision::Any),
+                                                        Param("path", DataCategory::Var, Precision::String),
+                                                    }),
+                                                vector<Param>()));
 
-        //load
+        // load
         opfactory.add_tf(std::make_shared<Load>(vector<Param>(
-                                                               {
-                                                                   Param("path", DataCategory::Var, Precision::String),
-                                                               }),
-                                                           vector<Param>()));
-        //loadtensordata
+                                                    {
+                                                        Param("path", DataCategory::Var, Precision::String),
+                                                    }),
+                                                vector<Param>()));
+        // loadtensordata
         opfactory.add_tf(std::make_shared<LoadTensorData>(vector<Param>(
-                                                               {
-                                                                   Param("path", DataCategory::Var, Precision::String),
-                                                               }),
-                                                           vector<Param>(
-                                                               {
-                                                                   Param("t", DataCategory::Tensor, Precision::Any),
-                                                               })));   
+                                                              {
+                                                                  Param("path", DataCategory::Var, Precision::String),
+                                                              }),
+                                                          vector<Param>(
+                                                              {
+                                                                  Param("t", DataCategory::Tensor, Precision::Any),
+                                                              })));
     }
 
     // elementwise
     void register_elementwise(TfFactory &tffactory)
-    {   
-        // todtype 
+    {
+        // todtype
         tffactory.add_tf(std::make_shared<Todtype>(vector<Param>(
-                                                                 {
-                                                                     Param("A", DataCategory::Tensor, Precision::Any),
-                                                                 }),
-                                                             vector<Param>(
-                                                                 {
-                                                                     Param("C", DataCategory::Tensor, Precision::Any),
-                                                                 })));
-
+                                                       {
+                                                           Param("A", DataCategory::Tensor, Precision::Any),
+                                                       }),
+                                                   vector<Param>(
+                                                       {
+                                                           Param("C", DataCategory::Tensor, Precision::Any),
+                                                       })));
 
         // add author=miaobyte
         tffactory.add_tf(std::make_shared<Add<miaobyte>>(vector<Param>(
@@ -465,17 +474,6 @@ namespace deepx::tf
                                                                 {
                                                                     Param("C", DataCategory::Tensor, Precision::Any),
                                                                 })));
-        // dropout author=miaobyte
-        tffactory.add_tf(std::make_shared<Dropout<miaobyte>>(vector<Param>(
-                                                                 {
-                                                                     Param("A", DataCategory::Tensor, Precision::Any),
-                                                                     Param("p", DataCategory::Var, Precision::Float32),
-                                                                     Param("seed", DataCategory::Var, Precision::Int32),
-                                                                 }),
-                                                                 vector<Param>(
-                                                                     {
-                                                                         Param("C", DataCategory::Tensor, Precision::Any),
-                                                                     }) ));
     }
     // matmul
     void register_matmul(TfFactory &tffactory)
@@ -546,15 +544,15 @@ namespace deepx::tf
                                                                      })));
         // indexselect author=miaobyte
         tffactory.add_tf(std::make_shared<IndexSelect<miaobyte>>(vector<Param>(
-                                                                {
-                                                                    Param("A", DataCategory::Tensor, Precision::Any),
-                                                                    Param("index", DataCategory::Tensor, Precision::Int32 | Precision::Int64),
-                                                                    Param("axis", DataCategory::Var, Precision::Int32),
-                                                                }),
-                                                            vector<Param>(
-                                                                {
-                                                                    Param("B", DataCategory::Tensor, Precision::Any),
-                                                                })));
+                                                                     {
+                                                                         Param("A", DataCategory::Tensor, Precision::Any),
+                                                                         Param("index", DataCategory::Tensor, Precision::Int32 | Precision::Int64),
+                                                                         Param("axis", DataCategory::Var, Precision::Int32),
+                                                                     }),
+                                                                 vector<Param>(
+                                                                     {
+                                                                         Param("B", DataCategory::Tensor, Precision::Any),
+                                                                     })));
     }
     // // reduce
     void register_reduce(TfFactory &tffactory)

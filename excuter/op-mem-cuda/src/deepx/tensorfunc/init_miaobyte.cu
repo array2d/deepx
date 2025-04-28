@@ -7,6 +7,8 @@
 #include "deepx/tensorfunc/cuda.hpp"
 namespace deepx::tensorfunc
 {
+    // 填充
+    // constant
     template <typename T>
     __global__ void kernel_constant(T *data, const T value, const int size)
     {
@@ -40,7 +42,47 @@ namespace deepx::tensorfunc
     template void launch_constant<int8_t>(int8_t *a, const int8_t value, const int size);
     template void launch_constant<bool>(bool *a, const bool value, const int size);
 
-    // 添加kernel函数
+    // dropout
+    template <typename T>
+    __global__ void dropout_kernel(T *A, const float p, const unsigned int seed, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        curandState state;
+        curand_init(seed, threadIdx.x, 0, &state); // 仅初始化一次
+
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            float rand = curand_uniform(&state);
+            if (rand < p)
+            {
+                A[idx] = 0;
+            }
+        }
+    }
+
+    template <typename T>
+    void launch_dropout(T *a, const float p, const unsigned int seed, const int size)
+    {
+        auto [numBlocks, blockSize] = BestDims(size);
+        dropout_kernel<<<numBlocks, blockSize>>>(a, p, seed, size);
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("Failed to launch dropout kernel: " +
+                                     std::string(cudaGetErrorString(err)));
+        }
+    }
+    template void launch_dropout<double>(double *a, const float p, const unsigned int seed, const int size);
+    template void launch_dropout<float>(float *a, const float p, const unsigned int seed, const int size);
+    template void launch_dropout<half>(half *a, const float p, const unsigned int seed, const int size);
+    template void launch_dropout<nv_bfloat16>(nv_bfloat16 *a, const float p, const unsigned int seed, const int size);
+    template void launch_dropout<int64_t>(int64_t *a, const float p, const unsigned int seed, const int size);
+    template void launch_dropout<int32_t>(int32_t *a, const float p, const unsigned int seed, const int size);
+    template void launch_dropout<int16_t>(int16_t *a, const float p, const unsigned int seed, const int size);
+    template void launch_dropout<int8_t>(int8_t *a, const float p, const unsigned int seed, const int size);
+
+    // 初始化
+    // arange
     template <typename T>
     __global__ void kernel_arange(T *data, const float start, const float step, const int size)
     {
@@ -133,7 +175,7 @@ namespace deepx::tensorfunc
     void launch_normal(T *a, const T mean, const T stddev, const unsigned int seed, const int size)
     {
         auto [numBlocks, blockSize] = BestDims(size);
-        kernel_normal<<<numBlocks, blockSize>>>(a,float(mean), float(stddev), seed, size);
+        kernel_normal<<<numBlocks, blockSize>>>(a, float(mean), float(stddev), seed, size);
         cudaError_t err = cudaGetLastError();
         if (err != cudaSuccess)
             throw std::runtime_error("Failed to launch normal kernel");

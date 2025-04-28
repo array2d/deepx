@@ -19,6 +19,20 @@ namespace deepx::tensorfunc
         constantDispatcher<Author, T>::constant(tensor, value);
     }
 
+    //dropout(A,p)=>C
+    template <typename Author, typename T>
+    struct dropoutDispatcher
+    {
+        static void dropout(Tensor<T> &input, const float p,const unsigned int seed) = delete;
+    };
+
+    template <typename Author, typename T>
+    void dropout(Tensor<T> &input, const float p,const unsigned int seed)
+    {
+        dropoutDispatcher<Author, T>::dropout(input, p, seed);
+    }
+    
+
     //arange
     template <typename Author, typename T>
     struct arangeDispatcher

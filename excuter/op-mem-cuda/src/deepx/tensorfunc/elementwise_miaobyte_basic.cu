@@ -407,48 +407,6 @@ namespace deepx::tensorfunc
     template void launch_invert<int16_t>(const int16_t *a, int16_t *c, const int size);
     template void launch_invert<int8_t>(const int8_t *a, int8_t *c, const int size);
 
-    //dropout
-    template <typename T>
-    __global__ void dropout_kernel(const T *A, const float p,const unsigned int seed, T *C, const int size)
-    {
-        int stride = blockDim.x * gridDim.x;
-        curandState state;
-        curand_init(seed, threadIdx.x, 0, &state); // 仅初始化一次
-
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
-        {
-            float rand = curand_uniform(&state);
-            if (rand < p)
-            {
-                C[idx] = 0;
-            }
-            else
-            {
-                C[idx] = A[idx];
-            }
-        }
-    }
-
-    template <typename T>
-    void launch_dropout(const T *a, const float p,const unsigned int seed, T *c, const int size)
-    {
-        auto [numBlocks, blockSize] = BestDims(size);
-        dropout_kernel<<<numBlocks, blockSize>>>(a, p, seed, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch dropout kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
-    }
-    template void launch_dropout<double>(const double *a, const float p,const unsigned int seed, double *c, const int size);
-    template void launch_dropout<float>(const float *a, const float p,const unsigned int seed, float *c, const int size);
-    template void launch_dropout<half>(const half *a, const float p,const unsigned int seed, half *c, const int size);
-    template void launch_dropout<nv_bfloat16>(const nv_bfloat16 *a, const float p,const unsigned int seed, nv_bfloat16 *c, const int size);
-    template void launch_dropout<int64_t>(const int64_t *a, const float p,const unsigned int seed, int64_t *c, const int size);
-    template void launch_dropout<int32_t>(const int32_t *a, const float p,const unsigned int seed, int32_t *c, const int size);
-    template void launch_dropout<int16_t>(const int16_t *a, const float p,const unsigned int seed, int16_t *c, const int size);
-    template void launch_dropout<int8_t>(const int8_t *a, const float p,const unsigned int seed, int8_t *c, const int size);
 }
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAOBYTE_BASIC_CU

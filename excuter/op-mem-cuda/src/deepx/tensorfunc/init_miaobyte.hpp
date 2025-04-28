@@ -19,6 +19,17 @@ namespace deepx::tensorfunc
         }
     };
 
+
+
+    template <typename T>
+    struct dropoutDispatcher<miaobyte, T>
+    {
+        static void dropout(Tensor<T> &A, const float p,const unsigned int seed)
+        {
+            launch_dropout(A.data, p, seed, A.shape.size);
+        }           
+    };
+
     // arange
     template <typename T>
     struct arangeDispatcher<miaobyte, T>

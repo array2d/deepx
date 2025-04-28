@@ -6,10 +6,7 @@ from .rtf_init import *
 from deepx import Tensor,Number
 from .authormap import defaultauthor
 
-# 命名规则
-# inplace操作的函数，其名为_后缀, 返回值为空
-# 非inplace操作的函数，其名为_后缀, 返回值为Tensor
-
+# 填充
 def constant_(t:Tensor,value: Union[float,int])->Tensor:
     rtf_constant(t,value,defaultauthor['constant'])
     
@@ -28,9 +25,19 @@ def ones(shape:tuple[int,...], dtype:str='float32',name:str=None)->Tensor:
     return constant(shape, value=1, dtype=dtype,name=name)
  
 def arange_(t:Tensor,start=0,step=1)->Tensor:
-    from .rtf_init import rtf_arange
     rtf_arange(t,start,step,defaultauthor['arange'])
-#pytorch style
+
+def dropout(a:Tensor, p:float=0.5, seed:int=None)->Tensor:
+    assert isinstance(a,Tensor)
+    assert isinstance(p,float) and 0<=p<=1
+    if seed is None:
+        import time,os
+        seed = int(time.time() * 1000) & 0xffffffff
+        seed = (seed + os.getpid()) & 0xffffffff
+    rtf_dropout(a,p,seed,defaultauthor['dropout'])
+    return a
+
+# 初始化
 def arange(start:Number,end:Number,step:Number=1,dtype:str='float32',name:str=None)->Tensor:
     s =[int((end-start)/step)]
     outtensor=newtensor(s,dtype=dtype,name=name)
@@ -41,7 +48,6 @@ def uniform_(t:Tensor,low=0, high=1,seed:int=None)->Tensor:
     if seed is None:
         seed = int(time.time() * 1000) & 0xffffffff
         seed = (seed + os.getpid()) & 0xffffffff
-    from .rtf_init import rtf_uniform
     rtf_uniform(t,low,high,seed,defaultauthor['uniform'])
 
 def uniform(shape:tuple[int,...],low=0, high=1,seed:int=None,dtype:str='float32',name:str=None)->Tensor:
@@ -169,7 +175,6 @@ def normal_(t:Tensor,mean:float=0, stddev:float=1,seed:int=None)->Tensor:
     if seed is None:
         seed = int(time.time() * 1000) & 0xffffffff
         seed = (seed + os.getpid()) & 0xffffffff
-    from .rtf_init import rtf_normal
     rtf_normal(t,mean,stddev,seed,defaultauthor['normal'])
 
 def normal(shape:tuple[int,...],mean:float=0, stddev:float=1,seed:int=None,dtype:str='float32',name:str=None,author='miaobyte')->Tensor:

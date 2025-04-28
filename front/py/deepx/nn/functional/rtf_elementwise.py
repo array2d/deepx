@@ -3,7 +3,7 @@ from deepx.nn.deepxir import DeepxIR,Param
 from deepx.scheduler import send
 from .rtf import A_B_op_C,A_scalar_op_C,A_op_C
 
-
+# 四则运算
 def rtf_add(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("add",a,b,out,author)
     return out
@@ -43,6 +43,7 @@ def rtf_rdivscalar(a:float, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     send(ir)
     return out
 
+# 幂、指数 运算
 def rtf_sqrt(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("sqrt",a,out,author)
     return out
@@ -74,6 +75,7 @@ def rtf_rsqrt(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("rsqrt",a,out,author)
     return out
 
+# 三角函数
 def rtf_sin(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("sin",a,out,author)
     return out
@@ -86,6 +88,7 @@ def rtf_tan(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("tan",a,out,author)
     return out
 
+# 比较
 def rtf_compare(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("compare",a,b,out,author)
     return out
@@ -110,6 +113,7 @@ def rtf_invert(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("invert",a,out,author)
     return out
 
+# 类型转换
 def rtf_todtype(t:Tensor,dest:Tensor):
     assert isinstance(t,Tensor)
     assert isinstance(dest,Tensor)
@@ -120,14 +124,3 @@ def rtf_todtype(t:Tensor,dest:Tensor):
     ir=DeepxIR("todtype", args, returns,'')
     send(ir)
 
-def rtf_dropout(a:Tensor, p:float, seed:int, out:Tensor, author='miaobyte')->Tensor:
-    assert isinstance(p,float) and 0<=p<=1
-    assert isinstance(seed,int)
-    assert isinstance(out,Tensor)
-    assert a.shape==out.shape
-
-    args=[Param.tensor(a),Param.varnum(p),Param.varnum(seed)]
-    returns=[Param.tensor(out)]
-    ir=DeepxIR("dropout",args,returns,author)
-    send(ir)
-    return out

@@ -48,7 +48,6 @@
 
 | Operation | Author |  Math Formula | IR Instruction |
 |-----------|--------|--------------|----------------|
-| dropout | miaobyte | T1.dropout(p,seed)->T3 | dropout(tensor<any> A, var<float32> p, var<int32> seed)->(tensor<any> C) |
 | switch | miaobyte | C=switch(tensors,cases) | switch(listtensor<any> tensors, tensor<int8> cases)->(tensor<any> result) |
 | greaterscalar | miaobyte | mask=compare(T1, scalar) | greaterscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
 | equalscalar | miaobyte | mask=compare(T1, scalar) | equalscalar(tensor<any> A, var<any> scalar, var<float64> epsilon)->(tensor<bool> mask) |
@@ -56,17 +55,18 @@
 | maxscalar | miaobyte | T3=max(T1, scalar) | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | tan | miaobyte | T3=tan(T1) | tan(tensor<float64|float32> A)->(tensor<float64|float32> C) |
 | sin | miaobyte | T3=sin(T1) | sin(tensor<float64|float32|float16|bfloat16> A)->(tensor<float64|float32|float16|bfloat16> C) |
+| dropout | miaobyte | dropout(p,seed)->A | dropout(var<float32> p, var<int32> seed)->(tensor<any> A) |
 | divscalar | miaobyte | T3=scalar/T1 | divscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | log | miaobyte | T3=log(T1) | log(tensor<float64|float32|float16|bfloat16> A)->(tensor<float64|float32|float16|bfloat16> C) |
 | addscalar | miaobyte | T3=T1+scalar | addscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
 | greater | miaobyte | mask=compare(T1, T2) | greater(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
 | lessscalar | miaobyte | mask=compare(T1, scalar) | lessscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
 | cos | miaobyte | T3=cos(T1) | cos(tensor<float64|float32|float16|bfloat16> A)->(tensor<float64|float32|float16|bfloat16> C) |
+| minscalar | miaobyte | T3=min(T1, scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
+| rpowscalar | miaobyte | T3=pow(scalar, T1) | rpowscalar(var<float64|int32> scalar, tensor<float64|float32> A)->(tensor<float64|float32> C) |
+| rdivscalar | miaobyte | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
 | less | miaobyte | mask=compare(T1, T2) | less(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
 | powscalar | miaobyte | T3=pow(T1, scalar) | powscalar(tensor<float64|float32> A, var<float64|int32> scalar)->(tensor<float64|float32> C) |
-| minscalar | miaobyte | T3=min(T1, scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
-| rdivscalar | miaobyte | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
-| rpowscalar | miaobyte | T3=pow(scalar, T1) | rpowscalar(var<float64|int32> scalar, tensor<float64|float32> A)->(tensor<float64|float32> C) |
 | todtype |  none  | T3(dtypeA)->T1(dtypeB) | todtype(tensor<any> a)->(tensor<any> b) |
 | add | cublas | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |
 | add | miaobyte | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |

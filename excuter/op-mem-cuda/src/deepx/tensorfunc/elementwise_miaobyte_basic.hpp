@@ -140,15 +140,6 @@ namespace deepx::tensorfunc
             launch_invert( A.data, C.data, A.shape.size);
         }
     };
-
-    template <typename T>
-    struct dropoutDispatcher<miaobyte, T>
-    {
-        static void dropout(const Tensor<T> &A, const float p,const unsigned int seed, Tensor<T> &C)
-        {
-            launch_dropout(A.data, p, seed, C.data, A.shape.size);
-        }           
-    };
 }
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_BASIC_HPP
