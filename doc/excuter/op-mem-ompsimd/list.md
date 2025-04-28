@@ -49,6 +49,7 @@
 
 | Operation | Author |  Math Formula | IR Instruction |
 |-----------|--------|--------------|----------------|
+| dropout | miaobyte | A.dropout(p,seed)->C | dropout(tensor<any> A, var<float32> p, var<int32> seed)->(tensor<any> C) |
 | switch | miaobyte | C=switch([tensors],case) | switch(listtensor<any> tensors, tensor<int8> cases)->(tensor<any> C) |
 | greaterscalar | miaobyte | mask=greater(T1,scalar) | greaterscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
 | equalscalar | miaobyte | mask=equal(T1,scalar) | equalscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
