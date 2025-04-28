@@ -1,6 +1,6 @@
 from typing import Optional,Tuple
 from deepx.nn.modules import Module,Linear
-from deepx import Tensor,repeat_kv,matmul,softmax,concat,arange
+from deepx import Tensor,repeat_kv,matmul,softmax,concat,arange,dropout as dropout_func
 
 
 
@@ -40,7 +40,7 @@ def eager_attention_forward(
         attn_weights = attn_weights + causal_mask
 
     attn_weights = softmax(attn_weights, dim=-1, dtype=query.dtype)
-    attn_weights = dropout(attn_weights, p=dropout, training=module.training)
+    attn_weights = dropout_func(attn_weights, p=dropout)
     attn_output = matmul(attn_weights, value_states)
     attn_output = attn_output.transpose(1, 2).contiguous()
 
