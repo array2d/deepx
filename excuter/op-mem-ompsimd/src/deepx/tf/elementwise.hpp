@@ -1900,5 +1900,64 @@ namespace deepx::tf
             return 0;
         }
     };
+
+    //dropout
+    template <typename Author>
+    class Dropout : public TF
+    {
+    public:
+        Dropout(vector<Param> args, vector<Param> returns)
+        {
+            this->name = "dropout";
+            this->metadata.author = Author::name();
+            this->tftype = "elementwise";
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override
+        {
+            return "A.dropout(p,seed)->C";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<Dropout<Author>>(*this);
+        }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            Precision C_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (a_type != C_type)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(C_type);
+                return 1;
+            }   
+            switch (a_type)
+            {
+            case Precision::Float64:
+                tensorfunc::dropout<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), this->getvar<float>(1,mem,true), this->getvar<unsigned int>(2,mem,true), *mem->gettensor<double>(this->returns[0].textvalue));
+                break;  
+            case Precision::Float32:
+                tensorfunc::dropout<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), this->getvar<float>(1,mem,true), this->getvar<unsigned int>(2,mem,true), *mem->gettensor<float>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                tensorfunc::dropout<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), this->getvar<float>(1,mem,true), this->getvar<unsigned int>(2,mem,true), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                break;  
+            case Precision::Int32:
+                tensorfunc::dropout<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), this->getvar<float>(1,mem,true), this->getvar<unsigned int>(2,mem,true), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                tensorfunc::dropout<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), this->getvar<float>(1,mem,true), this->getvar<unsigned int>(2,mem,true), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                break;  
+            case Precision::Int8:
+                tensorfunc::dropout<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), this->getvar<float>(1,mem,true), this->getvar<unsigned int>(2,mem,true), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported dtype: " + precision_str(a_type);
+                return 1;   
+            }
+            return 0;
+        }
+    };
+
 };
-#endif
+#endif // DEEPX_TF_ELEMENTWISE_HPP

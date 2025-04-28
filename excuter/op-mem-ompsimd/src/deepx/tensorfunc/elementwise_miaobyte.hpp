@@ -1,6 +1,7 @@
 #ifndef DEEPX_TENSORFUNC_ELEMENTWISE_MIAOBYTE_HPP
 #define DEEPX_TENSORFUNC_ELEMENTWISE_MIAOBYTE_HPP
 
+#include <random>
 #include <cblas.h>
 #include <cmath>
 #include <hwy/highway.h>
@@ -18,8 +19,8 @@ namespace deepx::tensorfunc
     {
         if (A.shape == B.shape && A.shape == C.shape)
         {
-            C.shape.rangeElementwiseParallel([&A, &B, &C, &scalar_op, &simd_op](int i,int i_end)
-                                  {
+            C.shape.rangeElementwiseParallel([&A, &B, &C, &scalar_op, &simd_op](int i, int i_end)
+                                             {
                                       
                                       const ScalableTag<T> tag;
                                       const size_t lanes = Lanes(tag);
@@ -62,8 +63,8 @@ namespace deepx::tensorfunc
     {
         if (A.shape == C.shape)
         {
-            C.shape.rangeElementwiseParallel([&A, &b, &C, &scalar_op, &simd_op](int i,int i_end)
-                                  {
+            C.shape.rangeElementwiseParallel([&A, &b, &C, &scalar_op, &simd_op](int i, int i_end)
+                                             {
                                       const ScalableTag<T> tag;
                                       const size_t lanes = Lanes(tag);
                                       size_t j = 0;
@@ -98,19 +99,17 @@ namespace deepx::tensorfunc
         }
     }
 
-    //todtype
-    template <typename T,typename Dtype>
+    // todtype
+    template <typename T, typename Dtype>
     static void todtype(const Tensor<T> &A, Tensor<Dtype> &C)
     {
-        C.shape.rangeElementwiseParallel([&A, &C](int i,int i_end)
-        {
+        C.shape.rangeElementwiseParallel([&A, &C](int i, int i_end)
+                                         {
             for (int j = 0; j < i_end; j++)
             {
                 C.data[i + j] = static_cast<Dtype>(A.data[i + j]);
-            }
-        });
+            } });
     }
-
 
     // add
     template <typename T>
@@ -302,23 +301,22 @@ namespace deepx::tensorfunc
     struct invertDispatcher<miaobyte, T>
     {
         static void invert(const Tensor<T> &A, Tensor<T> &C)
-        {   
+        {
             if (A.shape == C.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &C](int idx,int idx_end)
-                                      {
+                A.shape.rangeElementwiseParallel([&A, &C](int idx, int idx_end)
+                                                 {
                                            for (int j=0;j<idx_end;j++)
                                            {
                                                 C.data[idx+j]=~A.data[idx+j];
-                                           } 
-                                      });
+                                           } });
             }
             else
             {
                 throw std::invalid_argument("shape mismatch");
             }
         }
-    };  
+    };
 
     template <typename T>
     struct sqrtDispatcher<miaobyte, T, std::enable_if_t<std::is_floating_point_v<T>>>
@@ -327,8 +325,8 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
-                                           {
+                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                                                      {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
@@ -367,8 +365,8 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
-                                           {
+                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                                                      {
                                                size_t j = 0;
 
                                                while (j < i_end)
@@ -392,8 +390,8 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, &B, &C](int i,int i_end)
-                                      {
+                C.shape.rangeElementwiseParallel([&A, &B, &C](int i, int i_end)
+                                                 {
                                          for (int j = 0; j < i_end; j++)
                                          C.data[i+j] = std::pow(A.data[i+j], B.data[i+j]); });
             }
@@ -413,11 +411,10 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output, &value](int i,int i_end)
-                                           {
+                output.shape.rangeElementwiseParallel([&input, &output, &value](int i, int i_end)
+                                                      {
                                              for (int j = 0; j < i_end; j++)
-                                                output.data[i+j] = std::pow(input.data[i+j], value);
-                                            });
+                                                output.data[i+j] = std::pow(input.data[i+j], value); });
             }
             else
             {
@@ -434,18 +431,17 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output, &value](int i,int i_end)
-                                           {
+                output.shape.rangeElementwiseParallel([&input, &output, &value](int i, int i_end)
+                                                      {
                                                 for (int j = 0; j < i_end; j++)
-                                                output.data[i+j] = std::pow(value, input.data[i+j]);
-                                           });
+                                                output.data[i+j] = std::pow(value, input.data[i+j]); });
             }
             else
             {
                 throw std::invalid_argument("shape mismatch");
             }
         }
-    };  
+    };
 
     template <typename T>
     struct logDispatcher<miaobyte, T>
@@ -455,10 +451,9 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
-                                           { for (int j = 0; j < i_end; j++)
-                                                output.data[i+j] = std::log(input.data[i+j]);
-                                           });
+                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                                                      { for (int j = 0; j < i_end; j++)
+                                                output.data[i+j] = std::log(input.data[i+j]); });
             }
             else
             {
@@ -475,10 +470,9 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
-                                           { for (int j = 0; j < i_end; j++)
-                                                output.data[i+j] = std::exp(input.data[i+j]);
-                                           });
+                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                                                      { for (int j = 0; j < i_end; j++)
+                                                output.data[i+j] = std::exp(input.data[i+j]); });
             }
             else
             {
@@ -495,8 +489,8 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
-                                           {
+                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                                                      {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
@@ -537,8 +531,8 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
-                                           {
+                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                                                      {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
@@ -579,8 +573,8 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i,int i_end)
-                                           {
+                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                                                      {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
@@ -620,8 +614,8 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, &B, &C](int i,int i_end)
-                                      {
+                C.shape.rangeElementwiseParallel([&A, &B, &C](int i, int i_end)
+                                                 {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
@@ -662,8 +656,8 @@ namespace deepx::tensorfunc
         {
             if (A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, b, &C](int i,int i_end)
-                                      {
+                C.shape.rangeElementwiseParallel([&A, b, &C](int i, int i_end)
+                                                 {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
@@ -704,8 +698,8 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, &B, &C](int i,int i_end)
-                                      {
+                C.shape.rangeElementwiseParallel([&A, &B, &C](int i, int i_end)
+                                                 {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
@@ -746,8 +740,8 @@ namespace deepx::tensorfunc
         {
             if (A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, b, &C](int i,int i_end)
-                                      {   
+                C.shape.rangeElementwiseParallel([&A, b, &C](int i, int i_end)
+                                                 {   
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
                 size_t j=0;
@@ -780,16 +774,16 @@ namespace deepx::tensorfunc
         }
     };
 
-    //equal
-    template <typename T,typename MaskT>
-    struct equalDispatcher<miaobyte, T,MaskT>
+    // equal
+    template <typename T, typename MaskT>
+    struct equalDispatcher<miaobyte, T, MaskT>
     {
-        static void equal(const Tensor<T> &A, const Tensor<T> &B,const float epsilon, Tensor<MaskT> &mask)
+        static void equal(const Tensor<T> &A, const Tensor<T> &B, const float epsilon, Tensor<MaskT> &mask)
         {
             if (A.shape == B.shape && mask.shape == A.shape)
-            {   
-                A.shape.rangeElementwiseParallel([&A, &B, &mask,epsilon](int i,int i_end)
-                                      {
+            {
+                A.shape.rangeElementwiseParallel([&A, &B, &mask, epsilon](int i, int i_end)
+                                                 {
                                             for (int j = 0; j < i_end; j++)
                                             {
                                                 if (epsilon == 0)
@@ -799,8 +793,7 @@ namespace deepx::tensorfunc
                                                 else{
                                                     mask.data[i+j]=std::abs(A.data[i+j]-B.data[i+j])<=epsilon;
                                                 }
-                                            }
-                                            });
+                                            } });
             }
             else
             {
@@ -809,16 +802,16 @@ namespace deepx::tensorfunc
         }
     };
 
-    //equalscalar
-    template <typename T,typename MaskT>
-    struct equalscalarDispatcher<miaobyte, T,MaskT>
+    // equalscalar
+    template <typename T, typename MaskT>
+    struct equalscalarDispatcher<miaobyte, T, MaskT>
     {
-        static void equalscalar(const Tensor<T> &A, const T scalar,const float epsilon, Tensor<MaskT> &mask)
+        static void equalscalar(const Tensor<T> &A, const T scalar, const float epsilon, Tensor<MaskT> &mask)
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &mask, &scalar,epsilon](int i,int i_end)
-                                      {
+                A.shape.rangeElementwiseParallel([&A, &mask, &scalar, epsilon](int i, int i_end)
+                                                 {
                 for (int j = 0; j < i_end; j++)
                 {
                     if (epsilon == 0)
@@ -828,8 +821,7 @@ namespace deepx::tensorfunc
                     else{
                         mask.data[i+j]=std::abs(A.data[i+j]-scalar)<=epsilon;
                     }
-                }
-                });
+                } });
             }
             else
             {
@@ -838,67 +830,64 @@ namespace deepx::tensorfunc
         };
     };
 
-    //less
-    template <typename T,typename MaskT>
-    struct lessDispatcher<miaobyte, T,MaskT>
+    // less
+    template <typename T, typename MaskT>
+    struct lessDispatcher<miaobyte, T, MaskT>
     {
         static void less(const Tensor<T> &A, const Tensor<T> &B, Tensor<MaskT> &mask)
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &B, &mask](int i,int i_end)
-                                      {
+                A.shape.rangeElementwiseParallel([&A, &B, &mask](int i, int i_end)
+                                                 {
                 for (int j = 0; j < i_end; j++)
                 {
                     mask.data[i+j]=A.data[i+j]<B.data[i+j];
-                }   
-                });
+                } });
             }
             else
             {
                 throw std::invalid_argument("shape mismatch");
             }
-        }   
+        }
     };
 
-    //lessscalar
-    template <typename T,typename MaskT>
-    struct lessscalarDispatcher<miaobyte, T,MaskT>
+    // lessscalar
+    template <typename T, typename MaskT>
+    struct lessscalarDispatcher<miaobyte, T, MaskT>
     {
         static void lessscalar(const Tensor<T> &A, const T scalar, Tensor<MaskT> &mask)
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &mask, &scalar](int i,int i_end)
-                                      {
+                A.shape.rangeElementwiseParallel([&A, &mask, &scalar](int i, int i_end)
+                                                 {
                 for (int j = 0; j < i_end; j++)
                 {
                     mask.data[i+j]=A.data[i+j]<scalar;
-                }
-                });
+                } });
             }
             else
             {
                 throw std::invalid_argument("shape mismatch");
             }
-        }   
+        }
     };
-    
-    //greater
-    template <typename T,typename MaskT>
-    struct greaterDispatcher<miaobyte, T,MaskT>
+
+    // greater
+    template <typename T, typename MaskT>
+    struct greaterDispatcher<miaobyte, T, MaskT>
     {
         static void greater(const Tensor<T> &A, const Tensor<T> &B, Tensor<MaskT> &mask)
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &B, &mask](int i,int i_end)
-                                      {
+                A.shape.rangeElementwiseParallel([&A, &B, &mask](int i, int i_end)
+                                                 {
                 for (int j = 0; j < i_end; j++)
                 {
                     mask.data[i+j]=A.data[i+j]>B.data[i+j];
-                }
-                });
+                } });
             }
             else
             {
@@ -907,52 +896,91 @@ namespace deepx::tensorfunc
         }
     };
 
-    //greaterscalar
-    template <typename T,typename MaskT>
-    struct greaterscalarDispatcher<miaobyte, T,MaskT>
+    // greaterscalar
+    template <typename T, typename MaskT>
+    struct greaterscalarDispatcher<miaobyte, T, MaskT>
     {
         static void greaterscalar(const Tensor<T> &A, const T scalar, Tensor<MaskT> &mask)
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &mask, &scalar](int i,int i_end)
-                                      {
+                A.shape.rangeElementwiseParallel([&A, &mask, &scalar](int i, int i_end)
+                                                 {
                 for (int j = 0; j < i_end; j++)
                 {
                     mask.data[i+j]=A.data[i+j]>scalar;
-                }
-                });
+                } });
             }
             else
             {
                 throw std::invalid_argument("shape mismatch");
             }
-        }   
-    };      
+        }
+    };
 
-    //switch
-    template <typename T,typename casesT>
-    struct switchDispatcher<miaobyte, T,casesT>
+    // switch
+    template <typename T, typename casesT>
+    struct switchDispatcher<miaobyte, T, casesT>
     {
-        static void Switch(const vector<Tensor<T>*> tensors,const Tensor<casesT> &cases, Tensor<T> &C)
+        static void Switch(const vector<Tensor<T> *> tensors, const Tensor<casesT> &cases, Tensor<T> &C)
         {
             if (cases.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&tensors, &cases, &C](int i,int i_end)
-                                      {
+                C.shape.rangeElementwiseParallel([&tensors, &cases, &C](int i, int i_end)
+                                                 {
                 for (int j = 0; j < i_end; j++)
                 {   
                     int which_tensor=cases.data[i];
                     C.data[i+j]=tensors[which_tensor]->data[i];
-                }
-                });
+                } });
             }
             else
             {
                 throw std::invalid_argument("shape mismatch");
-            }   
+            }
         }
-    };      
-    
+    };
+
+    // dropout
+    template <typename T>
+    struct dropoutDispatcher<miaobyte, T>
+    {
+        static void dropout(const Tensor<T> &A, const float p, const unsigned int seed, Tensor<T> &C)
+        {
+            if (A.shape == C.shape)
+            {
+                std::uniform_real_distribution<double> distribution(0, 1);
+                std::default_random_engine generator;
+                if (seed != 0)
+                {
+                    generator.seed(seed);
+                }
+                else
+                {
+                    std::random_device rd;
+                    generator.seed(rd());
+                }
+
+                A.shape.rangeElementwiseParallel([&A, &C, &p, &distribution, &generator](int i, int i_end)
+                                                 {
+                                        for (int j = 0; j < i_end; j++)
+                                        {
+                                            double rand = distribution(generator);
+                                            if (rand < p)
+                                            {
+                                                C.data[i+j]=0;
+                                            }
+                                            else
+                                            {
+                                                C.data[i+j]=A.data[i+j];
+                                            }
+                                        } });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }
+    };
 };
 #endif // DEEPX_OP_CPU_ELEMENTWISE_HPP

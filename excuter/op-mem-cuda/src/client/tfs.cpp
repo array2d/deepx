@@ -462,6 +462,17 @@ namespace deepx::tf
                                                                 {
                                                                     Param("result", DataCategory::Tensor, Precision::Any),
                                                                 })));
+        // dropout
+        tffactory.add_tf(std::make_shared<Dropout<miaobyte>>(vector<Param>(
+                                                                 {
+                                                                     Param("A", DataCategory::Tensor, Precision::Any),
+                                                                     Param("p", DataCategory::Var, Precision::Float32),
+                                                                     Param("seed", DataCategory::Var, Precision::Int32),
+                                                                 }),
+                                                                 vector<Param>(
+                                                                     {
+                                                                         Param("C", DataCategory::Tensor, Precision::Any),
+                                                                     })));
     }
     // matmul
     void register_matmul(TfFactory &tffactory)
