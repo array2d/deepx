@@ -120,6 +120,14 @@ def rtf_todtype(t:Tensor,dest:Tensor):
     ir=DeepxIR("todtype", args, returns,'')
     send(ir)
 
-def rtf_dropout(a:Tensor, p:float, out:Tensor, author='miaobyte')->Tensor:
-    A_B_op_C("dropout",a,p,out,author)
+def rtf_dropout(a:Tensor, p:float, seed:int, out:Tensor, author='miaobyte')->Tensor:
+    assert isinstance(p,float) and 0<=p<=1
+    assert isinstance(seed,int)
+    assert isinstance(out,Tensor)
+    assert a.shape==out.shape
+
+    args=[Param.tensor(a),Param.varnum(p),Param.varnum(seed)]
+    returns=[Param.tensor(out)]
+    ir=DeepxIR("dropout",args,returns,author)
+    send(ir)
     return out
