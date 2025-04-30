@@ -19,8 +19,15 @@ __all__ = [
     #leaffunc
     "newtensor","rnewtensor","printtensor","load", #life
     "printtensor","save",#io
-    "constant","constant_","full","zeros","ones","uniform","uniform_","arange","arange_","kaiming_uniform","kaiming_uniform_",
-    "add","sub","mul","div","sqrt","pow","exp","log","invert","todtype","dropout",
+    "constant","constant_","dropout","full","zeros","ones","uniform","uniform_","arange","arange_",
+    "kaiming_uniform","kaiming_uniform_",
+    "add","sub","mul","div",
+    "sqrt","pow","exp","log",
+    "min","max",
+    "less","greater","equal","notequal",
+    "switch",
+    "todtype",
+    "invert",
     "matmul",
     "reducemax","reducemin","sum","prod",
     "reshape","permute","transpose","concat","broadcastTo","indexselect",

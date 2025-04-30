@@ -71,10 +71,6 @@ def rtf_log(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("log",a,out,author)
     return out
 
-def rtf_rsqrt(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
-    A_op_C("rsqrt",a,out,author)
-    return out
-
 # 三角函数
 def rtf_sin(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("sin",a,out,author)
@@ -88,11 +84,7 @@ def rtf_tan(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("tan",a,out,author)
     return out
 
-# 比较
-def rtf_compare(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
-    A_B_op_C("compare",a,b,out,author)
-    return out
-
+# 取大小值
 def rtf_max(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("max",a,b,out,author)
     return out
@@ -109,9 +101,54 @@ def rtf_minscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
     A_scalar_op_C("minscalar",a,b,out,author)
     return out
 
+# 位运算
 def rtf_invert(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_op_C("invert",a,out,author)
     return out
+
+#比较
+# A<B -> C 等价于 B>=A -> C
+def rtf_less(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
+    A_B_op_C("less",a,b,out,author)
+    return out
+# A>B -> C
+def rtf_greater(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
+    A_B_op_C("greater",a,b,out,author)
+    return out
+# A<b -> C 等价于 b>=A -> C
+def rtf_lessscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("lessscalar",a,b,out,author)
+    return out
+# A>b -> C
+def rtf_greaterscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("greaterscalar",a,b,out,author)
+    return out
+
+# A==B -> C
+def rtf_equal(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
+    A_B_op_C("equal",a,b,out,author)
+    return out
+# A==b -> C
+def rtf_equalscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("equalscalar",a,b,out,author)
+    return out
+# A!=B -> C
+def rtf_notequal(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
+    A_B_op_C("notequal",a,b,out,author)
+    return out
+# A!=b -> C
+def rtf_notequalscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_op_C("notequalscalar",a,b,out,author)
+    return out
+
+# 根据cases[index]的值tensoridx，从X[tensoridx]这个Tensor[index]，赋值给out[index]
+def rtf_switch(X:tuple[Tensor,...], cases:Tensor, out:Tensor, author='miaobyte')->Tensor:
+    args = [Param.listtensor(X),Param.tensor(cases)]
+    returns = [Param.tensor(out)]
+    ir = DeepxIR("switch", args, returns, author)
+    send(ir)
+    return out
+
 
 # 类型转换
 def rtf_todtype(t:Tensor,dest:Tensor):

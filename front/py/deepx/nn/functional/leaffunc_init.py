@@ -40,7 +40,7 @@ def dropout(a:Tensor, p:float=0.5, seed:int=None)->Tensor:
 # 初始化
 def arange(start:Number,end:Number,step:Number=1,dtype:str='float32',name:str=None)->Tensor:
     s =[int((end-start)/step)]
-    outtensor=newtensor(s,dtype=dtype,name=name)
+    outtensor=newtensor(tuple(s),dtype=dtype,name=name)
     arange_(outtensor,start,step)
     return outtensor
 

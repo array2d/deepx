@@ -40,6 +40,7 @@
 | Operation | Author |  Math Formula | IR Instruction |
 |-----------|--------|--------------|----------------|
 | normal | miaobyte | normal(mean,stddev,seed)->T1 | normal(var<any> mean, var<any> stddev, var<int32> seed)->(tensor<any> t) |
+| dropout | miaobyte | dropout(p,seed)->A | dropout(var<float32> p, var<int32> seed)->(tensor<any> A) |
 | uniform | miaobyte | uniform(low,high,seed)->T1 | uniform(var<any> low, var<any> high, var<int32> seed)->(tensor<any> t) |
 | arange | miaobyte | arange(start,step)->T1 | arange(var<any> start, var<any> step)->(tensor<any> t) |
 | constant | miaobyte | constant(value)->T1 | constant(var<any> value)->(tensor<any> t) |
@@ -55,7 +56,6 @@
 | maxscalar | miaobyte | T3=max(T1, scalar) | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | tan | miaobyte | T3=tan(T1) | tan(tensor<float64|float32> A)->(tensor<float64|float32> C) |
 | sin | miaobyte | T3=sin(T1) | sin(tensor<float64|float32|float16|bfloat16> A)->(tensor<float64|float32|float16|bfloat16> C) |
-| dropout | miaobyte | dropout(p,seed)->A | dropout(var<float32> p, var<int32> seed)->(tensor<any> A) |
 | divscalar | miaobyte | T3=scalar/T1 | divscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | log | miaobyte | T3=log(T1) | log(tensor<float64|float32|float16|bfloat16> A)->(tensor<float64|float32|float16|bfloat16> C) |
 | addscalar | miaobyte | T3=T1+scalar | addscalar(tensor<any> A, var<any> b)->(tensor<any> C) |

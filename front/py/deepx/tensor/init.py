@@ -1,10 +1,18 @@
 from typing import Union
 from deepx.tensor import tensor_method
 
+# 填充
 @tensor_method
 def full_(self,value:Union[float,int]):
     from deepx.nn.functional import constant_ as constant_func
     constant_func(self,value=value)
+
+@tensor_method
+def dropout_(self,p:float=0.5,seed:int=None):
+    from deepx.nn.functional import dropout as dropout_func
+    dropout_func(self,p,seed)
+    return self
+
 
 @tensor_method
 def zeros_(self):

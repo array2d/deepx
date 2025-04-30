@@ -1,7 +1,6 @@
 from typing import Union
 import importlib
 
-
 from deepx.tensor import Tensor,Shape
 from .leaffunc_life import newtensor
 from .authormap import defaultauthor
@@ -9,13 +8,15 @@ from .authormap import defaultauthor
 # inplace操作的函数，其名为_后缀, 返回值为空
 # 非inplace操作的函数，其名为_后缀, 返回值为Tensor
 
-
-def create_A_B_tf_C(op_name):
+def create_A_B_tf_C(op_name,outtype=None):
     """创建元素级操作函数"""
     def op_func(
             a: Tensor,
             b: Union[Tensor, float, int] = None, 
             out: Union[Tensor, str] = None) -> Tensor:
+        outtype=a.dtype
+        if op_func.__outtype__ is not None:
+            outtype=op_func.__outtype__
         outtensor = out
         rtf_module = importlib.import_module('deepx.nn.functional.rtf_elementwise')
         if isinstance(b, Tensor):
@@ -26,20 +27,21 @@ def create_A_B_tf_C(op_name):
                 an = a.broadcastTo(newshape)
                 bn = b.broadcastTo(newshape)
                 if isinstance(out,str) or out is None:
-                    outtensor=newtensor(newshape,dtype=a.dtype,name=out)
+                    outtensor=newtensor(newshape,dtype=outtype,name=out)
             else:
                 if isinstance(out,str) or out is None:
-                    outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
+                    outtensor=newtensor(a.shape,dtype=outtype,name=out)
             rtf_func = getattr(rtf_module, f'rtf_{op_name}')
             rtf_func(an, bn, outtensor, defaultauthor[op_name])
         else:
             if isinstance(out,str) or out is None:
-                outtensor=newtensor(a.shape,dtype=a.dtype,name=out)
+                outtensor=newtensor(a.shape,dtype=outtype,name=out)
             rtf_func = getattr(rtf_module, f'rtf_{op_name}scalar')
             rtf_func(a, b, outtensor, defaultauthor[f'{op_name}scalar'])
         return outtensor
     op_func.__name__ = op_name
     op_func.__qualname__ = op_name
+    op_func.__outtype__ = outtype
     return op_func
 
 def create_A_tf_C(op_name):

@@ -2,6 +2,7 @@ from typing import Optional,Union
 
 from deepx.tensor import Tensor,tensor_method,Number
 
+# 四则运算
 @tensor_method
 def add(self,
         other:Union[Tensor,float,int],
@@ -43,8 +44,6 @@ def div(self, other:Union[Tensor,float,int],
     from deepx.nn.functional import div as div_func
     return div_func(self,other,out)
 
-
-
 @tensor_method
 def div_(self, other:Union[Tensor,float,int]):
     from deepx.nn.functional import div as div_func
@@ -64,6 +63,8 @@ def rdiv_(self, other:Union[float,int]):
     div_func(other,self,self)
     return self
 
+
+# 取最值
 @tensor_method
 def min(self,  other:Union[Tensor,float,int],
         out:Union[Tensor,str]='')->Tensor:
@@ -102,7 +103,7 @@ def clamp_(self, min:Union[float,int], max:Union[float,int]):
     #todo
     pass
  
-
+# 幂指运算
 @tensor_method
 def exp(self,out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import exp as exp_func
@@ -157,15 +158,63 @@ def rsqrt_(self):
     from deepx.nn.functional import rsqrt as rsqrt_func
     rsqrt_func(self,self)
 
+# 三角函数
+@tensor_method
+def sin(self,out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import sin as sin_func
+    return sin_func(self,out)
+
+@tensor_method
+def cos(self,out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import cos as cos_func
+    return cos_func(self,out)
+
+@tensor_method
+def tan(self,out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import tan as tan_func
+    return tan_func(self,out)
+
+
+# 位运算
 @tensor_method
 def invert(self,out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import invert as invert_func
     return invert_func(self,out)
 
+# 比较
+@tensor_method
+def less(self,other:Union[Tensor,float,int],out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import less as less_func
+    return less_func(self,other,out)
 
 @tensor_method
-def dropout_(self,p:float=0.5,seed:int=None):
-    from deepx.nn.functional import dropout as dropout_func
-    dropout_func(self,p,seed)
-    return self
+def greater(self,other:Union[Tensor,float,int],out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import greater as greater_func
+    return greater_func(self,other,out)
 
+@tensor_method
+def equal(self,other:Union[Tensor,float,int],out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import equal as equal_func
+    return equal_func(self,other,out)
+
+@tensor_method
+def notequal(self,other:Union[Tensor,float,int],out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import notequal as notequal_func   
+    return notequal_func(self,other,out)
+
+# 分支
+@tensor_method
+def switch(self,cases:Union[Tensor,float,int],out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import switch as switch_func
+    return switch_func(self,cases,out)
+
+@tensor_method
+def switch_(self,cases:Union[Tensor,float,int]):
+    from deepx.nn.functional import switch as switch_func
+    switch_func(self,cases,self)
+
+# 类型转换
+@tensor_method
+def todtype(self,dest:Union[Tensor,float,int]):
+    from deepx.nn.functional import todtype as todtype_func
+    return todtype_func(self,dest)

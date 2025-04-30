@@ -107,7 +107,12 @@ namespace deepx::mem
                 result->data = ptr_tensor->data;
                 break;
             }
-
+            case Precision::Bool:
+            {
+                auto ptr_tensor = std::static_pointer_cast<Tensor<bool>>(ptr);
+                result->data = ptr_tensor->data;
+                break;
+            }
             default:
                 throw std::runtime_error("Unsupported dtype: " + precision_str(ptr->shape.dtype));
             }
