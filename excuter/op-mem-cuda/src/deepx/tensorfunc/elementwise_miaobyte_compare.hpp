@@ -98,6 +98,41 @@ namespace deepx::tensorfunc
             launch_equalscalar(A.data, scalar, epsilon, mask.data, A.shape.size);
         }
     };
+     // notequal(A,B)=>C
+    template <typename T,typename MaskT>
+    struct notequalDispatcher<miaobyte, T,MaskT>
+    {
+        static void notequal(const Tensor<T> &A, const Tensor<T> &B,const float epsilon, Tensor<MaskT> &mask)
+        {
+            if (A.shape.size != B.shape.size || A.shape.size != mask.shape.size)
+            {
+                throw TensorShapeError("notequal");
+            }
+            if (epsilon < 0)
+            {
+                throw std::invalid_argument("notequal epsilon must be positive");
+            }
+            launch_notequal(A.data, B.data, epsilon, mask.data, A.shape.size);
+        }
+    };
+    // notequalscalar(A,scalar)=>C
+    template <typename T,typename MaskT>
+    struct notequalscalarDispatcher<miaobyte, T,MaskT>
+    {
+        static void notequalscalar(const Tensor<T> &A, const T scalar,const float epsilon, Tensor<MaskT> &mask)
+        {
+            if (A.shape.size != mask.shape.size)
+            {
+                throw TensorShapeError("notequalscalar");
+            }
+            if (epsilon < 0)
+            {
+                throw std::invalid_argument("notequal epsilon must be positive");
+            }
+            launch_notequalscalar(A.data, scalar, epsilon, mask.data, A.shape.size);
+        }
+    };
+
 
     // less(A,B)=>C
     template <typename T,typename MaskT>

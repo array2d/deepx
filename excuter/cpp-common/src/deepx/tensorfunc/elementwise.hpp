@@ -333,6 +333,31 @@ namespace deepx::tensorfunc
     {
         equalscalarDispatcher<Author, T, MaskT>::equalscalar(A, scalar, epsilon, mask);
     }
+    //notequal(A,B)=>mask
+    template <typename Author, typename T, typename MaskT>
+    struct notequalDispatcher
+    {
+        static void notequal(const Tensor<T> &A, const Tensor<T> &B,const float epsilon, Tensor<MaskT> &mask) = delete;
+    };
+
+    template <typename Author, typename T, typename MaskT>
+    void notequal(const Tensor<T> &A, const Tensor<T> &B,const float epsilon, Tensor<MaskT> &mask)
+    {
+        notequalDispatcher<Author, T, MaskT>::notequal(A, B, epsilon, mask);
+    }
+
+    // notequal(A,scalar)=>mask
+    template <typename Author, typename T, typename MaskT>
+    struct notequalscalarDispatcher
+    {
+        static void notequalscalar(const Tensor<T> &A, const T scalar,const float epsilon, Tensor<MaskT> &mask) = delete;
+    };
+
+    template <typename Author, typename T, typename MaskT>
+    void notequalscalar(const Tensor<T> &A, const T scalar,const float epsilon, Tensor<MaskT> &mask)
+    {
+        notequalscalarDispatcher<Author, T, MaskT>::notequalscalar(A, scalar, epsilon, mask);
+    }
 
     // less(A,B)=>mask
     template <typename Author, typename T, typename MaskT>

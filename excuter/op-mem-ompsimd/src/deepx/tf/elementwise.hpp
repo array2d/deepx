@@ -1504,7 +1504,7 @@ namespace deepx::tf
         }
         string math_formula() const override
         {
-            return "mask=equal(T1,T2)";
+            return "equal(T1,T2)->mask";
         }
         shared_ptr<TF> clone() const override
         {
@@ -1514,7 +1514,10 @@ namespace deepx::tf
         {
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
             Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
-            float epsilon = this->getvar<float>(2,mem,true);
+            float epsilon =0;
+            if (this->args.size()>2){
+                epsilon=this->getvar<float>(2,mem,true);
+            }
             Precision mask_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
             if (a_type != b_type || mask_type!=Precision::Bool)
             {

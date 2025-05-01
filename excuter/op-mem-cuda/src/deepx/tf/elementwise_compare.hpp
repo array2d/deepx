@@ -284,7 +284,7 @@ namespace deepx::tf
 
         string math_formula() const override
         {
-            return "mask=compare(T1, T2)";
+            return "T1==T2->mask";
         }
         shared_ptr<TF> clone() const override
         {
@@ -295,7 +295,10 @@ namespace deepx::tf
         {
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
             Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
-            float epsilon = this->getvar<float>(2, mem);
+            float epsilon =0;
+            if (this->args.size()>2){
+                epsilon=this->getvar<float>(2,mem,true);
+            }
             Precision mask_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
             if (a_type != b_type || mask_type != Precision::Bool)
             {
@@ -351,7 +354,7 @@ namespace deepx::tf
 
         string math_formula() const override
         {
-            return "mask=compare(T1, scalar)";
+            return "T1==scalar->mask";
         }
         shared_ptr<TF> clone() const override
         {
@@ -363,7 +366,7 @@ namespace deepx::tf
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
             Precision mask_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
             float epsilon = this->getvar<float>(2, mem);
-            if (a_type != mask_type || mask_type != Precision::Bool)
+            if ( mask_type != Precision::Bool)
             {
                 error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(mask_type);
                 return 1;
@@ -393,6 +396,143 @@ namespace deepx::tf
                 break;
             case Precision::Int8:
                 tensorfunc::equalscalar<Author, int8_t, bool>(*mem->gettensor<int8_t>(this->args[0].textvalue), this->getvar<int8_t>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported type: " + precision_str(a_type);
+                return 1;
+            }
+            return 0;
+        }
+    };
+
+
+    template <typename Author>
+    class NotEqual : public TF
+    {
+    public:
+        NotEqual(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "notequal";
+            this->metadata.author=Author::name();
+            this->tftype = "elementwise";
+            this->args = args;
+            this->returns = returns;
+        }
+
+        string math_formula() const override
+        {
+            return "T1!=T2->mask";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<NotEqual<Author>>(*this);
+        }
+
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            float epsilon =0;
+            if (this->args.size()>2){
+                epsilon=this->getvar<float>(2,mem,true);
+            }
+            Precision mask_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            if (a_type != b_type || mask_type != Precision::Bool)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(b_type) + " or " + precision_str(a_type) + " != " + precision_str(mask_type);
+                return 1;
+            }
+            switch (a_type)
+            {
+            case Precision::Float64:
+                tensorfunc::notequal<Author, double, bool>(*mem->gettensor<double>(this->args[0].textvalue), *mem->gettensor<double>(this->args[1].textvalue), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:
+                tensorfunc::notequal<Author, float, bool>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->args[1].textvalue), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Float16:
+                tensorfunc::notequal<Author, half, bool>(*mem->gettensor<half>(this->args[0].textvalue), *mem->gettensor<half>(this->args[1].textvalue), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::BFloat16:
+                tensorfunc::notequal<Author, nv_bfloat16, bool>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), *mem->gettensor<nv_bfloat16>(this->args[1].textvalue), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                tensorfunc::notequal<Author, int64_t, bool>(*mem->gettensor<int64_t>(this->args[0].textvalue), *mem->gettensor<int64_t>(this->args[1].textvalue), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Int32:
+                tensorfunc::notequal<Author, int32_t, bool>(*mem->gettensor<int32_t>(this->args[0].textvalue), *mem->gettensor<int32_t>(this->args[1].textvalue), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                tensorfunc::notequal<Author, int16_t, bool>(*mem->gettensor<int16_t>(this->args[0].textvalue), *mem->gettensor<int16_t>(this->args[1].textvalue), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Int8:
+                tensorfunc::notequal<Author, int8_t, bool>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->args[1].textvalue), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            default:
+                error = "Unsupported type: " + precision_str(a_type);
+                return 1;
+            }
+            return 0;
+        }
+    };
+
+    template <typename Author>
+    class NotEqualScalar : public TF
+    {
+    public:
+        NotEqualScalar(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "notequalscalar";
+            this->metadata.author=Author::name();
+            this->tftype = "elementwise";
+            this->args = args;
+            this->returns = returns;
+        }
+
+        string math_formula() const override
+        {
+            return "T1!=scalar->mask";
+        }
+        shared_ptr<TF> clone() const override
+        {
+            return make_shared<NotEqualScalar<Author>>(*this);
+        }
+
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            Precision mask_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
+            float epsilon = this->getvar<float>(2, mem);
+            if (mask_type != Precision::Bool)
+            {
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(mask_type);
+                return 1;
+            }
+            switch (a_type)
+            {
+            case Precision::Float64:
+                tensorfunc::notequalscalar<Author, double, bool>(*mem->gettensor<double>(this->args[0].textvalue), this->getvar<double>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Float32:
+                tensorfunc::notequalscalar<Author, float, bool>(*mem->gettensor<float>(this->args[0].textvalue), this->getvar<float>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Float16:
+                tensorfunc::notequalscalar<Author, half, bool>(*mem->gettensor<half>(this->args[0].textvalue), this->getvar<half>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::BFloat16:
+                tensorfunc::notequalscalar<Author, nv_bfloat16, bool>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), this->getvar<nv_bfloat16>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Int64:
+                tensorfunc::notequalscalar<Author, int64_t, bool>(*mem->gettensor<int64_t>(this->args[0].textvalue), this->getvar<int64_t>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Int32:
+                tensorfunc::notequalscalar<Author, int32_t, bool>(*mem->gettensor<int32_t>(this->args[0].textvalue), this->getvar<int32_t>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Int16:
+                tensorfunc::notequalscalar<Author, int16_t, bool>(*mem->gettensor<int16_t>(this->args[0].textvalue), this->getvar<int16_t>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
+            case Precision::Int8:
+                tensorfunc::notequalscalar<Author, int8_t, bool>(*mem->gettensor<int8_t>(this->args[0].textvalue), this->getvar<int8_t>(1, mem), epsilon, *mem->gettensor<bool>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported type: " + precision_str(a_type);

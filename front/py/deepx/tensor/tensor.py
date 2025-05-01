@@ -120,25 +120,37 @@ class Tensor:
         return self.sub(other)
     def __rsub__(self, other:Union[Number,'Tensor']):
         return self.sub(other)
-    
     def __mul__(self, other:Union[Number,'Tensor']):
         return self.mul(other)
     def __rmul__(self, other:Union[Number,'Tensor']):
         return self.mul(other)
     def __truediv__(self, other:Union[Number,'Tensor']):
         return self.div(other)
-    
     def __rtruediv__(self, other:Union[Number,'Tensor']):
         return self.rdiv(other)
-
+    # 幂指
     def __pow__(self, other:Union[Number,'Tensor']):
         return self.pow(other)
     
     def __rpow__(self, other:Union[Number,'Tensor']):
         return self.rpow(other)
-    
+    # 位
     def __invert__(self):
         return self.invert()
+    # 比较
+    def __eq__(self, other:Union[Number,'Tensor']):
+        return self.equal(other)
+    def __ne__(self, other:Union[Number,'Tensor']):
+        return self.notequal(other)
+    def __gt__(self, other:Union[Number,'Tensor']):
+        return self.greater(other)
+    def __ge__(self, other:Union[Number,'Tensor']):
+        return other.less(self)
+    def __lt__(self, other:Union[Number,'Tensor']):
+        return self.less(other)
+    def __le__(self, other:Union[Number,'Tensor']):
+        return other.greater(self)   
+    
     #矩阵乘法
     def __matmul__(self, other:'Tensor'):
         return self.matmul(other)

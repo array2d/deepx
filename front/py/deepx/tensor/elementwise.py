@@ -193,14 +193,14 @@ def greater(self,other:Union[Tensor,float,int],out:Union[Tensor,str]='')->Tensor
     return greater_func(self,other,out)
 
 @tensor_method
-def equal(self,other:Union[Tensor,float,int],out:Union[Tensor,str]='')->Tensor:
+def equal(self,other:Union[Tensor,float,int],epsilon:float=1e-6,out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import equal as equal_func
-    return equal_func(self,other,out)
+    return equal_func(self,other,epsilon,out)
 
 @tensor_method
-def notequal(self,other:Union[Tensor,float,int],out:Union[Tensor,str]='')->Tensor:
+def notequal(self,other:Union[Tensor,float,int],epsilon:float=1e-6,out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import notequal as notequal_func   
-    return notequal_func(self,other,out)
+    return notequal_func(self,other,epsilon,out)
 
 # 分支
 @tensor_method

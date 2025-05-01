@@ -39,7 +39,7 @@ namespace deepx::tensorfunc
     
     //equal
     template <typename T,typename MaskT>
-    __global__ void equal_kernel(const T* A, const T* B,const float epsilon, MaskT* mask, const int size);
+    __global__ void equalwithepsilon_kernel(const T* A, const T* B,const float epsilon, MaskT* mask, const int size);
 
     template <typename T,typename MaskT>
     __global__ void equal_kernel(const T* A, const T* B, float* mask, const int size);
@@ -49,10 +49,33 @@ namespace deepx::tensorfunc
 
     //equalscalar
     template <typename T,typename MaskT>
-    __global__ void equalscalar_kernel(const T* A, const T scalar,const float epsilon, MaskT* mask, const int size);
+    __global__ void equalscalarwithepsilon_kernel(const T* A, const T scalar,const float epsilon, MaskT* mask, const int size);
+
+    template <typename T,typename MaskT>
+    __global__ void equalscalar_kernel(const T* A, const T scalar, float* mask, const int size);
 
     template <typename T,typename MaskT>
     void launch_equalscalar(const T* A, const T scalar,const float epsilon, MaskT* mask, const int size);
+
+    //notequal
+    template <typename T,typename MaskT>
+    __global__ void notequalwithepsilon_kernel(const T* A, const T* B,const float epsilon, MaskT* mask, const int size);
+
+    template <typename T,typename MaskT>
+    __global__ void notequal_kernel(const T* A, const T* B, MaskT* mask, const int size);
+
+    template <typename T,typename MaskT>
+    void launch_notequal(const T* A, const T* B,const float epsilon, MaskT* mask, const int size);  
+
+    //notequalscalar
+    template <typename T,typename MaskT>
+    __global__ void notequalscalarwithepsilon_kernel(const T* A, const T scalar,const float epsilon, MaskT* mask, const int size);
+
+    template <typename T,typename MaskT>
+    __global__ void notequalscalar_kernel(const T* A, const T scalar, MaskT* mask, const int size);
+
+    template <typename T,typename MaskT>
+    void launch_notequalscalar(const T* A, const T scalar,const float epsilon, MaskT* mask, const int size);    
 
     //less
     template <typename T,typename MaskT>

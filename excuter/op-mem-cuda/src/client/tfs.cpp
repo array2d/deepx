@@ -406,7 +406,7 @@ namespace deepx::tf
                                                                {
                                                                    Param("A", DataCategory::Tensor, Precision::Any),
                                                                    Param("B", DataCategory::Tensor, Precision::Any),
-                                                                   Param("epsilon", DataCategory::Var, Precision::Float64),
+                                                                   Param("epsilon", DataCategory::Var, Precision::Float32),
                                                                }),
                                                            vector<Param>(
                                                                {
@@ -416,7 +416,27 @@ namespace deepx::tf
                                                                      {
                                                                          Param("A", DataCategory::Tensor, Precision::Any),
                                                                          Param("scalar", DataCategory::Var, Precision::Any),
-                                                                         Param("epsilon", DataCategory::Var, Precision::Float64),
+                                                                         Param("epsilon", DataCategory::Var, Precision::Float32),
+                                                                     }),
+                                                                 vector<Param>(
+                                                                     {
+                                                                         Param("mask", DataCategory::Tensor, Precision::Bool),
+                                                                     })));
+        tffactory.add_tf(std::make_shared<NotEqual<miaobyte>>(vector<Param>(
+                                                               {
+                                                                   Param("A", DataCategory::Tensor, Precision::Any),
+                                                                   Param("B", DataCategory::Tensor, Precision::Any),
+                                                                   Param("epsilon", DataCategory::Var, Precision::Float32),
+                                                               }),
+                                                           vector<Param>(
+                                                               {
+                                                                   Param("mask", DataCategory::Tensor, Precision::Bool),
+                                                               })));
+        tffactory.add_tf(std::make_shared<NotEqualScalar<miaobyte>>(vector<Param>(
+                                                                     {
+                                                                         Param("A", DataCategory::Tensor, Precision::Any),
+                                                                         Param("scalar", DataCategory::Var, Precision::Any),
+                                                                         Param("epsilon", DataCategory::Var, Precision::Float32),
                                                                      }),
                                                                  vector<Param>(
                                                                      {

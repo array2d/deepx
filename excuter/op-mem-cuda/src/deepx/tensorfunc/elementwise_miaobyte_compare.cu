@@ -250,6 +250,122 @@ namespace deepx::tensorfunc
     template void launch_equalscalar<int16_t,bool>(const int16_t *A, const int16_t scalar, const float epsilon, bool *mask, const int size);
     template void launch_equalscalar<int8_t,bool>(const int8_t *A, const int8_t scalar, const float epsilon, bool *mask, const int size);
 
+    // not  equal
+    template <typename T,typename MaskT>
+    __global__ void notequalwithepsilon_kernel(const T *A, const T *B, const float epsilon, MaskT *mask, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            float diff = fabsf(static_cast<float>(A[idx]) - static_cast<float>(B[idx]));
+            if (diff < epsilon)
+            {
+                mask[idx] = 0;
+            }
+            else
+            {
+                mask[idx] = 1;
+            }
+        }
+    }
+
+    template <typename T,typename MaskT>
+    __global__ void notequal_kernel(const T *A, const T *B, MaskT *mask, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            mask[idx] = (A[idx] != B[idx]);
+        }
+    }
+
+    template <typename T,typename MaskT>
+    void launch_notequal(const T *A, const T *B, const float epsilon, MaskT *mask, const int size)
+    {
+        auto [numBlocks, blockSize] = BestDims(size);
+        if (epsilon == 0)
+        {
+            notequal_kernel<<<numBlocks, blockSize>>>(A, B, mask, size);
+        }
+        else
+        {
+            notequalwithepsilon_kernel<<<numBlocks, blockSize>>>(A, B, epsilon, mask, size);
+        }
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("Failed to launch add kernel: " +
+                                     std::string(cudaGetErrorString(err)));
+        }
+    }
+
+    template void launch_notequal<double,bool>(const double *A, const double *B, const float epsilon, bool *mask, const int size);
+    template void launch_notequal<float,bool>(const float *A, const float *B, const float epsilon, bool *mask, const int size);
+    template void launch_notequal<nv_bfloat16,bool>(const nv_bfloat16 *A, const nv_bfloat16 *B, const float epsilon, bool *mask, const int size);
+    template void launch_notequal<__half,bool>(const __half *A, const __half *B, const float epsilon, bool *mask, const int size);
+    template void launch_notequal<int64_t,bool>(const int64_t *A, const int64_t *B, const float epsilon, bool *mask, const int size);
+    template void launch_notequal<int32_t,bool>(const int32_t *A, const int32_t *B, const float epsilon, bool *mask, const int size);
+    template void launch_notequal<int16_t,bool>(const int16_t *A, const int16_t *B, const float epsilon, bool *mask, const int size);
+    template void launch_notequal<int8_t,bool>(const int8_t *A, const int8_t *B, const float epsilon, bool *mask, const int size);
+
+    // notequalscalar
+    template <typename T,typename MaskT>
+    __global__ void notequalscalarwithepsilon_kernel(const T *A, const T scalar, const float epsilon, MaskT *mask, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {   
+            float diff = fabsf(static_cast<float>(A[idx]) - static_cast<float>(scalar));
+            if (diff < epsilon)
+            {
+                mask[idx] = 0;
+            }
+            else
+            {
+                mask[idx] = 1;
+            }
+        }
+    }
+
+    template <typename T,typename MaskT>
+    __global__ void notequalscalar_kernel(const T *A, const T scalar, MaskT *mask, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            mask[idx] = (A[idx] != scalar);
+        }
+    }
+
+    template <typename T,typename MaskT>
+    void launch_notequalscalar(const T *A, const T scalar, const float epsilon, MaskT *mask, const int size)
+    {
+        auto [numBlocks, blockSize] = BestDims(size);
+        if (epsilon == 0)
+        {
+            notequalscalar_kernel<<<numBlocks, blockSize>>>(A, scalar, mask, size);
+        }
+        else
+        {
+            notequalscalarwithepsilon_kernel<<<numBlocks, blockSize>>>(A, scalar, epsilon, mask, size);
+        }
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("Failed to launch add kernel: " +
+                                     std::string(cudaGetErrorString(err)));
+        }
+    }
+
+    template void launch_notequalscalar<double,bool>(const double *A, const double scalar, const float epsilon, bool *mask, const int size);
+    template void launch_notequalscalar<float,bool>(const float *A, const float scalar, const float epsilon, bool *mask, const int size);
+    template void launch_notequalscalar<nv_bfloat16,bool>(const nv_bfloat16 *A, const nv_bfloat16 scalar, const float epsilon, bool *mask, const int size);
+    template void launch_notequalscalar<__half,bool>(const __half *A, const __half scalar, const float epsilon, bool *mask, const int size);
+    template void launch_notequalscalar<int64_t,bool>(const int64_t *A, const int64_t scalar, const float epsilon, bool *mask, const int size);
+    template void launch_notequalscalar<int32_t,bool>(const int32_t *A, const int32_t scalar, const float epsilon, bool *mask, const int size);
+    template void launch_notequalscalar<int16_t,bool>(const int16_t *A, const int16_t scalar, const float epsilon, bool *mask, const int size);
+    template void launch_notequalscalar<int8_t,bool>(const int8_t *A, const int8_t scalar, const float epsilon, bool *mask, const int size);
+
     // less
     template <typename T,typename MaskT>
     __global__ void less_kernel(const T *A, const T *B, MaskT *mask, const int size)

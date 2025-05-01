@@ -44,6 +44,43 @@ def create_A_B_tf_C(op_name,outtype=None):
     op_func.__outtype__ = outtype
     return op_func
 
+def create_A_B_c_tf_D(op_name,outtype=None):
+    """创建元素级操作函数"""
+    def op_func(
+            A: Tensor,
+            B: Union[Tensor, float, int] = None,
+            c: float=0,
+            out: Union[Tensor, str] = None) -> Tensor:
+        outtype='bool'
+        if op_func.__outtype__ is not None:
+            outtype=op_func.__outtype__
+        outtensor = out
+        rtf_module = importlib.import_module('deepx.nn.functional.rtf_elementwise')
+        if isinstance(B, Tensor):
+            an=A
+            bn=B
+            if A.shape != B.shape:
+                newshape = Shape.broadcast_shape(A.shape, B.shape)
+                an = A.broadcastTo(newshape)
+                bn = B.broadcastTo(newshape)
+                if isinstance(out,str) or out is None:
+                    outtensor=newtensor(newshape,dtype=outtype,name=out)
+            else:
+                if isinstance(out,str) or out is None:
+                    outtensor=newtensor(A.shape,dtype=outtype,name=out)
+            rtf_func = getattr(rtf_module, f'rtf_{op_name}')
+            rtf_func(an, bn,c, outtensor, defaultauthor[op_name])
+        else:
+            if isinstance(out,str) or out is None:
+                outtensor=newtensor(A.shape,dtype=outtype,name=out)
+            rtf_func = getattr(rtf_module, f'rtf_{op_name}scalar')
+            rtf_func(A,B,c, outtensor, defaultauthor[f'{op_name}scalar'])
+        return outtensor
+    op_func.__name__ = op_name
+    op_func.__qualname__ = op_name
+    op_func.__outtype__ = outtype
+    return op_func
+
 def create_A_tf_C(op_name):
     def op_func(
             a:Tensor,

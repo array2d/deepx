@@ -1,7 +1,7 @@
 from deepx.tensor import Tensor,Number
 from deepx.nn.deepxir import DeepxIR,Param
 from deepx.scheduler import send
-from .rtf import A_B_op_C,A_scalar_op_C,A_op_C
+from .rtf import A_B_op_C,A_B_c_op_D,A_scalar_op_C,A_scalar_c_op_D,A_op_C
 
 # 四则运算
 def rtf_add(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
@@ -108,7 +108,7 @@ def rtf_invert(a:Tensor, out:Tensor, author='miaobyte')->Tensor:
 
 #比较
 # A<B -> C 等价于 B>=A -> C
-def rtf_less(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
+def rtf_less(a:Tensor, b:Tensor,out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("less",a,b,out,author)
     return out
 # A>B -> C
@@ -116,7 +116,7 @@ def rtf_greater(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("greater",a,b,out,author)
     return out
 # A<b -> C 等价于 b>=A -> C
-def rtf_lessscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
+def rtf_lessscalar(a:Tensor, b:float,out:Tensor, author='miaobyte')->Tensor:
     A_scalar_op_C("lessscalar",a,b,out,author)
     return out
 # A>b -> C
@@ -125,20 +125,20 @@ def rtf_greaterscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
     return out
 
 # A==B -> C
-def rtf_equal(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
-    A_B_op_C("equal",a,b,out,author)
+def rtf_equal(a:Tensor, b:Tensor,epsilon:float, out:Tensor, author='miaobyte')->Tensor:
+    A_B_c_op_D("equal",a,b,epsilon,out,author)
     return out
 # A==b -> C
-def rtf_equalscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("equalscalar",a,b,out,author)
+def rtf_equalscalar(a:Tensor, b:float,epsilon:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_c_op_D("equalscalar",a,b,epsilon,out,author)
     return out
 # A!=B -> C
-def rtf_notequal(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
-    A_B_op_C("notequal",a,b,out,author)
+def rtf_notequal(a:Tensor, b:Tensor,epsilon:float, out:Tensor, author='miaobyte')->Tensor:
+    A_B_c_op_D("notequal",a,b,epsilon,out,author)
     return out
 # A!=b -> C
-def rtf_notequalscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
-    A_scalar_op_C("notequalscalar",a,b,out,author)
+def rtf_notequalscalar(a:Tensor, b:float,epsilon:float, out:Tensor, author='miaobyte')->Tensor:
+    A_scalar_c_op_D("notequalscalar",a,b,epsilon,out,author)
     return out
 
 # 根据cases[index]的值tensoridx，从X[tensoridx]这个Tensor[index]，赋值给out[index]

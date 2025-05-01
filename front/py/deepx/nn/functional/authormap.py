@@ -26,9 +26,13 @@ defaultauthor=dict({
         'maxscalar':'miaobyte',
         #
         'less': 'miaobyte',
+        'lessscalar': 'miaobyte',
         'greater': 'miaobyte',
+        'greaterscalar': 'miaobyte',
         'equal': 'miaobyte',
+        'equalscalar': 'miaobyte',
         'notequal': 'miaobyte',
+        'notequalscalar': 'miaobyte',
         #
         'exp':'miaobyte',
         'log':'miaobyte',

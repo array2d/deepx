@@ -1,7 +1,7 @@
 from typing import Optional, Union
 from deepx import Tensor,Shape,Number
 
-from .leaffunc import create_A_B_tf_C,create_A_tf_C
+from .leaffunc import create_A_B_tf_C,create_A_tf_C,create_A_B_c_tf_D
 from .leaffunc_life import newtensor
 from .authormap import defaultauthor
 
@@ -59,8 +59,8 @@ invert=create_A_tf_C('invert')
 #比较
 less=create_A_B_tf_C('less',outtype='bool')
 greater=create_A_B_tf_C('greater',outtype='bool')
-equal=create_A_B_tf_C('equal',outtype='bool')
-notequal=create_A_B_tf_C('notequal',outtype='bool')
+equal=create_A_B_c_tf_D('equal',outtype='bool')
+notequal=create_A_B_c_tf_D('notequal',outtype='bool')
 
 #分支
 def switch(X:tuple[Tensor,...], cases:Tensor, out:Union[Tensor,str]=None)->Tensor:
