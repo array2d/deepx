@@ -15,24 +15,29 @@ namespace deepx::tensorfunc
                 throw std::invalid_argument("A.shape could matmul with B.shape");
             }
             //TODO
-            //这里如果对二维矩阵运算，则omp并行不起来，因为C.shape.dim() - 2刚好=0
-            C.shape.rangeParallel(C.shape.dim() - 2, [&](const std::vector<int> &indices)
-                                  {
-                        int aIdx=A.shape.linearat(indices);
-                        int bIdx=B.shape.linearat(indices);
-                        int cIdx=C.shape.linearat(indices);
-                        int m=A.shape[-2];
-                        int k=A.shape[-1];
-                        int n=B.shape[-1];
-                        for(int i=0;i<m;i++){
-                            for(int j=0;j<n;j++){
-                                T sum=0;
-                                for(int l=0;l<k;l++){
-                                    sum+=A.data[aIdx+i*k+l]*B.data[bIdx+l*n+j];
-                                }
-                                C.data[cIdx+i*n+j]=sum;
-                            }
-                        } });
+            //这里需要进一步优化
+            C.shape.rangeParallel(C.shape.dim(), [&A,&B,&C](const int idx,const std::vector<int> &indices,ThreadLocalVectors &tlv) {
+                
+                // int m=A.shape[-2];
+                int k=A.shape[-1];
+                // int n=B.shape[-1];
+     
+                std::copy(indices.begin(),indices.end()-2,tlv.get(0).begin());
+                tlv.get(0)[indices.size()-2]=A.shape[-2];
+                tlv.get(0)[indices.size()-1]=indices[-1];
+                int aIdx=A.shape.linearat(tlv.get(0));
+                std::copy(indices.begin(),indices.end()-2,tlv.get(1).begin());
+                tlv.get(1)[indices.size()-2]=0;
+                tlv.get(1)[indices.size()-1]=indices[-2];
+                int bIdx=B.shape.linearat(tlv.get(1));
+                int bstride=k;
+                
+                T sum=0;
+                for(int l=0;l<k;l++){
+                    sum+=A.data[aIdx+l]+B.data[bIdx+l*bstride];
+                }
+                C.data[idx]=sum;
+            },{A.shape.dim(),B.shape.dim()});
         }
     };
 

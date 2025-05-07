@@ -28,7 +28,7 @@ int main()
     client::udpserver server(8080);
     deepx::tf::TfFactory tf_factory;
     register_all(tf_factory);
- 
+
     // 将op table输出到markdown文件
     string docdir = "../../../doc/excuter/op-mem-ompsimd/";
     std::ofstream md_file(docdir + "list.md");
@@ -72,14 +72,28 @@ int main()
             (*src).init(op.name, op.args, op.returns);
             memmutex.lock();
             opresp.start_at = chrono::system_clock::now();
-
-            int ret = (*src).run(mem,opresp.message);
+            int ret = 0;
+            if ((*src).metadata.benchmark.repeat > 1)
+            {
+                for (int i = 0; i < (*src).metadata.benchmark.repeat; i++)
+                {
+                    ret = (*src).run(mem, opresp.message);
+                    if (ret != 0)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                ret = (*src).run(mem, opresp.message);
+            }
             memmutex.unlock();
             if (ret != 0)
             {
                 opresp.error(opresp.message);
                 server.resp(opresp.to_string());
-                cerr<<opresp.message<<endl;
+                cerr << opresp.message << endl;
                 continue;
             }
             opresp.finish("");

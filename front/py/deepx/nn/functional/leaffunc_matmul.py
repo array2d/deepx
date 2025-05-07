@@ -4,7 +4,7 @@ from deepx import Tensor,Shape
 from .leaffunc_life import newtensor
 from .authormap import defaultauthor
 
-def matmul(a:Tensor,b:Tensor,out:Union[Tensor,str]='',bench:tuple[int,int]=None)->Tensor:
+def matmul(a:Tensor,b:Tensor,out:Union[Tensor,str]='',bench:int=None)->Tensor:
     outtensor=out
     if isinstance(out,str) or out is None:
         outshape=Shape.matmul(a.shape,b.shape)
