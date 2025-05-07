@@ -475,5 +475,43 @@ namespace deepx
         }
     }
 
+    template <Precision P>
+    struct PrecisionWrapper {};
+
+    template <typename PrecisionWrapper>
+    struct to_tensor_type;
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Float64>> {
+        using type = double;
+    };
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Float32>> {
+        using type = float;
+    };
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Int64>> {
+        using type = int64_t;
+    };
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Int32>> {
+        using type = int32_t;
+    };
+    
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Int16>> {
+        using type = int16_t;
+    };
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Int8>> {
+        using type = int8_t;
+    };
+
+    template <Precision p>
+    using tensor_t = typename to_tensor_type<PrecisionWrapper<p>>::type; 
 } // namespace deepx
 #endif

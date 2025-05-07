@@ -6,9 +6,7 @@ using namespace std;
 using namespace deepx::tf;
 using namespace deepx;
 
-int main(int argc, char **argv)
-{
-
+void test_1() {
     unordered_map<string, TypeDef> dtype_map = {
         {"tensor<any>", make_dtype(DataCategory::Tensor, Precision::Any)},
         {"tensor<int>", make_dtype(DataCategory::Tensor, Precision::Int)},
@@ -54,6 +52,26 @@ int main(int argc, char **argv)
     }
 
     cout << string(80, '=') << endl;
+}
 
+// test to tensor type
+void test_2() {
+    if (typeid(tensor_t<Precision::Float64>)== typeid(double)) {
+        std::cout<<"it's ok"<<std::endl;
+    } else {
+        std::cout<<"it's wrong"<<std::endl;
+    }
+
+    if (typeid(tensor_t<Precision::Float32>)== typeid(float)) {
+        std::cout<<"it's ok"<<std::endl;
+    } else {
+        std::cout<<"it's wrong"<<std::endl;
+    }
+}
+
+int main(int argc, char **argv)
+{
+    // test_1();
+    test_2();
     return 0;
 }
