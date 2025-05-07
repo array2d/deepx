@@ -1,18 +1,19 @@
 # deepx
 
-deepx提出了一种原生分布式自动并行的训推一体化的深度学习框架。
+deepx提出了一种以IR计算图为核心的原生分布式自动并行的训推一体化的深度学习框架,以IR计算图为核心，经过多层级等价替换，实现从简单的数学形式的计算图，自适应等价替换为分布式、并行、自动反向的工程系统架构。
 
 ## 一.deepx概述
 
-deepx的执行支持eager和auto两种模式
+deepx的分为前端表达侧，编译替换层，执行器层
 
-+ eager立即执行函数
-+ auto则会经过计算图编译器优化器
++ 前端表达侧，交由算法工程师、用接近数学的表达方式，设计其数学计算过程。只表示为单节点、单线程的简介数学表达过程，不设计复杂的device类型、计算节点数量等。
++ 编译替换层：注册了多轮不同类型的IR编译器，实现等价替换，可以以插件的形式增加自定义能力如定制kvcache，实现对计算图进行局部替换，获得新的能力。
++ 执行器层：实现真正的tensor运算，大规模并行化。
 
 ### 前端
 
 python sdk提供接近pytorch的API
-也容许其他语言的sdk接入
+也容许其他语言的sdk接入，
 
 + IR通信调度。不同于pytorch或其他py+bind c++这种单一进程的栈上函数调度执行的方式。deepx各个程序（如front的python sdk，back的计算图编译器优化器、excuter如ompsimd）之间，通过IR实现网络通信调度，需要各自启动对应进程。
 
@@ -21,36 +22,43 @@ python sdk提供接近pytorch的API
 |--------------|-----------------------|-------------------------|
 | 执行模式     | 单进程内函数栈调度     | 多进程分布式协同         |
 | 通信方式     | 内存直接访问           | IR网络计算调度协议交换          |
-| 组件耦合度   | 紧耦合（Python绑定C++）| 松耦合（gRPC/自定义协议）|
+| 组件耦合度   | 紧耦合（Python绑定C++）| 松耦合|
+| tensor生命周期管理 |  由python侧控制 | 由deltensor这个IR指令，显示管理tensor|
 
-### 调度面
+### 编译替换层
 
 + 注册中心:收集当前已就绪的执行器的算子列表,收集算子时耗和空间占用信息
 + 计算图编译器优化器:fusion算子，计算图节点消除,自动生成tensor拆分并行的计算子图并替代原节点
 + 执行调度器：数据并行，流水线并行(前向反向并行)，模型并行。
 + front生成基础IR，编译器负责进行fusion成excuter注册的高级算子。
 
-### 执行器
+### 执行层
 
-负责低级的算子计算操作，以Op为执行的核心单元
+执行层包括op和mem两种执行器，但实际实现时，当前只设计了一个程序同时负责op和mem的管理。
+
+负责低级的算子计算操作，以IR为执行的核心单元
 ```
-Op{args(args_grad),returns(returns_grad)|func forward,backward}
+Op{args(args_grad),returns(returns_grad)|func run}
 ```
 
-大部分Op都需要同时实现forward和backward,但也有部分只为推理设计的fusionOp可以根据需要实现forward。
+Op需要实现run方法
 
 关于excuter，只要能按deepxIR序列执行，并返回结果，就可以接入deepx分布式调度框架，因此，从硬件、指令、加速库、高级框架包括训练、推理引擎，都可以稍作修改，就接入deepx体系。
+
+当前的
 
 
 #### 默认执行器
 + cpu执行器,已实现ompsimd。其支持的算子列表[ompsimd](doc/excuter/op-mem-ompsimd/list.md)
 
 #### GPU执行器
-+ cuda执行器【实现中状态】
++ cuda执行器，其支持的算子列表[cuda](doc/excuter/op-mem-cuda/list.md)
+
 欢迎大家提交cuda代码
 
 + rocm
-
++ apple
++ 其他硬件加速器
 
 #### 张量计算框架or函数级执行器
 

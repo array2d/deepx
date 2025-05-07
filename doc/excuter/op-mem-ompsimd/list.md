@@ -52,7 +52,8 @@
 |-----------|--------|--------------|----------------|
 | switch | miaobyte | C=switch([tensors],case) | switch(listtensor<any> tensors, tensor<int8> cases)->(tensor<any> C) |
 | greaterscalar | miaobyte | mask=greater(T1,scalar) | greaterscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
-| equalscalar | miaobyte | mask=equal(T1,scalar) | equalscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
+| notequal | miaobyte | notequal(T1,T2)->mask | notequal(tensor<any> A, tensor<any> B, var<float32> epsilon)->(tensor<bool> mask) |
+| equalscalar | miaobyte | mask=equal(T1,scalar) | equalscalar(tensor<any> A, var<any> scalar, var<float32> eposilon)->(tensor<bool> mask) |
 | min | miaobyte | T3=min(T1,T2) | min(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | maxscalar | miaobyte | T3=max(T1,scalar) | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | divscalar | miaobyte | T3=T1/scalar | divscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
@@ -60,6 +61,7 @@
 | addscalar | miaobyte | T3=T1+scalar | addscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
 | greater | miaobyte | mask=greater(T1,T2) | greater(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
 | lessscalar | miaobyte | mask=less(T1,scalar) | lessscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
+| notequalscalar | miaobyte | mask=notequal(T1,scalar) | notequalscalar(tensor<any> A, var<any> scalar, var<float32> epsilon)->(tensor<bool> mask) |
 | minscalar | miaobyte | T3=min(T1,scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | rpowscalar | miaobyte | T3=scalar^T1 | rpowscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
 | rdivscalar | miaobyte | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
@@ -73,7 +75,7 @@
 | subscalar | miaobyte | T3=T1-scalar | subscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
 | exp | miaobyte | T3=exp(T1) | exp(tensor<any> A)->(tensor<any> C) |
 | mul | miaobyte | T3=T1*T2 | mul(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| equal | miaobyte | equal(T1,T2)->mask | equal(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
+| equal | miaobyte | equal(T1,T2)->mask | equal(tensor<any> A, tensor<any> B, var<float32> eposilon)->(tensor<bool> mask) |
 | mulscalar | miaobyte | T3=T1*scalar | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
 | div | miaobyte | T3=T1/T2 | div(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | invert | miaobyte | T3=~T1 | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) |

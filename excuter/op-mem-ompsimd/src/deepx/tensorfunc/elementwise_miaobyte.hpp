@@ -829,6 +829,71 @@ namespace deepx::tensorfunc
             }
         };
     };
+    // notequal
+    template <typename T, typename MaskT>
+    struct notequalDispatcher<miaobyte, T, MaskT>
+    {
+        static void notequal(const Tensor<T> &A, const Tensor<T> &B, const float epsilon, Tensor<MaskT> &mask)
+        {
+            if (A.shape == B.shape && mask.shape == A.shape)
+            {
+                A.shape.rangeElementwiseParallel([&A, &B, &mask, epsilon](int i, int i_end)
+                                                 {
+                    if (epsilon == 0)
+                    {
+                        for (int j = 0; j < i_end; j++)
+                        {
+
+                            mask.data[i + j] = A.data[i + j] != B.data[i + j];
+                        }
+                    }
+                    else
+                    {
+                        for (int j = 0; j < i_end; j++)
+                        {
+                            mask.data[i + j] = std::abs(A.data[i + j] - B.data[i + j]) > epsilon;
+                        };
+                     } });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }
+    };
+
+    // notequalscalar
+    template <typename T, typename MaskT>
+    struct notequalscalarDispatcher<miaobyte, T, MaskT>
+    {
+        static void notequalscalar(const Tensor<T> &A, const T scalar, const float epsilon, Tensor<MaskT> &mask)
+        {
+            if (A.shape == mask.shape)
+            {
+                A.shape.rangeElementwiseParallel([&A, &mask, &scalar, epsilon](int i, int i_end)
+                                                 {
+                    if (epsilon == 0)
+                    {
+                        for (int j = 0; j < i_end; j++)
+                        {
+
+                            mask.data[i + j] = A.data[i + j] != scalar;
+                        }
+                    }
+                    else
+                    {
+                        for (int j = 0; j < i_end; j++)
+                        {
+                            mask.data[i + j] = std::abs(A.data[i + j] - scalar) > epsilon;
+                        }
+                    } });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        };
+    };
 
     // less
     template <typename T, typename MaskT>
@@ -940,7 +1005,5 @@ namespace deepx::tensorfunc
             }
         }
     };
-
-  
 };
 #endif // DEEPX_OP_CPU_ELEMENTWISE_HPP
