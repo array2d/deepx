@@ -25,7 +25,7 @@ __all__ = [
     "sqrt","pow","exp","log",
     "min","max",
     "less","greater","equal","notequal",
-    "switch",
+    "switch","where",
     "todtype",
     "invert",
     "matmul",

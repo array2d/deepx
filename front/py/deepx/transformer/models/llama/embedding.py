@@ -11,11 +11,11 @@ class LlamaRotaryEmbedding(Module):
         # 原始最大序列长度
         self.original_max_seq_len = config["max_position_embeddings"]
         # 旋转类型
-        self.rope_type=config["rope_scaling"]["type"]
+        self.rope_type=config["rope_scaling"]["rope_type"]
         # 旋转初始化函数
         self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
         # 旋转初始化函数
-        inv_freq, self.attention_scaling = self.rope_init_fn(self.config)
+        inv_freq, self.attention_scaling = self.rope_init_fn(config)
         # 注册缓存
         self.register_buffer("inv_freq", inv_freq, persistent=False)
         # 原始旋转频率
