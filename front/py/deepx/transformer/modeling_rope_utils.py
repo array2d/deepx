@@ -26,12 +26,15 @@ def _compute_llama3_parameters(config:dict={
 }) -> Tuple[Tensor, float]:
     # Gets the default RoPE parameters
     inv_freq, attention_factor = _compute_default_rope_parameters(config)
-    #TODO
 
-    low_freq_wavelen = config.old_context_len / config.low_freq_factor
-    high_freq_wavelen = config.old_context_len / config.high_freq_factor
+    low_freq_factor = config["rope_scaling"]["low_freq_factor"]  # `1` in the original implementation
+    high_freq_factor = config["rope_scaling"]["high_freq_factor"]  # `4` in the original implementation
+    old_context_len = config["rope_scaling"]["original_max_position_embeddings"]  # `8192` in the original implementation
+    low_freq_wavelen = old_context_len /low_freq_factor
+    high_freq_wavelen = old_context_len/ high_freq_factor
 
     wavelen = 2 * math.pi / inv_freq
+    wavelen.print()
     # wavelen < high_freq_wavelen: do nothing
     # wavelen > low_freq_wavelen: divide by factor
     inv_freq_llama =  where(wavelen > low_freq_wavelen, inv_freq / config.factor, inv_freq)

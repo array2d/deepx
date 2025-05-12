@@ -338,7 +338,7 @@ namespace deepx::tf
         // rpowscalar author=miaobyte
         tffactory.add_tf(std::make_shared<RpowScalar<miaobyte>>(vector<Param>(
                                                                     {
-                                                                        Param("scalar", DataCategory::Var, Precision::Any),
+                                                                        Param("scalar", DataCategory::Var, Precision::Float32),
                                                                         Param("A", DataCategory::Tensor, Precision::Any),
                                                                     }),
                                                                 vector<Param>(

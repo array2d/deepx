@@ -65,7 +65,7 @@
 | cos | miaobyte | T3=cos(T1) | cos(tensor<float64|float32|float16|bfloat16> A)->(tensor<float64|float32|float16|bfloat16> C) |
 | notequalscalar | miaobyte | T1!=scalar->mask | notequalscalar(tensor<any> A, var<any> scalar, var<float32> epsilon)->(tensor<bool> mask) |
 | minscalar | miaobyte | T3=min(T1, scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
-| rpowscalar | miaobyte | T3=pow(scalar, T1) | rpowscalar(var<float64|int32> scalar, tensor<float64|float32> A)->(tensor<float64|float32> C) |
+| rpowscalar | miaobyte | T3=pow(scalar, T1) | rpowscalar(var<float32|int32> scalar, tensor<float64|float32> A)->(tensor<float64|float32> C) |
 | rdivscalar | miaobyte | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
 | less | miaobyte | mask=compare(T1, T2) | less(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
 | powscalar | miaobyte | T3=pow(T1, scalar) | powscalar(tensor<float64|float32> A, var<float64|int32> scalar)->(tensor<float64|float32> C) |
