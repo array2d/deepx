@@ -1992,31 +1992,31 @@ namespace deepx::tf
         {
             Precision cases_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
             Precision C_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
-            if (cases_type != Precision::Int8 )
+            if (cases_type != Precision::Int32 )
             {
-                error = "Type mismatch: " + precision_str(cases_type) + " != int8";
+                error = "Type mismatch: " + precision_str(cases_type) + " != Int32";
                 return 1;
             }
-
+            auto cases=*mem->gettensor<int32_t>(this->args[1].textvalue);
             switch (cases_type)
             {
             case Precision::Float64:
-                tensorfunc::Switch<Author, double,int8_t>(mem->gettensors<double>(this->getvector<string>(0)), *mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                tensorfunc::Switch<Author, double,int32_t>(mem->gettensors<double>(this->getvector<string>(0)), cases, *mem->gettensor<double>(this->returns[0].textvalue));
                 break;
             case Precision::Float32:
-                tensorfunc::Switch<Author, float,int8_t>(mem->gettensors<float>(this->getvector<string>(0)), *mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                tensorfunc::Switch<Author, float,int32_t>(mem->gettensors<float>(this->getvector<string>(0)), cases, *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
             case Precision::Int64:
-                tensorfunc::Switch<Author, int64_t,int8_t>(mem->gettensors<int64_t>(this->getvector<string>(0)), *mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                tensorfunc::Switch<Author, int64_t,int32_t>(mem->gettensors<int64_t>(this->getvector<string>(0)), cases, *mem->gettensor<int64_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int32:
-                tensorfunc::Switch<Author, int32_t,int8_t>(mem->gettensors<int32_t>(this->getvector<string>(0)), *mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                tensorfunc::Switch<Author, int32_t,int32_t>(mem->gettensors<int32_t>(this->getvector<string>(0)),cases, *mem->gettensor<int32_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int16:
-                tensorfunc::Switch<Author, int16_t,int8_t>(mem->gettensors<int16_t>(this->getvector<string>(0)), *mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                tensorfunc::Switch<Author, int16_t,int32_t>(mem->gettensors<int16_t>(this->getvector<string>(0)),cases, *mem->gettensor<int16_t>(this->returns[0].textvalue));
                 break;
             case Precision::Int8:   
-                tensorfunc::Switch<Author, int8_t,int8_t>(mem->gettensors<int8_t>(this->getvector<string>(0)), *mem->gettensor<int8_t>(this->args[1].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                tensorfunc::Switch<Author, int8_t,int32_t>(mem->gettensors<int8_t>(this->getvector<string>(0)),cases, *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 break;
             default:
                 error = "Unsupported dtype: " + precision_str(cases_type);

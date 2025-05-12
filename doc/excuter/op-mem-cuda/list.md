@@ -49,7 +49,7 @@
 
 | Operation | Author |  Math Formula | IR Instruction |
 |-----------|--------|--------------|----------------|
-| switch | miaobyte | C=switch(tensors,cases) | switch(listtensor<any> tensors, tensor<int8> cases)->(tensor<any> result) |
+| switch | miaobyte | C=switch(tensors,cases) | switch(listtensor<any> tensors, tensor<int32> cases)->(tensor<any> result) |
 | greaterscalar | miaobyte | mask=compare(T1, scalar) | greaterscalar(tensor<any> A, var<any> scalar)->(tensor<bool> mask) |
 | notequal | miaobyte | T1!=T2->mask | notequal(tensor<any> A, tensor<any> B, var<float32> epsilon)->(tensor<bool> mask) |
 | equalscalar | miaobyte | T1==scalar->mask | equalscalar(tensor<any> A, var<any> scalar, var<float32> epsilon)->(tensor<bool> mask) |

@@ -486,7 +486,7 @@ namespace deepx::tf
         tffactory.add_tf(std::make_shared<Switch<miaobyte>>(vector<Param>(
                                                                 {
                                                                     Param("tensors", DataCategory::ListTensor, Precision::Any),
-                                                                    Param("cases", DataCategory::Tensor, Precision::Int8),
+                                                                    Param("cases", DataCategory::Tensor, Precision::Int32),
                                                                 }),
                                                             vector<Param>(
                                                                 {
