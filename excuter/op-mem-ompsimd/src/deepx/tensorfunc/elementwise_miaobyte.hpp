@@ -995,8 +995,8 @@ namespace deepx::tensorfunc
                                                  {
                 for (int j = 0; j < i_end; j++)
                 {   
-                    int which_tensor=cases.data[i];
-                    C.data[i+j]=tensors[which_tensor]->data[i];
+                    int which_tensor=cases.data[i+j];
+                    C.data[i+j]=tensors[which_tensor]->data[i+j];
                 } });
             }
             else

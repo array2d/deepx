@@ -56,5 +56,5 @@ def bool(input:Tensor)->Tensor:
     return todtype(input,dest)
 
 def where(condition:Tensor,x:Tensor,y:Tensor)->Tensor:
-    from .leaffunc_elementwise import switch_func
-    return switch_func((x,y),condition)
+    from .leaffunc_elementwise import switch as switch_func
+    return switch_func((y,x),condition)

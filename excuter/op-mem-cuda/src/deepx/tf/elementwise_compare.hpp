@@ -835,35 +835,99 @@ namespace deepx::tf
         {
 
             Precision C_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
-            auto cases=*mem->gettensor<int32_t>(this->args[1].textvalue);
+            Precision cases_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+    
             switch (C_type)
             {
             case Precision::Float64:
-                tensorfunc::Switch<Author, double>(mem->gettensors<double>(this->getvector<string>(0)), cases, *mem->gettensor<double>(this->returns[0].textvalue));
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, double,bool>(mem->gettensors<double>(this->getvector<string>(0)), *mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, double,int32_t>(mem->gettensors<double>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<double>(this->returns[0].textvalue));
+                }
                 break;
-            case Precision::Float32:
-                tensorfunc::Switch<Author, float>(mem->gettensors<float>(this->getvector<string>(0)), cases, *mem->gettensor<float>(this->returns[0].textvalue));
+            case Precision::Float32:    
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, float,bool>(mem->gettensors<float>(this->getvector<string>(0)), *mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, float,int32_t>(mem->gettensors<float>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
+                }
                 break;
             case Precision::Float16:
-                tensorfunc::Switch<Author, half>(mem->gettensors<half>(this->getvector<string>(0)), cases, *mem->gettensor<half>(this->returns[0].textvalue));
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, half,bool>(mem->gettensors<half>(this->getvector<string>(0)), *mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, half,int32_t>(mem->gettensors<half>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<half>(this->returns[0].textvalue));
+                }
                 break;
             case Precision::BFloat16:
-                tensorfunc::Switch<Author, nv_bfloat16>(mem->gettensors<nv_bfloat16>(this->getvector<string>(0)), cases, *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, nv_bfloat16,bool>(mem->gettensors<nv_bfloat16>(this->getvector<string>(0)), *mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, nv_bfloat16,int32_t>(mem->gettensors<nv_bfloat16>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                }
                 break;
             case Precision::Int64:
-                tensorfunc::Switch<Author, int64_t>(mem->gettensors<int64_t>(this->getvector<string>(0)), cases, *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, int64_t,bool>(mem->gettensors<int64_t>(this->getvector<string>(0)), *mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, int64_t,int32_t>(mem->gettensors<int64_t>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int64_t>(this->returns[0].textvalue));
+                }
                 break;
             case Precision::Int32:
-                tensorfunc::Switch<Author, int32_t>(mem->gettensors<int32_t>(this->getvector<string>(0)),cases, *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, int32_t,bool>(mem->gettensors<int32_t>(this->getvector<string>(0)), *mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, int32_t,int32_t>(mem->gettensors<int32_t>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int32_t>(this->returns[0].textvalue));
+                }
                 break;
             case Precision::Int16:
-                tensorfunc::Switch<Author, int16_t>(mem->gettensors<int16_t>(this->getvector<string>(0)),cases, *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, int16_t,bool>(mem->gettensors<int16_t>(this->getvector<string>(0)), *mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, int16_t,int32_t>(mem->gettensors<int16_t>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int16_t>(this->returns[0].textvalue));
+                }
                 break;
             case Precision::Int8:
-                tensorfunc::Switch<Author, int8_t>(mem->gettensors<int8_t>(this->getvector<string>(0)), cases, *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, int8_t,bool>(mem->gettensors<int8_t>(this->getvector<string>(0)), *mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, int8_t,int32_t>(mem->gettensors<int8_t>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                }
                 break;
             case Precision::Bool:
-                tensorfunc::Switch<Author, bool>(mem->gettensors<bool>(this->getvector<string>(0)),cases, *mem->gettensor<bool>(this->returns[0].textvalue));
+                if (cases_type == Precision::Bool) 
+                {
+                    tensorfunc::Switch<Author, bool,bool>(mem->gettensors<bool>(this->getvector<string>(0)),*mem->gettensor<bool>(this->args[1].textvalue), *mem->gettensor<bool>(this->returns[0].textvalue));
+                }
+                else
+                {
+                    tensorfunc::Switch<Author, bool,int32_t>(mem->gettensors<bool>(this->getvector<string>(0)),*mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<bool>(this->returns[0].textvalue));
+                }
                 break;
             default:
                 error = "Unsupported type: " + precision_str(C_type);

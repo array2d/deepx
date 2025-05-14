@@ -69,7 +69,7 @@ def switch(X:tuple[Tensor,...], cases:Tensor, out:Union[Tensor,str]=None)->Tenso
         assert isinstance(x,Tensor) and x.shape==cases.shape
     outtensor=out
     if isinstance(out,str) or out is None:
-        outtensor=newtensor(cases.shape,dtype=cases.dtype,name=out)
+        outtensor=newtensor(cases.shape,dtype=X[0].dtype,name=out)
     assert isinstance(outtensor,Tensor) and outtensor.shape==cases.shape
 
     from .rtf_elementwise import rtf_switch

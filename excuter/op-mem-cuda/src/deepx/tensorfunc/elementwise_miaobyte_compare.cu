@@ -533,6 +533,16 @@ namespace deepx::tensorfunc
     template void launch_switch<int16_t,int32_t>(const int16_t **tensorsdata, const int numTensors, const int32_t *cases, int16_t *C, const int size);
     template void launch_switch<int8_t,int32_t>(const int8_t **tensorsdata, const int numTensors, const int32_t *cases, int8_t *C, const int size);
     template void launch_switch<bool,int32_t>(const bool **tensorsdata, const int numTensors, const int32_t *cases, bool *C, const int size);
+    
+    template void launch_switch<double,bool>(const double **tensorsdata, const int numTensors, const bool *cases, double *C, const int size);
+    template void launch_switch<float,bool>(const float **tensorsdata, const int numTensors, const bool *cases, float *C, const int size);
+    template void launch_switch<nv_bfloat16,bool>(const nv_bfloat16 **tensorsdata, const int numTensors, const bool *cases, nv_bfloat16 *C, const int size);
+    template void launch_switch<__half,bool>(const __half **tensorsdata, const int numTensors, const bool *cases, __half *C, const int size);
+    template void launch_switch<int64_t,bool>(const int64_t **tensorsdata, const int numTensors, const bool *cases, int64_t *C, const int size);
+    template void launch_switch<int32_t,bool>(const int32_t **tensorsdata, const int numTensors, const bool *cases, int32_t *C, const int size);
+    template void launch_switch<int16_t,bool>(const int16_t **tensorsdata, const int numTensors, const bool *cases, int16_t *C, const int size);
+    template void launch_switch<int8_t,bool>(const int8_t **tensorsdata, const int numTensors, const bool *cases, int8_t *C, const int size);
+    template void launch_switch<bool,bool>(const bool **tensorsdata, const int numTensors, const bool *cases, bool *C, const int size);
  
 }
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_COMPARE_CU

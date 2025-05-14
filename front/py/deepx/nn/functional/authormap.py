@@ -33,6 +33,7 @@ defaultauthor=dict({
         'equalscalar': 'miaobyte',
         'notequal': 'miaobyte',
         'notequalscalar': 'miaobyte',
+        'switch':'miaobyte',
         #
         'exp':'miaobyte',
         'log':'miaobyte',
