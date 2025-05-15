@@ -34,7 +34,7 @@ def permute(t:Tensor,
     outtensor=out
     if isinstance(out,str) or out is None:
         outshape = [t.shape[dim] for dim in dimorder]
-        outtensor=newtensor(outshape,dtype=t.dtype,name=out)
+        outtensor=newtensor(tuple(outshape),dtype=t.dtype,name=out)
 
     from .rtf_changeshape import rtf_transpose
     rtf_transpose(t,dimorder,outtensor,defaultauthor['transpose'])
@@ -52,12 +52,11 @@ def concat(tensors:Union[list[Tensor],tuple[Tensor,...]],dim:int,out:Union[Tenso
     assert isinstance(tensors,list) or isinstance(tensors,tuple)
     for t in tensors:
         assert isinstance(t,Tensor)
-
+    dim=dim%tensors[0].ndim
     outtensor=out
     if isinstance(out,str) or out is None:
-        outshape=list(tensors[0].shape)
-        outshape[dim]=sum(t.shape[dim] for t in tensors)
-        outtensor=newtensor(outshape,dtype=tensors[0].dtype,name=out)
+        outshape=Shape.concat(tuple(t.shape for t in tensors),dim)
+        outtensor=newtensor(tuple(outshape),dtype=tensors[0].dtype,name=out)
     from .rtf_changeshape import rtf_concat
     rtf_concat(tensors,dim,outtensor,defaultauthor['concat'])
     return outtensor

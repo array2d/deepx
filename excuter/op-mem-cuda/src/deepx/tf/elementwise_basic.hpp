@@ -1026,6 +1026,9 @@ namespace deepx::tf
             case Precision::Int8:
                 tensorfunc::invert<Author>(*mem->gettensor<int8_t>(this->args[0].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 break;
+            case Precision::Bool:
+                tensorfunc::invert<Author>(*mem->gettensor<bool>(this->args[0].textvalue), *mem->gettensor<bool>(this->returns[0].textvalue));
+                break;
             default:
                 error = "Unsupported dtype: " + precision_str(a_type);
                 return 1;

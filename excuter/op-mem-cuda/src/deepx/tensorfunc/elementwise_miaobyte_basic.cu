@@ -406,6 +406,7 @@ namespace deepx::tensorfunc
     template void launch_invert<int32_t>(const int32_t *a, int32_t *c, const int size);
     template void launch_invert<int16_t>(const int16_t *a, int16_t *c, const int size);
     template void launch_invert<int8_t>(const int8_t *a, int8_t *c, const int size);
+    template void launch_invert<bool>(const bool *a, bool *c, const int size);
 
 }
 

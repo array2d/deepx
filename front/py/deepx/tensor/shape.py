@@ -116,6 +116,19 @@ class Shape:
         return Shape(tuple(shape[i] for i in dimorder))
     
     @classmethod
+    def concat(cls,shapes:tuple,dim:int)->tuple[int,...]:
+        assert isinstance(shapes,tuple)
+        assert isinstance(dim,int)
+        dim=dim%len(shapes[0])
+        for shape in shapes:
+            assert isinstance(shape,tuple)
+            assert len(shape)==len(shapes[0])
+        outshape=list(shapes[0])
+        for i in range(1,len(shapes)):
+            outshape[dim]+=shapes[i][dim]
+        return tuple(outshape)
+
+    @classmethod
     def matmul(cls,shape:tuple[int],other:tuple[int])->tuple[int]:
         if len(shape)<2 or len(other)<2:
             raise ValueError(f"matmul: self.ndimension()<2 or other.ndimension()<2")

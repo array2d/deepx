@@ -42,6 +42,10 @@ defaultauthor=dict({
         'rpowscalar':'miaobyte',
         'sqrt':'miaobyte',
         #
+        'sin':'miaobyte',
+        'cos':'miaobyte',
+        'tan':'miaobyte',
+        #
         'dropout':'miaobyte',
         #changeshape
         'reshape':'miaobyte',

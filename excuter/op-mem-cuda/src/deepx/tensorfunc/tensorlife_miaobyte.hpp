@@ -19,8 +19,8 @@ namespace deepx::tensorfunc
         T *data;
         cudaError_t err = cudaMalloc(&data, size * sizeof(T));
         if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to allocate Unified Memory");
+        {   
+            throwcudaerror("Failed to cudaMalloc "+std::to_string(size) +" "+ precision_str(precision<T>()),err);
         }
         return data;
     }

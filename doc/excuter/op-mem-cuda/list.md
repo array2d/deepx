@@ -80,7 +80,7 @@
 | equal | miaobyte | T1==T2->mask | equal(tensor<any> A, tensor<any> B, var<float32> epsilon)->(tensor<bool> mask) |
 | mulscalar | miaobyte | T3=T1*scalar | mulscalar(tensor<any> A, var<any> b)->(tensor<any> C) |
 | div | miaobyte | T3=T1/T2 | div(tensor<any> A, tensor<any> B)->(tensor<any> C) |
-| invert | miaobyte | T3=~T1 | invert(tensor<int64|int32|int16|int8> A)->(tensor<int64|int32|int16|int8> C) |
+| invert | miaobyte | T3=~T1 | invert(tensor<int64|int32|int16|int8|bool> A)->(tensor<int64|int32|int16|int8|bool> C) |
 | max | miaobyte | T3=max(T1, T2) | max(tensor<any> A, tensor<any> B)->(tensor<any> C) |
 | pow | miaobyte | T3=pow(T1, T2) | pow(tensor<float64|float32> A, tensor<float64|float32> B)->(tensor<float64|float32> C) |
 

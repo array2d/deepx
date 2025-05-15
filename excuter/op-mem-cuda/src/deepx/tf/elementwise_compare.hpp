@@ -636,7 +636,7 @@ namespace deepx::tf
         {
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
             Precision mask_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
-            if (a_type != mask_type || mask_type != Precision::Bool)
+            if (mask_type != Precision::Bool)
             {
                 error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(mask_type);
                 return 1;
@@ -769,7 +769,7 @@ namespace deepx::tf
         {
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
             Precision mask_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
-            if (a_type != mask_type || mask_type != Precision::Bool)
+            if (mask_type != Precision::Bool)
             {
                 error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(mask_type);
                 return 1;
@@ -916,7 +916,7 @@ namespace deepx::tf
                 }
                 else
                 {
-                    tensorfunc::Switch<Author, int8_t,int32_t>(mem->gettensors<int8_t>(this->getvector<string>(0)), *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
+                    tensorfunc::Switch<Author, int8_t,int32_t>(mem->gettensors<int8_t>(this->getvector<string>(0)),     *mem->gettensor<int32_t>(this->args[1].textvalue), *mem->gettensor<int8_t>(this->returns[0].textvalue));
                 }
                 break;
             case Precision::Bool:

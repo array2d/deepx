@@ -34,13 +34,12 @@ def _compute_llama3_parameters(config:dict={
     high_freq_wavelen = old_context_len/ high_freq_factor
 
     wavelen = 2 * math.pi / inv_freq
-    wavelen.print()
-    # wavelen < high_freq_wavelen: do nothing
-    # wavelen > low_freq_wavelen: divide by factor
-    inv_freq_llama =  where(wavelen > low_freq_wavelen, inv_freq / config.factor, inv_freq)
+    factor=config["rope_scaling"]["factor"]
+    cases=wavelen > low_freq_wavelen
+    inv_freq_llama =  where(cases, inv_freq /factor, inv_freq)
     # otherwise: interpolate between the two, using a smooth factor
-    smooth_factor = (config.old_context_len / wavelen - config.low_freq_factor) / (config.high_freq_factor - config.low_freq_factor)
-    smoothed_inv_freq = (1 - smooth_factor) * inv_freq_llama / config.factor + smooth_factor * inv_freq_llama
+    smooth_factor = (old_context_len / wavelen -low_freq_factor) / ( high_freq_factor -  low_freq_factor)
+    smoothed_inv_freq = (1 - smooth_factor) * inv_freq_llama /  factor + smooth_factor * inv_freq_llama
     is_medium_freq = ~(wavelen < high_freq_wavelen) * ~(wavelen > low_freq_wavelen)
     inv_freq_llama =  where(is_medium_freq, smoothed_inv_freq, inv_freq_llama)
 

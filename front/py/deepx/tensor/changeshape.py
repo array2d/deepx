@@ -49,6 +49,12 @@ def broadcastTo(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
     return result
 
 @tensor_method
+def broadcast_to(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import broadcastTo as broadcast_to_func
+    result=broadcast_to_func(self,shape,out)
+    return result
+
+@tensor_method
 def indexselect(self,index:Tensor,axis:int=0,out:Union[Tensor,str]='')->Tensor:
     assert isinstance(index,Tensor)
     gatheraxis=axis%self.ndim

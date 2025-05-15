@@ -80,6 +80,12 @@ namespace deepx::tensorfunc
         return {size, host_data};
     }
 
+    inline void throwcudaerror(const std::string& msg,cudaError_t err){
+       if (err != cudaSuccess)
+        {
+            throw std::runtime_error(msg + "\n" + std::string(cudaGetErrorString(err)));
+        }
+    }
 }
 
 #endif

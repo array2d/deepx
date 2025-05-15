@@ -299,11 +299,11 @@ namespace deepx::tf
         // invert author=miaobyte
         tffactory.add_tf(std::make_shared<Invert<miaobyte>>(vector<Param>(
                                                                 {
-                                                                    Param("A", DataCategory::Tensor, Precision::Int64 | Precision::Int32 | Precision::Int16 | Precision::Int8),
+                                                                    Param("A", DataCategory::Tensor, Precision::Int64 | Precision::Int32 | Precision::Int16 | Precision::Int8|Precision::Bool),
                                                                 }),
                                                             vector<Param>(
                                                                 {
-                                                                    Param("C", DataCategory::Tensor, Precision::Int64 | Precision::Int32 | Precision::Int16 | Precision::Int8),
+                                                                    Param("C", DataCategory::Tensor, Precision::Int64 | Precision::Int32 | Precision::Int16 | Precision::Int8|Precision::Bool),
                                                                 })));
         // sqrt author=miaobyte
         tffactory.add_tf(std::make_shared<Sqrt<miaobyte>>(vector<Param>(
@@ -357,6 +357,33 @@ namespace deepx::tf
                                                              })));
         // exp author=miaobyte
         tffactory.add_tf(std::make_shared<Exp<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Any),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Any),
+                                                             })));
+        // sin author=miaobyte
+        tffactory.add_tf(std::make_shared<Sin<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Any),
+                                                             }),
+                                                         vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Any),
+                                                             })));
+        // cos author=miaobyte
+        tffactory.add_tf(std::make_shared<Cos<miaobyte>>(vector<Param>(
+                                                             {
+                                                                 Param("A", DataCategory::Tensor, Precision::Any),
+                                                             }),
+                                                            vector<Param>(
+                                                             {
+                                                                 Param("C", DataCategory::Tensor, Precision::Any),
+                                                             })));
+        // tan author=miaobyte
+        tffactory.add_tf(std::make_shared<Tan<miaobyte>>(vector<Param>(
                                                              {
                                                                  Param("A", DataCategory::Tensor, Precision::Any),
                                                              }),

@@ -67,7 +67,7 @@ print("cos:", torch_cos)
 
 ############-------DEEPX-------################
 from deepx.nn.modules import Embedding,Module
-from deepx  import load
+from deepx  import load,arange
 from deepx.transformer.models.llama import LlamaRotaryEmbedding
 
 input=load(dir+'input')
@@ -83,12 +83,13 @@ class NetDeepx(Module):
     def forward(self,x):
         inputs_embeds = self.embed_tokens(x)
         hidden_states = inputs_embeds
-        position_ids = torch.arange(hidden_states.shape[1], device=hidden_states.device).unsqueeze(0)
+        position_ids = arange(start=0,end=hidden_states.shape[1]).unsqueeze(0)
         return self.rotary_emb(hidden_states, position_ids)
 
 net = NetDeepx(configdict=config.to_dict())
 out=net.forward(input)
-out.print()
+out[0].print()
+out[1].print()
 
 
 

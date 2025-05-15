@@ -15,10 +15,7 @@ class LlamaRotaryEmbedding(Module):
         # 旋转初始化函数
         self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
         # 旋转初始化函数
-        inv_freq, self.attention_scaling = self.rope_init_fn(config)
-        # 注册缓存
-        self.register_buffer("inv_freq", inv_freq, persistent=False)
-        # 原始旋转频率
+        self.inv_freq, self.attention_scaling = self.rope_init_fn(config)
         self.original_inv_freq = self.inv_freq
 
     # def _dynamic_frequency_update(self, position_ids, device):
@@ -42,14 +39,14 @@ class LlamaRotaryEmbedding(Module):
 
     def forward(self, x, position_ids):
         # 扩展旋转频率
-        inv_freq_expanded = self.inv_freq.unsqueeze(dim=0).unsqueeze(dim=2).float()
+        inv_freq_expanded = self.inv_freq.unsqueeze(dim=0).unsqueeze(dim=2).todtype('float32')
         broadcast_shape=(position_ids.shape[0], self.inv_freq.shape[0], 1)
-        inv_freq_expanded = inv_freq_expanded.broadcast_to(broadcast_shape)
+        inv_freq_expanded = inv_freq_expanded.reshape(broadcast_shape)
 
         # 使用torch.unsqueeze和type转换替代索引操作
-        position_ids_expanded = position_ids.unsqueeze(dim=1).to(dtype=x.dtype)
+        position_ids_expanded = position_ids.unsqueeze(dim=1).todtype(x.dtype)
         # 计算频率
-        freqs = (inv_freq_expanded @ position_ids_expanded).transpose(1, 2)
+        freqs = (inv_freq_expanded @ position_ids_expanded).T
         # 拼接频率
         emb = concat((freqs, freqs), dim=-1)
         # 计算余弦和正弦
@@ -59,4 +56,4 @@ class LlamaRotaryEmbedding(Module):
         cos = cos * self.attention_scaling
         sin = sin * self.attention_scaling
 
-        return cos.to(dtype=x.dtype), sin.to(dtype=x.dtype)
+        return cos.todtype(x.dtype), sin.todtype(x.dtype)

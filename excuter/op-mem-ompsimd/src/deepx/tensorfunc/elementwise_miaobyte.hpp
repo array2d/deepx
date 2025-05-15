@@ -491,30 +491,11 @@ namespace deepx::tensorfunc
             {
                 output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
                                                       {
-                const ScalableTag<T> tag;
-                const size_t lanes = Lanes(tag);
-                size_t j=0;
-
-                // 1. 处理前置未对齐部分
-                while (j < i_end && !IsAligned(tag,input.data + i + j)) {
-                    output.data[i+j] = std::sin(input.data[i+j]);
-                    ++j;
-                }
-
-                // 2. 处理中间对齐部分
-                size_t aligned_end=i_end-(i_end%lanes);
-                for (; j+lanes<=aligned_end; j +=  lanes  )
-                {
-                    auto vec = Load(tag, input.data + i + j);
-                    auto vec_result = Sin(vec);
-                    Store(vec_result, tag, output.data + i + j);
-                }
-
-                // 3. 处理尾部剩余元素
-                for (;j<i_end;j++)
-                {
-                    output.data[i+j] = std::sin(input.data[i+j]);
-                } });
+                    for (int j = 0; j < i_end; j++)
+                    {
+                        output.data[i+j] = std::sin(input.data[i+j]);
+                    } 
+                    });
             }
             else
             {
@@ -533,30 +514,11 @@ namespace deepx::tensorfunc
             {
                 output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
                                                       {
-                const ScalableTag<T> tag;
-                const size_t lanes = Lanes(tag);
-                size_t j=0;
-
-                // 1. 处理前置未对齐部分
-                while (j < i_end && !IsAligned(tag,input.data + i + j)) {
-                    output.data[i+j] = std::cos(input.data[i+j]);
-                    ++j;
-                }
-
-                // 2. 处理中间对齐部分
-                size_t aligned_end=i_end-(i_end%lanes);
-                for (; j+lanes<=aligned_end; j +=  lanes  )
-                {
-                    auto vec = Load(tag, input.data + i + j);
-                    auto vec_result = Cos(vec);
-                    Store(vec_result, tag, output.data + i + j);
-                }
-
-                // 3. 处理尾部剩余元素
-                for (;j<i_end;j++)
-                {
-                    output.data[i+j] = std::cos(input.data[i+j]);
-                } });
+                    for (int j = 0; j < i_end; j++)
+                    {
+                        output.data[i+j] = std::cos(input.data[i+j]);
+                    }
+                });
             }
             else
             {
@@ -575,30 +537,11 @@ namespace deepx::tensorfunc
             {
                 output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
                                                       {
-                const ScalableTag<T> tag;
-                const size_t lanes = Lanes(tag);
-                size_t j=0;
-
-                // 1. 处理前置未对齐部分
-                while (j < i_end && !IsAligned(tag,input.data + i + j)) {
-                    output.data[i+j] = std::tan(input.data[i+j]);
-                    ++j;
-                }
-
-                // 2. 处理中间对齐部分
-                size_t aligned_end=i_end-(i_end%lanes);
-                for (; j+lanes<=aligned_end; j +=  lanes  )
-                {
-                    auto vec = Load(tag, input.data + i + j);
-                    auto vec_result = Tan(vec);
-                    Store(vec_result, tag, output.data + i + j);
-                }
-
-                // 3. 处理尾部剩余元素
-                for (;j<i_end;j++)
-                {
-                    output.data[i+j] = std::tan(input.data[i+j]);
-                } });
+                    for (int j = 0; j < i_end; j++)
+                    {
+                        output.data[i+j] = std::tan(input.data[i+j]);
+                    }
+                });
             }
             else
             {
@@ -606,6 +549,7 @@ namespace deepx::tensorfunc
             }
         }
     };
+          
 
     template <typename T>
     struct maxDispatcher<miaobyte, T>
@@ -784,16 +728,17 @@ namespace deepx::tensorfunc
             {
                 A.shape.rangeElementwiseParallel([&A, &B, &mask, epsilon](int i, int i_end)
                                                  {
-                                            for (int j = 0; j < i_end; j++)
-                                            {
-                                                if (epsilon == 0)
-                                                {
-                                                    mask.data[i+j]=A.data[i+j]==B.data[i+j];
-                                                }
-                                                else{
-                                                    mask.data[i+j]=std::abs(A.data[i+j]-B.data[i+j])<=epsilon;
-                                                }
-                                            } });
+                                                             for (int j = 0; j < i_end; j++)
+                                                             {
+                                                                 if (epsilon == 0)
+                                                                 {
+                                                                     mask.data[i + j] = A.data[i + j] == B.data[i + j];
+                                                                 }
+                                                                 else
+                                                                 {
+                                                                     mask.data[i + j] = std::abs(A.data[i + j] - B.data[i + j]) <= epsilon;
+                                                                 }
+                                                             } });
             }
             else
             {
@@ -995,7 +940,7 @@ namespace deepx::tensorfunc
                                                  {
                 for (int j = 0; j < i_end; j++)
                 {   
-                    int which_tensor=cases.data[i+j];
+                    casesT which_tensor=cases.data[i+j];
                     C.data[i+j]=tensors[which_tensor]->data[i+j];
                 } });
             }

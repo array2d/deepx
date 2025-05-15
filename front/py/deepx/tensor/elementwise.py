@@ -215,6 +215,10 @@ def switch_(self,cases:Union[Tensor,float,int]):
 
 # 类型转换
 @tensor_method
-def todtype(self,dest:Union[Tensor,float,int]):
+def todtype(self,dtype:str):
+    from deepx.nn.functional import newtensor
+    dest=newtensor(self.shape,dtype=dtype)
     from deepx.nn.functional import todtype as todtype_func
-    return todtype_func(self,dest)
+    todtype_func(self,dest)
+    return dest
+ 
