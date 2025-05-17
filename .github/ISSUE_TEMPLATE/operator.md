@@ -1,5 +1,5 @@
 ---
-name: 算子新增
+name: 算子新增、修改、删除
 about: 用于提交新的算子实现请求
 title: '[算子] '
 labels: enhancement, operator
