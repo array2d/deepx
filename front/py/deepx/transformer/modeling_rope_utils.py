@@ -27,24 +27,27 @@ def _compute_llama3_parameters(config:dict={
     # Gets the default RoPE parameters
     inv_freq, attention_factor = _compute_default_rope_parameters(config)
 
+    factor = config["rope_scaling"]["factor"]  # `8` in the original implementation
     low_freq_factor = config["rope_scaling"]["low_freq_factor"]  # `1` in the original implementation
     high_freq_factor = config["rope_scaling"]["high_freq_factor"]  # `4` in the original implementation
     old_context_len = config["rope_scaling"]["original_max_position_embeddings"]  # `8192` in the original implementation
-    low_freq_wavelen = old_context_len /low_freq_factor
-    high_freq_wavelen = old_context_len/ high_freq_factor
+
+    low_freq_wavelen = old_context_len / low_freq_factor
+    high_freq_wavelen = old_context_len / high_freq_factor
 
     wavelen = 2 * math.pi / inv_freq
-    factor=config["rope_scaling"]["factor"]
-    cases=wavelen > low_freq_wavelen
-    inv_freq_llama =  where(cases, inv_freq /factor, inv_freq)
+
+    # wavelen < high_freq_wavelen: do nothing
+    # wavelen > low_freq_wavelen: divide by factor
+    inv_freq_llama = where(wavelen > low_freq_wavelen, inv_freq / factor, inv_freq)
     # otherwise: interpolate between the two, using a smooth factor
-    smooth_factor = (old_context_len / wavelen -low_freq_factor) / ( high_freq_factor -  low_freq_factor)
-    smoothed_inv_freq = (1 - smooth_factor) * inv_freq_llama /  factor + smooth_factor * inv_freq_llama
+    smooth_factor = (old_context_len / wavelen - low_freq_factor) / (high_freq_factor - low_freq_factor)
+    smoothed_inv_freq = (1 - smooth_factor) * inv_freq_llama / factor + smooth_factor * inv_freq_llama
     is_medium_freq = ~(wavelen < high_freq_wavelen) * ~(wavelen > low_freq_wavelen)
     inv_freq_llama =  where(is_medium_freq, smoothed_inv_freq, inv_freq_llama)
 
     return inv_freq_llama, attention_factor
- 
+
 ROPE_INIT_FUNCTIONS = {
     "default": _compute_default_rope_parameters,
     # "linear": _compute_linear_scaling_rope_parameters,
