@@ -45,19 +45,16 @@ namespace deepx::tensorfunc
     }
 
     template <typename T>
-    void launch_sin(int numBlocks, int blockSize, const T* a, T* c, const int size){
+    void launch_sin(const T* a, T* c, const int size){
+        auto [numBlocks, blockSize] = BestDims(size);
         sin_kernel<<<numBlocks, blockSize>>>(a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to launch sin kernel: " + 
-                                       std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch sin kernel",cudaGetLastError());
     }
 
-    template void  launch_sin<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);
-    template void  launch_sin<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
-    template void  launch_sin<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
-    template void  launch_sin<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
+    template void  launch_sin<double>(const double* a, double* c, const int size);
+    template void  launch_sin<float>(const float* a, float* c, const int size);
+    template void  launch_sin<__half>(const __half* a, __half* c, const int size);
+    template void  launch_sin<nv_bfloat16>(const nv_bfloat16* a, nv_bfloat16* c, const int size);
     // cos
     template <typename T>
     __global__ void cos_kernel(const T* A, T* C, const int size);
@@ -91,18 +88,15 @@ namespace deepx::tensorfunc
         }
     }
     template <typename T>
-    void launch_cos(int numBlocks, int blockSize, const T* a, T* c, const int size){
+    void launch_cos(const T* a, T* c, const int size){
+        auto [numBlocks, blockSize] = BestDims(size);
         cos_kernel<<<numBlocks, blockSize>>>(a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to launch cos kernel: " + 
-                                       std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch cos kernel",cudaGetLastError());
     }
-    template void  launch_cos<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);    
-    template void  launch_cos<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
-    template void  launch_cos<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
-    template void  launch_cos<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
+    template void  launch_cos<double>(const double* a, double* c, const int size);    
+    template void  launch_cos<float>(const float* a, float* c, const int size);
+    template void  launch_cos<__half>(const __half* a, __half* c, const int size);
+    template void  launch_cos<nv_bfloat16>(const nv_bfloat16* a, nv_bfloat16* c, const int size);
     // tan
     template <typename T>
     __global__ void tan_kernel(const T* A, T* C, const int size);
@@ -123,17 +117,14 @@ namespace deepx::tensorfunc
    
  
     template <typename T>   
-    void launch_tan(int numBlocks, int blockSize, const T* a, T* c, const int size){
+    void launch_tan(const T* a, T* c, const int size){
+        auto [numBlocks, blockSize] = BestDims(size);
         tan_kernel<<<numBlocks, blockSize>>>(a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to launch tan kernel: " + 
-                                       std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch tan kernel",cudaGetLastError());
     }
-    template void  launch_tan<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);
-    template void  launch_tan<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
- 
+        
+    template void  launch_tan<double>( const double* a, double* c, const int size);
+    template void  launch_tan<float>(const float* a, float* c, const int size);
 }
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAOBYTE_SIN_CU

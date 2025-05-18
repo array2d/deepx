@@ -27,12 +27,7 @@ namespace deepx::tensorfunc
     void launch_todtype(const T* a, Dtype* c,const int size){
         auto [numBlocks, blockSize] = BestDims(size);
         todtype_kernel<<<numBlocks, blockSize>>>(a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch todtype kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch todtype kernel",cudaGetLastError());
     }
     template void launch_todtype<double, float>(const double *a, float *c, const int size);
     template void launch_todtype<double, half>(const double *a, half *c, const int size);
@@ -114,13 +109,7 @@ namespace deepx::tensorfunc
         // 启动kernel
         auto [numBlocks, blockSize] = BestDims(size);
         add_kernel<<<numBlocks, blockSize>>>(a, b, c, size);
-        // 检查kernel执行是否成功
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_add<double>(const double *a, const double *b, double *c, const int size);
@@ -147,12 +136,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         addscalar_kernel<<<numBlocks, blockSize>>>(a, scalar, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch addscalar kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch addscalar kernel",cudaGetLastError());
     }
     template void launch_addscalar<double>(const double *a, const double scalar, double *c, const int size);
     template void launch_addscalar<float>(const float *a, const float scalar, float *c, const int size);
@@ -178,12 +162,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         sub_kernel<<<numBlocks, blockSize>>>(a, b, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch sub kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch sub kernel",cudaGetLastError());
     }
     template void launch_sub<double>(const double *a, const double *b, double *c, const int size);
     template void launch_sub<float>(const float *a, const float *b, float *c, const int size);
@@ -209,13 +188,9 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         subscalar_kernel<<<numBlocks, blockSize>>>(a, scalar, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch subscalar kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch subscalar kernel",cudaGetLastError());
     }
+ 
     template void launch_subscalar<double>(const double *a, const double scalar, double *c, const int size);
     template void launch_subscalar<float>(const float *a, const float scalar, float *c, const int size);
     template void launch_subscalar<half>(const half *a, const half scalar, half *c, const int size);
@@ -239,11 +214,7 @@ namespace deepx::tensorfunc
     void launch_rsubscalar(const T scalar, const T* a, T* c,const int size){
         auto [numBlocks, blockSize] = BestDims(size);
         rsubscalar_kernel<<<numBlocks, blockSize>>>(scalar, a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch rsubscalar kernel: "+std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch rsubscalar kernel",cudaGetLastError());
     }
     template void launch_rsubscalar<double>(const double scalar, const double* a, double* c,const int size);
     template void launch_rsubscalar<float>(const float scalar, const float* a, float* c,const int size);
@@ -271,13 +242,9 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         mul_kernel<<<numBlocks, blockSize>>>(a, b, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch mul kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch mul kernel",cudaGetLastError());
     }
+ 
     template void launch_mul<double>(const double *a, const double *b, double *c, const int size);
     template void launch_mul<float>(const float *a, const float *b, float *c, const int size);
     template void launch_mul<half>(const half *a, const half *b, half *c, const int size);
@@ -302,12 +269,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         mulscalar_kernel<<<numBlocks, blockSize>>>(a, scalar, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch mulscalar kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch mulscalar kernel",cudaGetLastError());
     }
     template void launch_mulscalar<double>(const double *a, const double scalar, double *c, const int size);
     template void launch_mulscalar<float>(const float *a, const float scalar, float *c, const int size);
@@ -333,13 +295,9 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         div_kernel<<<numBlocks, blockSize>>>(a, b, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch div kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch div kernel",cudaGetLastError());
     }
+ 
     template void launch_div<double>(const double *a, const double *b, double *c, const int size);
     template void launch_div<float>(const float *a, const float *b, float *c, const int size);
     template void launch_div<half>(const half *a, const half *b, half *c, const int size);
@@ -364,13 +322,9 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         divscalar_kernel<<<numBlocks, blockSize>>>(a, scalar, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch divscalar kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch divscalar kernel",cudaGetLastError());
     }
+ 
     template void launch_divscalar<double>(const double *a, const double scalar, double *c, const int size);
     template void launch_divscalar<float>(const float *a, const float scalar, float *c, const int size);
     template void launch_divscalar<half>(const half *a, const half scalar, half *c, const int size);
@@ -395,13 +349,9 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         rdivscalar_kernel<<<numBlocks, blockSize>>>(scalar, a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch rdivscalar kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch rdivscalar kernel",cudaGetLastError());
     }
+
     template void launch_rdivscalar<double>(const double scalar, const double *a, double *c, const int size);
     template void launch_rdivscalar<float>(const float scalar, const float *a, float *c, const int size);
     template void launch_rdivscalar<half>(const half scalar, const half *a, half *c, const int size);
@@ -421,17 +371,21 @@ namespace deepx::tensorfunc
         }
     }
 
+    template <>
+    __global__ void invert_kernel<bool>(const bool *A, bool *C, const int size)
+    {
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        {
+            C[idx] = !A[idx];
+        }
+    }
+
     template <typename T>
     void launch_invert(const T *a, T *c, const int size)
     {
         auto [numBlocks, blockSize] = BestDims(size);
         invert_kernel<<<numBlocks, blockSize>>>(a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch invert kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch invert kernel",cudaGetLastError());
     }
     template void launch_invert<int64_t>(const int64_t *a, int64_t *c, const int size);
     template void launch_invert<int32_t>(const int32_t *a, int32_t *c, const int size);

@@ -24,12 +24,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         kernel_constant<<<numBlocks, blockSize>>>(a, value, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-            throw std::runtime_error("Failed to launch constant kernel");
-        err = cudaDeviceSynchronize();
-        if (err != cudaSuccess)
-            throw std::runtime_error("Failed to synchronize device");
+        throwcudaerror("Failed to launch constant kernel",cudaGetLastError());
     }
 
     template void launch_constant<double>(double *a, const double value, const int size);
@@ -65,12 +60,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         dropout_kernel<<<numBlocks, blockSize>>>(a, p, seed, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch dropout kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch dropout kernel",cudaGetLastError());
     }
     template void launch_dropout<double>(double *a, const float p, const unsigned int seed, const int size);
     template void launch_dropout<float>(float *a, const float p, const unsigned int seed, const int size);
@@ -98,12 +88,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         kernel_arange<<<numBlocks, blockSize>>>(a, static_cast<float>(start), static_cast<float>(step), size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-            throw std::runtime_error("Failed to launch arange kernel");
-        err = cudaDeviceSynchronize();
-        if (err != cudaSuccess)
-            throw std::runtime_error("Failed to synchronize device");
+        throwcudaerror("Failed to launch arange kernel",cudaGetLastError());
     }
     template void launch_arange<double>(double *a, const double start, const double step, const int size);
     template void launch_arange<float>(float *a, const float start, const float step, const int size);
@@ -138,12 +123,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         kernel_uniform<<<numBlocks, blockSize>>>(a, float(low), float(high), seed, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-            throw std::runtime_error("Failed to launch uniform kernel");
-        err = cudaDeviceSynchronize();
-        if (err != cudaSuccess)
-            throw std::runtime_error("Failed to synchronize device");
+        throwcudaerror("Failed to launch uniform kernel",cudaGetLastError());
     }
     template void launch_uniform<double>(double *a, const double low, const double high, const unsigned int seed, const int size);
     template void launch_uniform<float>(float *a, const float low, const float high, const unsigned int seed, const int size);
@@ -176,12 +156,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         kernel_normal<<<numBlocks, blockSize>>>(a, float(mean), float(stddev), seed, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-            throw std::runtime_error("Failed to launch normal kernel");
-        err = cudaDeviceSynchronize();
-        if (err != cudaSuccess)
-            throw std::runtime_error("Failed to synchronize device");
+        throwcudaerror("Failed to launch normal kernel",cudaGetLastError());
     }
     template void launch_normal<double>(double *a, const double mean, const double stddev, const unsigned int seed, const int size);
     template void launch_normal<float>(float *a, const float mean, const float stddev, const unsigned int seed, const int size);

@@ -24,12 +24,8 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         sqrt_kernel<<<numBlocks, blockSize>>>(a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch sqrt kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch sqrt kernel",cudaGetLastError());
+ 
     }
     template void launch_sqrt<double>(const double *a, double *c, const int size);
     template void launch_sqrt<float>(const float *a, float *c, const int size);
@@ -51,12 +47,8 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         pow_kernel<<<numBlocks, blockSize>>>(a, b, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch pow kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch pow kernel",cudaGetLastError());
+ 
     }
     template void launch_pow<double>(const double *a, const double *b, double *c, const int size);
     template void launch_pow<float>(const float *a, const float *b, float *c, const int size);
@@ -76,12 +68,8 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         powscalar_kernel<<<numBlocks, blockSize>>>(a, scalar, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch powscalar kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch powscalar kernel",cudaGetLastError());
+ 
     }
     template void launch_powscalar<double>(const double *a, const double scalar, double *c, const int size);
     template void launch_powscalar<float>(const float *a, const float scalar, float *c, const int size);
@@ -101,12 +89,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         rpowscalar_kernel<<<numBlocks, blockSize>>>(scalar, a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch rpowscalar kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch rpowscalar kernel",cudaGetLastError());
     }
     template void launch_rpowscalar<double>(const double scalar, const double *a, double *c, const int size);
     template void launch_rpowscalar<float>(const float scalar, const float *a, float *c, const int size);
@@ -126,12 +109,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         log_kernel<<<numBlocks, blockSize>>>(a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch log kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch log kernel",cudaGetLastError());
     }
     template void launch_log<double>(const double *a, double *c, const int size);
     template void launch_log<float>(const float *a, float *c, const int size);
@@ -152,12 +130,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         exp_kernel<<<numBlocks, blockSize>>>(a, c, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch exp kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch exp kernel",cudaGetLastError());
     }
     template void launch_exp<double>(const double *a, double *c, const int size);
     template void launch_exp<float>(const float *a, float *c, const int size);

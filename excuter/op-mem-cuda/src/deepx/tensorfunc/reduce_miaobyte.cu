@@ -100,6 +100,7 @@ namespace deepx::tensorfunc
         default:
             throw std::runtime_error("dim too large, max support " + std::to_string(MAX_DIM));
         }
+        throwcudaerror("Failed to launch sum kernel",cudaGetLastError());
     }
 
     template void launch_sum<double>(const double *tensor_data, const int *tensor_strides, const int tensor_dim, const int tensor_len,
@@ -196,6 +197,7 @@ namespace deepx::tensorfunc
         default:
             throw std::runtime_error("dim too large, max support " + std::to_string(MAX_DIM));
         }
+        throwcudaerror("Failed to launch prod kernel",cudaGetLastError());
     }
 
     template void launch_prod<double>(const double *tensor_data, const int *tensor_strides, const int tensor_dim, const int tensor_len,
@@ -304,6 +306,7 @@ namespace deepx::tensorfunc
         default:
             throw std::runtime_error("dim too large, max support " + std::to_string(MAX_DIM));
         }
+        throwcudaerror("Failed to launch max kernel",cudaGetLastError());
     };
 
     template void launch_reducemax<double>(const double *tensor_data, const int *tensor_strides, const int tensor_dim, const int tensor_len,
@@ -412,6 +415,7 @@ namespace deepx::tensorfunc
         default:
             throw std::runtime_error("dim too large, max support " + std::to_string(MAX_DIM));
         }
+        throwcudaerror("Failed to launch min kernel",cudaGetLastError());
     }
 
     template void launch_reducemin<double>(const double *tensor_data, const int *tensor_strides, const int tensor_dim, const int tensor_len,

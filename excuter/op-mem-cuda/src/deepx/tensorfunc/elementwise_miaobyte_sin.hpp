@@ -19,9 +19,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != C.shape.size) {
                 throw TensorShapeError("sin");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_sin(numBlocks, blockSize, A.data, C.data, A.shape.size);           
+            launch_sin(A.data, C.data, A.shape.size);           
         }   
     };
 
@@ -33,9 +31,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != C.shape.size) {
                 throw TensorShapeError("cos");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_cos(numBlocks, blockSize, A.data, C.data, A.shape.size);
+            launch_cos(A.data, C.data, A.shape.size);
         }
     };
 
@@ -47,9 +43,7 @@ namespace deepx::tensorfunc
             if (A.shape.size != C.shape.size) { 
                 throw TensorShapeError("tan");
             }
-            const int blockSize = A.shape.size > 256 ? 256 : A.shape.size;
-            int numBlocks = (A.shape.size + blockSize - 1) / blockSize;
-            launch_tan(numBlocks, blockSize, A.data, C.data, A.shape.size);
+            launch_tan(A.data, C.data, A.shape.size);
         }
     };
 

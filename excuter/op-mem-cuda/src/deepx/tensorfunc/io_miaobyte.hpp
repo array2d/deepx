@@ -22,7 +22,6 @@ namespace deepx::tensorfunc
         static void print(const Tensor<T> &t, const std::string &f = "")
         {
             int64_t total_bytes = t.shape.bytes();
-
             // 统一分配CPU内存
             unsigned char* device_data=reinterpret_cast<unsigned char*>(t.data);
             auto [_,host_data]= device_offload(device_data,total_bytes);

@@ -21,12 +21,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         max_kernel<<<numBlocks, blockSize>>>(A, B, C, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_max<double>(const double *A, const double *B, double *C, const int size);
@@ -53,12 +48,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         maxscalar_kernel<<<numBlocks, blockSize>>>(A, scalar, C, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_maxscalar<double>(const double *A, const double scalar, double *C, const int size);
@@ -85,12 +75,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         min_kernel<<<numBlocks, blockSize>>>(A, B, C, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_min<double>(const double *A, const double *B, double *C, const int size);
@@ -117,12 +102,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         minscalar_kernel<<<numBlocks, blockSize>>>(A, scalar, C, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_minscalar<double>(const double *A, const double scalar, double *C, const int size);
@@ -175,12 +155,7 @@ namespace deepx::tensorfunc
         {
             equalwithepsilon_kernel<<<numBlocks, blockSize>>>(A, B, epsilon, mask, size);
         }
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_equal<double,bool>(const double *A, const double *B, const float epsilon, bool *mask, const int size);
@@ -233,12 +208,7 @@ namespace deepx::tensorfunc
         {
             equalscalarwithepsilon_kernel<<<numBlocks, blockSize>>>(A, scalar, epsilon, mask, size);
         }
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_equalscalar<double,bool>(const double *A, const double scalar, const float epsilon, bool *mask, const int size);
@@ -291,12 +261,7 @@ namespace deepx::tensorfunc
         {
             notequalwithepsilon_kernel<<<numBlocks, blockSize>>>(A, B, epsilon, mask, size);
         }
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_notequal<double,bool>(const double *A, const double *B, const float epsilon, bool *mask, const int size);
@@ -349,12 +314,7 @@ namespace deepx::tensorfunc
         {
             notequalscalarwithepsilon_kernel<<<numBlocks, blockSize>>>(A, scalar, epsilon, mask, size);
         }
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_notequalscalar<double,bool>(const double *A, const double scalar, const float epsilon, bool *mask, const int size);
@@ -382,12 +342,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         less_kernel<<<numBlocks, blockSize>>>(A, B, mask, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_less<double,bool>(const double *A, const double *B, bool *mask, const int size);
@@ -416,12 +371,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         lessscalar_kernel<<<numBlocks, blockSize>>>(A, scalar, mask, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_lessscalar<double,bool>(const double *A, const double scalar, bool *mask, const int size);
@@ -449,12 +399,7 @@ namespace deepx::tensorfunc
     {   
         auto [numBlocks, blockSize] = BestDims(size);
         greater_kernel<<<numBlocks, blockSize>>>(A, B, mask, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }
 
     template void launch_greater<double,bool>(const double *A, const double *B, bool *mask, const int size);
@@ -482,12 +427,7 @@ namespace deepx::tensorfunc
     {
         auto [numBlocks, blockSize] = BestDims(size);
         greaterscalar_kernel<<<numBlocks, blockSize>>>(A, scalar, mask, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }   
 
     template void launch_greaterscalar<double,bool>(const double *A, const double scalar, bool *mask, const int size);
@@ -516,13 +456,9 @@ namespace deepx::tensorfunc
         auto [numBlocks, blockSize] = BestDims(size);
         cudaVector<const T *> tensorsdataList(tensorsdata, numTensors, cudaMemcpyHostToDevice);
         switch_kernel<<<numBlocks, blockSize>>>(tensorsdataList.data, numTensors, cases, C, size);
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("Failed to launch add kernel: " +
-                                     std::string(cudaGetErrorString(err)));
-        }
+        throwcudaerror("Failed to launch add kernel",cudaGetLastError());
     }   
+ 
     
     template void launch_switch<double,int32_t>(const double **tensorsdata, const int numTensors, const int32_t *cases, double *C, const int size);
     template void launch_switch<float,int32_t>(const float **tensorsdata, const int numTensors, const int32_t *cases, float *C, const int size);

@@ -96,11 +96,7 @@ namespace deepx::tensorfunc
         default:
             throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
         }
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("cuda error");
-        }
+        throwcudaerror("Failed to launch transpose kernel",cudaGetLastError());
     }
 
     template void launch_transpose<double>(const double *input, const int *inputStrides, double *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
@@ -224,12 +220,9 @@ namespace deepx::tensorfunc
         default:
             throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
         }
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("cuda error");
-        }
+        throwcudaerror("Failed to launch concat kernel",cudaGetLastError());
     }
+ 
     template void launch_concat<double>(const double **tensorsData, const int *inputStrides, double *outputData, const int *outputStrides, const int dim, const int len, const int axis, const int numTensors, const int *shapeAtAxis);
     template void launch_concat<float>(const float **tensorsData, const int *inputStrides, float *outputData, const int *outputStrides, const int dim, const int len, const int axis, const int numTensors, const int *shapeAtAxis);
     template void launch_concat<nv_bfloat16>(const nv_bfloat16 **tensorsData, const int *inputStrides, nv_bfloat16 *outputData, const int *outputStrides, const int dim, const int len, const int axis, const int numTensors, const int *shapeAtAxis);
@@ -335,11 +328,7 @@ namespace deepx::tensorfunc
         default:
             throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
         }
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("cuda error");
-        }
+        throwcudaerror("Failed to launch broadcastTo kernel",cudaGetLastError());
     }
     template void launch_broadcastTo<double>(const double *input, const int *inputStrides, const int inputDim,
                                              const BroadcastMap *broadcastMap,
@@ -489,12 +478,9 @@ namespace deepx::tensorfunc
         default:
             throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
         }
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            throw std::runtime_error("cuda error");
-        }
+        throwcudaerror("Failed to launch indexselect kernel",cudaGetLastError());
     }
+ 
     template void launch_indexselect<double, int64_t>(const double *input, const int *inputStrides, const int inputDim,
                                                       const int64_t *index, const int *indexStrides, const int indexDim,
                                                       const int gatherAxis,

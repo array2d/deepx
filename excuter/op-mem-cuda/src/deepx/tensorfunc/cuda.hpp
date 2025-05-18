@@ -68,23 +68,20 @@ namespace deepx::tensorfunc
 
     using std::shared_ptr;
     
-    inline std::pair<int, std::shared_ptr<unsigned char[]>> device_offload(unsigned char *data,int size)
-    {
-        shared_ptr<unsigned char[]> host_data(new unsigned char[size]);
-        cudaMemcpy(host_data.get(), data, size, cudaMemcpyDeviceToHost);
-        cudaError_t err=cudaGetLastError();
-        if(err!=cudaSuccess){
-            throw std::runtime_error("Failed to copy data from device to host");
-            
-        }
-        return {size, host_data};
-    }
+
 
     inline void throwcudaerror(const std::string& msg,cudaError_t err){
        if (err != cudaSuccess)
         {
             throw std::runtime_error(msg + "\n" + std::string(cudaGetErrorString(err)));
         }
+    }
+    inline std::pair<int, std::shared_ptr<unsigned char[]>> device_offload(unsigned char *data,int size)
+    {
+        shared_ptr<unsigned char[]> host_data(new unsigned char[size]);
+        cudaMemcpy(host_data.get(), data, size, cudaMemcpyDeviceToHost);
+        throwcudaerror("Failed to copy data from device to host",cudaGetLastError());
+        return {size, host_data};
     }
 }
 

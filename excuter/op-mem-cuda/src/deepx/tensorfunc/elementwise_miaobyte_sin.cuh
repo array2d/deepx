@@ -11,60 +11,26 @@
 
 namespace deepx::tensorfunc
 {
+    // sin
     template <typename T>
     __global__ void sin_kernel(const T* A, T* C, const int size);
 
     template <typename T>
-    void launch_sin(int numBlocks, int blockSize, const T* a, T* c, const int size);
+    void launch_sin(const T* a, T* c, const int size);
 
-    template <>
-    void launch_sin<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);
-
-    template <>
-    void launch_sin<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
-
-    template <>
-    void launch_sin<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
-
-    template <>
-    void launch_sin<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
     
     template <typename T>
     __global__ void cos_kernel(const T* A, T* C, const int size);
 
     template <typename T>
-    void launch_cos(int numBlocks, int blockSize, const T* a, T* c, const int size);
+    void launch_cos( const T* a, T* c, const int size);
 
-    template <>
-    void launch_cos<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);
-
-    template <>
-    void launch_cos<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
-
-    template <>
-    void launch_cos<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
-
-    template <>
-    void launch_cos<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
-    
+    // tan
     template <typename T>
     __global__ void tan_kernel(const T* A, T* C, const int size);
 
     template <typename T>
-    void launch_tan(int numBlocks, int blockSize, const T* a, T* c, const int size);
-
-    template <>
-    void launch_tan<double>(int numBlocks, int blockSize, const double* a, double* c, const int size);
-
-    template <>
-    void launch_tan<float>(int numBlocks, int blockSize, const float* a, float* c, const int size);
-
-    template <>
-    void launch_tan<nv_bfloat16>(int numBlocks, int blockSize, const nv_bfloat16* a, nv_bfloat16* c, const int size);
-
-    template <>
-    void launch_tan<__half>(int numBlocks, int blockSize, const __half* a, __half* c, const int size);
- 
+    void launch_tan( const T* a, T* c, const int size);
 }
 
 #endif
