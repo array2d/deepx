@@ -37,7 +37,10 @@ namespace deepx::tf
             this->textvalue = textvalue;
         }
     }
-
+    string Param::to_string() const
+    {
+        return dtype_str(dtype) + ":" + textvalue;
+    }
     string TFMetadata::to_string() const
     {
         stringstream ss;
@@ -335,11 +338,7 @@ namespace deepx::tf
             }
 
             // 输出类型，根据show_name决定是否输出参数名
-            ss << dtype_str(args[i].dtype);
-            if (show_name)
-            {
-                ss << " " << args[i].textvalue;
-            }
+            ss << args[i].to_string();
         }
 
         ss << ")->(";
@@ -351,13 +350,8 @@ namespace deepx::tf
             {
                 ss << ", "; // 始终使用逗号分隔返回值
             }
-
             // 输出类型，根据show_name决定是否输出返回值名
-            ss << dtype_str(returns[i].dtype);
-            if (show_name)
-            {
-                ss << " " << returns[i].textvalue;
-            }
+            ss << returns[i].to_string();
         }
 
         ss << ")";

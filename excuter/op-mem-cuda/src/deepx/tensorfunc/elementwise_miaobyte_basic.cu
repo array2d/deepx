@@ -97,7 +97,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void add_kernel(const T *A, const T *B, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] + B[idx];
         }
@@ -125,7 +126,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void addscalar_kernel(const T *A, const T scalar, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] + scalar;
         }
@@ -151,7 +153,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void sub_kernel(const T *A, const T *B, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] - B[idx];
         }
@@ -177,7 +180,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void subscalar_kernel(const T *A, const T scalar, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] - scalar;
         }
@@ -231,7 +235,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void mul_kernel(const T *A, const T *B, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] * B[idx];
         }
@@ -258,7 +263,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void mulscalar_kernel(const T *A, const T scalar, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] * scalar;
         }
@@ -284,7 +290,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void div_kernel(const T *A, const T *B, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] / B[idx];
         }
@@ -311,7 +318,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void divscalar_kernel(const T *A, const T scalar, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] / scalar;
         }
@@ -338,7 +346,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void rdivscalar_kernel(const T scalar, const T *A, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = scalar / A[idx];
         }
@@ -365,7 +374,8 @@ namespace deepx::tensorfunc
     template <typename T>
     __global__ void invert_kernel(const T *A, T *C, const int size)
     {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = ~A[idx];
         }
@@ -373,8 +383,9 @@ namespace deepx::tensorfunc
 
     template <>
     __global__ void invert_kernel<bool>(const bool *A, bool *C, const int size)
-    {
-        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += blockDim.x * gridDim.x)
+    {   
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = !A[idx];
         }

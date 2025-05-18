@@ -31,6 +31,7 @@ namespace deepx::tf
             : textvalue(textvalue), dtype(make_dtype(dt, prec)) {}
 
         void parse(const string &param);
+        string to_string() const;
     };
     // 元数据
     struct Benchmark
