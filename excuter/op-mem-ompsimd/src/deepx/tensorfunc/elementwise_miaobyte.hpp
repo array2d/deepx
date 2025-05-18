@@ -987,7 +987,37 @@ namespace deepx::tensorfunc
                 {   
                     casesT which_tensor=cases.data[i+j];
                     C.data[i+j]=tensors[which_tensor]->data[i+j];
-                } });
+                } 
+                });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }
+    };
+    
+    template <typename T>
+    struct switchDispatcher<miaobyte, T, bool>
+    {
+        static void Switch(const vector<Tensor<T> *> tensors, const Tensor<bool> &cases, Tensor<T> &C)
+        {
+            if (cases.shape == C.shape)
+            {
+                // 对于bool类型，tensors必须只有2个元素
+                if (tensors.size() != 2)
+                {
+                    throw std::invalid_argument("For bool cases, tensors size must be 2");
+                }
+
+                C.shape.rangeElementwiseParallel([&tensors, &cases, &C](int i, int i_end)
+                {
+                    for (int j = 0; j < i_end; j++)
+                    {   
+                        // bool特化版本：false选第一个tensor，true选第二个tensor
+                        C.data[i+j] = cases.data[i+j] ? tensors[1]->data[i+j] : tensors[0]->data[i+j];
+                    } 
+                });
             }
             else
             {
