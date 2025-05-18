@@ -18,7 +18,7 @@ def printall(t):
 def newtensor(dtype):
 
    from deepx.nn.functional import newtensor
-   t=newtensor(1,2,3,dtype=dtype)
+   t=newtensor((1,2,3),dtype=dtype)
    printall(t)
 
 

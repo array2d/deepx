@@ -119,8 +119,7 @@ class Tensor:
     def __sub__(self, other:Union[Number,'Tensor']):
         return self.sub(other)
     def __rsub__(self, other:Union[Number,'Tensor']):
-        x=self.mul(-1)
-        return x.add(other)
+        return self.rsub(other)
     def __mul__(self, other:Union[Number,'Tensor']):
         return self.mul(other)
     def __rmul__(self, other:Union[Number,'Tensor']):

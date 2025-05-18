@@ -56,7 +56,6 @@ class NetTorch(torch.nn.Module):
         print(self.rotary_emb.inv_freq)
     def forward(self, x):
         inputs_embeds = self.embed_tokens(x)
-        print(inputs_embeds)
         hidden_states = inputs_embeds
         # create position embeddings to be shared across the decoder layers
         position_ids = torch.arange(hidden_states.shape[1], device=hidden_states.device).unsqueeze(0)

@@ -1,4 +1,4 @@
-from .llama_rope_torch import dir,config
+from llama_rope_torch import dir,config
 
 ############-------DEEPX-------################
 from deepx.nn.modules import Embedding,Module
@@ -14,7 +14,8 @@ class NetDeepx(Module):
         super().__init__()
         self.embed_tokens = Embedding(configdict["vocab_size"], configdict["hidden_size"],weight=embed_tokens_weight)
         self.rotary_emb = LlamaRotaryEmbedding(config=configdict)
-
+        print("rotary_emb.inv_freq")
+        self.rotary_emb.inv_freq.print()
     def forward(self,x):
         inputs_embeds = self.embed_tokens(x)
         hidden_states = inputs_embeds

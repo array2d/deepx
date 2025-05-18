@@ -339,6 +339,28 @@ namespace deepx::tensorfunc
         }
     };
 
+    template <>
+    struct invertDispatcher<miaobyte, bool>
+    {
+        static void invert(const Tensor<bool> &A, Tensor<bool> &C)
+        {
+            if (A.shape == C.shape)
+            {
+                A.shape.rangeElementwiseParallel([&A, &C](int idx, int idx_end)
+                                                {
+                                        for (int j=0;j<idx_end;j++)
+                                        {
+                                                C.data[idx+j]=!A.data[idx+j];  // 使用逻辑非运算符
+                                        } });
+            }
+            else
+            {
+                throw std::invalid_argument("shape mismatch");
+            }
+        }
+    };
+
+    // sqrt
     template <typename T>
     struct sqrtDispatcher<miaobyte, T, std::enable_if_t<std::is_floating_point_v<T>>>
     {
@@ -379,6 +401,8 @@ namespace deepx::tensorfunc
             }
         }
     };
+
+    // sqrt
     template <typename T>
     struct sqrtDispatcher<miaobyte, T, std::enable_if_t<std::is_integral_v<T>>>
     {
