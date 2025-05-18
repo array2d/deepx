@@ -225,6 +225,37 @@ namespace deepx::tensorfunc
     template void launch_subscalar<int16_t>(const int16_t *a, const int16_t scalar, int16_t *c, const int size);
     template void launch_subscalar<int8_t>(const int8_t *a, const int8_t scalar, int8_t *c, const int size);
 
+    // rsubscalar
+    template <typename T>
+    __global__ void rsubscalar_kernel(const T scalar, const T* A, T* C,const int size){
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            C[idx] = scalar - A[idx];
+        }   
+    }
+
+    template <typename T>
+    void launch_rsubscalar(const T scalar, const T* a, T* c,const int size){
+        auto [numBlocks, blockSize] = BestDims(size);
+        rsubscalar_kernel<<<numBlocks, blockSize>>>(scalar, a, c, size);
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+            throw std::runtime_error("Failed to launch rsubscalar kernel: "+std::string(cudaGetErrorString(err)));
+        }
+    }
+    template void launch_rsubscalar<double>(const double scalar, const double* a, double* c,const int size);
+    template void launch_rsubscalar<float>(const float scalar, const float* a, float* c,const int size);
+    template void launch_rsubscalar<half>(const half scalar, const half* a, half* c,const int size);
+    template void launch_rsubscalar<nv_bfloat16>(const nv_bfloat16 scalar, const nv_bfloat16* a, nv_bfloat16* c,const int size);
+    template void launch_rsubscalar<int64_t>(const int64_t scalar, const int64_t* a, int64_t* c,const int size);
+    template void launch_rsubscalar<int32_t>(const int32_t scalar, const int32_t* a, int32_t* c,const int size);
+    template void launch_rsubscalar<int16_t>(const int16_t scalar, const int16_t* a, int16_t* c,const int size);
+    template void launch_rsubscalar<int8_t>(const int8_t scalar, const int8_t* a, int8_t* c,const int size);
+
+ 
+
     // mul
     template <typename T>
     __global__ void mul_kernel(const T *A, const T *B, T *C, const int size)

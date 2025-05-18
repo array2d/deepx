@@ -28,6 +28,18 @@ def sub_(self, other:Union[Tensor,float,int]):
     sub_func(self,other,self)
 
 @tensor_method
+def rsub(self,other:Union[Tensor,float,int],
+        out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import sub as sub_func
+    return sub_func(other,self,out)
+
+@tensor_method
+def rsub_(self,other:Union[Tensor,float,int]):
+    from deepx.nn.functional import sub as sub_func
+    sub_func(other,self,self)
+    return self
+
+@tensor_method
 def mul(self,  other:Union[Tensor,float,int],
         out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import mul as mul_func

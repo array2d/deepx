@@ -58,6 +58,9 @@
 | maxscalar | miaobyte | T3=max(T1,scalar) | maxscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | tan | miaobyte | T3=tan(T1) | tan(tensor<any> A)->(tensor<any> C) |
 | sin | miaobyte | T3=sin(T1) | sin(tensor<any> A)->(tensor<any> C) |
+| less | miaobyte | mask=less(T1,T2) | less(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
+| powscalar | miaobyte | T3=T1^scalar | powscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
+| rsubscalar | miaobyte | T3=scalar-T1 | rsubscalar(var<any> scalar, tensor<any> a)->(tensor<any> c) |
 | divscalar | miaobyte | T3=T1/scalar | divscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | log | miaobyte | T3=log(T1) | log(tensor<any> A)->(tensor<any> C) |
 | addscalar | miaobyte | T3=T1+scalar | addscalar(tensor<any> a, var<any> scalar)->(tensor<any> c) |
@@ -68,8 +71,6 @@
 | minscalar | miaobyte | T3=min(T1,scalar) | minscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | rpowscalar | miaobyte | T3=scalar^T1 | rpowscalar(var<float32> scalar, tensor<any> A)->(tensor<any> C) |
 | rdivscalar | miaobyte | T3=scalar/T1 | rdivscalar(var<any> scalar, tensor<any> A)->(tensor<any> C) |
-| less | miaobyte | mask=less(T1,T2) | less(tensor<any> A, tensor<any> B)->(tensor<bool> mask) |
-| powscalar | miaobyte | T3=T1^scalar | powscalar(tensor<any> A, var<any> scalar)->(tensor<any> C) |
 | todtype |  none  | T3(dtypeA)->T1(dtypeB) | todtype(tensor<any> A)->(tensor<any> C) |
 | add | cblas | T3=T1+T2 | add(tensor<float64|float32> a, tensor<float64|float32> b)->(tensor<float64|float32> c) |
 | add | miaobyte | T3=T1+T2 | add(tensor<any> a, tensor<any> b)->(tensor<any> c) |

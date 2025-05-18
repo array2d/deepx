@@ -7,18 +7,26 @@ from .authormap import defaultauthor
 
 #四则运算
 add = create_A_B_tf_C('add')
-sub = create_A_B_tf_C('sub')
+_sub=create_A_B_tf_C('sub')
+def rsub(a:float,b:Tensor,out:Union[Tensor,str]=None)->Tensor:
+    outtensor=out
+    if isinstance(out,str) or out is None:
+        outtensor=newtensor(b.shape,dtype=b.dtype,name=out)
+    from .rtf_elementwise import rtf_rsubscalar
+    rtf_rsubscalar(a,b,outtensor,defaultauthor['rsubscalar'])
+    return outtensor
+def sub(a:Union[Tensor,float,int],
+        b:Union[Tensor,float,int],
+        out:Union[Tensor,str]=None)->Tensor:
+    if isinstance(a,Tensor):
+        return _sub(a,b,out)
+    elif isinstance(a,float) or isinstance(a,int):
+        return rsub(a,b,out)
+
+
 mul = create_A_B_tf_C('mul')
 _div=create_A_B_tf_C('div')
 
-def div(
-        a: Union[Tensor, float, int],
-        b: Union[Tensor, float, int], 
-        out:Union[Tensor,str]=None)->Tensor:
-    if isinstance(a,Tensor):
-        return _div(a,b,out)
-    elif isinstance(a,float) or isinstance(a,int):
-        return rdiv(a,b,out)
 def rdiv(
         a: Union[float, int],
         b: Tensor, 
@@ -29,6 +37,15 @@ def rdiv(
     from .rtf_elementwise import rtf_rdivscalar
     rtf_rdivscalar(a,b,outtensor,defaultauthor['rdivscalar'])
     return outtensor
+def div(
+        a: Union[Tensor, float, int],
+        b: Union[Tensor, float, int], 
+        out:Union[Tensor,str]=None)->Tensor:
+    if isinstance(a,Tensor):
+        return _div(a,b,out)
+    elif isinstance(a,float) or isinstance(a,int):
+        return rdiv(a,b,out)
+
 
 ## 幂、指数 运算 
 

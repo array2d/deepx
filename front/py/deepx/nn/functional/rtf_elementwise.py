@@ -20,6 +20,13 @@ def rtf_subscalar(a:Tensor, b:float, out:Tensor, author='miaobyte')->Tensor:
     A_scalar_op_C("subscalar",a,b,out,author)
     return out
 
+def rtf_rsubscalar(a:float, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
+    args = [ Param.varnum(a),Param.tensor(b)]
+    returns = [Param.tensor(out)]
+    ir = DeepxIR("rsubscalar", args, returns, author)
+    send(ir)
+    return out
+
 def rtf_mul(a:Tensor, b:Tensor, out:Tensor, author='miaobyte')->Tensor:
     A_B_op_C("mul",a,b,out,author)
     return out

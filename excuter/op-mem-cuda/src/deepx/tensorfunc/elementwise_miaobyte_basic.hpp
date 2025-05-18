@@ -70,6 +70,18 @@ namespace deepx::tensorfunc
     };  
 
     template <typename T>
+    struct rsubscalarDispatcher<miaobyte, T>
+    {
+        static void rsubscalar(const T scalar, const Tensor<T> &A, Tensor<T> &C)
+        {
+            if (A.shape.size != C.shape.size) { 
+                throw TensorShapeError("rsubscalar");
+            }
+            launch_rsubscalar(scalar, A.data, C.data, A.shape.size);
+        }
+    };  
+    
+    template <typename T>
     struct mulDispatcher<miaobyte, T>
     {
         static void mul(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)

@@ -194,6 +194,27 @@ namespace deepx::tensorfunc
         }
     };
 
+    template <typename T>
+    struct rsubscalarDispatcher<miaobyte, T>
+    {
+        static void rsubscalar(const T scalar, const Tensor<T> &A, Tensor<T> &C)
+    {
+        elementwise_A_b_C<T>(A, scalar, C,
+                             // 标量操作
+                             [](const T &a,const T &scalar, T &c)
+                             { c = scalar - a; },
+                             // SIMD操作
+                             []( const T *a,const T scalar, T *c, size_t size)
+                             {
+                                const ScalableTag<T> tag;
+                                auto vec1 = Load(tag, a);
+                                auto vec_scalar = Set(tag, scalar);
+                                auto vec_result = Sub(vec_scalar, vec1);
+                                Store(vec_result, tag, c);
+                             });
+        }
+    };
+
     // 添加 mul 的模板特化实现
     template <typename T>
     struct mulDispatcher<miaobyte, T>

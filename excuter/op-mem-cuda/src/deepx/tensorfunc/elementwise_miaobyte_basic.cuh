@@ -44,7 +44,15 @@ namespace deepx::tensorfunc
 
     template <typename T>
     void launch_subscalar(const T* a, const T scalar, T* c,const int size);
- 
+    
+
+    // rsubscalar
+    template <typename T>
+    __global__ void rsubscalar_kernel(const T scalar, const T* A, T* C,const int size);
+
+    template <typename T>
+    void launch_rsubscalar(const T scalar, const T* a, T* c,const int size);
+
     // mul
     template <typename T>
     __global__ void mul_kernel(const T* A, const T* B, T* C,const int size);

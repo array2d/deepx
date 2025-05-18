@@ -58,6 +58,7 @@ namespace deepx::tensorfunc
         subDispatcher<Author, T>::sub(A, B, C);
     }
 
+    // A-scalar=>C
     template <typename Author, typename T>
     struct subscalarDispatcher
     {
@@ -66,19 +67,33 @@ namespace deepx::tensorfunc
             throw NotImplementError("subscalar");
         }
     };
-
-    // A-scalar=>C
     template <typename Author, typename T>
     void subscalar(const Tensor<T> &input, const T value, Tensor<T> &output)
     {
         subscalarDispatcher<Author, T>::subscalar(input, value, output);
     }
 
+
+
+    //scalar-A=>C
+    template <typename Author, typename T>
+    struct rsubscalarDispatcher
+    {
+        static void rsubscalar(const T value, const Tensor<T> &input, Tensor<T> &output) = delete;
+    };
+    template <typename Author, typename T>
+    void rsubscalar(const T value, const Tensor<T> &input, Tensor<T> &output)
+    {
+        rsubscalarDispatcher<Author, T>::rsubscalar(value, input, output);
+    }
+
+
     template <typename Author, typename T>
     struct mulDispatcher
     {
         static void mul(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C) = delete;
     };
+
 
     // A*B=>C
     template <typename Author, typename T>

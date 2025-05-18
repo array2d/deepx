@@ -246,6 +246,18 @@ namespace deepx::tf
                                                                    {
                                                                        Param("c", DataCategory::Tensor, Precision::Any),
                                                                    })));
+        // rsubscalar author=miaobyte
+        tffactory.add_tf(std::make_shared<RSubScalar<miaobyte>>(vector<Param>(
+                                                                   {
+                                                                       Param("scalar", DataCategory::Var, Precision::Any),
+                                                                       Param("a", DataCategory::Tensor, Precision::Any),
+                                                                   }),
+                                                               vector<Param>(
+                                                                   {
+                                                                       Param("c", DataCategory::Tensor, Precision::Any),
+                                                                   })));
+
+
         // mul author=miaobyte
         tffactory.add_tf(std::make_shared<Mul<miaobyte>>(vector<Param>(
                                                              {

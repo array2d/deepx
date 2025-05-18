@@ -11,6 +11,7 @@ defaultauthor=dict({
         'addscalar':'miaobyte',
         'sub':'miaobyte',
         'subscalar':'miaobyte',
+        'rsubscalar':'miaobyte',
         'mul':'miaobyte',
         'mulscalar':'miaobyte',
         'div':'miaobyte',
