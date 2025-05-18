@@ -109,6 +109,9 @@ namespace deepx::tensorfunc
     template <typename T,typename casesT>
     __global__ void switch_kernel(const T** tensorsdata,const int numTensors, const casesT* cases, T* C, const int size);
 
+    template <typename T>
+    __global__ void switch_kernel(const T** tensorsdata, const int numTensors, const bool* cases, T* C, const int size);
+
     template <typename T,typename casesT>
     void launch_switch(const T** tensorsdata,const int numTensors, const casesT* cases, T* C, const int size);
     

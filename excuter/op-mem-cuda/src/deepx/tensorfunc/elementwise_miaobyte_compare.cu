@@ -449,7 +449,15 @@ namespace deepx::tensorfunc
             C[idx] = tensorsdata[cases[idx]][idx];
         }
     }
- 
+    template <typename T>
+    __global__ void switch_kernel(const T** tensorsdata, const int numTensors, const bool* cases, T* C, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            C[idx] = cases[idx] ? tensorsdata[1][idx] : tensorsdata[0][idx];
+        }
+    }
     template <typename T,typename casesT>
     void launch_switch(const T **tensorsdata, const int numTensors, const casesT *cases, T *C, const int size)
     {

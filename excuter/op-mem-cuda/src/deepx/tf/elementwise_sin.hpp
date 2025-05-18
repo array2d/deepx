@@ -86,11 +86,10 @@ namespace deepx::tf
         int run(shared_ptr<MemBase> mem, string &error) override
         {
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
-            Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
             Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
-            if (a_type != c_type || b_type != c_type)
+            if (a_type != c_type)
             {
-                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(c_type) + " or " + precision_str(b_type) + " != " + precision_str(c_type);
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(c_type);
                 return 1;
             }
             switch (a_type)
@@ -141,11 +140,10 @@ namespace deepx::tf
         int run(shared_ptr<MemBase> mem, string &error) override
         {
             Precision a_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
-            Precision b_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
             Precision c_type = mem->gettensor(this->returns[0].textvalue).get()->shape.dtype;
-            if (a_type != c_type || b_type != c_type)
+            if (a_type != c_type)
             {
-                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(c_type) + " or " + precision_str(b_type) + " != " + precision_str(c_type);
+                error = "Type mismatch: " + precision_str(a_type) + " != " + precision_str(c_type);
                 return 1;
             }
             switch (a_type)
@@ -156,6 +154,7 @@ namespace deepx::tf
             case Precision::Float32:
                 tensorfunc::tan<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
+                
             default:
                 error = "Unsupported type: " + precision_str(a_type);
                 return 1;

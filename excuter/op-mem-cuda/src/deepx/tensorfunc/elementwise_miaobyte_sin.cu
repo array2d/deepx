@@ -114,7 +114,7 @@ namespace deepx::tensorfunc
             C[idx] = tanf(A[idx]);
         }
     }
-   
+ 
  
     template <typename T>   
     void launch_tan(const T* a, T* c, const int size){
