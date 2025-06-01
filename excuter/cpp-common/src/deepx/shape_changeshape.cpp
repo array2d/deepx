@@ -142,4 +142,18 @@ namespace deepx
         }
         return output_shape;
     }
+
+    // repeat
+    std::vector<int> repeatShape(const std::vector<int> &src, const std::vector<int> &repeats)
+    {
+        if (src.size() != repeats.size()) {
+            throw std::invalid_argument("Shape and repeats must have the same number of dimensions");
+        }
+        
+        std::vector<int> dest(src.size());
+        for (size_t i = 0; i < src.size(); ++i) {
+            dest[i] = src[i] * repeats[i];
+        }
+        return dest;
+    }
 }

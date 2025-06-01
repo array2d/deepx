@@ -66,11 +66,19 @@ namespace deepx
         }
         std::cout << "]" << std::endl;
     }
+    //linearat
+    //linearat 支持和strides不同dim的indice索引
+    //当strides.size() < indices.size()时，indices的前面部分会默认都是unsqueeze的维度，从而被忽略。在repeat方法中，用到。
+    //当strides.size() > indices.size()时，strides的后面部分会被忽略不计算
     int Shape::linearat(const std::vector<int> &indices) const{
         int idx=0;
-        for(int i=0;i<indices.size();i++){
-            idx+=indices[i]*strides[i];
+        int stride_i=0,indices_i=0;
+        if (indices.size()> shape.size()) {
+            indices_i=indices.size()-shape.size();
         }
+        for(;stride_i<strides.size()&&stride_i<indices.size();){
+            idx+=indices[indices_i++]*strides[stride_i++];
+        }       
         return idx;
     }
     std::vector<int> Shape::linearto(int idx_linear) const{

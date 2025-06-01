@@ -1,6 +1,6 @@
 from typing import Optional,Tuple
 from deepx.nn.modules import Module,Linear
-from deepx import Tensor,repeat_kv,matmul,softmax,concat,arange,dropout as dropout_func
+from deepx import Tensor,matmul,softmax,concat,arange,dropout as dropout_func
 
 
 
@@ -17,7 +17,14 @@ def apply_rotary_pos_emb(q:Tensor, k:Tensor, cos:Tensor, sin:Tensor, unsqueeze_d
     q_embed = (q * cos) + (rotate_half(q) * sin)
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed
- 
+
+def repeat_kv(hidden_states: Tensor, n_rep: int) -> Tensor:
+    batch, num_key_value_heads, slen, head_dim = hidden_states.shape
+    if n_rep == 1:
+        return hidden_states
+    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_key_value_heads, n_rep, slen, head_dim)
+    return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
+
 
 # https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/modeling_llama.py
 # 经简化，去掉了分布式配置，去掉attention的配置。交给IR自动替换flashattention，后续的组件自动处理

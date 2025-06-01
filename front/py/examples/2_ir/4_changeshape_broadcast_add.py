@@ -1,5 +1,5 @@
 ########====DEEPX====########
-from deepx import Tensor,ones
+from deepx import ones
 
 a=ones( 4,2,3 ,name="a")    
 b=ones(  2,1 ,name='b')

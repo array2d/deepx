@@ -74,6 +74,42 @@ namespace deepx::tensorfunc
         indexselectDispatcher<Author, T, GatherAxisT>::indexselect(input, indices, axis, output);
     }
 
+    //repeat
+    template <typename Author, typename T>
+    struct repeatDispatcher
+    {
+        static void repeat(const Tensor<T> &A, const std::vector<int> &repeats, Tensor<T> &B) = delete;
+    };
+    //Repeats:The number of times to repeat this tensor along each dimension
+    // https://docs.pytorch.org/docs/stable/generated/torch.Tensor.repeat.html#torch.Tensor.repeat
+    template <typename Author, typename T> 
+    void repeat(const Tensor<T> &A, const std::vector<int> &repeats, Tensor<T> &B)
+    {
+        repeatDispatcher<Author, T>::repeat(A, repeats, B);
+    }
+
+    //repeat_interleave
+    template <typename Author, typename T>
+    struct repeat_interleaveDispatcher
+    {
+        static void repeat_interleave(const Tensor<T> &A, const int repeats, Tensor<T> &B) = delete;
+        static void repeat_interleave(const Tensor<T> &A, const Tensor<T> &repeats, Tensor<T> &B) = delete;
+    };
+    template <typename Author, typename T>
+    void repeat_interleave(const Tensor<T> &A, const  int repeats, Tensor<T> &B)
+    {
+        repeat_interleaveDispatcher<Author, T>::repeat_interleave(A, repeats, B);
+    }
+    template <typename Author, typename T>
+    void repeat_interleave(const Tensor<T> &A, const Tensor<T> &repeats, Tensor<T> &B)
+    {
+        repeat_interleaveDispatcher<Author, T>::repeat_interleave(A, repeats, B);
+    }
+
+
+
+
+
     // // split
     // //  https://onnx.ai/onnx/operators/onnx__Split.html
     // template <typename Author, typename T>

@@ -177,6 +177,28 @@ namespace deepx::tensorfunc
         }
     };
 
+    // repeat
+    template <typename T>
+    struct repeatDispatcher<miaobyte, T>
+    {
+        static void repeat(const Tensor<T> &A, const std::vector<int> &repeats, Tensor<T> &B)
+        {
+            auto new_shape = repeatShape(A.shape.shape, repeats);
+            if (new_shape.empty() || new_shape != B.shape.shape)
+            {
+                throw TensorShapeError("Repeat shape mismatch");
+            }
+            B.shape.rangeParallel(B.shape.dim(), [&A,B,&repeats](const int idx, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                                  {
+                        for (size_t i = 0; i < A.shape.dim(); ++i) {
+                            tlv.get(0)[i] = indices[i] / repeats[i];
+                        }
+                        B.data[idx] = A.data[A.shape.linearat(tlv.get(0))];
+                    },{B.shape.dim()});
+        }
+    };
+
+
     // template <typename T>
     // void split(const Tensor<T> &tensor, const int axis, std::vector<Tensor<T> *> &results)
     // {
