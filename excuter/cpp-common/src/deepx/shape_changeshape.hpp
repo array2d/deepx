@@ -73,5 +73,8 @@ namespace deepx
  
     //indexselect
     vector<int> indexselectShape(const vector<int> &input_shape, const vector<int> &index_shape, const int axis);
+
+    //repeat
+    std::vector<int> repeatShape(const std::vector<int> &src, const std::vector<int> &repeats);
 }
 #endif // DEEPX_SHAPE_CHANGESHAPE_HPP

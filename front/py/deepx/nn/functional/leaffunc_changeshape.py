@@ -93,6 +93,19 @@ def indexselect(input:Tensor,indices:Tensor,gatheraxis:int,out:Union[Tensor,str]
     rtf_indexselect(input,indices,gatheraxis,outtensor,defaultauthor['indexselect'])
     return outtensor
 
+def repeat(input:Tensor,repeats:tuple[int,...],out:Union[Tensor,str]=''):
+    assert isinstance(repeats,tuple)
+    assert input.Shape.ndim==len(repeats)
+    for i in repeats:
+        assert isinstance(i,int) and i>0
+    outtensor=out
+    if isinstance(out,str) or out is None:
+        outshape=Shape.repeatshape(input.shape,repeats)
+        outtensor=newtensor(outshape,dtype=input.dtype,name=out)
+    from .rtf_changeshape import rtf_repeat
+    rtf_repeat(input,repeats,outtensor,defaultauthor['repeat'])
+    return outtensor
+
 # def unsqueeze(t:Tensor,dim:int)->Tensor:
 #     # 确保dim是有效的
 #     if dim < -t.ndim-1 or dim > t.ndim:

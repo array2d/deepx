@@ -74,6 +74,12 @@ def unsqueeze(self,dim:int)->Tensor:
     result=unsqueeze_func(self,dim)
     return result
 
+@tensor_method
+def repeat(self,repeats:tuple[int,...])->Tensor:
+    from deepx.nn.functional import repeat as repeat_func
+    result=repeat_func(self,repeats)
+    return result
+
 # @tensor_method
 # def expand(self,shape:tuple)->Tensor:
 #     from deepx.nn.functional import expand as expand_func

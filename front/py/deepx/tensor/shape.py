@@ -200,3 +200,8 @@ class Shape:
                 yaml.dump({'shape': list(self.shape), 'dtype': self._dtype,'size':self.numel(),'dim':self.ndim,'stride':list(self.stride)}, f)
         else:
             raise ValueError("文件名必须以.shape结尾")
+        
+    @classmethod
+    def repeatshape(cls,input_shape:tuple[int,...],repeat:tuple[int,...])->tuple[int,...]:
+        assert len(input_shape)== len(repeat)
+        return tuple(d * r for d, r in zip(input_shape, repeat))

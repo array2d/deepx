@@ -188,12 +188,13 @@ namespace deepx::tensorfunc
             {
                 throw TensorShapeError("Repeat shape mismatch");
             }
-            B.shape.rangeParallel(B.shape.dim(), [&A,B,&repeats](const int idx, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+            B.shape.rangeParallel(B.shape.dim(), [&A,&B,&repeats](const int idx, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                   {
                         for (size_t i = 0; i < A.shape.dim(); ++i) {
                             tlv.get(0)[i] = indices[i] / repeats[i];
                         }
-                        B.data[idx] = A.data[A.shape.linearat(tlv.get(0))];
+                        int idx_A=A.shape.linearat(tlv.get(0));
+                        B.data[idx] = A.data[idx_A];
                     },{B.shape.dim()});
         }
     };

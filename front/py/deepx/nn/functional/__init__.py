@@ -30,7 +30,7 @@ __all__ = [
     "invert",
     "matmul",
     "reducemax","reducemin","sum","prod",
-    "reshape","permute","transpose","concat","broadcastTo","broadcast_to","indexselect",
+    "reshape","permute","transpose","concat","broadcastTo","broadcast_to","indexselect",'repeat',
 
     #functional
     "relu","sigmoid","swish","silu",

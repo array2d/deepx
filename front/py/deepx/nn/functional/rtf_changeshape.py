@@ -35,3 +35,11 @@ def rtf_indexselect(input:Tensor,indices:Tensor,axis:int,out:Tensor,author='miao
     ir=DeepxIR("indexselect", args, returns,author)
     send(ir)
  
+def rtf_repeat(input:Tensor,repeats:tuple[int,...],out:Tensor,author='miaobyte'):
+    assert isinstance(repeats,tuple)
+    for i in repeats:
+        assert isinstance(i,int) and i>0
+    args=[Param.tensor(input),Param.vector(repeats,'int32')]
+    returns=[Param.tensor(out)]
+    ir=DeepxIR("repeat", args, returns,author)
+    send(ir)
