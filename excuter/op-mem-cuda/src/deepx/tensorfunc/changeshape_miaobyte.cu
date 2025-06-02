@@ -103,6 +103,7 @@ namespace deepx::tensorfunc
     template void launch_transpose<float>(const float *input, const int *inputStrides, float *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
     template void launch_transpose<nv_bfloat16>(const nv_bfloat16 *input, const int *inputStrides, nv_bfloat16 *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
     template void launch_transpose<__half>(const __half *input, const int *inputStrides, __half *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
+    
     template void launch_transpose<int64_t>(const int64_t *input, const int *inputStrides, int64_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
     template void launch_transpose<int32_t>(const int32_t *input, const int *inputStrides, int32_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
     template void launch_transpose<int16_t>(const int16_t *input, const int *inputStrides, int16_t *output, const int *outputStrides, const int dim, const int len, const int *dimOrder);
@@ -546,6 +547,120 @@ namespace deepx::tensorfunc
                                                       const int32_t *index, const int *indexStrides, const int indexDim,
                                                       const int gatherAxis,
                                                       int8_t *output, const int *outputStrides, const int outputDim, const int outputlen);
-}
+
+
+    //repeat
+    template <int DIM, typename T>
+    __global__ void repeat_kernel(
+        const T *input, const int *inputStrides,
+        const int *repeats, 
+        T *output, const int *outputStrides,const int outputlen,const int dim){
+        const int grid_stride = gridDim.x * blockDim.x;
+        int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+        for (; thread_id < outputlen; thread_id += grid_stride)
+        {
+            // 输出索引
+            int output_indices[DIM];
+            linearTo(outputStrides, dim, output_indices, thread_id);
+
+            // 输入索引
+            int input_indices[DIM];
+            for (int i = 0; i < dim; ++i)
+            {
+                input_indices[i] = output_indices[i] / repeats[i];
+            }
+            int inputIdx = linearAt(inputStrides, dim, input_indices);
+            int outputIdx = linearAt(outputStrides, dim, output_indices);
+            output[outputIdx] = input[inputIdx];
+        }
+    }
+
+
+    template <typename T>
+    void launch_repeat(
+        const T *input, const int *inputStrides, 
+        const int *repeats,
+        T *output, const int *outputStrides,  const int outputlen,const int dim){
+
+
+        auto [numBlocks, blockSize] = BestDims(outputlen);
+        // input
+        cudaVector<int> inputStrides_d(inputStrides, dim, cudaMemcpyHostToDevice);
+        // output
+        cudaVector<int> outputStrides_d(outputStrides, dim, cudaMemcpyHostToDevice);
+        // repeats
+        cudaVector<int> repeats_d(repeats, dim, cudaMemcpyHostToDevice);
+        
+        switch (dim)
+        {
+        case 1:
+            repeat_kernel<1, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 2:
+            repeat_kernel<2, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 3:
+            repeat_kernel<3, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 4:
+            repeat_kernel<4, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 5:
+            repeat_kernel<5, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 6:
+            repeat_kernel<6, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 7:
+            repeat_kernel<7, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 8:
+            repeat_kernel<8, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 9:
+            repeat_kernel<9, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 10:
+            repeat_kernel<10, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 11:
+            repeat_kernel<11, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        case 12:
+            repeat_kernel<12, T><<<numBlocks, blockSize>>>(input, inputStrides_d.data, repeats_d.data, output, outputStrides_d.data, outputlen, dim);
+            break;
+        default:
+            throw std::runtime_error("dimension large than " + std::to_string(MAX_DIM));
+        }
+    }
+
+    template void launch_repeat<double>(const double *input, const int *inputStrides, 
+                                        const int *repeats,
+                                        double *output, const int *outputStrides,  const int outputlen,const int dim);
+    template void launch_repeat<float>(const float *input, const int *inputStrides,
+                                        const int *repeats,
+                                        float *output, const int *outputStrides,  const int outputlen,const int dim);
+    template void launch_repeat<nv_bfloat16>(const nv_bfloat16 *input, const int *inputStrides,
+                                        const int *repeats,
+                                        nv_bfloat16 *output, const int *outputStrides,  const int outputlen,const int dim);
+    template void launch_repeat<__half>(const __half *input, const int *inputStrides,
+                                        const int *repeats,
+                                        __half *output, const int *outputStrides,  const int outputlen,const int dim);
+    template void launch_repeat<int64_t>(const int64_t *input, const int *inputStrides,
+                                        const int *repeats,
+                                        int64_t *output, const int *outputStrides,  const int outputlen,const int dim);
+    template void launch_repeat<int32_t>(const int32_t *input, const int *inputStrides,
+                                        const int *repeats,
+                                        int32_t *output, const int *outputStrides,  const int outputlen,const int dim);
+    template void launch_repeat<int16_t>(const int16_t *input, const int *inputStrides,
+                                        const int *repeats,
+                                        int16_t *output, const int *outputStrides,  const int outputlen,const int dim);
+    template void launch_repeat<int8_t>(const int8_t *input, const int *inputStrides,
+                                        const int *repeats,
+                                        int8_t *output, const int *outputStrides,  const int outputlen,const int dim);
+    template void launch_repeat<bool>(const bool *input, const int *inputStrides,
+                                        const int *repeats,
+                                        bool *output, const int *outputStrides,  const int outputlen,const int dim);                                     
+}// namespace deepx
 
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_HPP

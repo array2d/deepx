@@ -65,5 +65,21 @@ namespace deepx::tensorfunc
         const GatherAxisT *indices,const int *indicesStrides,const int indicesDim,
         const int gatherAxis,
         T *output,const int *outputStrides,const int outputDim,const int outputlen);
+
+
+    // repeat
+    template <int DIM, typename T>
+    __global__ void repeat_kernel(
+        const T *input, const int *inputStrides, 
+        const int *repeats,
+        T *output, const int *outputStrides, const int outputlen,
+        const int dim);
+ 
+    template <typename T>
+    void launch_repeat(
+        const T *input, const int *inputStrides, 
+        const int *repeats, 
+        T *output, const int *outputStrides, const int outputlen,
+        const int dim);
 };
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_CUH

@@ -571,6 +571,17 @@ namespace deepx::tf
                                                                      {
                                                                          Param("B", DataCategory::Tensor, Precision::Any),
                                                                      })));
+        // repeat
+        tffactory.add_tf(std::make_shared<Repeat<miaobyte>>(vector<Param>(
+                                                                {
+                                                                    Param("A", DataCategory::Tensor, Precision::Any),
+                                                                    Param("repeats", DataCategory::Vector, Precision::Int32),
+                                                                 }),
+                                                            vector<Param>(
+                                                                {
+                                                                    Param("B", DataCategory::Tensor, Precision::Any),
+                                                                })));                                                        
+
     }
     // reduce
     void register_reduce(TfFactory &tffactory)

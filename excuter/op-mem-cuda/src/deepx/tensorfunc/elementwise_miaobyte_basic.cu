@@ -32,6 +32,7 @@ namespace deepx::tensorfunc
     template void launch_todtype<double, float>(const double *a, float *c, const int size);
     template void launch_todtype<double, half>(const double *a, half *c, const int size);
     template void launch_todtype<double, nv_bfloat16>(const double *a, nv_bfloat16 *c, const int size);
+    //template void launch_todtype<double, nv_float8>(const double *a, int64_t *c, const int size);
     template void launch_todtype<double, int64_t>(const double *a, int64_t *c, const int size);
     template void launch_todtype<double, int32_t>(const double *a, int32_t *c, const int size);
     template void launch_todtype<double, int16_t>(const double *a, int16_t *c, const int size);

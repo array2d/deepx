@@ -117,7 +117,7 @@ namespace deepx::tensorfunc
         }
     };
 
-    //indexselect
+    //indexselectmoe_infer
     template <typename T,typename GatherAxisT>
     struct indexselectDispatcher<miaobyte, T,GatherAxisT>
     {
@@ -133,6 +133,23 @@ namespace deepx::tensorfunc
                             indices.data, indices.shape.strides.data(), indices.shape.dim(),
                             gatherAxis,
                             output.data,output.shape.strides.data(),output.shape.dim(),output.shape.size);
+        }
+    };
+
+    //repeat
+    template <typename T>
+    struct repeatDispatcher<miaobyte, T>
+    {
+        static void repeat(const Tensor<T> &A, const std::vector<int> &repeats, Tensor<T> &B)
+        {
+            auto new_shape = repeatShape(A.shape.shape, repeats);
+            if (new_shape.empty() || new_shape != B.shape.shape)
+            {
+                throw TensorShapeError("Repeat shape mismatch");
+            }
+            launch_repeat<T>(A.data, A.shape.strides.data(), 
+                             repeats.data(), 
+                             B.data, B.shape.strides.data(),B.shape.size, B.shape.dim());
         }
     };
 }

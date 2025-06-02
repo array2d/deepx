@@ -9,7 +9,6 @@
 
 namespace deepx::tf
 {
-
     // todtype
     class Todtype : public TF
     {
