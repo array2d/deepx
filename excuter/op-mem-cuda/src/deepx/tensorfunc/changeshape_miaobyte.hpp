@@ -152,5 +152,6 @@ namespace deepx::tensorfunc
                              B.data, B.shape.strides.data(),B.shape.size, B.shape.dim());
         }
     };
+
 }
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_HPP

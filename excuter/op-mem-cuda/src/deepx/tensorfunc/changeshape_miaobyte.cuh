@@ -81,5 +81,13 @@ namespace deepx::tensorfunc
         const int *repeats, 
         T *output, const int *outputStrides, const int outputlen,
         const int dim);
+
+    // repeat_interleave
+    template <int DIM, typename T>
+    __global__ void repeat_interleave_kernel(
+        const T *input, const int *inputStrides,
+        const int *repeats,
+        T *output, const int *outputStrides, const int outputlen,
+        const int dim);
 };
 #endif // DEEPX_TENSORFUNC_CHANGESHAPE_MIAOBYTE_CUH

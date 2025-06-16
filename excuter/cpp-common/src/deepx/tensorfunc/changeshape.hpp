@@ -92,19 +92,19 @@ namespace deepx::tensorfunc
     template <typename Author, typename T>
     struct repeat_interleaveDispatcher
     {
-        static void repeat_interleave(const Tensor<T> &A, const int repeats, Tensor<T> &B) = delete;
-        static void repeat_interleave(const Tensor<T> &A, const Tensor<T> &repeats, Tensor<T> &B) = delete;
+        static void repeat_interleave(const Tensor<T> &A, const int repeats,const int dim, Tensor<T> &B) = delete;
+        // static void repeat_interleave(const Tensor<T> &A, const Tensor<T> &repeats, Tensor<T> &B) = delete;
     };
     template <typename Author, typename T>
-    void repeat_interleave(const Tensor<T> &A, const  int repeats, Tensor<T> &B)
+    void repeat_interleave(const Tensor<T> &A, const  int repeats,const int dim, Tensor<T> &B)
     {
-        repeat_interleaveDispatcher<Author, T>::repeat_interleave(A, repeats, B);
+        repeat_interleaveDispatcher<Author, T>::repeat_interleave(A, repeats,dim, B);
     }
-    template <typename Author, typename T>
-    void repeat_interleave(const Tensor<T> &A, const Tensor<T> &repeats, Tensor<T> &B)
-    {
-        repeat_interleaveDispatcher<Author, T>::repeat_interleave(A, repeats, B);
-    }
+    // template <typename Author, typename T>
+    // void repeat_interleave(const Tensor<T> &A, const Tensor<T> &repeats, Tensor<T> &B)
+    // {
+    //     repeat_interleaveDispatcher<Author, T>::repeat_interleave(A, repeats, B);
+    // }
 
 
 
