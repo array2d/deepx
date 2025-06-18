@@ -1,4 +1,7 @@
 from .embedding import *
+from .attention import *
+
 __all__ = [
-    "LlamaRotaryEmbedding"
+    "LlamaRotaryEmbedding",
+    "rotate_half"
 ]

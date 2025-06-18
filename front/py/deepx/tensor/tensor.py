@@ -124,6 +124,8 @@ class Tensor:
         return self.mul(other)
     def __rmul__(self, other:Union[Number,'Tensor']):
         return self.mul(other)
+    def __neg__(self):
+        return self.mul(-1.0)
     def __truediv__(self, other:Union[Number,'Tensor']):
         return self.div(other)
     def __rtruediv__(self, other:Union[Number,'Tensor']):
