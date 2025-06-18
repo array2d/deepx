@@ -1,8 +1,7 @@
-from token_text import dir,config
+from token_text import dir
 
 ############-------DEEPX-------################
-from deepx.nn.modules import Embedding,Module
-from deepx  import load,arange
+from deepx  import load
 from deepx.transformer.models.llama import rotate_half
 
 input=load(dir+'input')
