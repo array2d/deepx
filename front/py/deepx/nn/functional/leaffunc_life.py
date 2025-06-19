@@ -1,7 +1,7 @@
 from deepx.tensor import Tensor
 from typing import Union
  
-def newtensor(shape:tuple[int,...],dtype:str='float32',name:str=None):
+def newtensor(shape:tuple[int,...],dtype:str='float32',name:str=None)->Tensor:
     assert isinstance(shape,tuple)
     for i in shape:
         assert isinstance(i,int)

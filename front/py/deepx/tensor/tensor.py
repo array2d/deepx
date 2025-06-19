@@ -159,8 +159,35 @@ class Tensor:
     def __rmatmul__(self, other:'Tensor'):
         return other.matmul(self)
 
-    def __getitem__(self, index:'Tensor'):
-        return self.indexselect(index)
+    def __getitem__(self, idx):
+        if  isinstance(idx,Tensor):
+            return self.indexselect(idx)
+        if isinstance(idx, int):
+            from deepx.tensor import newtensor
+            index=newtensor((1,),dtype='int32')
+            index.full_(idx)
+            return self.indexselect(index)
+        elif isinstance(idx, tuple):
+            indices=list(idx)
+        else:
+            raise TypeError("Index must be an integer or a slice")
+
+        if Ellipsis in indices:
+            ellipsis_idx = indices.index(Ellipsis)
+            num_ellipsis = self.ndim - (len(indices) - 1)
+            indices[ellipsis_idx:ellipsis_idx + 1] = [slice(None)] * num_ellipsis
+
+        print(indices)
+        need_reshape=False
+        need_indexselect=False
+        for i, ix in enumerate(indices):
+            if ix is None:
+                need_reshape = True
+            elif isinstance(ix, slice):
+                if ix != slice(None, None, None):
+                    need_indexselect = True
+        print(need_reshape,need_indexselect)
+        return self
 
     #shape操作
     @property
