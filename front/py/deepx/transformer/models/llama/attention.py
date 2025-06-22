@@ -1,15 +1,13 @@
 from typing import Optional,Tuple
 from deepx.nn.modules import Module,Linear
-from deepx import Tensor,matmul,softmax,concat,arange,dropout as dropout_func
+from deepx import Tensor,matmul,softmax,cat,dropout as dropout_func
 
 
 
 def rotate_half(x:Tensor):
-    index_front=arange(0,x.shape[-1]//2,dtype="int32")
-    index_back=arange(x.shape[-1]//2,x.shape[-1],dtype="int32")
-    x1 = x.indexselect(gatheraxis=-1,index=index_front)
-    x2 = x.indexselect(gatheraxis=-1,index=index_back)
-    return concat((-x2, x1,), dim=-1)
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return  cat((-x2, x1,), dim=-1)
 
 def apply_rotary_pos_emb(q:Tensor, k:Tensor, cos:Tensor, sin:Tensor, unsqueeze_dim:int=1):
     cos = cos.unsqueeze(unsqueeze_dim)

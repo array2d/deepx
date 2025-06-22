@@ -63,6 +63,14 @@ def indexselect(self,index:Tensor,gatheraxis:int=0,out:Union[Tensor,str]='')->Te
     return result
 
 @tensor_method
+def sliceselect(self,index:slice,dim:int=0,out:Union[Tensor,str]='')->Tensor:
+    assert isinstance(index,slice)
+    gatheraxis=dim%self.ndim
+    from deepx.nn.functional import sliceselect as sliceselect_func
+    result=sliceselect_func(self,index,gatheraxis,out)
+    return result
+
+@tensor_method
 def squeeze(self,dim:int)->Tensor:
     from deepx.nn.functional import squeeze as squeeze_func
     result=squeeze_func(self,dim)

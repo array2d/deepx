@@ -160,34 +160,47 @@ class Tensor:
         return other.matmul(self)
 
     def __getitem__(self, idx):
+        # 简单操作
         if  isinstance(idx,Tensor):
             return self.indexselect(idx)
-        if isinstance(idx, int):
-            from deepx.tensor import newtensor
-            index=newtensor((1,),dtype='int32')
-            index.full_(idx)
-            return self.indexselect(index)
+        if isinstance(idx, int): 
+            return self.sliceselect(slice(idx,idx+1)).squeeze(dim=0)
+        
+        ## 阶段1,
+        if isinstance(idx, slice):
+            indices = [idx]
         elif isinstance(idx, tuple):
-            indices=list(idx)
+            indices = list(idx)
         else:
-            raise TypeError("Index must be an integer or a slice")
+            raise TypeError(f"Index must be an integer, slice, tuple, or Tensor, not {type(idx).__name__}")
+        # 阶段2
+        result = self
+        new_axis_positions = []
+        dim_cursor = 0
+        
+        for item in  indices:
+            if item is None:
+                # 如果是 None，则表示在该位置添加一个新的维度
+                new_axis_positions.append(dim_cursor)
+                continue
+            if item == Ellipsis:
+                num_ellipsis = self.ndim - len(indices) + 1
+                dim_cursor += num_ellipsis
+                continue
+            # 如果是完整的切片 (e.g., ':')，则无需操作，直接进入下一维度
+            if item == slice(None, None, None):
+                dim_cursor += 1
+                continue
+            result=result.sliceselect(item,dim=dim_cursor)
+            dim_cursor += 1
+ 
+        # 2. 在指定位置添加新维度（由 None 产生）
+        i=0
+        for pos in sorted(new_axis_positions):
+            result = result.unsqueeze(pos+i)
+            i += 1
 
-        if Ellipsis in indices:
-            ellipsis_idx = indices.index(Ellipsis)
-            num_ellipsis = self.ndim - (len(indices) - 1)
-            indices[ellipsis_idx:ellipsis_idx + 1] = [slice(None)] * num_ellipsis
-
-        print(indices)
-        need_reshape=False
-        need_indexselect=False
-        for i, ix in enumerate(indices):
-            if ix is None:
-                need_reshape = True
-            elif isinstance(ix, slice):
-                if ix != slice(None, None, None):
-                    need_indexselect = True
-        print(need_reshape,need_indexselect)
-        return self
+        return result
 
     #shape操作
     @property

@@ -80,17 +80,16 @@ def broadcastTo(t:Tensor,new_shape:tuple[int,...],out:Union[Tensor,str]='',requi
     return outtensor
 broadcast_to = broadcastTo
 
-def indexselect(input:Tensor,indices:Tensor,gatheraxis:int,out:Union[Tensor,str]='')->Tensor:
-    assert gatheraxis>=0 and gatheraxis<input.ndim
-
+def indexselect(input:Tensor,indices:Tensor,dim:int,out:Union[Tensor,str]='')->Tensor:
+    assert dim>=0 and dim<input.ndim
     outtensor=out
     if isinstance(out,str) or out is None:
-        outshape=Shape.indexselectshape(input.shape,indices.shape,gatheraxis)
+        outshape=Shape.indexselectshape(input.shape,indices.shape,dim)
         outtensor=newtensor(outshape,dtype=input.dtype,name=out)
     assert outtensor.shape==outshape
     
     from .rtf_changeshape import rtf_indexselect
-    rtf_indexselect(input,indices,gatheraxis,outtensor,defaultauthor['indexselect'])
+    rtf_indexselect(input,indices,dim,outtensor,defaultauthor['indexselect'])
     return outtensor
 
 def repeat(input:Tensor,repeats:tuple[int,...],out:Union[Tensor,str]=''):

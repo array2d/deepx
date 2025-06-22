@@ -37,7 +37,7 @@ __all__ = [
     "mean",
     "rsqrt",
     "softmax",
-    "squeeze","unsqueeze",
+    "squeeze","unsqueeze","sliceselect","cat",
 
     #other
     "calculate_fan_in_and_fan_out",
