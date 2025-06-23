@@ -39,12 +39,12 @@ class LlamaRotaryEmbedding(Module):
 
     def forward(self, x, position_ids):
         # 扩展旋转频率
-        inv_freq_expanded = self.inv_freq.unsqueeze(dim=0).unsqueeze(dim=2).todtype('float32')
-        broadcast_shape=(position_ids.shape[0], self.inv_freq.shape[0], 1)
-        inv_freq_expanded = inv_freq_expanded.reshape(broadcast_shape)
-
+        inv_freq_expanded = self.inv_freq[None, :, None].todtype('float32').expand((position_ids.shape[0], -1, 1))
+ 
         # 使用torch.unsqueeze和type转换替代索引操作
-        position_ids_expanded = position_ids.unsqueeze(dim=1).todtype(x.dtype)
+        position_ids_expanded = position_ids[:, None, :].float()
+
+        
         # 计算频率
         freqs = (inv_freq_expanded @ position_ids_expanded).T
         # 拼接频率

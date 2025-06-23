@@ -1,6 +1,6 @@
 from typing import Union
 from deepx import Tensor
-from .leaffunc_changeshape import reshape,indexselect, concat
+from .leaffunc_changeshape import reshape,indexselect, concat,broadcastTo
 from .leaffunc_init import newtensor,arange
 def squeeze(t:Tensor,dim:int)->Tensor:
     assert isinstance(dim,int)
@@ -13,7 +13,7 @@ def squeeze(t:Tensor,dim:int)->Tensor:
 def unsqueeze(t:Tensor,dim:int)->Tensor:
     assert isinstance(dim,int)
     assert isinstance(t,Tensor)
-    dim=dim%t.ndim
+    dim = dim % (t.ndim + 1)
     newshape=list(t.shape)
     newshape.insert(dim,1)
     return reshape(t,tuple(newshape))
@@ -30,3 +30,6 @@ def sliceselect(t:Tensor,sliceobj:slice,dim:int=-1,out:Union[Tensor,str]='')->Te
     return  indexselect(t,index,dim=dim,out=out)
 
 cat= concat
+# 参考 PyTorch 文档，broadcastTo和expand是作用一样
+#  https://docs.pytorch.org/docs/stable/generated/torch.broadcast_to.html
+expand = broadcastTo

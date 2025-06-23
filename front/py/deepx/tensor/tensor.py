@@ -1,7 +1,5 @@
 from typing import Optional,Union,TypeAlias
-
 from triton.language.semantic import equal
-
 from .shape import Shape
 
 

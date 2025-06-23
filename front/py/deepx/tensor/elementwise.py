@@ -228,9 +228,45 @@ def switch_(self,cases:Union[Tensor,float,int]):
 # 类型转换
 @tensor_method
 def todtype(self,dtype:str):
+    assert isinstance(dtype,str)
+    if str== self.dtype:
+        return self
     from deepx.nn.functional import newtensor
     dest=newtensor(self.shape,dtype=dtype)
     from deepx.nn.functional import todtype as todtype_func
     todtype_func(self,dest)
     return dest
- 
+
+@tensor_method
+def double(self)->Tensor:
+    """将张量转换为float64类型"""
+    return self.todtype('float64')
+
+@tensor_method
+def float(self)->Tensor:
+    """将张量转换为float32类型"""
+    return self.todtype('float32')
+
+@tensor_method
+def half(self)->Tensor:
+    """将张量转换为float16类型"""
+    return self.todtype('float16')
+
+@tensor_method
+def long(self)->Tensor:
+    """将张量转换为int64类型"""
+    return self.todtype('int64')
+
+
+@tensor_method
+def int(self)->Tensor:
+    """将张量转换为int32类型"""
+    return self.todtype('int32')
+
+@tensor_method
+def bool(self)->Tensor:
+    """将张量转换为bool类型"""
+    return self.todtype('bool')
+
+
+

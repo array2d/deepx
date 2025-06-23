@@ -42,6 +42,8 @@ def transpose_(self):
     transpose_func(self,self)
     return self
 
+# broadcast_to==broadcastTo==expand
+# https://docs.pytorch.org/docs/stable/generated/torch.broadcast_to.html
 @tensor_method
 def broadcastTo(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import broadcastTo as broadcastTo_func
@@ -52,6 +54,12 @@ def broadcastTo(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
 def broadcast_to(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
     from deepx.nn.functional import broadcastTo as broadcast_to_func
     result=broadcast_to_func(self,shape,out)
+    return result
+
+@tensor_method
+def expand(self,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
+    from deepx.nn.functional import broadcastTo as expand_func
+    result=expand_func(self,shape,out)
     return result
 
 @tensor_method
@@ -88,8 +96,3 @@ def repeat(self,repeats:tuple[int,...])->Tensor:
     result=repeat_func(self,repeats)
     return result
 
-# @tensor_method
-# def expand(self,shape:tuple)->Tensor:
-#     from deepx.nn.functional import expand as expand_func
-#     result=expand_func(self,shape,False)
-#     return result

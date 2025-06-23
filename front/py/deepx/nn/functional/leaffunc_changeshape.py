@@ -61,16 +61,25 @@ def concat(tensors:Union[list[Tensor],tuple[Tensor,...]],dim:int,out:Union[Tenso
     rtf_concat(tensors,dim,outtensor,defaultauthor['concat'])
     return outtensor
 
-def broadcastTo(t:Tensor,new_shape:tuple[int,...],out:Union[Tensor,str]='',requires_grad:bool=False,author='miaobyte')->Tensor:
-    assert isinstance(new_shape,tuple)
-    for i in new_shape:
-        assert isinstance(i,int) and i>0
-    
+def broadcastTo(t:Tensor,newshape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
+    assert isinstance(newshape,tuple)
+    assert len(newshape)==t.ndim
+    new_shape=[]
+    for idx,i in enumerate(newshape):
+        assert isinstance(i,int)
+        if i==-1:
+            new_shape.append(t.shape[idx])
+        elif i>0:
+            new_shape.append(i)
+        else:
+            raise ValueError(f"新形状参数不合法，维度 {idx} 的值{i}")
+    new_shape=tuple(new_shape)
     if t.shape==new_shape:
         return t
+
     bshape=Shape.broadcast_shape(t.shape,new_shape)
-    if bshape!=tuple(new_shape):
-        raise ValueError(f"广播失败：{t.shape} 无法广播为 {new_shape} ")
+    if bshape!=new_shape:
+        raise ValueError(f"广播失败：{t.shape} 无法广播为 {new_shape}，请先reshape")
     outtensor=out
     if isinstance(out,str) or out is None:
         outshape=new_shape
@@ -78,7 +87,9 @@ def broadcastTo(t:Tensor,new_shape:tuple[int,...],out:Union[Tensor,str]='',requi
     from .rtf_changeshape import rtf_broadcastTo
     rtf_broadcastTo(t,new_shape,outtensor,defaultauthor['broadcastTo'])
     return outtensor
+
 broadcast_to = broadcastTo
+
 
 def indexselect(input:Tensor,indices:Tensor,dim:int,out:Union[Tensor,str]='')->Tensor:
     assert dim>=0 and dim<input.ndim

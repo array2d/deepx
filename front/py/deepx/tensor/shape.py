@@ -142,34 +142,17 @@ class Shape:
     
     @classmethod
     def broadcast_shape(cls,shape_a: tuple[int,...], shape_b: tuple[int,...]) -> tuple[int,...]:
-        """计算两个形状的广播后形状"""
-        # 获取形状的长度
-        len_a, len_b = len(shape_a), len(shape_b)
-        
-        # 创建结果形状
+        assert isinstance(shape_a,tuple) and isinstance(shape_b,tuple)
+        assert len(shape_b)==len(shape_a)
+        """计算两个形状的广播后形状（长度必须一致）"""
         result_shape = []
-        
-        # 从右往左对齐并计算每个维度
-        for i in range(1, min(len_a, len_b) + 1):
-            dim_a = shape_a[-i]
-            dim_b = shape_b[-i]
-            
+        for dim_a, dim_b in zip(shape_a, shape_b):
             if dim_a == 1 or dim_b == 1:
-                # 广播规则：如果一个维度为1，取另一个维度的值
-                result_shape.insert(0, max(dim_a, dim_b))
+                result_shape.append(max(dim_a, dim_b))
             elif dim_a == dim_b:
-                # 维度相同，保持不变
-                result_shape.insert(0, dim_a)
+                result_shape.append(dim_a)
             else:
-                # 维度不同且都不为1，无法广播
-                raise ValueError(f"无法广播的形状：{shape_a} 和 {shape_b}")
-        
-        # 添加较长形状中多出的前导维度
-        if len_a > len_b:
-            result_shape = list(shape_a[:len_a - len_b]) + result_shape
-        elif len_b > len_a:
-            result_shape = list(shape_b[:len_b - len_a]) + result_shape
-        
+                raise ValueError(f"无法广播的形状：{shape_a} 和 {shape_b},请先reshape")
         return tuple(result_shape)
 
  
