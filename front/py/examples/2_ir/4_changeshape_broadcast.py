@@ -11,11 +11,11 @@ torch_a[None:,]
 
 
 ########====DEEPX====########
-from deepx import Tensor,arange,broadcastTo
+from deepx import  arange
 
 a=arange(start=0,end=4*2*3,name="a").reshape_((4,2,3))
 b=arange(start=0,end=2,name='b').reshape((2,1))
-bb=b.broadcastTo( a.shape,out="b.broadcasted")
+bb=b.unsqueeze(0).broadcastTo(a.shape,out="b.broadcasted")
 bb.print()
 
 c=a[None:,]

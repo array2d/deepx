@@ -13,7 +13,7 @@ print(torch_x2)
 #######-----------------deepx-----------------#######
 from deepx import Tensor,broadcast_to,arange
 deepx_x = arange(0,6).reshape_((1,2,3))      # shape=(2,3)
-deepx_y = broadcast_to(deepx_x, (3,2,3))    # 需要原维度为1
+deepx_y = deepx_x.broadcast_to((3,2,3))    # 需要原维度为1
 deepx_y.print()
 
 

@@ -14,7 +14,7 @@ from deepx.nn.modules import Linear
 from deepx import ones
 
 net = Linear(64, 4)
-input=ones(1,64,name='input')
+input=ones((1,64),name='input')
 out=net.forward(input)
 out.print()
 
