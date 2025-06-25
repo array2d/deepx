@@ -1,6 +1,8 @@
 from typing import Optional,Tuple
-from deepx.nn.modules import Module,Linear
+from deepx import nn
 from deepx import Tensor,matmul,softmax,cat,dropout as dropout_func
+from deepx.nn.modules import Module
+from deepx.utils import Config
 
 
 
@@ -52,7 +54,9 @@ def eager_attention_forward(
     return attn_output, attn_weights
 
 class LlamaAttention(Module):
-    def __init__(self, config:dict, layer_idx: int):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
+
+    def __init__(self, config: Config, layer_idx: int):
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -62,18 +66,19 @@ class LlamaAttention(Module):
         self.attention_dropout = config.attention_dropout
         self.is_causal = True
 
-        self.q_proj = Linear(
+        self.q_proj = nn.Linear(
             config.hidden_size, config.num_attention_heads * self.head_dim, bias=config.attention_bias
         )
-        self.k_proj = Linear(
+        self.k_proj = nn.Linear(
             config.hidden_size, config.num_key_value_heads * self.head_dim, bias=config.attention_bias
         )
-        self.v_proj = Linear(
+        self.v_proj = nn.Linear(
             config.hidden_size, config.num_key_value_heads * self.head_dim, bias=config.attention_bias
         )
-        self.o_proj = Linear(
+        self.o_proj = nn.Linear(
             config.num_attention_heads * self.head_dim, config.hidden_size, bias=config.attention_bias
         )
+
 
     def forward(
         self,
@@ -90,17 +95,16 @@ class LlamaAttention(Module):
 
         cos, sin = position_embeddings
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
- 
- 
-        attn_output, attn_weights = attention_interface(
+
+
+        attn_output, attn_weights =eager_attention_forward(
             self,
             query_states,
             key_states,
             value_states,
             attention_mask,
-            dropout=0.0 if not self.training else self.attention_dropout,
             scaling=self.scaling,
-            **kwargs,
+            dropout=0.0 if not self.training else self.attention_dropout
         )
 
         attn_output = attn_output.reshape(*input_shape, -1)

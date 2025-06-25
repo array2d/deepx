@@ -1,3 +1,4 @@
+from deepx.utils import Config
 from token_text import dir,config
 
 ############-------DEEPX-------################
@@ -10,12 +11,10 @@ input=load(dir+'input')
 embed_tokens_weight=load(dir+'weight')
 
 class NetDeepx(Module):
-    def __init__(self,configdict:dict):
+    def __init__(self,config:Config):
         super().__init__()
-        self.embed_tokens = Embedding(configdict["vocab_size"], configdict["hidden_size"],weight=embed_tokens_weight)
-        self.rotary_emb = LlamaRotaryEmbedding(config=configdict)
-        print("rotary_emb.inv_freq")
-        self.rotary_emb.inv_freq.print()
+        self.embed_tokens = Embedding(config.vocab_size, config.hidden_size,weight=embed_tokens_weight)
+        self.rotary_emb = LlamaRotaryEmbedding(config=config)
     def forward(self,x):
         inputs_embeds = self.embed_tokens(x)
         hidden_states = inputs_embeds
@@ -23,7 +22,7 @@ class NetDeepx(Module):
         return self.rotary_emb(hidden_states, position_ids)
 
 if __name__ == "__main__":
-    net = NetDeepx(configdict=config.to_dict())
+    net = NetDeepx(config=config)
     out=net.forward(input)
     out[0].print()
     out[1].print()

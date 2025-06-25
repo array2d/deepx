@@ -1,7 +1,7 @@
 hidden_size = 8
 eps = 1e-6
 dir = '/home/lipeng/model/deepxmodel/llama/'
-model_path = "/home/lipeng/model/deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+model_path = "/home/lipeng/model/deepseek-ai/DeepSeek-R1-Distill-Llama-8B/"
 print()
 
 from transformers import AutoTokenizer, AutoConfig
@@ -14,8 +14,9 @@ def init_tokenizer(model_path):
 
 
 tokenizer = init_tokenizer(model_path)
-config = AutoConfig.from_pretrained(model_path)
-
+# config = AutoConfig.from_pretrained(model_path)
+from deepx.utils import Config
+config=Config.from_file(model_path+"config.json")
 
 def tokenize_text(text, tokenizer):
     tokens = tokenizer(text, return_tensors="pt").input_ids

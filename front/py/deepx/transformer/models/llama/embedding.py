@@ -1,17 +1,17 @@
 from deepx.nn.modules import Module
-from deepx import Tensor,concat
+from deepx import  cat
 from deepx.transformer.modeling_rope_utils import ROPE_INIT_FUNCTIONS
-
+from deepx.utils import Config
 # https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/modeling_llama.py
 class LlamaRotaryEmbedding(Module):
-    def __init__(self,config:dict):
+    def __init__(self,config:Config):
         super().__init__()
         # 最大序列长度
-        self.max_seq_len_cached = config["max_position_embeddings"]
+        self.max_seq_len_cached = config.max_position_embeddings
         # 原始最大序列长度
-        self.original_max_seq_len = config["max_position_embeddings"]
+        self.original_max_seq_len = config.max_position_embeddings
         # 旋转类型
-        self.rope_type=config["rope_scaling"]["rope_type"]
+        self.rope_type=config.rope_scaling.rope_type
         # 旋转初始化函数
         self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
         # 旋转初始化函数
@@ -39,7 +39,7 @@ class LlamaRotaryEmbedding(Module):
 
     def forward(self, x, position_ids):
         # 扩展旋转频率
-        inv_freq_expanded = self.inv_freq[None, :, None].todtype('float32').expand((position_ids.shape[0], -1, 1))
+        inv_freq_expanded = self.inv_freq[None, :, None].float().expand((position_ids.shape[0], -1, 1))
  
         # 使用torch.unsqueeze和type转换替代索引操作
         position_ids_expanded = position_ids[:, None, :].float()
@@ -48,7 +48,7 @@ class LlamaRotaryEmbedding(Module):
         # 计算频率
         freqs = (inv_freq_expanded @ position_ids_expanded).T
         # 拼接频率
-        emb = concat((freqs, freqs), dim=-1)
+        emb = cat((freqs, freqs), dim=-1)
         # 计算余弦和正弦
         cos = emb.cos()
         sin = emb.sin()
