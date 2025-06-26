@@ -17,9 +17,14 @@ namespace stdutil
 
     void save(const byte *data, size_t size, const string &path)
     {
-
         ofstream ofs(path, ios::binary | ios::out | ios::trunc);
+        if (!ofs.is_open()) {
+            throw std::runtime_error("Failed to open file for writing: " + path);
+        }
         ofs.write(reinterpret_cast<const char *>(data), size);
+        if (!ofs) {
+            throw std::runtime_error("Failed to write data to file: " + path);
+        }
         ofs.close();
     }
 

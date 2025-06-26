@@ -54,6 +54,12 @@ namespace deepx::tf
             case Precision::Float32:
                 reshape<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), shape, *mem->gettensor<float>(this->returns[0].textvalue));
                 break;
+            case Precision::Float16:
+                reshape<Author, half>(*mem->gettensor<half>(this->args[0].textvalue), shape, *mem->gettensor<half>(this->returns[0].textvalue));
+                break;
+            case Precision::BFloat16:
+                reshape<Author, nv_bfloat16>(*mem->gettensor<nv_bfloat16>(this->args[0].textvalue), shape, *mem->gettensor<nv_bfloat16>(this->returns[0].textvalue));
+                break;               
             case Precision::Int64:
                 reshape<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), shape, *mem->gettensor<int64_t>(this->returns[0].textvalue));
                 break;
