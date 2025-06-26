@@ -69,7 +69,8 @@ class SafeTensorExporter:
             with safe_open(model_path, framework="numpy") as f:
                 for key in f.keys():
                     t = f.get_tensor(key)
-                    save_numpy(t,key)
+                    path= os.path.join(self.output_dir, key)
+                    save_numpy(t,path)
 
         self.mvothers()
         
@@ -92,17 +93,18 @@ class SafeTensorExporter:
 
 
 if __name__ == "__main__":
+    print()
     parser = argparse.ArgumentParser(description='Safetensor模型转换工具')
-    parser.add_argument('--model_dir', type=str, required=True,
+    parser.add_argument('--model', type=str, required=True,
                         help='输入目录路径，包含model.safetensors和config.json')
-    parser.add_argument('--output_dir', type=str, required=True,
+    parser.add_argument('--output', type=str, required=True,
                         help='输出目录路径，转换后的DeepX格式数据将保存于此')
 
     args = parser.parse_args()
 
     exporter = SafeTensorExporter(
-        model_dir=args.model_dir,
-        output_dir=args.output_dir
+        model_dir=args.model,
+        output_dir=args.output
     )
     try:
         exporter.export()
