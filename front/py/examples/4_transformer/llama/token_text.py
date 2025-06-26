@@ -14,9 +14,9 @@ def init_tokenizer(model_path):
 
 
 tokenizer = init_tokenizer(model_path)
-# config = AutoConfig.from_pretrained(model_path)
-from deepx.utils import Config
-config=Config.from_file(model_path+"config.json")
+config = AutoConfig.from_pretrained(model_path)
+# from deepx.utils import Config
+# config=Config.from_file(model_path+"config.json")
 
 def tokenize_text(text, tokenizer):
     tokens = tokenizer(text, return_tensors="pt").input_ids
