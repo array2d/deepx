@@ -24,23 +24,67 @@ namespace deepx::tf
         int run(shared_ptr<MemBase> mem, string &error) override
         {
             string name = this->args[0].textvalue;
-            if (mem->existstensor(name))
-            {
-                auto t = mem->gettensor(name);
-                if (this->args.size() == 1)
-                {
-                    tensorfunc::print<Author, void>(*t);
-                }
-                else
-                {
-                    tensorfunc::print<Author, void>(*t, this->args[1].textvalue);
-                }
-            }
-            else
-            {
+            if (!mem->existstensor(name))
+            { 
                 std::cerr << "print " << name << " not found" << std::endl;
                 error = "print " + name + " not found";
                 return 1;
+            }
+            string format="";
+            if (this->args.size() > 1){
+                format = this->args[1].textvalue;
+            }
+             
+            Precision dtype = mem->gettensor(name)->shape.dtype;
+            switch (dtype)
+            {   
+            case Precision::Float64:{
+                auto t = mem->gettensor<double>(name);
+                tensorfunc::print<Author,double>(*t,format);
+                break;
+            }
+            case Precision::Float32:{
+                auto t = mem->gettensor<float>(name);
+                tensorfunc::print<Author>(*t,format);
+                break;
+            }
+            case Precision::Float16:{
+                auto t = mem->gettensor<half>(name);
+                 tensorfunc::print<Author>(*t,format);
+                break;
+            }
+            case Precision::BFloat16:{
+                auto t = mem->gettensor<nv_bfloat16>(name);
+                 tensorfunc::print<Author>(*t,format);
+                break;
+            }
+            case Precision::Int64:{
+                auto t = mem->gettensor<int64_t>(name);
+                 tensorfunc::print<Author>(*t,format);
+                break;  
+            }
+            case Precision::Int32:{
+                auto t = mem->gettensor<int32_t>(name);
+                 tensorfunc::print<Author>(*t,format);
+                break;
+            }
+            case Precision::Int16:{
+                auto t = mem->gettensor<int16_t>(name);
+                 tensorfunc::print<Author>(*t,format);
+                break;  
+            }
+            case Precision::Int8:{
+                auto t = mem->gettensor<int8_t>(name);
+                tensorfunc::print<Author>(*t,format);
+                break;
+            }
+            case Precision::Bool:{
+                auto t = mem->gettensor<bool>(name);
+                tensorfunc::print<Author,bool>(*t,format);
+                break;  
+            }
+            default:
+                break;
             }
             return 0;
         }
