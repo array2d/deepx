@@ -129,7 +129,7 @@ class Shape:
         return tuple(outshape)
 
     @classmethod
-    def matmul(cls,shape:tuple[int],other:tuple[int])->tuple[int]:
+    def matmul(cls,shape:tuple[int,...],other:tuple[int,...])->tuple[int,...]:
         if len(shape)<2 or len(other)<2:
             raise ValueError(f"matmul: self.ndimension()<2 or other.ndimension()<2")
         if len(shape)!=len(other):

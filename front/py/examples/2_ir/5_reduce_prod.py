@@ -11,8 +11,8 @@ print(torch_p)
 
 ############-------DEEPX-------################
 
-from deepx import Tensor,ones,zeros,arange
-from deepx.nn.functional import sum,prod
+from deepx import  arange
+from deepx.nn.functional import  prod
 
 t=arange(0,60,name='t').reshape_((3,4,5))
 t.print()

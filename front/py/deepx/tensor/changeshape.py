@@ -30,16 +30,19 @@ def permute_(self,dimorder:tuple[int,...])->Tensor:
     return self
 
 @tensor_method
-def transpose(self,out:Union[Tensor,str]=''):
+def transpose(self,dim0:int,dim1:int,out:Union[Tensor,str]=''):
     assert isinstance(out,str) or isinstance(out,Tensor)
+    assert isinstance(dim0,int) and isinstance(dim1,int)
     from deepx.nn.functional import transpose as transpose_func
-    result=transpose_func(self,out)
+    result=transpose_func(self,dim0,dim1,out)
     return result
 
 @tensor_method
-def transpose_(self):
+def transpose_(self,dim0:int,dim1:int):
+    assert isinstance(dim0,int) and isinstance(dim1,int)
+    assert isinstance(dim0,int) and isinstance(dim1,int)
     from deepx.nn.functional import transpose as transpose_func
-    transpose_func(self,self)
+    transpose_func(self,dim0,dim1,self)
     return self
 
 # broadcast_to==broadcastTo==expand

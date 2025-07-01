@@ -202,8 +202,8 @@ class Tensor:
 
     #shape操作
     @property
-    def T(self) -> str:
-        return self.transpose()
+    def mT(self) -> str:
+        return self.transpose(-1,-2)
 
     # 打印
     @staticmethod

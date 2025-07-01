@@ -1,7 +1,15 @@
 from typing import Union
 from deepx import Tensor
-from .leaffunc_changeshape import reshape,indexselect, concat,broadcastTo
+from .leaffunc_changeshape import reshape,indexselect, concat,broadcastTo,permute
 from .leaffunc_init import newtensor,arange
+
+
+def transpose(t:Tensor,dim0:int,dim1:int,out:Union[Tensor,str]='')->Tensor:
+    dimorder = list(range(t.ndim))
+    dimorder[dim0],dimorder[dim1]=dimorder[dim1],dimorder[dim0]
+    return permute(t,tuple(dimorder),out)
+
+
 def squeeze(t:Tensor,dim:int)->Tensor:
     assert isinstance(dim,int)
     assert isinstance(t,Tensor)

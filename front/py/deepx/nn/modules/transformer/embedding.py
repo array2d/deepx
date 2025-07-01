@@ -1,7 +1,8 @@
 from deepx.nn.modules import Module
 from deepx import  cat
-from deepx.transformer.modeling_rope_utils import ROPE_INIT_FUNCTIONS
+from .modeling_rope_utils import ROPE_INIT_FUNCTIONS
 from deepx.utils import Config
+
 # https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/modeling_llama.py
 class LlamaRotaryEmbedding(Module):
     def __init__(self,config:Config):
@@ -46,7 +47,7 @@ class LlamaRotaryEmbedding(Module):
 
         
         # 计算频率
-        freqs = (inv_freq_expanded @ position_ids_expanded).T
+        freqs = (inv_freq_expanded @ position_ids_expanded).mT
         # 拼接频率
         emb = cat((freqs, freqs), dim=-1)
         # 计算余弦和正弦

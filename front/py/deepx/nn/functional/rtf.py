@@ -37,7 +37,7 @@ def A_op_C(op:str,a:Tensor,out:Tensor,author='miaobyte'):
     ir=DeepxIR(op, args, returns,author)
     send(ir)
 
-def A_b1_b2_op_C(op:str,a:Tensor,b1:tuple[int],b2:bool,out:Tensor,author='miaobyte'):
+def A_b1_b2_op_C(op:str,a:Tensor,b1:tuple[int,...],b2:bool,out:Tensor,author='miaobyte'):
     args=[Param.tensor(a),Param.vector(b1,'int32'),Param.varbool(b2)]
     returns=[Param.tensor(out)]
     ir=DeepxIR(op, args, returns,author)

@@ -4,7 +4,7 @@ from token_text import dir,config
 ############-------DEEPX-------################
 from deepx.nn.modules import Embedding,Module
 from deepx  import load,arange
-from deepx.transformer.models.llama import LlamaRotaryEmbedding
+from deepx.nn.modules.transformer  import LlamaRotaryEmbedding
 
 input=load(dir+'input')
 

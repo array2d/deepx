@@ -41,7 +41,7 @@ class Linear(Module):
 
     def forward(self, input: Tensor) -> Tensor:
         #`y = xA^T + b`
-        y=input @ self.weight.T
+        y=input @ self.weight.mT
         oldshape=y.shape
         if self.bias is not None:
             y.reshape_(tuple(y.shape[1:]))

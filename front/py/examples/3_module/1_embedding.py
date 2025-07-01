@@ -18,7 +18,7 @@ def tokenize_text(text, tokenizer):
         tokens = torch.where(tokens < tokenizer.vocab_size, tokens, torch.tensor(unk_token_id, device=tokens.device))
     return tokens
 
-dir="/home/lipeng/model/deepxmodel/embeddingtest/"
+dir="/home/lipeng/model/deepx/embeddingtest/"
  
 ############-------PyTorch-------################
 import torch.nn as nn

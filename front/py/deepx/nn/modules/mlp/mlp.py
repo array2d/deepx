@@ -5,7 +5,7 @@ ACT2FN={
     "silu":swish_fn,
 }
 
-class LlamaMLP(Module):
+class MLP(Module):
     def __init__(self, config:dict):
         super().__init__()
         # 输入层大小

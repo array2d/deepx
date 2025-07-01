@@ -16,7 +16,7 @@ print("\nPyTorch sigmoid result:")
 print(out_torch)
 
 ############-------DEEPX-------################
-from deepx import Tensor,ones,zeros,arange,load
+from deepx import  load
 from deepx import sigmoid
 
 # 使用相同的初始化方式

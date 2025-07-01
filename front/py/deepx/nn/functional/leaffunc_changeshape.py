@@ -9,7 +9,6 @@ def reshape(t:Tensor,shape:tuple[int,...],out:Union[Tensor,str]='')->Tensor:
     for i in shape:
         assert isinstance(i,int) and i>0
 
-    outtensor=out
     if isinstance(out,str) or out is None:
         outshape=shape
         outtensor=newtensor(outshape,dtype=t.dtype,name=out)
@@ -39,11 +38,6 @@ def permute(t:Tensor,
     from .rtf_changeshape import rtf_transpose
     rtf_transpose(t,dimorder,outtensor,defaultauthor['transpose'])
     return outtensor
-
-def transpose(t:Tensor,out:Union[Tensor,str]='')->Tensor:
-    dimorder = list(range(t.ndim))
-    dimorder[-1],dimorder[-2]=dimorder[-2],dimorder[-1]
-    return permute(t,tuple(dimorder),out)
 
  
 

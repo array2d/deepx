@@ -4,6 +4,35 @@ from deepx import Tensor,matmul,softmax,cat,dropout as dropout_func
 from deepx.nn.modules import Module
 from deepx.utils import Config
 
+def scaled_dot_product(
+    query: Tensor,
+    key: Tensor,
+    value: Tensor,
+    attention_mask: Optional[Tensor] = None,
+    scaling_factor: float = 1.0,
+    dropout_prob: float = 0.0
+) -> Tuple[Tensor, Tensor]:
+    # 计算注意力分数
+    attn_scores = (query @ key.mT) * scaling_factor
+
+    # softmax归一化
+    attn_weights =  softmax(attn_scores, dim=-1)
+
+    # 应用注意力掩码
+    if attention_mask is not None:
+        causal_mask = attention_mask[:, :, :, : key.shape[-2]]
+        attn_weights = attn_weights + causal_mask
+
+    # 可选的dropout
+    if dropout_prob > 0.0:
+        attn_weights = dropout_func(attn_weights, p=dropout_prob)
+    
+    # 注意力加权值
+    attn_output =  matmul(attn_weights, value)
+    
+    # 恢复原始维度
+    attn_output = attn_output.mT
+    return attn_output, attn_weights
 
 
 def rotate_half(x:Tensor):
@@ -29,7 +58,7 @@ def repeat_kv(hidden_states: Tensor, n_rep: int) -> Tensor:
 # https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/modeling_llama.py
 # 经简化，去掉了分布式配置，去掉attention的配置。交给IR自动替换flashattention，后续的组件自动处理
 
-def eager_attention_forward(
+def GQA(
     module: Module,
     query: Tensor,
     key: Tensor,
@@ -49,7 +78,7 @@ def eager_attention_forward(
     attn_weights = softmax(attn_weights, dim=-1, dtype=query.dtype)
     attn_weights = dropout_func(attn_weights, p=dropout)
     attn_output = matmul(attn_weights, value_states)
-    attn_output = attn_output.transpose(1, 2).contiguous()
+    attn_output = attn_output.transpose(1, 2)
 
     return attn_output, attn_weights
 
@@ -97,7 +126,7 @@ class LlamaAttention(Module):
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
 
 
-        attn_output, attn_weights =eager_attention_forward(
+        attn_output, attn_weights =GQA(
             self,
             query_states,
             key_states,

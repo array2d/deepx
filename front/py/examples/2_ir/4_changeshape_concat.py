@@ -12,7 +12,7 @@ print(torch_t)
 
 ############-------DEEPX-------################
 
-from deepx import Tensor,zeros, ones, concat
+from deepx import  ones, concat
 
 
 t1 = ones( (3,4,5),dtype='float32',name='t1')
