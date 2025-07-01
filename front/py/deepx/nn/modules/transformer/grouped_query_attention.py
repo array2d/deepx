@@ -1,6 +1,6 @@
 from typing import Optional
 from deepx import Tensor, Module
-from .scaled_dot_product_attention import  scaled_dot_product_attention
+from .attention import  scaled_dot_product_attention
 
 def repeat_kv(hidden_states: Tensor, n_rep: int) -> Tensor:
     batch, num_key_value_heads, slen, head_dim = hidden_states.shape
