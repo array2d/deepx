@@ -1,7 +1,7 @@
 from typing import Optional,Tuple
 from deepx import Tensor,matmul,softmax,dropout
 
-def scaled_dot_product(
+def scaled_dot_product_attention(
     query: Tensor,
     key: Tensor,
     value: Tensor,

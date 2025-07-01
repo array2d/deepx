@@ -1,6 +1,6 @@
 from typing import Optional
 from deepx import Tensor, Module
-from .scaled_dot_product_attention import  scaled_dot_product
+from .scaled_dot_product_attention import  scaled_dot_product_attention
 
 def repeat_kv(hidden_states: Tensor, n_rep: int) -> Tensor:
     batch, num_key_value_heads, slen, head_dim = hidden_states.shape
@@ -26,7 +26,7 @@ def grouped_query_attention(
     key_states = repeat_kv(key, module.num_key_value_groups)
     value_states = repeat_kv(value, module.num_key_value_groups)
 
-    return scaled_dot_product(
+    return scaled_dot_product_attention(
         query, key, value,
         attention_mask=attention_mask,
         scaling_factor=scaling_factor,
