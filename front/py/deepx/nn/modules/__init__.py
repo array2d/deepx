@@ -1,9 +1,11 @@
-from .module import Module, Sequential
+from .module import Module
+from .container import Sequential, ModuleList
 from .linear import Linear
 from .sparse import Embedding
+
 __all__ = [
     "Module",
-    "Linear",
-    "Sequential",
+    "Sequential","ModuleList",
     "Embedding",
+    "Linear",
     ]

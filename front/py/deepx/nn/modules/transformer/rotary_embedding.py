@@ -1,5 +1,5 @@
 from deepx.nn.modules import Module
-from deepx import  cat
+from deepx import  cat,Tensor
 from .modeling_rope_utils import ROPE_INIT_FUNCTIONS
 from deepx.utils import Config
 
@@ -58,3 +58,15 @@ class LlamaRotaryEmbedding(Module):
         sin = sin * self.attention_scaling
 
         return cos.todtype(x.dtype), sin.todtype(x.dtype)
+
+def rotate_half(x:Tensor):
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return  cat((-x2, x1,), dim=-1)
+
+def apply_rotary_pos_emb(q:Tensor, k:Tensor, cos:Tensor, sin:Tensor, unsqueeze_dim:int=1):
+    cos = cos.unsqueeze(unsqueeze_dim)
+    sin = sin.unsqueeze(unsqueeze_dim)
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
+    return q_embed, k_embed

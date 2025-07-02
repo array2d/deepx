@@ -5,8 +5,8 @@ from deepx import arange,Tensor,where
 
 def _compute_default_rope_parameters(config:Config=None,seq_len: Optional[int] = None, **rope_kwargs) -> Tuple[Tensor, float]:
     if len(rope_kwargs) > 0:
-        base = rope_kwargs["base"]
-        dim = rope_kwargs["dim"]
+        base = rope_kwargs.base 
+        dim = rope_kwargs.dim 
     elif config is not None:
         base = config.rope_theta
         partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
@@ -23,10 +23,10 @@ def _compute_llama3_parameters(config:Config,seq_len: Optional[int] = None,**rop
     # Gets the default RoPE parameters
     inv_freq, attention_factor = _compute_default_rope_parameters(config, seq_len, **rope_kwargs)
 
-    factor = config.rope_scaling["factor"]  # `8` in the original implementation
-    low_freq_factor = config.rope_scaling["low_freq_factor"]  # `1` in the original implementation
-    high_freq_factor = config.rope_scaling["high_freq_factor"]  # `4` in the original implementation
-    old_context_len = config.rope_scaling["original_max_position_embeddings"]  # `8192` in the original implementation
+    factor = config.rope_scaling.factor   # `8` in the original implementation
+    low_freq_factor = config.rope_scaling.low_freq_factor  # `1` in the original implementation
+    high_freq_factor = config.rope_scaling.high_freq_factor  # `4` in the original implementation
+    old_context_len = config.rope_scaling.original_max_position_embeddings  # `8192` in the original implementation
 
     low_freq_wavelen = old_context_len / low_freq_factor
     high_freq_wavelen = old_context_len / high_freq_factor

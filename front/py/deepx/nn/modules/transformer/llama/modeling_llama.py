@@ -1,22 +1,12 @@
-from typing import Optional,Tuple
-from deepx.nn.modules import Module,Linear,Embedding
-from deepx import Tensor,cat 
+from typing import Optional,Tuple,Union
+from deepx.nn.modules import Module,ModuleList,Linear,Embedding
+from deepx import Tensor,cat,arange
 from front.py.deepx.nn.modules.transformer.modeling_rope_utils import ROPE_INIT_FUNCTIONS
-from deepx.nn.modules.mlp import LlamaMLP
-from deepx.nn.modules.norm import LlamaRMSNorm
-from deepx.nn.modules.transformer import LlamaRotaryEmbedding
+from deepx.nn.modules.mlp import  MLP
+from deepx.nn.modules.norm import  RMSNorm
+from deepx.nn.modules.transformer import LlamaRotaryEmbedding,apply_rotary_pos_emb,grouped_query_attention as GQA
+from deepx.utils.config import Config
 
-def rotate_half(x:Tensor):
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return  cat((-x2, x1,), dim=-1)
-
-def apply_rotary_pos_emb(q:Tensor, k:Tensor, cos:Tensor, sin:Tensor, unsqueeze_dim:int=1):
-    cos = cos.unsqueeze(unsqueeze_dim)
-    sin = sin.unsqueeze(unsqueeze_dim)
-    q_embed = (q * cos) + (rotate_half(q) * sin)
-    k_embed = (k * cos) + (rotate_half(k) * sin)
-    return q_embed, k_embed
 
 
 
@@ -85,9 +75,9 @@ class LlamaDecoderLayer(Module):
 
         self.self_attn = LlamaAttention(config=config, layer_idx=layer_idx)
 
-        self.mlp = LlamaMLP(config)
-        self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.mlp = MLP(config)
+        self.input_layernorm =  RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.post_attention_layernorm =  RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
     def forward(
         self,
@@ -142,7 +132,7 @@ class LlamaModel(Module):
         self.layers = ModuleList(
             [LlamaDecoderLayer(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
         )
-        self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.norm =  RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.rotary_emb = LlamaRotaryEmbedding(config=config)
         self.gradient_checkpointing = False
 
@@ -184,13 +174,10 @@ class LlamaModel(Module):
 
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
-
-        if use_cache and past_key_values is None:
-            past_key_values = DynamicCache()
-
+ 
         if cache_position is None:
             past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
-            cache_position = torch.arange(
+            cache_position =  arange(
                 past_seen_tokens, past_seen_tokens + inputs_embeds.shape[1], device=inputs_embeds.device
             )
 
@@ -244,17 +231,13 @@ class LlamaModel(Module):
 
     def _update_causal_mask(
         self,
-        attention_mask: torch.Tensor,
-        input_tensor: torch.Tensor,
-        cache_position: torch.Tensor,
+        attention_mask:  Tensor,
+        input_tensor:  Tensor,
+        cache_position:  Tensor,
         past_key_values: Cache,
         output_attentions: bool,
     ):
-        if self.config._attn_implementation == "flash_attention_2":
-            if attention_mask is not None and (attention_mask == 0.0).any():
-                return attention_mask
-            return None
-
+ 
         # For SDPA, when possible, we will rely on its `is_causal` argument instead of its `attn_mask` argument, in
         # order to dispatch on Flash Attention 2. This feature is not compatible with static cache, as SDPA will fail
         # to infer the attention mask.
@@ -278,7 +261,7 @@ class LlamaModel(Module):
         else:
             target_length = (
                 attention_mask.shape[-1]
-                if isinstance(attention_mask, torch.Tensor)
+                if isinstance(attention_mask,  Tensor)
                 else past_seen_tokens + sequence_length + 1
             )
 
@@ -302,19 +285,18 @@ class LlamaModel(Module):
             # Attend to all tokens in fully masked rows in the causal_mask, for example the relevant first rows when
             # using left padding. This is required by F.scaled_dot_product_attention memory-efficient attention path.
             # Details: https://github.com/pytorch/pytorch/issues/110213
-            min_dtype = torch.finfo(dtype).min
+            min_dtype =  finfo(dtype).min
             causal_mask = AttentionMaskConverter._unmask_unattended(causal_mask, min_dtype)
 
         return causal_mask
 
     @staticmethod
     def _prepare_4d_causal_attention_mask_with_cache_position(
-        attention_mask: torch.Tensor,
+        attention_mask:  Tensor,
         sequence_length: int,
         target_length: int,
-        dtype: torch.dtype,
-        device: torch.device,
-        cache_position: torch.Tensor,
+        dtype:  dtype,
+        cache_position:  Tensor,
         batch_size: int,
         **kwargs,
     ):
@@ -323,7 +305,7 @@ class LlamaModel(Module):
         `(batch_size, key_value_length)`, or if the input `attention_mask` is already 4D, do nothing.
 
         Args:
-            attention_mask (`torch.Tensor`):
+            attention_mask (` Tensor`):
                 A 2D attention mask of shape `(batch_size, key_value_length)` or a 4D attention mask of shape
                 `(batch_size, 1, query_length, key_value_length)`.
             sequence_length (`int`):
@@ -331,26 +313,26 @@ class LlamaModel(Module):
             target_length (`int`):
                 The target length: when generating with static cache, the mask should be as long as the static cache,
                 to account for the 0 padding, the part of the cache that is not filled yet.
-            dtype (`torch.dtype`):
+            dtype (` dtype`):
                 The dtype to use for the 4D attention mask.
-            device (`torch.device`):
+            device (` device`):
                 The device to plcae the 4D attention mask on.
-            cache_position (`torch.Tensor`):
+            cache_position (` Tensor`):
                 Indices depicting the position of the input sequence tokens in the sequence.
-            batch_size (`torch.Tensor`):
+            batch_size (` Tensor`):
                 Batch size.
         """
         if attention_mask is not None and attention_mask.dim() == 4:
             # In this case we assume that the mask comes already in inverted form and requires no inversion or slicing.
             causal_mask = attention_mask
         else:
-            min_dtype = torch.finfo(dtype).min
-            causal_mask = torch.full(
+            min_dtype =  finfo(dtype).min
+            causal_mask =  full(
                 (sequence_length, target_length), fill_value=min_dtype, dtype=dtype, device=device
             )
             if sequence_length != 1:
-                causal_mask = torch.triu(causal_mask, diagonal=1)
-            causal_mask *= torch.arange(target_length, device=device) > cache_position.reshape(-1, 1)
+                causal_mask =  triu(causal_mask, diagonal=1)
+            causal_mask *=  arange(target_length, device=device) > cache_position.reshape(-1, 1)
             causal_mask = causal_mask[None, None, :, :].expand(batch_size, 1, -1, -1)
             if attention_mask is not None:
                 causal_mask = causal_mask.clone()  # copy to contiguous memory for in-place edit
