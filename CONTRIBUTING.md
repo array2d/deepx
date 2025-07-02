@@ -13,9 +13,14 @@ deepx框架的发展，主要包括五大类方向
 
 ## 步骤
 
-第一次提交
+第一个job：完成编译
   1. Fork本仓库（github.com/array2d/deepx）的main分支，到你的github/yourname/deepx
   2. 本地clone github/yourname/deepx
+  3. 按照doc目录支持，完成编译，运行front/py/example的例子
+  4. 来到 #75 issue，证明你在deepx的第一份工作
+
+第一次提交
+
   3. 提交并推送您的更改到你的github：`git commit -m 'Add some feature'`
   4. 创建一个Pull Request。
 
