@@ -1,8 +1,8 @@
 from typing import Optional,Tuple,Union
 from deepx.nn.modules import Module,ModuleList,Linear,Embedding
 from deepx import Tensor,cat,arange
-from front.py.deepx.nn.modules.transformer.modeling_rope_utils import ROPE_INIT_FUNCTIONS
-from deepx.nn.modules.mlp import  MLP
+from deepx.nn.modules.transformer.modeling_rope_utils import ROPE_INIT_FUNCTIONS
+from deepx.nn.modules.mlp import  GatedMLP
 from deepx.nn.modules.norm import  RMSNorm
 from deepx.nn.modules.transformer import LlamaRotaryEmbedding,apply_rotary_pos_emb,grouped_query_attention as GQA
 from deepx.utils.config import Config
@@ -75,7 +75,7 @@ class LlamaDecoderLayer(Module):
 
         self.self_attn = LlamaAttention(config=config, layer_idx=layer_idx)
 
-        self.mlp = MLP(config)
+        self.mlp = GatedMLP(config)
         self.input_layernorm =  RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm =  RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
