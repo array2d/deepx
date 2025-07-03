@@ -1,5 +1,4 @@
 from safetensors import safe_open
-import numpy as np
 import os
 import json
 import argparse
@@ -62,14 +61,14 @@ class SafeTensorExporter:
         """导出safetensor模型到指定目录"""
         model_files = self._find_model_files()
         
-        from deepxutil.numpy import save_numpy
+        from deepxutil.torch import save_torch
 
         for model_path in model_files:
-            with safe_open(model_path, framework="numpy") as f:
+            with safe_open(model_path, framework="pt") as f:
                 for key in f.keys():
                     t = f.get_tensor(key)
                     path= os.path.join(self.output_dir, key)
-                    save_numpy(t,path)
+                    save_torch(t,path)
 
         self.mvothers()
         
