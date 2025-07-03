@@ -2,7 +2,6 @@ from safetensors import safe_open
 import numpy as np
 import os
 import json
-import yaml
 import argparse
 import shutil
 import glob
@@ -95,9 +94,9 @@ class SafeTensorExporter:
 if __name__ == "__main__":
     print()
     parser = argparse.ArgumentParser(description='Safetensor模型转换工具')
-    parser.add_argument('--model', type=str, required=True,
+    parser.add_argument('model', type=str, 
                         help='输入目录路径，包含model.safetensors和config.json')
-    parser.add_argument('--output', type=str, required=True,
+    parser.add_argument('--output','-o', type=str, required=True,
                         help='输出目录路径，转换后的DeepX格式数据将保存于此')
 
     args = parser.parse_args()

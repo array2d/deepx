@@ -1,5 +1,11 @@
-import numpy as np
 from typing import Optional,Union
+
+def prod(shape):
+    result = 1
+    for dim in shape:
+        result *= dim
+    return result
+
 class Shape:
     def __init__(self, shape:tuple[int,...]=None):
         # 确保 shape 是元组类型
@@ -7,7 +13,7 @@ class Shape:
         self._shape = shape
         for i in self._shape:
             assert isinstance(i,int) and i>0
-        self._size = int(np.prod(self.shape)) if self.shape else 0
+        self._size = int(prod(self.shape)) if self.shape else 0
         # 计算 stride（步长）
         self._strides = self._compute_strides()
         self._dtype=None

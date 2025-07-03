@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
-
+ 
 setup(
-    name='deepx',
+    name='deepxutil',
     version='0.0.2',
-    description='DeepX - 高性能深度学习框架的Python接口',
+    description='DeepX Utils - DeepX框架的实用工具集',
     author='igor.li',
     author_email='lipeng@mirrorsoft.cn',
     packages=find_packages(),

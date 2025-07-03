@@ -1,6 +1,11 @@
 name: Tool/deepxctl Build
 on: [push, pull_request]
- 
+  push:
+    paths:
+      - 'tool/deepxctl/**'
+  pull_request:
+    paths:
+      - 'tool/deepxctl/**'
 jobs:
   build:
     strategy:
