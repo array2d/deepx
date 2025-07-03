@@ -37,9 +37,10 @@ excuter所执行的内容，就是deepxir的序列或deepxir计算图
 
 https://github.com/array2d/deepx/blob/main/doc/excuter/op-mem-cuda/list.md
 
-deepxir分为3类
+deepxir分为4类
 
 计算：tensor这些系列elementwise、changeshape、tensorlife、io、reduce、init
+
 指令结构:
 queue[deepxIR]，串行指令，有前后执行顺序
 parallel[deepxIR]，可并行的指令，无顺序依赖，可并行
