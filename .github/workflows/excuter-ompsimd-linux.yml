@@ -1,6 +1,12 @@
 name: Excuter/ompsimd-linux Build
 on: [push, pull_request]
-
+on: [push, pull_request]
+  push:
+    paths:
+      - 'excuter/op-mem-ompsimd/**'
+  pull_request:
+    paths:
+      - 'excuter/op-mem-ompsimd/**'
 env:
   HIGHWAY_VERSION: 1.2.0
 

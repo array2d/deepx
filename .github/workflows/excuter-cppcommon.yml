@@ -1,6 +1,11 @@
 name: Excuter/cppcommon Build
 on: [push, pull_request]
-
+  push:
+    paths:
+      - 'excuter/cpp-common/**'
+  pull_request:
+    paths:
+      - 'excuter/cpp-common/**'
 env:
   HIGHWAY_VERSION: 1.2.0
 

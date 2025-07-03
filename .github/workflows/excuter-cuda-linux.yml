@@ -1,6 +1,11 @@
 name: Excuter/cuda-linux Build
 on: [push, pull_request]
-
+  push:
+    paths:
+      - 'excuter/op-mem-cuda/**'
+  pull_request:
+    paths:
+      - 'excuter/op-mem-cuda/**'
 env:
   CUDA_VERSION: "12.6.0"
   CUDA_MAJOR_VERSION: "12"
