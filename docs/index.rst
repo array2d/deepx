@@ -18,7 +18,7 @@ DeepX 原生分布式并行的深度学习训练推理一体框架
    :caption: doc 文档
    
    front/py/deepx/about
-   excuter/op-mem-ompsimd/list
+   executor/op-mem-ompsimd/list
    deepxIR/ir
 
 .. toctree::
@@ -27,9 +27,9 @@ DeepX 原生分布式并行的深度学习训练推理一体框架
    
    front/py/contribute
    scheduler/scheduler
-   excuter/excuter
-   excuter/op-mem-ompsimd/contribute
-   excuter/op-mem-ompsimd/range
+   executor/executor
+   executor/op-mem-ompsimd/contribute
+   executor/op-mem-ompsimd/range
 
 索引和搜索
 ==========

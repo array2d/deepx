@@ -4,7 +4,7 @@ deepx框架的发展，主要包括五大类方向
 
 + front: 新增模型、module、python类函数等
 + 中间层：包括计算图优化器，插件系统(自动KVcache系统)，自动分布式化，栈tensor自动释放，自动Inplace化等操作
-+ 新增或修改excuter
++ 新增或修改executor
 + 增加或修改算子，进一步可以分为leaftensorfunc(不可分割的基础算子)，fusedtensorfunc（融合算子）
 + 文档丰富：
 + 运维自动化方向

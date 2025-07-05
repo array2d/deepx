@@ -2,10 +2,10 @@ name: Excuter/cppcommon Build
 on: [push, pull_request]
   push:
     paths:
-      - 'excuter/cpp-common/**'
+      - 'executor/cpp-common/**'
   pull_request:
     paths:
-      - 'excuter/cpp-common/**'
+      - 'executor/cpp-common/**'
 env:
   HIGHWAY_VERSION: 1.2.0
 
@@ -48,7 +48,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          excuter/cpp-common/build
+          executor/cpp-common/build
           ~/.ccache
         key: ${{ runner.os }}-build-${{ hashFiles('**/CMakeLists.txt') }}
         restore-keys: |
@@ -57,7 +57,7 @@ jobs:
     # 构建 cpp-common 库
     - name: Build Common Library
       run: |
-        cd excuter/cpp-common
+        cd executor/cpp-common
         mkdir -p build && cd build
         cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
         cmake --build . --config Release -j$(nproc)

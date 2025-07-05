@@ -29,7 +29,7 @@ int main()
     register_all(tf_factory);
 
     // 将op table输出到markdown文件
-    string docdir = "../../../doc/excuter/op-mem-cuda/";
+    string docdir = "../../../doc/executor/op-mem-cuda/";
     std::ofstream md_file(docdir + "list.md");
     if (md_file.is_open())
     {

@@ -1,6 +1,6 @@
 ## op-mem-cuda 支持算子列表 
 
-本页面由 `excuter/op-mem-cuda 生成，请勿手动修改 
+本页面由 `executor/op-mem-cuda 生成，请勿手动修改 
 
 ### matmul
 

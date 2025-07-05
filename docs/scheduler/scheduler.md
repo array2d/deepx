@@ -1,12 +1,12 @@
 ### scheduler
 
-DeepX框架的scheduler，是front和excuter之间的桥梁。
+DeepX框架的scheduler，是front和executor之间的桥梁。
 
-front只负责搭建抽象计算图，excuter负责执行算子，而scheduler负责将抽象计算图转换为执行计算图，并发送给excuter。
+front只负责搭建抽象计算图，executor负责执行算子，而scheduler负责将抽象计算图转换为执行计算图，并发送给executor。
 
 #### 算子注册器
 
-算子注册器，接收excuter的算子及精度列表。
+算子注册器，接收executor的算子及精度列表。
 
 
 #### 调度器

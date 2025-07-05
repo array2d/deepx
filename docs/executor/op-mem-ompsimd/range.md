@@ -1,4 +1,4 @@
-## excuter
+## executor
 
 ### op-mem-ompsimd
 
@@ -8,9 +8,9 @@ range函数是shape类中的一个函数，用于根据shape对tensor进行omp�
 
 定义和实现分别在：
 
-excuter/common/src/deepx/shape.hpp
+executor/common/src/deepx/shape.hpp
 
-excuter/common/src/deepx/shape_range.cpp
+executor/common/src/deepx/shape_range.cpp
 
 | func | omp并行 | omp线程local局部对象 | 调用场景   |
 | ---- | ---- | ------ | ---------- |

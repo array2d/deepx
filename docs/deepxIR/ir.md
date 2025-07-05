@@ -21,7 +21,7 @@ newtensor 3 4 5 -> T1
 
 ## 函数定义(funcdef)
 
-函数定义由excuter层负责注册实现,用于声明操作的参数和返回值类型。excuter通过注册funcdef来声明其支持的tensorfunc。
+函数定义由executor层负责注册实现,用于声明操作的参数和返回值类型。executor通过注册funcdef来声明其支持的tensorfunc。
 
 因此需要设置参数、返回值的详细类型约束
 
@@ -50,7 +50,7 @@ matmul(A,B)->C //id=1 created_at=123456789 sent_at=123456790
 
 对于tensorfunc的类型系统，我们只关心与tensor相关的类型系统
 
-参考 excuter/common/src/deepx/dtype.hpp
+参考 executor/common/src/deepx/dtype.hpp
 
 ```
 {
@@ -79,7 +79,7 @@ matmul(A,B)->C //id=1 created_at=123456789 sent_at=123456790
 
 ## funcdef
 
-excuter 负责定义其支持的tensorfunc
+executor 负责定义其支持的tensorfunc
 
 1. 矩阵乘法:
 ```
@@ -89,7 +89,7 @@ matmul(Tensor<float32|float64> A, Tensor<float32|float64> B) -> Tensor<float32|f
 # funccall  
 matmul A,B -> C
 // rtf(remote tensor func)解析器会自动解析参数和返回值的列表
-// excuter会从mem获取A，B，C这3个tensor，并执行matmul操作
+// executor会从mem获取A，B，C这3个tensor，并执行matmul操作
 ```
 
 2. 张量求和:
@@ -100,9 +100,9 @@ sum(Tensor<any> input, vector<int32> dims,var<bool> keepdim) -> Tensor<any> outp
 # funccall
 sum(T1,[0 1],true) -> T2
 // rtf(remote tensor func)解析器会自动解析参数和返回值的列表
-// 其中[0 1]会被解析为vector<int32>，便于excuter执行时使用
-// true会被解析为var<bool> keepdim，便于excuter执行时使用
-// excuter会从mem获取T1，T2这2个tensor，并执行sum操作
+// 其中[0 1]会被解析为vector<int32>，便于executor执行时使用
+// true会被解析为var<bool> keepdim，便于executor执行时使用
+// executor会从mem获取T1，T2这2个tensor，并执行sum操作
 ```
 
 3. 创建新张量:

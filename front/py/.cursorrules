@@ -9,6 +9,6 @@ Always respond in 中文
 是deepx的python部分，项目路径为/home/lipeng/code/ai/deepx/front/py
 deepx的对外暴露的设计，尽可能接近pytorch的API
 deepx_py是前端，负责搭建深度学习模型,但并不参与实际数据存储和计算
-deepx_py虽然有类似pytorch的API,但只是调用excuter内的对应实现
-deepx_py依赖网络api调用后端excuter的计算
-deepx_py的每个OP，都会在excuter内找到对应的实现
+deepx_py虽然有类似pytorch的API,但只是调用executor内的对应实现
+deepx_py依赖网络api调用后端executor的计算
+deepx_py的每个OP，都会在executor内找到对应的实现

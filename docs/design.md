@@ -15,9 +15,9 @@ deepIR{
 }
 ```
 
-excuter执行deepxIR的规则
+executor执行deepxIR的规则
 
-+ excuter执行deepxIR时，不得修改args中的tensor
++ executor执行deepxIR时，不得修改args中的tensor
 + 但deepIR不限制args和returns中的Param同名，这样可以实现类似inplace的操作
 
 

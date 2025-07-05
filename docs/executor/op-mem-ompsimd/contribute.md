@@ -1,4 +1,4 @@
-## excuter
+## executor
 
 ### op-mem-ompsimd
 

@@ -1,4 +1,4 @@
-## 如何给excuter添加一个新算子
+## 如何给executor添加一个新算子
 
 ### 层次结构图
 
@@ -14,7 +14,7 @@
 
 #### Op
 
-Op是excuter的算子，是excuter的执行单元
+Op是executor的算子，是executor的执行单元
 
 在程序中，Op是基类，不同的Op有不同的实现，比如Add, Mul, MatMul等。
 每个Op都需要override forward和backward函数
@@ -31,7 +31,7 @@ Matmul会选择选择一个默认的实现
 git clone https://github.com/deepx-org/deepx.git
 
 #### 1.cpu执行器
-cd deepx/excuter/op-mem-ompsimd
+cd deepx/executor/op-mem-ompsimd
 
 需要提前安装好依赖
 + highway需要源码安装
@@ -43,7 +43,7 @@ make build && cd build && cmake .. && make
 
 
 #### 2.cuda执行器
-cd deepx/excuter/op-mem-cuda
+cd deepx/executor/op-mem-cuda
 
 需要提前安装好依赖
 + cuda
@@ -60,7 +60,7 @@ todo
 
 #### 4.front对接测试
 
-1.先启动excuter可执行文件， 位于excuter/op-mem-{cuda/ompsimd}/build，可执行文件名同excuter名
+1.先启动executor可执行文件， 位于executor/op-mem-{cuda/ompsimd}/build，可执行文件名同executor名
 2.然后测试front中py的对应算子脚本（front/py/examples 目录）
 
 可以按照顺序，以此测试

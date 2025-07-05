@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15...3.29)
-project(deepx-excuter-cuda LANGUAGES CXX CUDA) 
+project(deepx-executor-cuda LANGUAGES CXX CUDA) 
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)

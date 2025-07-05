@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15...3.29)
-project(deepx-excuter-ompsimd LANGUAGES CXX ) 
+project(deepx-executor-ompsimd LANGUAGES CXX ) 
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)

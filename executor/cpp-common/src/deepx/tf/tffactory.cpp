@@ -82,11 +82,11 @@ namespace deepx::tf
         cloned->metadata=other.metadata;
         return cloned;
     }
-    string TfFactory::print_markdown(string excuter_name) const
+    string TfFactory::print_markdown(string executor_name) const
     {
         std::stringstream ss;
-        ss << "## " << excuter_name << " 支持算子列表 \n\n";
-        ss << "本页面由 `excuter/" << excuter_name << " 生成，请勿手动修改 \n\n";
+        ss << "## " << executor_name << " 支持算子列表 \n\n";
+        ss << "本页面由 `executor/" << executor_name << " 生成，请勿手动修改 \n\n";
  
         // 首先按tftype分组
         unordered_map<string, vector<shared_ptr<TF>>> tf_by_type;

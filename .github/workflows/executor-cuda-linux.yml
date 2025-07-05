@@ -2,10 +2,10 @@ name: Excuter/cuda-linux Build
 on: [push, pull_request]
   push:
     paths:
-      - 'excuter/op-mem-cuda/**'
+      - 'executor/op-mem-cuda/**'
   pull_request:
     paths:
-      - 'excuter/op-mem-cuda/**'
+      - 'executor/op-mem-cuda/**'
 env:
   CUDA_VERSION: "12.6.0"
   CUDA_MAJOR_VERSION: "12"
@@ -62,7 +62,7 @@ jobs:
             cd /workspace && \
             
             # 构建 common 库
-            cd excuter/cpp-common && \
+            cd executor/cpp-common && \
             mkdir -p build && cd build && \
             cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja .. && \
             ninja && \

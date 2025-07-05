@@ -1,4 +1,4 @@
-## c++:计算执行器(excuter)
+## c++:计算执行器(executor)
 
 负责实现tensor的具体计算过程,对接硬件如GPU、CPU的simd指令
 
@@ -33,9 +33,9 @@ deepxctl:提供对deepx体系的所有工具、库、模型、镜像的统一纳
 ## deepxIR
 虽然deepxIR不是独立的编程语言，但是deepx体系的程序格式标准
 
-excuter所执行的内容，就是deepxir的序列或deepxir计算图
+executor所执行的内容，就是deepxir的序列或deepxir计算图
 
-https://github.com/array2d/deepx/blob/main/doc/excuter/op-mem-cuda/list.md
+https://github.com/array2d/deepx/blob/main/doc/executor/op-mem-cuda/list.md
 
 deepxir分为4类
 

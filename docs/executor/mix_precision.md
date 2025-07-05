@@ -8,7 +8,7 @@ mix precision 是一种混合精度训练方法，它使用 16 位浮点数和 8
 
 在深度学习中，模型通常使用 32 位浮点数进行训练，这样可以确保模型的精度。但是，32 位浮点数占用的显存较大，计算时间较长。因此，为了减少显存占用和计算时间，可以使用 mix precision 训练方法。
 
-## 3. 关于excuter的mix precision的实现
+## 3. 关于executor的mix precision的实现
 
 如：
 

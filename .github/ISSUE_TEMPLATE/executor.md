@@ -1,8 +1,8 @@
 ---
 name: 执行引擎
 about:按照给定计算图，负责存储、计算、网络传输的执行
-title: '[excuter] '
-labels: excuter,
+title: '[executor] '
+labels: executor,
 assignees: ''
 ---
 
