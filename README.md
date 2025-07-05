@@ -50,10 +50,10 @@ Op需要实现run方法
 
 
 #### 默认执行器
-+ cpu执行器,已实现ompsimd。其支持的算子列表[ompsimd](doc/executor/op-mem-ompsimd/list.md)
++ cpu执行器,已实现ompsimd。其支持的算子列表[ompsimd](docs/executor/op-mem-ompsimd/list.md)
 
 #### GPU执行器
-+ cuda执行器，其支持的算子列表[cuda](doc/executor/op-mem-cuda/list.md)
++ cuda执行器，其支持的算子列表[cuda](docs/executor/op-mem-cuda/list.md)
 
 欢迎大家提交cuda代码
 

@@ -35,7 +35,7 @@ deepxctl:提供对deepx体系的所有工具、库、模型、镜像的统一纳
 
 executor所执行的内容，就是deepxir的序列或deepxir计算图
 
-https://github.com/array2d/deepx/blob/main/doc/executor/op-mem-cuda/list.md
+https://github.com/array2d/deepx/blob/main/docs/executor/op-mem-cuda/list.md
 
 deepxir分为4类
 
