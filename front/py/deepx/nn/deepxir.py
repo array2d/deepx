@@ -216,3 +216,38 @@ class DeepxIRResp:
         if self._finish_at is not None:
             parts.append(f"finish_at={self._finish_at.strftime('%H:%M:%S.%f')[:-3]}")
         return ' '.join(parts)
+
+def ref_funcstart(fname:str,args_:list, returns_:list):
+    args=[]
+    for arg in args_:
+        if isinstance(arg,Tensor):
+            args.append(Param.tensor(arg))
+        elif isinstance(arg,int) or isinstance(arg,float):
+            args.append(Param.varnum(arg))
+        elif isinstance(arg,bool):
+            args.append(Param.varbool(arg))
+        elif isinstance(arg,str):
+            args.append(Param.varstr(arg))
+        else:
+            raise TypeError(f"Unsupported argument type: {type(arg)}")
+    returns=[]
+    for ret in returns_:
+        if isinstance(ret,Tensor):
+            returns.append(Param.tensor(ret))
+        elif isinstance(arg,int) or isinstance(arg,float):
+            returns.append(Param.varnum(ret))
+        elif isinstance(ret,bool):
+            returns.append(Param.varbool(ret))
+        elif isinstance(ret,str):
+            returns.append(Param.varstr(ret))
+        else:
+            raise TypeError(f"Unsupported return type: {type(ret)}")
+    ir=DeepxIR(fname, args, returns,'')
+    #send(ir)
+
+def FuseFunc(f):
+    fname=f.__name__
+    
+    f()
+
+    return
