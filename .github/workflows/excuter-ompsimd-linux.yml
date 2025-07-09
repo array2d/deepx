@@ -1,5 +1,5 @@
 name: Excuter/ompsimd-linux Build
-on: [push, pull_request]
+on:
   push:
     paths:
       - 'excuter/op-mem-ompsimd/**'
