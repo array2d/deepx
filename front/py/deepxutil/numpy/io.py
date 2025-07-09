@@ -12,7 +12,7 @@ def save_numpy(t,tensorpath:str,realdtype:str=None):
     shape=Shape(t.shape)
     shape._dtype=str(t.dtype)
     if realdtype is not None:
-        shape._realdtype=realdtype
+        shape._dtype=realdtype
     shape.save(tensorpath+".shape")
 
     array = ascontiguousarray(t)
