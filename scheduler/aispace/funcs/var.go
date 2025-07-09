@@ -1,4 +1,4 @@
-package cell
+package funcs
 
 type Var struct {
 	funcspace *FuncSpace // 函数空间
