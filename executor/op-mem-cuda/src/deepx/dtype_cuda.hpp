@@ -3,6 +3,7 @@
 
 #include <cuda_fp16.h>
 #include <cuda_bf16.h>
+#include <cuda_fp8.h>
 
 #include "deepx/dtype.hpp"
 
@@ -34,6 +35,27 @@ namespace deepx
         else
             return Precision::Any;
     }   
+
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::BFloat16>> {
+        using type = nv_bfloat16;
+    };
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Float16>> {
+        using type = half;
+    };
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Float8E5M2>> {
+        using type =  __nv_fp8_e5m2;
+    };
+
+    template <>
+    struct to_tensor_type<PrecisionWrapper<Precision::Float8E4M3>> {
+        using type = __nv_fp8_e4m3;
+    };
 }
 
 #endif // DEEPX_DTYPE_CUDA_HPP

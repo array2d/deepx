@@ -1,5 +1,5 @@
 name: Excuter/cuda-linux Build
-on: 
+on:
   push:
     paths:
       - 'executor/op-mem-cuda/**'
