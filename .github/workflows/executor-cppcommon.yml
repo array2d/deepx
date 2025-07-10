@@ -1,5 +1,5 @@
 name: Excuter/cppcommon Build
-on: [push, pull_request]
+on: 
   push:
     paths:
       - 'executor/cpp-common/**'
