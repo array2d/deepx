@@ -10,14 +10,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-WORKDIR /home/
+WORKDIR /home
 # CUDA 已经预装，无需额外配置
-ADD cpp-common cpp-common
-ADD op-mem-cuda op-mem-cuda
+ADD executor/cpp-common   cpp-common
+ADD executor/op-mem-cuda  op-mem-cuda
 WORKDIR /home/op-mem-cuda
 
 RUN rm -rf build && mkdir build && cd build && \
     cmake .. && \
     make -j$(nproc)
 
-CMD ["./build/bin/deepx-executor-cuda"]
+ENTRYPOINT ["./build/deepx-executor-cuda"]
