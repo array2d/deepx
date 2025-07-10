@@ -15,7 +15,7 @@ deepx的分前中后端，分别是为前端表达侧，编译替换调度层，
 python sdk提供接近pytorch的API
 也容许其他语言的sdk接入，
 
-+ IR通信调度。不同于pytorch或其他py+bind c++这种单一进程的栈上函数调度执行的方式。deepx各个程序（如front的python sdk，back的计算图编译器优化器、excuter如ompsimd）之间，通过IR实现网络通信调度，需要各自启动对应进程。
++ IR通信调度。不同于pytorch或其他py+bind c++这种单一进程的栈上函数调度执行的方式。deepx各个程序（如front的python sdk，back的计算图编译器优化器、executor如ompsimd）之间，通过IR实现网络通信调度，需要各自启动对应进程。
 
 
 | 维度         | PyTorch类框架          | DeepX                   |
@@ -30,7 +30,7 @@ python sdk提供接近pytorch的API
 + 注册中心:收集当前已就绪的执行器的算子列表,收集算子时耗和空间占用信息
 + 计算图编译器优化器:fusion算子，计算图节点消除,自动生成tensor拆分并行的计算子图并替代原节点
 + 执行调度器：数据并行，流水线并行(前向反向并行)，模型并行。
-+ front生成基础IR，编译器负责进行fusion成excuter注册的高级算子。
++ front生成基础IR，编译器负责进行fusion成executor注册的高级算子。
 
 
 ### 执行层
@@ -44,16 +44,16 @@ Op{args(args_grad),returns(returns_grad)|func run}
 
 Op需要实现run方法
 
-关于excuter，只要能按deepxIR序列执行，并返回结果，就可以接入deepx分布式调度框架，因此，从硬件、指令、加速库、高级框架包括训练、推理引擎，都可以稍作修改，就接入deepx体系。
+关于executor，只要能按deepxIR序列执行，并返回结果，就可以接入deepx分布式调度框架，因此，从硬件、指令、加速库、高级框架包括训练、推理引擎，都可以稍作修改，就接入deepx体系。
 
 当前的
 
 
 #### 默认执行器
-+ cpu执行器,已实现ompsimd。其支持的算子列表[ompsimd](doc/excuter/op-mem-ompsimd/list.md)
++ cpu执行器,已实现ompsimd。其支持的算子列表[ompsimd](docs/executor/op-mem-ompsimd/list.md)
 
 #### GPU执行器
-+ cuda执行器，其支持的算子列表[cuda](doc/excuter/op-mem-cuda/list.md)
++ cuda执行器，其支持的算子列表[cuda](docs/executor/op-mem-cuda/list.md)
 
 欢迎大家提交cuda代码
 

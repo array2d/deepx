@@ -6,7 +6,7 @@ Always respond in 中文
 项目分为3部分
 1. 前端。python库的接口风格参考pytorch，其他语言如go,java,c,rust等，后续设计完善。
 2. 调度器，待设计
-3. 执行器，使用c++,cuda,metal,omp simd等,实现不同excuter的算子的前向和反向
+3. 执行器，使用c++,cuda,metal,omp simd等,实现不同executor的算子的前向和反向
 
 关于概念
 deepx.Tensor仅仅就是一个tensor，不像pytorch的tensor，一个tensor其实包含了自身和梯度2个tensor的数据

@@ -1,0 +1,64 @@
+name: Excuter/cppcommon Build
+on:
+  push:
+    paths:
+      - 'executor/cpp-common/**'
+  pull_request:
+    paths:
+      - 'executor/cpp-common/**'
+env:
+  HIGHWAY_VERSION: 1.2.0
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]  # 只保留 Ubuntu
+        backend: [ompsimd]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    # 系统依赖安装
+    - name: Install Dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-22.04'
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libopenblas-dev \
+          libyaml-cpp-dev \
+          libjemalloc-dev \
+          libgtest-dev \
+          clang \
+          git
+
+    # 设置 ccache
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+
+    # 构建缓存
+    - name: Cache Build
+      uses: actions/cache@v3
+      with:
+        path: |
+          executor/cpp-common/build
+          ~/.ccache
+        key: ${{ runner.os }}-build-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+ 
+    # 构建 cpp-common 库
+    - name: Build Common Library
+      run: |
+        cd executor/cpp-common
+        mkdir -p build && cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
+        cmake --build . --config Release -j$(nproc)
+ 

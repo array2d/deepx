@@ -1,1 +1,0 @@
-excuter只实现基础的op，不要实现可以由基础op组合的op，如relu可以由max组合。
