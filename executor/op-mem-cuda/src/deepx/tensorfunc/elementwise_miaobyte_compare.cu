@@ -1,12 +1,14 @@
 #ifndef DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_COMPARE_CU
 #define DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_COMPARE_CU
 
+#include <cuda_fp8.h>
 #include "deepx/tensorfunc/cuda.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/vector_cuda.cuh"
+#include "deepx/dtype_cuda.hpp"
 namespace deepx::tensorfunc
 {
-    template <typename T>
+    template <typename T, std::enable_if_t<!is_fp8_v<T>, int> = 0>
     __global__ void max_kernel(const T *A, const T *B, T *C, const int size)
     {
         int stride = blockDim.x * gridDim.x;
@@ -15,6 +17,20 @@ namespace deepx::tensorfunc
             C[idx] = A[idx] > B[idx] ? A[idx] : B[idx];
         }
     }
+
+    template <typename T, std::enable_if_t<is_fp8_v<T>, int> = 0>
+    __global__ void max_kernel(const T *A, const T *B, T *C, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            __half temp_a = to_half<T>::convert(A[idx]); 
+            __half temp_b = to_half<T>::convert(B[idx]);
+            __half temp_c = temp_a > temp_b ? temp_a : temp_b;
+            C[idx] = to_fp8<T>::convert(temp_c);
+        }
+    }
+
 
     template <typename T>
     void launch_max(const T *A, const T *B, T *C, const int size)
@@ -32,14 +48,29 @@ namespace deepx::tensorfunc
     template void launch_max<int32_t>(const int32_t *A, const int32_t *B, int32_t *C, const int size);
     template void launch_max<int16_t>(const int16_t *A, const int16_t *B, int16_t *C, const int size);
     template void launch_max<int8_t>(const int8_t *A, const int8_t *B, int8_t *C, const int size);
+    template void launch_max<__nv_fp8_e4m3>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 *B, __nv_fp8_e4m3 *C, const int size);
+    template void launch_max<__nv_fp8_e5m2>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 *B, __nv_fp8_e5m2 *C, const int size);
 
-    template <typename T>
+    template <typename T, std::enable_if_t<!is_fp8_v<T>, int> = 0>
     __global__ void maxscalar_kernel(const T *A, const T scalar, T *C, const int size)
     {
         int stride = blockDim.x * gridDim.x;
         for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] > scalar ? A[idx] : scalar;
+        }
+    }
+
+    template <typename T, std::enable_if_t<is_fp8_v<T>, int> = 0>
+    __global__ void maxscalar_kernel(const T *A, const T scalar, T *C, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            __half temp_a = to_half<T>::convert(A[idx]);
+            __half temp_scalar = to_half<T>::convert(scalar);
+            __half temp_c = temp_a > temp_scalar ? temp_a : temp_scalar;
+            C[idx] = to_fp8<T>::convert(temp_c);
         }
     }
 
@@ -59,14 +90,30 @@ namespace deepx::tensorfunc
     template void launch_maxscalar<int32_t>(const int32_t *A, const int32_t scalar, int32_t *C, const int size);
     template void launch_maxscalar<int16_t>(const int16_t *A, const int16_t scalar, int16_t *C, const int size);
     template void launch_maxscalar<int8_t>(const int8_t *A, const int8_t scalar, int8_t *C, const int size);
+    template void launch_maxscalar<__nv_fp8_e4m3>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 scalar, __nv_fp8_e4m3 *C, const int size);
+    template void launch_maxscalar<__nv_fp8_e5m2>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 scalar, __nv_fp8_e5m2 *C, const int size);
 
-    template <typename T>
+    template <typename T, std::enable_if_t<!is_fp8_v<T>, int> = 0>
     __global__ void min_kernel(const T *A, const T *B, T *C, const int size)
     {
         int stride = blockDim.x * gridDim.x;
         for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] < B[idx] ? A[idx] : B[idx];
+        }
+    }
+
+
+    template <typename T, std::enable_if_t<is_fp8_v<T>, int> = 0>
+    __global__ void min_kernel(const T *A, const T *B, T *C, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            __half temp_a = to_half<T>::convert(A[idx]); 
+            __half temp_b = to_half<T>::convert(B[idx]);
+            __half temp_c = temp_a < temp_b ? temp_a : temp_b;
+            C[idx] = to_fp8<T>::convert(temp_c);
         }
     }
 
@@ -86,14 +133,29 @@ namespace deepx::tensorfunc
     template void launch_min<int32_t>(const int32_t *A, const int32_t *B, int32_t *C, const int size);
     template void launch_min<int16_t>(const int16_t *A, const int16_t *B, int16_t *C, const int size);
     template void launch_min<int8_t>(const int8_t *A, const int8_t *B, int8_t *C, const int size);
+    template void launch_min<__nv_fp8_e4m3>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 *B, __nv_fp8_e4m3 *C, const int size);
+    template void launch_min<__nv_fp8_e5m2>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 *B, __nv_fp8_e5m2 *C, const int size);
 
-    template <typename T>
+    template <typename T, std::enable_if_t<!is_fp8_v<T>, int> = 0>
     __global__ void minscalar_kernel(const T *A, const T scalar, T *C, const int size)
     {
         int stride = blockDim.x * gridDim.x;
         for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             C[idx] = A[idx] < scalar ? A[idx] : scalar;
+        }
+    }
+
+    template <typename T, std::enable_if_t<is_fp8_v<T>, int> = 0>
+    __global__ void minscalar_kernel(const T *A, const T scalar, T *C, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            __half temp_a = to_half<T>::convert(A[idx]);
+            __half temp_scalar = to_half<T>::convert(scalar);
+            __half temp_c = temp_a < temp_scalar ? temp_a : temp_scalar;
+            C[idx] = to_fp8<T>::convert(temp_c);
         }
     }
 
@@ -113,9 +175,11 @@ namespace deepx::tensorfunc
     template void launch_minscalar<int32_t>(const int32_t *A, const int32_t scalar, int32_t *C, const int size);
     template void launch_minscalar<int16_t>(const int16_t *A, const int16_t scalar, int16_t *C, const int size);
     template void launch_minscalar<int8_t>(const int8_t *A, const int8_t scalar, int8_t *C, const int size);
+    template void launch_minscalar<__nv_fp8_e4m3>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 scalar, __nv_fp8_e4m3 *C, const int size);
+    template void launch_minscalar<__nv_fp8_e5m2>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 scalar, __nv_fp8_e5m2 *C, const int size);
 
     // equal
-    template <typename T,typename MaskT>
+    template <typename T,typename MaskT, std::enable_if_t<!is_fp8_v<T>, int> = 0>
     __global__ void equalwithepsilon_kernel(const T *A, const T *B, const float epsilon, MaskT *mask, const int size)
     {
         int stride = blockDim.x * gridDim.x;
@@ -133,13 +197,44 @@ namespace deepx::tensorfunc
         }
     }
 
-    template <typename T,typename MaskT>
+        // equal
+    template <typename T, typename MaskT, std::enable_if_t<is_fp8_v<T>, int> = 0>
+    __global__ void equalwithepsilon_kernel(const T *A, const T *B, const float epsilon, MaskT *mask, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            float diff = fabsf(static_cast<float>(to_half<T>::convert(A[idx])) - static_cast<float>(to_half<T>::convert(B[idx])));
+            if (diff < epsilon)
+            {
+                mask[idx] = 1;
+            }
+            else
+            {
+                mask[idx] = 0;
+            }
+        }
+    }
+
+
+
+    template <typename T,typename MaskT, std::enable_if_t<!is_fp8_v<T>, int> = 0>
     __global__ void equal_kernel(const T *A, const T *B, MaskT *mask, const int size)
     {
         int stride = blockDim.x * gridDim.x;
         for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
         {
             mask[idx] = (A[idx] == B[idx]);
+        }
+    }
+
+    template <typename T,typename MaskT, std::enable_if_t<is_fp8_v<T>, int> = 0>
+    __global__ void equal_kernel(const T *A, const T *B, MaskT *mask, const int size)
+    {
+        int stride = blockDim.x * gridDim.x;
+        for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += stride)
+        {
+            mask[idx] = (to_half<T>::convert(A[idx]) == to_half<T>::convert(B[idx]));
         }
     }
 
@@ -166,6 +261,8 @@ namespace deepx::tensorfunc
     template void launch_equal<int32_t,bool>(const int32_t *A, const int32_t *B, const float epsilon, bool *mask, const int size);
     template void launch_equal<int16_t,bool>(const int16_t *A, const int16_t *B, const float epsilon, bool *mask, const int size);
     template void launch_equal<int8_t,bool>(const int8_t *A, const int8_t *B, const float epsilon, bool *mask, const int size);
+    template void launch_equal<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 *B, const float epsilon, bool *mask, const int size);
+    template void launch_equal<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 *B, const float epsilon, bool *mask, const int size);
 
     // equalscalar
     template <typename T,typename MaskT>
@@ -219,6 +316,8 @@ namespace deepx::tensorfunc
     template void launch_equalscalar<int32_t,bool>(const int32_t *A, const int32_t scalar, const float epsilon, bool *mask, const int size);
     template void launch_equalscalar<int16_t,bool>(const int16_t *A, const int16_t scalar, const float epsilon, bool *mask, const int size);
     template void launch_equalscalar<int8_t,bool>(const int8_t *A, const int8_t scalar, const float epsilon, bool *mask, const int size);
+    // template void launch_equalscalar<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 scalar, const float epsilon, bool *mask, const int size);
+    // template void launch_equalscalar<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 scalar, const float epsilon, bool *mask, const int size);
 
     // not  equal
     template <typename T,typename MaskT>
@@ -272,6 +371,8 @@ namespace deepx::tensorfunc
     template void launch_notequal<int32_t,bool>(const int32_t *A, const int32_t *B, const float epsilon, bool *mask, const int size);
     template void launch_notequal<int16_t,bool>(const int16_t *A, const int16_t *B, const float epsilon, bool *mask, const int size);
     template void launch_notequal<int8_t,bool>(const int8_t *A, const int8_t *B, const float epsilon, bool *mask, const int size);
+    // template void launch_notequal<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 *B, const float epsilon, bool *mask, const int size);
+    // template void launch_notequal<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 *B, const float epsilon, bool *mask, const int size);
 
     // notequalscalar
     template <typename T,typename MaskT>
@@ -325,6 +426,8 @@ namespace deepx::tensorfunc
     template void launch_notequalscalar<int32_t,bool>(const int32_t *A, const int32_t scalar, const float epsilon, bool *mask, const int size);
     template void launch_notequalscalar<int16_t,bool>(const int16_t *A, const int16_t scalar, const float epsilon, bool *mask, const int size);
     template void launch_notequalscalar<int8_t,bool>(const int8_t *A, const int8_t scalar, const float epsilon, bool *mask, const int size);
+    // template void launch_notequalscalar<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 scalar, const float epsilon, bool *mask, const int size);
+    // template void launch_notequalscalar<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 scalar, const float epsilon, bool *mask, const int size);
 
     // less
     template <typename T,typename MaskT>
@@ -353,6 +456,8 @@ namespace deepx::tensorfunc
     template void launch_less<int32_t,bool>(const int32_t *A, const int32_t *B, bool *mask, const int size);
     template void launch_less<int16_t,bool>(const int16_t *A, const int16_t *B, bool *mask, const int size);
     template void launch_less<int8_t,bool>(const int8_t *A, const int8_t *B, bool *mask, const int size);
+    // template void launch_less<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 *B, bool *mask, const int size);
+    // template void launch_less<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 *B, bool *mask, const int size);
 
     // lessscalar
     
@@ -382,7 +487,9 @@ namespace deepx::tensorfunc
     template void launch_lessscalar<int32_t,bool>(const int32_t *A, const int32_t scalar, bool *mask, const int size);
     template void launch_lessscalar<int16_t,bool>(const int16_t *A, const int16_t scalar, bool *mask, const int size);
     template void launch_lessscalar<int8_t,bool>(const int8_t *A, const int8_t scalar, bool *mask, const int size);
-    
+    // template void launch_lessscalar<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 scalar, bool *mask, const int size);
+    // template void launch_lessscalar<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 scalar, bool *mask, const int size);
+
     // greater
     template <typename T,typename MaskT>
     __global__ void greater_kernel(const T *A, const T *B, MaskT *mask, const int size)
@@ -410,6 +517,8 @@ namespace deepx::tensorfunc
     template void launch_greater<int32_t,bool>(const int32_t *A, const int32_t *B, bool *mask, const int size);
     template void launch_greater<int16_t,bool>(const int16_t *A, const int16_t *B, bool *mask, const int size);
     template void launch_greater<int8_t,bool>(const int8_t *A, const int8_t *B, bool *mask, const int size);    
+    // template void launch_greater<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 *B, bool *mask, const int size);
+    // template void launch_greater<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 *B, bool *mask, const int size);
 
     // greaterscalar
     template <typename T,typename MaskT>
@@ -438,6 +547,8 @@ namespace deepx::tensorfunc
     template void launch_greaterscalar<int32_t,bool>(const int32_t *A, const int32_t scalar, bool *mask, const int size);
     template void launch_greaterscalar<int16_t,bool>(const int16_t *A, const int16_t scalar, bool *mask, const int size);
     template void launch_greaterscalar<int8_t,bool>(const int8_t *A, const int8_t scalar, bool *mask, const int size);
+    // template void launch_greaterscalar<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 *A, const __nv_fp8_e4m3 scalar, bool *mask, const int size);
+    // template void launch_greaterscalar<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 *A, const __nv_fp8_e5m2 scalar, bool *mask, const int size);
 
     // switch
     template <typename T,typename casesT>
@@ -476,7 +587,9 @@ namespace deepx::tensorfunc
     template void launch_switch<int16_t,int32_t>(const int16_t **tensorsdata, const int numTensors, const int32_t *cases, int16_t *C, const int size);
     template void launch_switch<int8_t,int32_t>(const int8_t **tensorsdata, const int numTensors, const int32_t *cases, int8_t *C, const int size);
     template void launch_switch<bool,int32_t>(const bool **tensorsdata, const int numTensors, const int32_t *cases, bool *C, const int size);
-    
+    // template void launch_switch<__nv_fp8_e4m3,int32_t>(const __nv_fp8_e4m3 **tensorsdata, const int numTensors, const int32_t *cases, __nv_fp8_e4m3 *C, const int size);
+    // template void launch_switch<__nv_fp8_e5m2,int32_t>(const __nv_fp8_e5m2 **tensorsdata, const int numTensors, const int32_t *cases, __nv_fp8_e5m2 *C, const int size);
+
     template void launch_switch<double,bool>(const double **tensorsdata, const int numTensors, const bool *cases, double *C, const int size);
     template void launch_switch<float,bool>(const float **tensorsdata, const int numTensors, const bool *cases, float *C, const int size);
     template void launch_switch<nv_bfloat16,bool>(const nv_bfloat16 **tensorsdata, const int numTensors, const bool *cases, nv_bfloat16 *C, const int size);
@@ -486,6 +599,7 @@ namespace deepx::tensorfunc
     template void launch_switch<int16_t,bool>(const int16_t **tensorsdata, const int numTensors, const bool *cases, int16_t *C, const int size);
     template void launch_switch<int8_t,bool>(const int8_t **tensorsdata, const int numTensors, const bool *cases, int8_t *C, const int size);
     template void launch_switch<bool,bool>(const bool **tensorsdata, const int numTensors, const bool *cases, bool *C, const int size);
- 
+    // template void launch_switch<__nv_fp8_e4m3,bool>(const __nv_fp8_e4m3 **tensorsdata, const int numTensors, const bool *cases, __nv_fp8_e4m3 *C, const int size);
+    // template void launch_switch<__nv_fp8_e5m2,bool>(const __nv_fp8_e5m2 **tensorsdata, const int numTensors, const bool *cases, __nv_fp8_e5m2 *C, const int size);
 }
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_MIAO_BYTE_COMPARE_CU
