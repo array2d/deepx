@@ -251,3 +251,41 @@ def FuseFunc(f):
     f()
 
     return
+
+from functools import wraps
+import inspect
+
+def deepx_op(opname):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            sig = inspect.signature(func)
+            bound = sig.bind(*args, **kwargs)
+            bound.apply_defaults()
+
+            params = [Param.tensor(v) for k, v in bound.arguments.items() if k != 'out']
+            returns = [Param.tensor(bound.arguments['out'])]
+
+            ir = DeepxIR(opname, params, returns, kwargs.get('author', None))
+            send(ir)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+def deepx_subgraph(opname):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            sig = inspect.signature(func)
+            bound = sig.bind(*args, **kwargs)
+            bound.apply_defaults()
+
+            params = [Param.tensor(v) for k, v in bound.arguments.items() if k != 'out']
+            returns = [Param.tensor(bound.arguments['out'])]
+
+            ir = DeepxIR(opname, params, returns, kwargs.get('author', None))
+            # 修改这里的逻辑
+            send(ir)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
