@@ -14,7 +14,7 @@ namespace client
     {
         if (sockfd > 0)
         {
-            close(sockfd);
+            ::close(sockfd);
         }
     }
     void udpserver::start(queue<deepx::tf::TF> &queue)
@@ -33,16 +33,16 @@ namespace client
         servaddr.sin_addr.s_addr = INADDR_ANY;
         servaddr.sin_port = htons(port);
 
-        if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
+        if (::bind(sockfd, (const struct sockaddr *)&servaddr, (socklen_t)sizeof(servaddr)) < 0)
         {
             perror("bind failed");
-            close(sockfd);
+            ::close(sockfd);
             exit(EXIT_FAILURE);
         }
         while (true)
         {
             len = sizeof(cliaddr);
-            n = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&cliaddr, &len);
+            n = ::recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&cliaddr, &len);
             buffer[n] = '\0';
             
             // 新增换行拆分逻辑
@@ -57,10 +57,10 @@ namespace client
                 }
             }
         }
-        close(sockfd);
+        ::close(sockfd);
     }
     void udpserver::resp(string str){
-         sendto(sockfd, str.c_str(), str.size(), 0,  // 改为sendto
+         ::sendto(sockfd, str.c_str(), str.size(), 0,  // 改为sendto
           (const struct sockaddr *)&cliaddr, sizeof(cliaddr));
     }
 }

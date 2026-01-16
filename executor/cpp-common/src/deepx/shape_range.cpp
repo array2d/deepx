@@ -4,7 +4,6 @@
 #include <any>
 #include <thread>
 
-#include <omp.h>
 #include "deepx/shape.hpp"
 namespace deepx
 {

@@ -25,7 +25,7 @@ find_package(yaml-cpp REQUIRED)
 
 target_link_libraries(deepx_common
     PUBLIC
-    yaml-cpp
+    yaml-cpp::yaml-cpp
 )
 
 target_include_directories(deepx_common PUBLIC
