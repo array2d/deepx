@@ -2,12 +2,12 @@
 #define DEEPX_TENSORFUNC_ELEMENTWISE_MIAOBYTE_HPP
 
 #include <stdexcept>
+#include <type_traits>
 
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/authors.hpp"
+#include "deepx/tensorfunc/elementwise_common.hpp"
 #include "deepx/tensorfunc/elementwise.hpp"
-#include "deepx/tensorfunc/authors.hpp"
-
 namespace deepx::tensorfunc
 {
     template <typename T>
@@ -15,15 +15,46 @@ namespace deepx::tensorfunc
     {
         static void add(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C)
         {
-            if (A.shape.size != B.shape.size || A.shape.size != C.shape.size ||
-                A.shape.shape != B.shape.shape || A.shape.shape != C.shape.shape)
+            detail::assert_same_shape(A, B, C);
+
+#if defined(__APPLE__) && TARGET_OS_OSX
+            // Try Metal path for supported dtypes. Current tensors are host-backed,
+            // so this does staging copies (correctness-first). If Metal is unavailable,
+            // fall back to the CPU implementation below.
+            bool ok = false;
+            if constexpr (std::is_same_v<T, float>)
             {
-                throw std::invalid_argument("shape mismatch");
+                ok = deepx::mps::kernels::add_f32(A.data, B.data, C.data, A.shape.size);
             }
-            for (int64_t i = 0; i < A.shape.size; ++i)
+#if defined(__FLT16_MANT_DIG__)
+            else if constexpr (std::is_same_v<T, _Float16>)
             {
-                C.data[i] = A.data[i] + B.data[i];
+                ok = deepx::mps::kernels::add_f16(A.data, B.data, C.data, A.shape.size);
             }
+#endif
+            else if constexpr (std::is_same_v<T, int8_t>)
+            {
+                ok = deepx::mps::kernels::add_i8(A.data, B.data, C.data, A.shape.size);
+            }
+            else if constexpr (std::is_same_v<T, int16_t>)
+            {
+                ok = deepx::mps::kernels::add_i16(A.data, B.data, C.data, A.shape.size);
+            }
+            else if constexpr (std::is_same_v<T, int32_t>)
+            {
+                ok = deepx::mps::kernels::add_i32(A.data, B.data, C.data, A.shape.size);
+            }
+            else if constexpr (std::is_same_v<T, int64_t>)
+            {
+                ok = deepx::mps::kernels::add_i64(A.data, B.data, C.data, A.shape.size);
+            }
+
+            if (ok)
+            {
+                return;
+            }
+#endif
+            detail::add_cpu(A, B, C);
         }
     };
 }
