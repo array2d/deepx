@@ -23,11 +23,14 @@ add_library(deepx_common SHARED
  
 find_package(yaml-cpp REQUIRED)
 
+set(YAMLCPP_LIB "")
 if (TARGET yaml-cpp::yaml-cpp)
-  target_link_libraries(deepx_common PUBLIC yaml-cpp::yaml-cpp)
+  set(YAMLCPP_LIB yaml-cpp::yaml-cpp)
 else()
-  target_link_libraries(deepx_common PUBLIC yaml-cpp)
+  set(YAMLCPP_LIB yaml-cpp)
 endif()
+  
+target_link_libraries(deepx_common PUBLIC ${YAMLCPP_LIB})
 
 target_include_directories(deepx_common PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
