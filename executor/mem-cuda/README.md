@@ -10,33 +10,32 @@
 ## 设计概述
 ### 1) Redis 元数据（KV/Hash）
 对每个 Tensor 名称建立一个 Hash：
-- `name`: string
 - `dtype`: string（如 f32/i8 等）
 - `shape`: string/json（如 "[2,3,4]")
+- `ctime`: int64
+- `node`: string（owner 节点/主机标识）
 - `device`: int（GPU id）
 - `bytes`: int
-- `ipc_handle`: binary/base64
-- `owner_pid`: int
+- `ipc_handle`: binary
 - `refcount`: int
-- `ctime/mtime`: int64
+
 
 ### 2) Redis 指令队列（List）
-用 list 作为控制通道（生产者/消费者）：
-- list key: `tensor:cmd`
-- 指令格式建议为 JSON：
-  ```json
-  {"op":"create|get|delete", "name":"X", "dtype":"f32", "shape":[2,3], "device":0}
-  ```
-- 处理流程：
-  - **create**: 分配 GPU 内存 → `cudaIpcGetMemHandle` → 写入 Hash
-  - **get**: 读取 Hash → `cudaIpcOpenMemHandle`
-  - **delete**: `refcount--`，为 0 时释放 GPU 内存并删除 Hash
+控制通道 list key: `tensor_lifecycle`。
+指令 JSON：
+```json
+{"op":"create|get|delete", "name":"X", "dtype":"f32", "shape":[2,3], "device":0, "pid":123, "node":"n1"}
+```
+处理流程：
+- **create**: 分配 GPU 内存 → `cudaIpcGetMemHandle` → 写入 Hash(state=ready, refcount=1)
+- **get**: 读取 Hash → `cudaIpcOpenMemHandle` → refcount++
+- **delete**: refcount--，为 0 时释放 GPU 内存并删除 Hash
 
 ### 3) CUDA IPC 基本流程
-- `cudaIpcGetMemHandle`：将 `cudaMalloc` 的指针导出为 handle
+- `cudaIpcGetMemHandle`：将 `cudaMalloc` 指针导出为 handle
 - `cudaIpcOpenMemHandle`：其他进程映射同一块 GPU 内存
-- 仅限**同机**；需保证 device id 一致
-- 跨 stream 写读，需要显式同步（事件/流同步策略）
+- 仅限同机；需保证 device id 一致
+- 跨 stream 写读需要显式同步（事件/流同步策略）
 
 ## 显存池方案
 你的需求是：**参考 PyTorch 的显存池管理**。这里给出两种落地路线：
@@ -73,19 +72,80 @@
 - 崩溃恢复：定期清理 owner_pid 不存在的条目
 - IPC handle 需与 device id 配对，否则会映射失败
 
-## 目录建议
+## 目录结构（具体方案）
 ```
 mem-cuda/
   README.md
   doc/
+    design.md                # 细化设计文档与协议约束
+    redis-schema.md          # Redis KV/Hash/List 结构定义
+    ipc.md                   # CUDA IPC 约束、时序与同步策略
+    allocator.md             # 显存池方案与接口
   src/
-    registry/        # Redis 元数据与命令处理
-    allocator/       # 显存池实现或适配层
-    ipc/             # cudaIpcGet/Open 封装
+    registry/                # Redis 元数据与命令处理
+      redis_client.h
+      redis_client.cpp
+      registry.h
+      registry.cpp
+      lua_scripts/            # 原子脚本
+        create_or_get.lua
+        ref_inc.lua
+        ref_dec.lua
+        gc_sweep.lua
+    ipc/                     # CUDA IPC 封装
+      ipc.h
+      ipc.cpp
+      ipc_guard.h             # 设备一致性与错误处理
+    allocator/               # 显存池实现或适配层
+      allocator.h
+      cuda_pool.cpp
+      rmm_adapter.cpp         # 可选
+      cnmem_adapter.cpp       # 可选
+    runtime/                 # 运行时控制（指令/同步）
+      lifecycle.h
+      lifecycle.cpp
+      sync.h
+      sync.cpp
+    common/
+      status/json/logging
+  test/
+    ipc_demo.cpp
+    registry_demo.cpp
+    lifecycle_demo.cpp
+  tools/
+    memcuda_ctl.cpp           # CLI 工具（create/get/delete/list）
 ```
 
-## 后续工作清单
-- [ ] 选定显存池方案（RMM / CNMeM / CUB / 自研）
-- [ ] 定义 Redis 数据结构与命令协议
-- [ ] 编写 IPC 封装与单机多进程 demo
-- [ ] 建立错误恢复与 GC 机制
+模块职责：
+- `registry/`: Redis 协议、Lua 原子操作、Hash 读写。
+- `ipc/`: CUDA IPC handle 导出/打开/关闭封装。
+- `allocator/`: 统一分配接口；可切换 RMM/CNMeM/自研。
+- `runtime/`: 指令消费/路由与跨 stream 同步策略。
+- `common/`: 状态码、JSON 解析、日志等公共工具聚合。
+
+## 后续工作清单（分阶段）
+- [ ] 阶段 0：确定目录与接口（完成本 README 细化）
+- [ ] 阶段 1：实现 `registry/` + Redis Lua 原子脚本
+- [ ] 阶段 2：实现 `ipc/` + `allocator/` 的最小实现（f32, 单 GPU）
+- [ ] 阶段 3：实现 `lifecycle/` worker 与 `tools/` CLI
+- [ ] 阶段 4：补齐 `sync/` 策略与崩溃恢复/GC
+
+## 构建依赖与示例
+
+- 必要系统依赖：CUDA Toolkit (兼容 CMake `CUDAToolkit`), `cmake` >= 3.18, `make`。
+- Redis C 客户端：推荐安装 `hiredis`（用于底层连接）。可选：`redis++`（C++ wrapper）。
+- 可选：RMM/CNMeM 库（若启用对应 adapter）。
+
+示例构建命令（在 `executor/mem-cuda` 目录下）：
+
+```bash
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_HIREDIS=ON -DUSE_REDISPP=OFF -DUSE_RMM=OFF
+make -j$(nproc)
+```
+
+常用 CMake 选项：
+- `-DUSE_HIREDIS=ON|OFF`：是否链接 hiredis（默认 ON）。
+- `-DUSE_REDISPP=ON|OFF`：是否启用 redis++（需要事先安装）。
+- `-DUSE_RMM=ON|OFF`：启用 RMM 适配（需要额外提供 RMM 的 include/link 设置）。
+
