@@ -38,21 +38,17 @@
 - 跨 stream 写读需要显式同步（事件/流同步策略）
 
 ## 显存池方案
-你的需求是：**参考 PyTorch 的显存池管理**。这里给出两种落地路线：
+你的需求是：**参考 PyTorch 的显存池管理**。这里给出可落地路线：
 
 ### 方案 A：接入成熟开源显存池（推荐）
-可选项目：
 - **RMM (RAPIDS Memory Manager)**
   - 优点：成熟、支持 pool/async allocator、统计完善
   - 适合：对稳定性与可观察性要求高的生产环境
-- **CNMeM (NVIDIA)**
-  - 优点：轻量、易集成
-  - 适合：需要最小依赖的场景
 - **CUB caching allocator**
   - 优点：性能好、实现简单
   - 适合：希望直接嵌入 CUDA 代码路径
 
-> 选择建议：优先 RMM；想保持最小依赖可用 CNMeM 或 CUB。
+> 选择建议：优先 RMM；想保持最小依赖可用 CUB。
 
 ### 方案 B：自研简化版显存池（AI 方案）
 如果不引入外部依赖，可先实现一个简化版池：
@@ -100,7 +96,6 @@ mem-cuda/
       allocator.h
       cuda_pool.cpp
       rmm_adapter.cpp         # 可选
-      cnmem_adapter.cpp       # 可选
     runtime/                 # 运行时控制（指令/同步）
       lifecycle.h
       lifecycle.cpp
@@ -119,7 +114,7 @@ mem-cuda/
 模块职责：
 - `registry/`: Redis 协议、Lua 原子操作、Hash 读写。
 - `ipc/`: CUDA IPC handle 导出/打开/关闭封装。
-- `allocator/`: 统一分配接口；可切换 RMM/CNMeM/自研。
+- `allocator/`: 统一分配接口；可切换 RMM/自研。
 - `runtime/`: 指令消费/路由与跨 stream 同步策略。
 - `common/`: 状态码、JSON 解析、日志等公共工具聚合。
 
@@ -133,19 +128,18 @@ mem-cuda/
 ## 构建依赖与示例
 
 - 必要系统依赖：CUDA Toolkit (兼容 CMake `CUDAToolkit`), `cmake` >= 3.18, `make`。
-- Redis C 客户端：推荐安装 `hiredis`（用于底层连接）。可选：`redis++`（C++ wrapper）。
-- 可选：RMM/CNMeM 库（若启用对应 adapter）。
+- Redis C++ 客户端：必须安装 `redis++`（redis-plus-plus）及其依赖 `hiredis`。
+- 可选：RMM 库（若启用对应 adapter）。
 
 示例构建命令（在 `executor/mem-cuda` 目录下）：
 
 ```bash
 mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_HIREDIS=ON -DUSE_REDISPP=OFF -DUSE_RMM=OFF
+cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_RMM=OFF
 make -j$(nproc)
 ```
 
 常用 CMake 选项：
-- `-DUSE_HIREDIS=ON|OFF`：是否链接 hiredis（默认 ON）。
-- `-DUSE_REDISPP=ON|OFF`：是否启用 redis++（需要事先安装）。
+
 - `-DUSE_RMM=ON|OFF`：启用 RMM 适配（需要额外提供 RMM 的 include/link 设置）。
 
