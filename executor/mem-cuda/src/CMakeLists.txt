@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.18)
 # src/CMakeLists.txt - memcuda core (clean)
 
 set(SRCS
-  registry/redis_client.cpp
-  registry/registry.cpp
   ipc/ipc.cpp
   allocator/cuda_pool.cpp
   runtime/lifecycle.cpp

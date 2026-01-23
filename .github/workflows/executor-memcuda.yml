@@ -68,6 +68,7 @@ jobs:
             ninja && \
             
             # 构建 CUDA 执行器
+            apt install -y libhiredis-dev && \
             cd ../../mem-cuda && \
             mkdir -p build && cd build && \
             cmake -DCMAKE_BUILD_TYPE=Release \
