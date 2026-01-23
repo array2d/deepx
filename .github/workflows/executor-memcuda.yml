@@ -34,7 +34,7 @@ jobs:
       run: |
         docker run --rm -v ${{ github.workspace }}:/workspace \
           -w /workspace \
-          nvidia/cuda:${{ CUDA_VERSION }}-devel-ubuntu24.04 \
+          nvidia/cuda:${CUDA_VERSION}-devel-ubuntu24.04 \
           /bin/bash -c "
             # 安装系统依赖
             apt-get update && \
