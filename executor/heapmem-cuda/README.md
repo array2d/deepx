@@ -1,4 +1,4 @@
-# mem-cuda 方案草案
+# heapmem-cuda 方案草案
 
 本目录用于设计/实现单机多进程的 GPU Tensor 统一存储面（CUDA IPC），并通过 Redis 做 name → IPC handle 的集中注册与控制。
 
@@ -20,7 +20,7 @@
 - `bytes`: int
 - `ipc_handle`: binary
 - `refcount`: int
-无需设计tensor owner
+
 
 ### 2) Redis 指令队列（List）
 控制通道 list key: `tensor_lifecycle`。
@@ -39,13 +39,19 @@
 - 仅限同机；需保证 device id 一致
 - 跨 stream 写读需要显式同步（事件/流同步策略）
 
-## 显存池方案
+## 是否有必要使用显存池
 
-- **RMM (RAPIDS Memory Manager)**
+显存池通常用于子分配（suballoc），子分配和cuda ipc存在冲突。
+
+堆tensor不会高频alloc/free
+
+但是，计算进程的栈tensor必须使用，现在有以下2个选项
+
+ **RMM (RAPIDS Memory Manager)**
   - 优点：成熟、支持 pool/async allocator、统计完善
   - 适合：对稳定性与可观察性要求高的生产环境
 
-其他op计算进程可以使用CUB。
+**CUB**
 
 ## 目录结构（具体方案）
 ```
