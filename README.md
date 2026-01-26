@@ -27,17 +27,27 @@ python sdk提供接近pytorch的API
 
 ### 中端：编译替换与分布式调度层
 
-+ 注册中心:收集当前已就绪的执行器的算子列表,收集算子时耗和空间占用信息
-+ 计算图编译器优化器:fusion算子，计算图节点消除,自动生成tensor拆分并行的计算子图并替代原节点
-+ 执行调度器：数据并行，流水线并行(前向反向并行)，模型并行。
-+ front生成基础IR，编译器负责进行fusion成executor注册的高级算子。
-
++ 统一存储面
+  * 当前采用redis存储tensor元信息，配合heapmem进程，负责管理堆tensor的生命周期
++ 统一计算面
+  * 收集当前已就绪的执行器的算子列表,收集算子时耗和空间占用信息
+  * 计算图编译器优化器:fusion算子，计算图节点消除,自动生成tensor拆分并行的计算子图并替代原节点
+  + front生成基础IR，编译器负责进行fusion成executor注册的高级算子。
++ 统一控制面
+  * 执行调度器：数据并行，流水线并行(前向反向并行)，模型并行。
 
 ### 执行层
 
-执行层包括op和mem两种执行器，但实际实现时，当前只设计了一个程序同时负责op和mem的管理。
+执行层包括op和heapmem两类执行器。
 
-负责低级的算子计算操作，以IR为执行的核心单元
+#### heapmem管理器
+
+heapmem管理的tensor，通常是持久的权重，可能被很多个不同进程访问，。
+相对应的，随着函数执行完毕自动回收的中间变量tensor，可以被称之为stacktensor，这些tensor交给op进程自行管理。
+
+#### op执行器
+
+负责算子计算操作，以IR为执行的核心单元
 ```
 Op{args(args_grad),returns(returns_grad)|func run}
 ```
@@ -45,15 +55,12 @@ Op{args(args_grad),returns(returns_grad)|func run}
 Op需要实现run方法
 
 关于executor，只要能按deepxIR序列执行，并返回结果，就可以接入deepx分布式调度框架，因此，从硬件、指令、加速库、高级框架包括训练、推理引擎，都可以稍作修改，就接入deepx体系。
+ 
++ cpu执行器
+已实现ompsimd。其支持的算子列表[ompsimd](docs/executor/op-mem-ompsimd/list.md)
 
-当前的
-
-
-#### 默认执行器
-+ cpu执行器,已实现ompsimd。其支持的算子列表[ompsimd](docs/executor/op-mem-ompsimd/list.md)
-
-#### GPU执行器
-+ cuda执行器，其支持的算子列表[cuda](docs/executor/op-mem-cuda/list.md)
++ cuda执行器
+其支持的算子列表[cuda](docs/executor/op-mem-cuda/list.md)
 
 欢迎大家提交cuda代码
 
