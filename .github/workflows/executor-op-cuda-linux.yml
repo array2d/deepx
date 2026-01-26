@@ -2,10 +2,10 @@ name: Excuter/cuda-linux Build
 on:
   push:
     paths:
-      - 'executor/op-mem-cuda/**'
+      - 'executor/op-cuda/**'
   pull_request:
     paths:
-      - 'executor/op-mem-cuda/**'
+      - 'executor/op-cuda/**'
 env:
   CUDA_VERSION: "12.6.0"
   CUDA_MAJOR_VERSION: "12"
@@ -34,7 +34,7 @@ jobs:
       run: |
         docker run --rm -v ${{ github.workspace }}:/workspace \
           -w /workspace \
-          nvidia/cuda:12.6.0-devel-ubuntu22.04 \
+          nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04 \
           /bin/bash -c "
             # 安装系统依赖
             apt-get update && \
@@ -68,7 +68,7 @@ jobs:
             ninja && \
             
             # 构建 CUDA 执行器
-            cd ../../op-mem-cuda && \
+            cd ../../op-cuda && \
             mkdir -p build && cd build && \
             cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
