@@ -2,10 +2,10 @@ name: op/cuda-linux Build
 on:
   push:
     paths:
-      - 'executor/mem-cuda/**'
+      - 'executor/heapmem-cuda/**'
   pull_request:
     paths:
-      - 'executor/mem-cuda/**'
+      - 'executor/heapmem-cuda/**'
 env:
   CUDA_VERSION: "12.9.1"
   CUDA_MAJOR_VERSION: "12"
@@ -69,7 +69,7 @@ jobs:
             
             # 构建 CUDA 执行器
             apt install -y libhiredis-dev && \
-            cd ../../mem-cuda && \
+            cd ../../heapmem-cuda && \
             mkdir -p build && cd build && \
             cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
