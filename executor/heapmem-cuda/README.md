@@ -59,6 +59,9 @@ mem-cuda/
   README.md
   doc/
   src/
+    registry/
+      init.h #进程初始化时，向redis注册当前节点、节点所有gpu、和gpu显存大小
+      cudastream.h # cudastream流和redis的list（lifecycle指令）结合
     ipc/                     # CUDA IPC 封装
       ipc.h
       ipc.cpp
@@ -79,6 +82,25 @@ mem-cuda/
 - `ipc/`: CUDA IPC handle 导出/打开/关闭封装。
 - `runtime/`: 指令消费/路由与跨 stream 同步策略。
 - `common/`: 状态码、JSON 解析、日志等公共工具聚合。
+
+
+### 架构图
+``` mermaid
+graph LR
+  subgraph 单机
+    RM["Redis (元数据 + 指令队列)"]
+    HMC["heapmem-cuda 进程"]
+    CP["计算进程 (多进程)"]
+    GPU["GPU"]
+  end
+
+  HMC -->|注册/读写 Hash| RM
+  CP -->|读写/推送 指令 list| RM
+  HMC -->|cudaMalloc / cudaIpcGetMemHandle| GPU
+  CP -->|cudaIpcOpenMemHandle| GPU
+  HMC -->|管理 ipc_handle / GC| CP
+  HMC -->|流/同步策略| GPU
+```
 
 ## 后续工作清单（分阶段）
 - [ ] 阶段 0：确定目录与接口（完成本 README 细化）
