@@ -48,8 +48,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          executor/op-mem-ompsimd/build
-          executor/cpp-common/build
+          executor/op-ompsimd/build
+          executor/deepxcore/build
           ~/.ccache
         key: ${{ runner.os }}-build-${{ hashFiles('**/CMakeLists.txt') }}
         restore-keys: |
@@ -58,9 +58,6 @@ jobs:
     # Highway 库安装
     - name: Install Highway (Ubuntu)
       run: |
-        # 安装依赖
-        sudo apt-get install -y libgtest-dev
-        
         # 克隆 Highway
         git clone --depth 1 --branch ${HIGHWAY_VERSION} https://github.com/google/highway.git
         cd highway
@@ -81,10 +78,10 @@ jobs:
         # 确保头文件正确安装
         sudo cp -r ../hwy /usr/local/include/
 
-    # 构建 cpp-common 库
-    - name: Build Common Library
+    # 构建 deepxcore 库
+    - name: Build deepxcore Library
       run: |
-        cd executor/cpp-common
+        cd executor/deepxcore
         mkdir -p build && cd build
         cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
         cmake --build . --config Release -j$(nproc)
@@ -92,7 +89,7 @@ jobs:
     # 构建执行器
     - name: CMake Build
       run: |
-        cd executor/op-mem-ompsimd
+        cd executor/op-ompsimd
         mkdir -p build && cd build
         cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
         cmake --build . --config Release -j$(nproc)

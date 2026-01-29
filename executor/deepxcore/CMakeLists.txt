@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15...3.29)
-project(deepx-common LANGUAGES CXX ) 
+project(deepxcore LANGUAGES CXX ) 
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -14,10 +14,10 @@ include_directories(src)
 
 # 源文件
 
-file(GLOB_RECURSE DEEPX_COMMON_SOURCES "src/*.cpp")
+file(GLOB_RECURSE DEEPX_CORE_SOURCES "src/*.cpp")
 
-add_library(deepx_common SHARED 
-    ${DEEPX_COMMON_SOURCES}
+add_library(deepxcore SHARED 
+    ${DEEPX_CORE_SOURCES}
 )
 
  
@@ -30,9 +30,9 @@ else()
   set(YAMLCPP_LIB yaml-cpp)
 endif()
   
-target_link_libraries(deepx_common PUBLIC ${YAMLCPP_LIB})
+target_link_libraries(deepxcore PUBLIC ${YAMLCPP_LIB})
 
-target_include_directories(deepx_common PUBLIC
+target_include_directories(deepxcore PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
