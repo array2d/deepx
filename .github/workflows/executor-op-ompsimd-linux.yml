@@ -1,4 +1,4 @@
-name: Excuter/ompsimd-linux Build
+name: executor/op-mem-ompsimd-linux Build
 on:
   push:
     paths:

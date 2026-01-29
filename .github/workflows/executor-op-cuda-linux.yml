@@ -1,4 +1,4 @@
-name: Excuter/cuda-linux Build
+name: executor/op-cuda-linux Build
 on:
   push:
     paths:

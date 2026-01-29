@@ -1,4 +1,4 @@
-name: Excuter/cppcommon Build
+name: executor/deepxcore Build
 on:
   push:
     paths:
