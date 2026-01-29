@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE Debug)
 # 包含头文件目录
 include_directories(src)
  
-add_subdirectory(../cpp-common common)
+add_subdirectory(../deepxcore deepxcore)
 
 # 源文件
 
@@ -53,7 +53,7 @@ add_library(deepx_ompsimd SHARED
 
 target_link_libraries( deepx_ompsimd
     PUBLIC 
-    deepx_common
+    deepxcore
     yaml-cpp
     ${JEMALLOC_LIBRARIES}    
     openblas

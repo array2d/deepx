@@ -1,4 +1,4 @@
-# mem-cuda 方案草案
+# heapmem-cuda 方案草案
 
 本目录用于设计/实现单机多进程的 GPU Tensor 统一存储面（CUDA IPC），并通过 Redis 做 name → IPC handle 的集中注册与控制。
 
@@ -20,7 +20,7 @@
 - `bytes`: int
 - `ipc_handle`: binary
 - `refcount`: int
-无需设计tensor owner
+
 
 ### 2) Redis 指令队列（List）
 控制通道 list key: `tensor_lifecycle`。
@@ -39,13 +39,19 @@
 - 仅限同机；需保证 device id 一致
 - 跨 stream 写读需要显式同步（事件/流同步策略）
 
-## 显存池方案
+## 是否有必要使用显存池
 
-- **RMM (RAPIDS Memory Manager)**
+显存池通常用于子分配（suballoc），子分配和cuda ipc存在冲突。
+
+堆tensor不会高频alloc/free
+
+但是，计算进程的栈tensor必须使用，现在有以下2个选项
+
+ **RMM (RAPIDS Memory Manager)**
   - 优点：成熟、支持 pool/async allocator、统计完善
   - 适合：对稳定性与可观察性要求高的生产环境
 
-其他op计算进程可以使用CUB。
+**CUB**
 
 ## 目录结构（具体方案）
 ```
@@ -53,6 +59,9 @@ mem-cuda/
   README.md
   doc/
   src/
+    registry/
+      init.h #进程初始化时，向redis注册当前节点、节点所有gpu、和gpu显存大小
+      cudastream.h # cudastream流和redis的list（lifecycle指令）结合
     ipc/                     # CUDA IPC 封装
       ipc.h
       ipc.cpp
@@ -73,6 +82,25 @@ mem-cuda/
 - `ipc/`: CUDA IPC handle 导出/打开/关闭封装。
 - `runtime/`: 指令消费/路由与跨 stream 同步策略。
 - `common/`: 状态码、JSON 解析、日志等公共工具聚合。
+
+
+### 架构图
+``` mermaid
+graph LR
+  subgraph 单机
+    RM["Redis (元数据 + 指令队列)"]
+    HMC["heapmem-cuda 进程"]
+    CP["计算进程 (多进程)"]
+    GPU["GPU"]
+  end
+
+  HMC -->|注册/读写 Hash| RM
+  CP -->|读写/推送 指令 list| RM
+  HMC -->|cudaMalloc / cudaIpcGetMemHandle| GPU
+  CP -->|cudaIpcOpenMemHandle| GPU
+  HMC -->|管理 ipc_handle / GC| CP
+  HMC -->|流/同步策略| GPU
+```
 
 ## 后续工作清单（分阶段）
 - [ ] 阶段 0：确定目录与接口（完成本 README 细化）

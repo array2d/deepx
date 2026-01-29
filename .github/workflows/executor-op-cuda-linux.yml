@@ -61,8 +61,8 @@ jobs:
             cp -r include/* /usr/local/include/ && \
             cd /workspace && \
             
-            # 构建 common 库
-            cd executor/cpp-common && \
+            # 构建 deepxcore 库
+            cd executor/deepxcore && \
             mkdir -p build && cd build && \
             cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja .. && \
             ninja && \
@@ -72,9 +72,7 @@ jobs:
             mkdir -p build && cd build && \
             cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-              -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
               -DCMAKE_CUDA_ARCHITECTURES=\"60;70;75;80;86\" \
-              -DCUTLASS_DIR=/usr/local \
               -GNinja .. && \
             ninja
           "
