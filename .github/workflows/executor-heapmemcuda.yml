@@ -1,4 +1,4 @@
-name: op/cuda-linux Build
+name: executor/heapmem-cuda Build
 on:
   push:
     paths:
@@ -61,8 +61,8 @@ jobs:
             cp -r include/* /usr/local/include/ && \
             cd /workspace && \
             
-            # 构建 common 库
-            cd executor/cpp-common && \
+            # 构建 deepxcore 库
+            cd executor/deepxcore && \
             mkdir -p build && cd build && \
             cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja .. && \
             ninja && \
