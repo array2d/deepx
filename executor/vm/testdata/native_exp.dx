@@ -1,0 +1,3 @@
+def native_exp(A:int) -> (C:float) {
+    exp(A) -> ./C
+}

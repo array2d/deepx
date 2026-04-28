@@ -1,0 +1,3 @@
+def native_int(A:float) -> (C:int) {
+    int(A) -> ./C
+}

@@ -1,0 +1,3 @@
+def native_abs(A:int) -> (C:int) {
+    abs(A) -> ./C
+}

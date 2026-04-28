@@ -1,0 +1,3 @@
+def native_pow(A:int, B:int) -> (C:float) {
+    pow(A, B) -> ./C
+}

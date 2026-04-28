@@ -1,0 +1,3 @@
+def native_sqrt(A:int) -> (C:float) {
+    sqrt(A) -> ./C
+}

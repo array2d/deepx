@@ -1,0 +1,3 @@
+def native_sign(A:int) -> (C:int) {
+    sign(A) -> ./C
+}

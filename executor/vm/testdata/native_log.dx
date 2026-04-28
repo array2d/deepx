@@ -1,0 +1,3 @@
+def native_log(A:int) -> (C:float) {
+    log(A) -> ./C
+}

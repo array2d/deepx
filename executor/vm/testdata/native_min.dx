@@ -1,0 +1,3 @@
+def native_min(A:int, B:int) -> (C:int) {
+    min(A, B) -> ./C
+}

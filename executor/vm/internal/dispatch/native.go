@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 
@@ -183,6 +184,35 @@ func evalNative(op string, inputs []nativeValue) (nativeValue, error) {
 		return evalBinaryInt(inputs, func(a, b int64) int64 { return a << uint64(b) })
 	case ">>":
 		return evalBinaryInt(inputs, func(a, b int64) int64 { return a >> uint64(b) })
+
+	// ── 数学 built-in ──
+	case "abs":
+		return evalAbs(inputs)
+	case "pow":
+		return evalPow(inputs)
+	case "min":
+		return evalMin(inputs)
+	case "max":
+		return evalMax(inputs)
+	case "sqrt":
+		return evalSqrt(inputs)
+	case "exp":
+		return evalExp(inputs)
+	case "log":
+		return evalLog(inputs)
+	case "neg":
+		return evalUnaryArith(inputs, func(a float64) float64 { return -a })
+	case "sign":
+		return evalSign(inputs)
+
+	// ── 类型转换 built-in ──
+	case "int":
+		return evalToInt(inputs)
+	case "float":
+		return evalToFloat(inputs)
+	case "bool":
+		return evalToBool(inputs)
+
 	default:
 		return nativeValue{}, fmt.Errorf("unknown native op: %s", op)
 	}
@@ -284,4 +314,175 @@ func evalBinaryInt(inputs []nativeValue, fn func(int64, int64) int64) (nativeVal
 		return nativeValue{}, err
 	}
 	return nativeValue{kind: "int", i: fn(inputs[0].asInt(), inputs[1].asInt())}, nil
+}
+
+// ── 数学 built-in evaluators ──
+
+func evalAbs(inputs []nativeValue) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	v := inputs[0]
+	switch v.kind {
+	case "int":
+		if v.i < 0 {
+			return nativeValue{kind: "int", i: -v.i}, nil
+		}
+		return nativeValue{kind: "int", i: v.i}, nil
+	case "float":
+		return nativeValue{kind: "float", f: math.Abs(v.f)}, nil
+	default:
+		return nativeValue{}, fmt.Errorf("abs requires numeric, got %s", v.kind)
+	}
+}
+
+func evalPow(inputs []nativeValue) (nativeValue, error) {
+	if err := requireBinary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	result := math.Pow(inputs[0].asFloat(), inputs[1].asFloat())
+	return nativeValue{kind: "float", f: result}, nil
+}
+
+func evalMin(inputs []nativeValue) (nativeValue, error) {
+	if err := requireBinary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	a, b := inputs[0], inputs[1]
+	if (a.kind == "int" || a.kind == "float") && (b.kind == "int" || b.kind == "float") {
+		af, bf := a.asFloat(), b.asFloat()
+		result := math.Min(af, bf)
+		if a.kind == "int" && b.kind == "int" {
+			return nativeValue{kind: "int", i: int64(result)}, nil
+		}
+		return nativeValue{kind: "float", f: result}, nil
+	}
+	// 字符串回退
+	if a.raw < b.raw {
+		return a, nil
+	}
+	return b, nil
+}
+
+func evalMax(inputs []nativeValue) (nativeValue, error) {
+	if err := requireBinary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	a, b := inputs[0], inputs[1]
+	if (a.kind == "int" || a.kind == "float") && (b.kind == "int" || b.kind == "float") {
+		af, bf := a.asFloat(), b.asFloat()
+		result := math.Max(af, bf)
+		if a.kind == "int" && b.kind == "int" {
+			return nativeValue{kind: "int", i: int64(result)}, nil
+		}
+		return nativeValue{kind: "float", f: result}, nil
+	}
+	if a.raw > b.raw {
+		return a, nil
+	}
+	return b, nil
+}
+
+func evalSqrt(inputs []nativeValue) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	x := inputs[0].asFloat()
+	if x < 0 {
+		return nativeValue{}, fmt.Errorf("sqrt of negative number: %v", x)
+	}
+	return nativeValue{kind: "float", f: math.Sqrt(x)}, nil
+}
+
+func evalExp(inputs []nativeValue) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	return nativeValue{kind: "float", f: math.Exp(inputs[0].asFloat())}, nil
+}
+
+func evalLog(inputs []nativeValue) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	x := inputs[0].asFloat()
+	if x <= 0 {
+		return nativeValue{}, fmt.Errorf("log of non-positive number: %v", x)
+	}
+	return nativeValue{kind: "float", f: math.Log(x)}, nil
+}
+
+func evalSign(inputs []nativeValue) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	v := inputs[0]
+	f := v.asFloat()
+	if f > 0 {
+		return nativeValue{kind: "int", i: 1}, nil
+	} else if f < 0 {
+		return nativeValue{kind: "int", i: -1}, nil
+	}
+	return nativeValue{kind: "int", i: 0}, nil
+}
+
+func evalUnaryArith(inputs []nativeValue, fn func(float64) float64) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	v := inputs[0]
+	result := fn(v.asFloat())
+	if v.kind == "int" {
+		return nativeValue{kind: "int", i: int64(result)}, nil
+	}
+	return nativeValue{kind: "float", f: result}, nil
+}
+
+// ── 类型转换 built-in evaluators ──
+
+func evalToInt(inputs []nativeValue) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	v := inputs[0]
+	switch v.kind {
+	case "int":
+		return v, nil
+	case "float":
+		return nativeValue{kind: "int", i: int64(v.f)}, nil
+	case "bool":
+		if v.b {
+			return nativeValue{kind: "int", i: 1}, nil
+		}
+		return nativeValue{kind: "int", i: 0}, nil
+	default:
+		return nativeValue{kind: "int", i: v.asInt()}, nil
+	}
+}
+
+func evalToFloat(inputs []nativeValue) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	v := inputs[0]
+	switch v.kind {
+	case "float":
+		return v, nil
+	case "int":
+		return nativeValue{kind: "float", f: float64(v.i)}, nil
+	case "bool":
+		if v.b {
+			return nativeValue{kind: "float", f: 1.0}, nil
+		}
+		return nativeValue{kind: "float", f: 0.0}, nil
+	default:
+		return nativeValue{kind: "float", f: v.asFloat()}, nil
+	}
+}
+
+func evalToBool(inputs []nativeValue) (nativeValue, error) {
+	if err := requireUnary(inputs); err != nil {
+		return nativeValue{}, err
+	}
+	return nativeValue{kind: "bool", b: inputs[0].asBool()}, nil
 }
