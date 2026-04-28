@@ -1,4 +1,4 @@
-package engine
+package dispatch
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
+	"git.array2d.com/ai/deepx/executor/vm/internal/state"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -20,8 +21,6 @@ type nativeValue struct {
 	f    float64
 }
 
-// parseNativeValue 将 Redis 中存储的字符串解析为类型化值。
-// 解析顺序: bool → int → float → string (兜底)
 func parseNativeValue(raw string) nativeValue {
 	v := nativeValue{raw: raw}
 	switch strings.ToLower(strings.TrimSpace(raw)) {
@@ -58,7 +57,6 @@ func (v nativeValue) String() string {
 	case "int":
 		return strconv.FormatInt(v.i, 10)
 	case "float":
-		// 避免多余的小数位
 		s := strconv.FormatFloat(v.f, 'f', -1, 64)
 		if !strings.Contains(s, ".") {
 			s += ".0"
@@ -100,18 +98,17 @@ func (v nativeValue) asBool() bool {
 	}
 }
 
-// dispatchNative 直接求值基础类型运算指令，不经过 op-plat。
-func dispatchNative(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) error {
-	// 1. 读取输入
+// Native 直接求值基础类型运算指令，不经过 op-plat。
+func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) error {
 	inputs := make([]nativeValue, 0, len(inst.Reads))
 	for _, r := range inst.Reads {
 		var raw string
-		if isRelative(r) {
+		if IsRelative(r) {
 			key := "/vthread/" + vtid + "/" + r[2:]
 			val, err := rdb.Get(ctx, key).Result()
 			if err != nil {
 				msg := fmt.Sprintf("native read %s: %v", key, err)
-				setError(ctx, rdb, vtid, pc, msg)
+				state.SetError(ctx, rdb, vtid, pc, msg)
 				return fmt.Errorf("%s", msg)
 			}
 			raw = val
@@ -121,45 +118,33 @@ func dispatchNative(ctx context.Context, rdb *redis.Client, vtid string, pc stri
 		inputs = append(inputs, parseNativeValue(raw))
 	}
 
-	// 2. 求值
 	result, err := evalNative(inst.Opcode, inputs)
 	if err != nil {
-		setError(ctx, rdb, vtid, pc, err.Error())
+		state.SetError(ctx, rdb, vtid, pc, err.Error())
 		return err
 	}
 
-	// 3. 写回输出
 	if len(inst.Writes) > 0 {
-		outKey := resolveWriteKey(vtid, inst.Writes[0])
+		outKey := ResolveWriteKey(vtid, inst.Writes[0])
 		if err := rdb.Set(ctx, outKey, result.String(), 0).Err(); err != nil {
 			msg := fmt.Sprintf("native write %s: %v", outKey, err)
-			setError(ctx, rdb, vtid, pc, msg)
+			state.SetError(ctx, rdb, vtid, pc, msg)
 			return fmt.Errorf("%s", msg)
 		}
 	}
 
 	log.Printf("[%s] NATIVE %s %v = %s", vtid, inst.Opcode, inputs, result.String())
-	setState(ctx, rdb, vtid, ir.NextPC(pc), "running")
+	state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 	return nil
 }
 
-func resolveWriteKey(vtid, param string) string {
-	if isRelative(param) {
-		return "/vthread/" + vtid + "/" + param[2:]
-	}
-	return param
-}
-
-// evalNative 执行符号算子的类型感知求值。
 func evalNative(op string, inputs []nativeValue) (nativeValue, error) {
 	switch op {
-	// ── 算术 ──
 	case "+":
 		return evalBinaryArith(inputs, func(a, b float64) float64 { return a + b })
 	case "-":
 		if len(inputs) == 1 {
-			v := inputs[0]
-			return evalNeg(v)
+			return evalNeg(inputs[0])
 		}
 		return evalBinaryArith(inputs, func(a, b float64) float64 { return a - b })
 	case "*":
@@ -168,8 +153,6 @@ func evalNative(op string, inputs []nativeValue) (nativeValue, error) {
 		return evalDiv(inputs)
 	case "%":
 		return evalMod(inputs)
-
-	// ── 比较 ──
 	case "==":
 		return evalCmp(inputs, func(a, b float64) bool { return a == b },
 			func(a, b string) bool { return a == b })
@@ -184,16 +167,12 @@ func evalNative(op string, inputs []nativeValue) (nativeValue, error) {
 		return evalCmpNum(inputs, func(a, b float64) bool { return a <= b })
 	case ">=":
 		return evalCmpNum(inputs, func(a, b float64) bool { return a >= b })
-
-	// ── 逻辑 ──
 	case "&&":
 		return evalLogic(inputs, func(a, b bool) bool { return a && b })
 	case "||":
 		return evalLogic(inputs, func(a, b bool) bool { return a || b })
 	case "!":
 		return evalNot(inputs)
-
-	// ── 位运算 (int only) ──
 	case "&":
 		return evalBinaryInt(inputs, func(a, b int64) int64 { return a & b })
 	case "|":
@@ -204,13 +183,10 @@ func evalNative(op string, inputs []nativeValue) (nativeValue, error) {
 		return evalBinaryInt(inputs, func(a, b int64) int64 { return a << uint64(b) })
 	case ">>":
 		return evalBinaryInt(inputs, func(a, b int64) int64 { return a >> uint64(b) })
-
 	default:
 		return nativeValue{}, fmt.Errorf("unknown native op: %s", op)
 	}
 }
-
-// ── evaluator helpers ──
 
 func requireBinary(inputs []nativeValue) error {
 	if len(inputs) != 2 {
@@ -226,7 +202,6 @@ func requireUnary(inputs []nativeValue) error {
 	return nil
 }
 
-// Binary arithmetic: promote to float, compute, demote to int if both inputs int.
 func evalBinaryArith(inputs []nativeValue, fn func(float64, float64) float64) (nativeValue, error) {
 	if err := requireBinary(inputs); err != nil {
 		return nativeValue{}, err
@@ -274,13 +249,11 @@ func evalMod(inputs []nativeValue) (nativeValue, error) {
 	return nativeValue{kind: "int", i: a.asInt() % b.asInt()}, nil
 }
 
-// evalCmp: 优先数值比较，回退字符串比较
 func evalCmp(inputs []nativeValue, numCmp func(float64, float64) bool, strCmp func(string, string) bool) (nativeValue, error) {
 	if err := requireBinary(inputs); err != nil {
 		return nativeValue{}, err
 	}
 	a, b := inputs[0], inputs[1]
-	// 两边都是数值类型 → 数值比较
 	if (a.kind == "int" || a.kind == "float") && (b.kind == "int" || b.kind == "float") {
 		return nativeValue{kind: "bool", b: numCmp(a.asFloat(), b.asFloat())}, nil
 	}

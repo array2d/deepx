@@ -1,4 +1,4 @@
 # caller: calls callee to add two numbers
 def caller(A:int, B:int) -> (C:int) {
-    call(callee, A, B) -> ./C
+    callee(A, B) -> ./C
 }

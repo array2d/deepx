@@ -1,8 +1,14 @@
-package engine
+// Package translate 负责 CALL eager 翻译与 RETURN 处理。
+//
+// CALL 时一次性将编译层 dxlang 指令翻译为执行层 [i,j] 坐标，
+// 后续逐条执行时零解析开销。
+package translate
 
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 
 	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
@@ -10,9 +16,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// handleCall 执行 CALL 指令的 eager 翻译
-// 返回子栈第一条指令的 PC
-func handleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) string {
+// handleCall 执行 CALL 指令的 eager 翻译。
+// 返回子栈第一条指令的 PC。
+func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) string {
 	funcName := inst.Reads[0]
 
 	// 1. 确定 backend
@@ -89,9 +95,9 @@ func handleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 	return pc + "/[0,0]"
 }
 
-// handleReturn 处理 RETURN 指令
-// 返回父栈 CALL 指令的下一条 PC
-func handleReturn(ctx context.Context, rdb *redis.Client, vtid string, pc string) string {
+// HandleReturn 处理 RETURN 指令。
+// 返回父栈 CALL 指令的下一条 PC。
+func HandleReturn(ctx context.Context, rdb *redis.Client, vtid string, pc string) string {
 	lastSlash := strings.LastIndex(pc, "/")
 	if lastSlash < 0 {
 		return pc // 根栈 return → vthread 即将 done
@@ -129,6 +135,12 @@ func handleReturn(ctx context.Context, rdb *redis.Client, vtid string, pc string
 
 	// 3. PC 恢复到父栈 CALL 的下一条
 	return ir.NextPC(parentPC)
+}
+
+// FormalParams 函数形参列表
+type FormalParams struct {
+	Reads  []string
+	Writes []string
 }
 
 // parseSignature 解析函数签名
@@ -174,12 +186,6 @@ func parseSignature(sig string) FormalParams {
 	return fp
 }
 
-// FormalParams 函数形参列表
-type FormalParams struct {
-	Reads  []string
-	Writes []string
-}
-
 // extractParamNames 从 "A:tensor, B:tensor, alpha:f32" 提取 ["A", "B", "alpha"]
 func extractParamNames(s string) []string {
 	var names []string
@@ -197,4 +203,64 @@ func extractParamNames(s string) []string {
 		}
 	}
 	return names
+}
+
+// mgetAll 批量读取指定 base 路径下的所有编译层/源码层指令。
+// base 格式: "/op/op-metal/func/gemm" 或 "/src/func/gemm"
+// KEYS 返回顺序不确定，按数字后缀排序以保证指令顺序。
+func mgetAll(ctx context.Context, rdb *redis.Client, base string) []string {
+	keys, err := rdb.Keys(ctx, base+"/*").Result()
+	if err != nil || len(keys) == 0 {
+		return nil
+	}
+
+	type indexedKey struct {
+		key   string
+		index int
+	}
+	var sorted []indexedKey
+	basePrefix := base + "/"
+	for _, k := range keys {
+		if !strings.HasPrefix(k, basePrefix) {
+			continue
+		}
+		suffix := k[len(basePrefix):]
+		n, err := strconv.Atoi(suffix)
+		if err != nil {
+			continue
+		}
+		sorted = append(sorted, indexedKey{key: k, index: n})
+	}
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].index < sorted[j].index })
+
+	orderedKeys := make([]string, len(sorted))
+	for i, sk := range sorted {
+		orderedKeys[i] = sk.key
+	}
+
+	if len(orderedKeys) == 0 {
+		return nil
+	}
+
+	vals, err := rdb.MGet(ctx, orderedKeys...).Result()
+	if err != nil {
+		return nil
+	}
+
+	result := make([]string, 0, len(vals))
+	for _, v := range vals {
+		if s, ok := v.(string); ok {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
+// replaceParams 将形参替换为实参 (原地修改)。
+func replaceParams(params []string, bindings map[string]string) {
+	for i, p := range params {
+		if v, ok := bindings[p]; ok {
+			params[i] = v
+		}
+	}
 }

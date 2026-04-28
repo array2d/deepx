@@ -137,28 +137,33 @@ func (f *DxFunc) RegisterFunc(ctx context.Context, rdb *redis.Client) error {
 	return nil
 }
 
-// VThreadState mirrors engine.VThreadState for test usage.
+// VThreadState mirrors state.VThreadState for test usage.
 type VThreadState struct {
 	PC     string `json:"pc"`
 	Status string `json:"status"`
 	Mode   string `json:"mode,omitempty"`
 }
 
-// CreateVThread creates a new vthread with initial state and entry CALL instruction.
+// CreateVThread creates a new vthread with initial state and entry instruction.
+// The entry instruction uses the function name as the opcode directly:
+//
+//	opcode = funcName (e.g., "add_test"), reads = args, writes = outputs
+//
+// The engine detects function names at runtime via isFunctionCall() and
+// converts them to internal CALL instructions automatically.
 func CreateVThread(ctx context.Context, rdb *redis.Client, funcName string, reads, writes []string) (string, error) {
 	vtid := fmt.Sprintf("test-%d", time.Now().UnixNano())
 
-	allReads := append([]string{funcName}, reads...)
-
-	state := VThreadState{PC: "[0,0]", Status: "init", Mode: "single"}
-	data, _ := json.Marshal(state)
+	st := VThreadState{PC: "[0,0]", Status: "init", Mode: "single"}
+	data, _ := json.Marshal(st)
 	if err := rdb.Set(ctx, "/vthread/"+vtid, data, 0).Err(); err != nil {
 		return "", fmt.Errorf("set state: %w", err)
 	}
 
 	pipe := rdb.Pipeline()
-	pipe.Set(ctx, "/vthread/"+vtid+"/[0,0]", "call", 0)
-	for i, r := range allReads {
+	// 直接使用函数名作为 opcode (不再使用 "call" 关键字)
+	pipe.Set(ctx, "/vthread/"+vtid+"/[0,0]", funcName, 0)
+	for i, r := range reads {
 		pipe.Set(ctx, fmt.Sprintf("/vthread/%s/[0,-%d]", vtid, i+1), r, 0)
 	}
 	for i, w := range writes {
