@@ -70,9 +70,7 @@
 ### 2.3 Vthread 路径
 
 ```
-/vthread/<vtid>/pc                 程序计数器, 如 "[3,0]"
-/vthread/<vtid>/status             状态: init|running|wait|error|done
-/vthread/<vtid>/error              错误信息 (status=error 时)
+/vthread/<vtid>                     → {"pc":"[3,0]", "status":"running"}  ← vthread 自身 (含 PC/状态)
 /vthread/<vtid>/[0,0]              指令 #0 操作码
 /vthread/<vtid>/[0,-1]             指令 #0 读参数 #1
 /vthread/<vtid>/[0,1]              指令 #0 写参数 #1
@@ -80,6 +78,8 @@
 /vthread/<vtid>/a                  命名槽位 (局部变量)
 /vthread/<vtid>/b                  命名槽位
 ```
+
+注：`pc` 和 `status` 是 `/vthread/<vtid>` 的 value 中的字段，不是独立的子 key。
 
 ### 2.4 命令队列
 
@@ -161,7 +161,7 @@ notify:vm                          VM 的唤醒通知队列
    → 无: BLPOP notify:vm (等待新 vthread 创建)
 
 2. 对当前 vthread:
-   a) GET /vthread/<vtid>/pc → 当前坐标 [n,0]
+   a) GET /vthread/<vtid> → {pc: "[n,0]", status: "running", ...}
    b) GET /vthread/<vtid>/[n,0] → opcode
 
 3. 指令分发:
@@ -169,27 +169,27 @@ notify:vm                          VM 的唤醒通知队列
    [张量计算指令] add, matmul, relu, mul, exp, ...
      → 构造 op-plat 任务包 (§4.2)
      → PUSH cmd:op-cuda:<device>
-     → SET status = "wait"
+     → SET /vthread/<vtid> = {pc: "[n,0]", status: "wait", ...}
      → BLPOP done:<vtid>
      → 醒来后检查结果
-     → SET pc = [n+1,0], status = "running"
+     → SET /vthread/<vtid> = {pc: "[n+1,0]", status: "running", ...}
    
    [控制流指令]
      call:
        → 读取 [n,-1] func_name, [n,-2..] args, [n,1] return_slot
        → 复制 /funcs/<func_name>/ 到 /vthread/<vtid>/[n,0]/ 子栈
        → 将 args 绑定到子栈指令的形参位置
-       → SET pc = [n,0]/[0,0]  (进入子栈)
+       → SET /vthread/<vtid> = {pc: "[n,0]/[0,0]", status: "running", ...}  (进入子栈)
      
      return:
        → 将返回值写入父栈 CALL 指令的写参数槽位
        → DELETE 当前子栈 KV 路径
-       → SET pc = 父栈 CALL 指令的下一条
+       → SET /vthread/<vtid> = {pc: "[n+1,0]", status: "running", ...}  (父栈下一条)
     
      if:
        → 读取条件: [n,-1] = cond, [n,0]/true/0 和 [n,0]/false/0
        → 根据 cond 结果设置 PC
-     
+    
      for:
        → 初始化迭代器, 循环 body 直到耗尽
    
@@ -205,7 +205,7 @@ notify:vm                          VM 的唤醒通知队列
        → SET /vthread/<vtid>/<name> = <value>  (基础类型直存 Redis)
 
 4. vthread 执行完毕 (pc 超出 seq 范围):
-   → SET status = "done"
+   → SET /vthread/<vtid> = {pc: "...", status: "done", ...}
    → 清理 /vthread/<vtid>/ 子树 (GC)
    → 回到步骤 1
 ```
@@ -219,11 +219,11 @@ VM-1 拾取 /vthread/1/ → 执行
 VM-2 拾取 /vthread/2/ → 执行
 VM-3 空闲 → BLPOP notify:vm
 
-避免竞争: 使用 Redis SETNX 原子操作标记 vthread 已被拾取
-  WATCH /vthread/<vtid>/status
-  GET status == "init"
+避免竞争: 使用 Redis 原子操作标记 vthread 已被拾取
+  WATCH /vthread/<vtid>
+  GET → {pc: "...", status: "init"}
   MULTI
-  SET status = "running"
+  SET /vthread/<vtid> = {pc: "...", status: "running"}
   EXEC
   → 只有一个 VM 能成功
 ```
@@ -444,8 +444,7 @@ kv.set("/funcs/forward/1", "relu(./mm) -> C")
 
 # 2. 创建 vthread
 vtid = kv.alloc_vtid()
-kv.set(f"/vthread/{vtid}/status", "init")
-kv.set(f"/vthread/{vtid}/pc", "[0,0]")
+kv.set(f"/vthread/{vtid}", {"pc": "[0,0]", "status": "init"})
 
 # 3. 写入入口指令 (call main)
 kv.set(f"/vthread/{vtid}/[0,0]", "call")
@@ -509,16 +508,15 @@ class FuncCache:
 ```
 pysdk:
   1. 分配 vtid (Redis INCR /sys/vtid_counter)
-  2. SET /vthread/<vtid>/status = "init"
-  3. SET /vthread/<vtid>/pc = "[0,0]"
-  4. 写入入口指令序列
-  5. PUSH notify:vm {"event": "new_vthread", "vtid": "<vtid>"}
+  2. SET /vthread/<vtid> = {"pc": "[0,0]", "status": "init"}
+  3. 写入入口指令序列
+  4. PUSH notify:vm {"event": "new_vthread", "vtid": "<vtid>"}
 
 VM:
   1. BLPOP notify:vm → 收到事件
-  2. WATCH /vthread/<vtid>/status
-  3. 检查 status == "init"
-  4. MULTI → SET status = "running" → EXEC
+  2. WATCH /vthread/<vtid>
+  3. GET → {pc: "...", status: "init"}
+  4. MULTI → SET /vthread/<vtid> = {pc: "...", status: "running"} → EXEC
   5. 开始执行循环 (§3.2)
 ```
 
@@ -528,7 +526,7 @@ VM:
 
 | 错误类型 | 示例 | 处理方式 |
 |---------|------|---------|
-| op-plat 执行失败 | GPU OOM, 数值溢出 | status→error, 记录到 /vthread/<vtid>/error |
+| op-plat 执行失败 | GPU OOM, 数值溢出 | status→error, error 信息写入 /vthread/<vtid> 的 value |
 | heap-plat 执行失败 | shm 分配失败, 磁盘满 | status→error |
 | 超时 | op-plat 无响应 | VM 超时后 status→error |
 | 锁冲突 | LOCK 超时 | 调用者决定重试或报错 |
@@ -538,11 +536,10 @@ VM:
 ```
 op-plat 返回 error:
   1. VM BLPOP 收到 error 完成通知
-  2. SET /vthread/<vtid>/status = "error"
-  3. SET /vthread/<vtid>/error = {...}
-  4. VM 释放该 vthread, 回到 idle 状态
+  2. SET /vthread/<vtid> = {pc: "[n,0]", status: "error", error: {...}}
+  3. VM 释放该 vthread, 回到 idle 状态
 
-pysdk 可通过 WATCH /vthread/<vtid>/status 感知错误
+pysdk 可通过 GET /vthread/<vtid> 检查 status 字段感知错误
 TODO: 错误恢复策略 (重试 / 跳过 / 降级) 待开发时确定
 ```
 
@@ -553,9 +550,8 @@ TODO: 错误恢复策略 (重试 / 跳过 / 降级) 待开发时确定
 ```
 GET /sys/op-plat/0     → op-plat 状态和负载
 GET /sys/heap-plat/0   → heap-plat 状态
-KEYS /vthread/*/status → 所有 vthread 状态概览
-GET /vthread/1/status  → 特定 vthread 的状态
-GET /vthread/1/pc      → 特定 vthread 的执行位置
+KEYS /vthread/*        → 所有 vthread 列表
+GET /vthread/1         → 特定 vthread 的状态 (含 pc 和 status 字段)
 ```
 
 ### 10.2 liveness 检测

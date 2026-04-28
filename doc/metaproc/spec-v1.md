@@ -189,6 +189,7 @@ for(iterator) ->               ← 循环入口
 ### 5.1 Vthread 路径结构
 
 ```
+/vthread/<vtid>              → {"pc":"[2,0]", "status":"running"}   ← vthread 自身 (含 PC 和状态)
 /vthread/<vtid>/[0,0]        ← 栈帧 #0，指令 #0 的操作码
 /vthread/<vtid>/[0,-1]       ← 栈帧 #0，指令 #0 的读参数 #1
 /vthread/<vtid>/[0,-2]       ← 栈帧 #0，指令 #0 的读参数 #2
@@ -197,8 +198,6 @@ for(iterator) ->               ← 循环入口
 ...
 /vthread/<vtid>/a            ← 栈帧 #0 的命名槽位 a 的值
 /vthread/<vtid>/b            ← 栈帧 #0 的命名槽位 b 的值
-/vthread/<vtid>/pc           ← 当前程序计数器 (如 [2,0])
-/vthread/<vtid>/status       ← vthread 状态
 ```
 
 ### 5.2 二维寻址
@@ -222,11 +221,21 @@ Tensor 类型的值存储 tensor 元信息（dtype, shape, 物理地址）。
 
 ### 5.4 程序计数器 (PC)
 
-`/vthread/<vtid>/pc` 的值指向当前待执行指令的坐标，如 `[3,0]`。
+PC 是 `/vthread/<vtid>` 的 value 中的 `pc` 字段，指向当前待执行指令的坐标。
+
+```
+/vthread/1 = {"pc": "[3,0]", "status": "running"}
+```
+
+`pc` 的值如 `[3,0]` 表示当前位于栈帧指令序列的第 3 条指令。
 
 ### 5.5 Vthread 状态
 
-`/vthread/<vtid>/status` 的值：
+Vthread 状态是 `/vthread/<vtid>` 的 value 中的 `status` 字段：
+
+```
+/vthread/1 = {"pc": "[3,0]", "status": "wait"}
+```
 
 | 状态 | 含义 |
 |------|------|
@@ -297,19 +306,19 @@ func A CALL func B，func B CALL func C，形成多层嵌套：
 
 ```
 VM 循环:
-  1. 读取 /vthread/<vtid>/pc → 当前坐标 [n,0]
+  1. GET /vthread/<vtid> → {pc: "[n,0]", status: "running", ...}
   2. 读取 /vthread/<vtid>/[n,0] → opcode
   3. 判断指令类型:
      a) 张量计算指令 (add, matmul, relu, ...):
         → 将指令 + 参数打包，PUSH 到目标 op-plat 的命令队列
-        → SET status = "wait"
+        → SET /vthread/<vtid> = {pc: "[n,0]", status: "wait", ...}
         → BLPOP vthread 的完成通知队列
         → op-plat 计算完毕，LPUSH 完成事件
-        → VM 醒来，SET pc = [n+1, 0]
+        → VM 醒来，SET /vthread/<vtid> = {pc: "[n+1,0]", status: "running", ...}
         
      b) 控制流指令 (call, if, for, return):
         → VM 直接处理 (无需 op-plat)
-        → 更新 PC 和栈结构
+        → 更新 /vthread/<vtid> 的 pc 字段
         
      c) 生命周期指令 (newtensor, deltensor):
         → PUSH 到 heap-plat 的命令队列
@@ -415,25 +424,26 @@ heap-plat 消费的指令:
 ```
 CREATE:
   pysdk 或编译器在 /vthread/ 下创建新的 vtid 子树
-  SET status = "init"
-  SET pc = [0,0]
+  SET /vthread/<vtid> = {"pc": "[0,0]", "status": "init"}
   写入入口指令 (call main)
 
 EXECUTE:
   VM 拾取 status="init" 的 vthread
   进入执行循环 (§7.1)
-  status → "running"
+  SET /vthread/<vtid> = {..., "status": "running"}
 
 WAIT:
-  张量计算指令发射后，status = "wait"
+  张量计算指令发射后
+  SET /vthread/<vtid> = {..., "status": "wait"}
   VM 阻塞在完成通知队列上
 
 ERROR:
-  指令执行失败 → status = "error"
-  错误信息写入 /vthread/<vtid>/error
+  指令执行失败
+  SET /vthread/<vtid> = {..., "status": "error", "error": "..."}
 
 DONE:
-  vthread 执行完毕 → status = "done"
+  vthread 执行完毕
+  SET /vthread/<vtid> = {..., "status": "done"}
   VM 清理 /vthread/<vtid>/ 子树 (GC)
 ```
 
@@ -472,7 +482,7 @@ DONE:
 | 代码段 (.text) | /funcs/ |
 | 堆段 (.data/.bss) | 非保留路径 (堆变量) |
 | 栈段 | /vthread/<vtid>/ 子树 |
-| 程序计数器 (PC) | /vthread/<vtid>/pc |
+| 程序计数器 (PC) | /vthread/<vtid> 的 value.pc 字段 |
 | 栈帧 | CALL 产生的子维度 |
 | 系统调用 | heap-plat / op-plat 命令 |
 | 文件描述符 | 堆 tensor 引用 |
