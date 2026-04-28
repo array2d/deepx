@@ -1,6 +1,6 @@
 #pragma once
 
-#include "registry.h"
+#include "deepx/registry.h"
 #include <unordered_map>
 #include <mutex>
 #include <fstream>

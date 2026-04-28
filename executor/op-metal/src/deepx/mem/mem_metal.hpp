@@ -7,7 +7,7 @@
 
 #include "deepx/tensor.hpp"
 #include "deepx/mem/mem.hpp"
-#include "deepx/shmem/shm_client.h"
+#include "deepx/shmem/shm_tensor.h"
 
 namespace deepx::mem {
 

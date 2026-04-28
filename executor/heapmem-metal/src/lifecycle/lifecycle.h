@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../registry/registry.h"
-#include "../shmem/shm_tensor.h"
+#include "deepx/registry.h"
+#include "deepx/shmem/shm_tensor.h"
 #include <string>
 #include <unordered_map>
 #include <atomic>

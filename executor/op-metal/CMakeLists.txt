@@ -10,7 +10,12 @@ if(NOT APPLE)
 endif()
 
 include_directories(src)
-include_directories(../heapmem-metal/src)  # 共享 shm_tensor.h
+include_directories(../common-metal/include)
+
+# 依赖 common-metal 公共库
+if(NOT TARGET deepx_common_metal)
+    add_subdirectory(../common-metal common-metal)
+endif()
 
 # 源文件
 file(GLOB_RECURSE DEEPX_SOURCES "src/deepx/*.cpp" "src/deepx/*.mm" "src/deepx/*.hpp" "src/deepx/*.h")
@@ -19,12 +24,9 @@ file(GLOB_RECURSE CLIENT_SOURCES "src/client/*.cpp" "src/client/*.mm")
 find_library(METAL Metal REQUIRED)
 find_library(FOUNDATION Foundation REQUIRED)
 
-# shm_tensor 实现 (shared with heapmem-metal)
-set(SHMEM_SRC ../heapmem-metal/src/shmem/shm_tensor.mm)
-
-add_library(deepx_metal SHARED ${DEEPX_SOURCES} ${SHMEM_SRC})
+add_library(deepx_metal SHARED ${DEEPX_SOURCES})
 target_link_libraries(deepx_metal
-    PUBLIC ${METAL} ${FOUNDATION}
+    PUBLIC deepx_common_metal ${METAL} ${FOUNDATION}
 )
 set_target_properties(deepx_metal PROPERTIES
     XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
