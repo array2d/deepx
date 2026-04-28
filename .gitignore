@@ -6,3 +6,4 @@
 **/dist/
 **/*.egg-info/
 *.pdf.claude/
+.claude/settings.local.json.tmp.*
