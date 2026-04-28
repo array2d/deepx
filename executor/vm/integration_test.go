@@ -316,3 +316,60 @@ func fileToFuncName(filename string) string {
 	base := filepath.Base(filename)
 	return base[:len(base)-len(filepath.Ext(base))]
 }
+
+// TestIntegration_CrossCall 测试一个 dx 函数 call 另一个函数
+func TestIntegration_CrossCall(t *testing.T) {
+	rdb, ctx, cancel := connectRedis(t)
+	defer cancel()
+	rdb.FlushDB(ctx)
+
+	// 1. 加载 callee 和 caller
+	calleePath := filepath.Join("testdata", "callee.dx")
+	callee, err := testutil.LoadDxFile(calleePath)
+	if err != nil {
+		t.Fatalf("Load callee: %v", err)
+	}
+	callerPath := filepath.Join("testdata", "caller.dx")
+	caller, err := testutil.LoadDxFile(callerPath)
+	if err != nil {
+		t.Fatalf("Load caller: %v", err)
+	}
+
+	// 2. 注册两个函数（callee 必须先注册，因为 caller 依赖它）
+	if err := callee.RegisterFunc(ctx, rdb); err != nil {
+		t.Fatalf("Register callee: %v", err)
+	}
+	if err := caller.RegisterFunc(ctx, rdb); err != nil {
+		t.Fatalf("Register caller: %v", err)
+	}
+	t.Logf("registered callee=%s caller=%s", callee.Name, caller.Name)
+
+	// 3. 创建 vthread
+	vtid, err := testutil.CreateVThread(ctx, rdb, "caller",
+		[]string{"./a", "./b"}, []string{"./c"})
+	if err != nil {
+		t.Fatalf("CreateVThread: %v", err)
+	}
+	rdb.Set(ctx, "/vthread/"+vtid+"/a", "7", 0)
+	rdb.Set(ctx, "/vthread/"+vtid+"/b", "8", 0)
+	t.Logf("vtid=%s", vtid)
+
+	// 4. 启动 VM worker
+	vmCtx, vmCancel := context.WithCancel(ctx)
+	defer vmCancel()
+	go engine.RunWorker(vmCtx, rdb, 0)
+	time.Sleep(200 * time.Millisecond)
+
+	// 5. 通知 VM
+	rdb.RPush(ctx, "notify:vm", `{"event":"new_vthread","vtid":"`+vtid+`"}`)
+
+	// 6. 等待并验证
+	done, outputs := waitVthread(t, rdb, vtid, 10*time.Second)
+	if !done {
+		t.Fatal("vthread did not complete")
+	}
+	t.Logf("outputs: %v", outputs)
+	if outputs["c"] != "15" {
+		t.Errorf("caller(7+8): got c=%q, want '15'", outputs["c"])
+	}
+}

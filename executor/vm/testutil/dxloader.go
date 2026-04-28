@@ -17,7 +17,7 @@ import (
 // DxFunc represents a parsed dxlang function from a .dx file.
 type DxFunc struct {
 	Name      string   // e.g., "add_test"
-	Signature string   // e.g., "(add_test(A, B) -> (C))"
+	Signature string   // e.g., "def add_test(A:int, B:int) -> (C:int)"
 	Body      []string // dxlang instruction lines
 }
 
@@ -26,12 +26,13 @@ type DxFunc struct {
 // File format:
 //
 //	# comment lines (ignored)
-//	(funcName(param1:type, ...) -> (out1:type, ...))
-//	instruction1
-//	instruction2
+//	def funcName(param1:type, ...) -> (out1:type, ...) {
+//	    instruction1
+//	    instruction2
+//	}
 //
-// The first non-empty, non-comment line is the signature.
-// All subsequent non-empty, non-comment lines form the body.
+// The first non-empty, non-comment line must start with 'def'.
+// Body lines are inside braces '{' ... '}'.
 func LoadDxFile(path string) (*DxFunc, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -53,35 +54,63 @@ func LoadDxFile(path string) (*DxFunc, error) {
 	}
 
 	if len(lines) < 2 {
-		return nil, fmt.Errorf("%s: need at least signature + 1 body instruction, got %d lines", path, len(lines))
+		return nil, fmt.Errorf("%s: need at least def line + 1 body instruction, got %d lines", path, len(lines))
 	}
 
-	sig := lines[0]
-	body := lines[1:]
+	// Parse def line
+	defLine := lines[0]
+	if !strings.HasPrefix(defLine, "def ") {
+		return nil, fmt.Errorf("%s: first content line must start with 'def', got: %s", path, defLine)
+	}
 
-	name := extractFuncName(sig)
+	name := extractFuncName(defLine)
 	if name == "" {
-		return nil, fmt.Errorf("%s: cannot extract function name from signature: %s", path, sig)
+		return nil, fmt.Errorf("%s: cannot extract function name from: %s", path, defLine)
+	}
+
+	// Extract body — inside { } or remaining lines
+	var body []string
+	if strings.HasSuffix(defLine, "{") {
+		// Braced format: body between { and }
+		for i := 1; i < len(lines); i++ {
+			if lines[i] == "}" {
+				break
+			}
+			body = append(body, lines[i])
+		}
+	} else {
+		// No-brace format: remaining lines are body
+		body = lines[1:]
+	}
+
+	if len(body) == 0 {
+		return nil, fmt.Errorf("%s: function body is empty", path)
 	}
 
 	return &DxFunc{
 		Name:      name,
-		Signature: sig,
+		Signature: strings.TrimSuffix(defLine, " {"),
 		Body:      body,
 	}, nil
 }
 
-// extractFuncName extracts the function name from a signature like
-// "(add_test(A:tensor, B:tensor) -> (C:tensor))" or "add_test -> (C)".
+// extractFuncName extracts the function name from a def line like
+// "def add_test(A:int, B:int) -> (C:int) {" or legacy "(add_test(A, B) -> (C))".
 func extractFuncName(sig string) string {
 	sig = strings.TrimSpace(sig)
-	// strip outer parens
+	// Strip "def " prefix
+	if strings.HasPrefix(sig, "def ") {
+		sig = strings.TrimSpace(sig[4:])
+	}
+	// Strip outer parens (legacy format)
 	if len(sig) >= 2 && sig[0] == '(' && sig[len(sig)-1] == ')' {
 		sig = sig[1 : len(sig)-1]
 	}
+	// Strip trailing " {" (braced def)
+	sig = strings.TrimSuffix(sig, " {")
 	sig = strings.TrimSpace(sig)
 
-	// isolate left side of "->"
+	// Isolate left side of "->"
 	left := sig
 	if idx := strings.Index(sig, "->"); idx >= 0 {
 		left = strings.TrimSpace(sig[:idx])
@@ -94,8 +123,7 @@ func extractFuncName(sig string) string {
 	return left
 }
 
-// RegisterFunc 将 DxFunc 注册到 Redis 的 /src/func/<name> 路径。
-// 签名写入 key="/src/func/<name>"，每条 body 指令写入 "/src/func/<name>/0", "/src/func/<name>/1", ...
+// RegisterFunc registers a DxFunc in Redis at /src/func/<name>.
 func (f *DxFunc) RegisterFunc(ctx context.Context, rdb *redis.Client) error {
 	if err := rdb.Set(ctx, "/src/func/"+f.Name, f.Signature, 0).Err(); err != nil {
 		return fmt.Errorf("register sig: %w", err)
@@ -116,28 +144,18 @@ type VThreadState struct {
 	Mode   string `json:"mode,omitempty"`
 }
 
-// CreateVThread 创建一个新的 vthread，写入初始状态和入口 CALL 指令。
-//
-// 参数:
-//   - funcName: 被调函数名
-//   - reads:    实参列表 (不含函数名), 如 ["./a", "./b"]
-//   - writes:   输出列表, 如 ["./c"]
-//
-// 返回生成的 vtid。
+// CreateVThread creates a new vthread with initial state and entry CALL instruction.
 func CreateVThread(ctx context.Context, rdb *redis.Client, funcName string, reads, writes []string) (string, error) {
 	vtid := fmt.Sprintf("test-%d", time.Now().UnixNano())
 
-	// 构建 CALL 指令
 	allReads := append([]string{funcName}, reads...)
 
-	// 写入 vthread 状态
 	state := VThreadState{PC: "[0,0]", Status: "init", Mode: "single"}
 	data, _ := json.Marshal(state)
 	if err := rdb.Set(ctx, "/vthread/"+vtid, data, 0).Err(); err != nil {
 		return "", fmt.Errorf("set state: %w", err)
 	}
 
-	// 写入指令 slot
 	pipe := rdb.Pipeline()
 	pipe.Set(ctx, "/vthread/"+vtid+"/[0,0]", "call", 0)
 	for i, r := range allReads {

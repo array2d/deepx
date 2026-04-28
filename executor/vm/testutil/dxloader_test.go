@@ -7,7 +7,6 @@ import (
 )
 
 func TestLoadDxFile(t *testing.T) {
-	// 相对于 testutil/ 目录的 testdata
 	dxPath := filepath.Join("..", "testdata", "add_test.dx")
 
 	fn, err := LoadDxFile(dxPath)
@@ -18,7 +17,7 @@ func TestLoadDxFile(t *testing.T) {
 	if fn.Name != "add_test" {
 		t.Errorf("Name = %q, want 'add_test'", fn.Name)
 	}
-	if fn.Signature != "(add_test(A:tensor, B:tensor) -> (C:tensor))" {
+	if fn.Signature != "def add_test(A:tensor, B:tensor) -> (C:tensor)" {
 		t.Errorf("Signature = %q", fn.Signature)
 	}
 	if len(fn.Body) != 1 {
@@ -34,9 +33,14 @@ func TestExtractFuncName(t *testing.T) {
 		sig  string
 		want string
 	}{
+		// def format
+		{"def add_test(A:int, B:int) -> (C:int) {", "add_test"},
+		{"def add_test(A:int, B:int) -> (C:int)", "add_test"},
+		{"def gemm(A, B, alpha, beta, C) -> (Y)", "gemm"},
+		{"def relu(X:tensor) -> (Y:tensor)", "relu"},
+		// legacy format
 		{"(add_test(A:tensor, B:tensor) -> (C:tensor))", "add_test"},
 		{"(gemm(A, B, alpha, beta, C) -> (Y))", "gemm"},
-		{"(relu(X:tensor) -> (Y:tensor))", "relu"},
 		{"add_test -> (C)", "add_test"},
 		{"simple_func", "simple_func"},
 	}
@@ -50,14 +54,14 @@ func TestExtractFuncName(t *testing.T) {
 }
 
 func TestLoadDxFile_Errors(t *testing.T) {
-	// 不存在的文件
 	_, err := LoadDxFile("/nonexistent/path.dx")
 	if err == nil {
 		t.Error("expected error for nonexistent file")
 	}
 
-	// 签名行太少
 	tmpDir := t.TempDir()
+
+	// Only comments
 	emptyPath := filepath.Join(tmpDir, "empty.dx")
 	os.WriteFile(emptyPath, []byte("# only comments\n"), 0644)
 	_, err = LoadDxFile(emptyPath)
@@ -65,11 +69,19 @@ func TestLoadDxFile_Errors(t *testing.T) {
 		t.Error("expected error for file with only comments")
 	}
 
-	// 只有签名没有 body
-	sigOnly := filepath.Join(tmpDir, "sigonly.dx")
-	os.WriteFile(sigOnly, []byte("(foo(A) -> (B))\n"), 0644)
-	_, err = LoadDxFile(sigOnly)
+	// No def prefix
+	noDef := filepath.Join(tmpDir, "nodef.dx")
+	os.WriteFile(noDef, []byte("(foo(A) -> (B))\nadd(A) -> ./B\n"), 0644)
+	_, err = LoadDxFile(noDef)
 	if err == nil {
-		t.Error("expected error for signature-only file")
+		t.Error("expected error for file without 'def' prefix")
+	}
+
+	// Def with no body
+	noBody := filepath.Join(tmpDir, "nobody.dx")
+	os.WriteFile(noBody, []byte("def foo(A) -> (B) {\n}\n"), 0644)
+	_, err = LoadDxFile(noBody)
+	if err == nil {
+		t.Error("expected error for function with empty body")
 	}
 }

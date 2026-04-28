@@ -1,4 +1,4 @@
 # add_test: basic element-wise addition
-# signature format: (funcName(param1:type, param2:type) -> (out1:type))
-(add_test(A:tensor, B:tensor) -> (C:tensor))
-add(A, B) -> ./C
+def add_test(A:tensor, B:tensor) -> (C:tensor) {
+    add(A, B) -> ./C
+}

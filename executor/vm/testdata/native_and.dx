@@ -1,3 +1,3 @@
-# native_and: test logical AND (infix)
-(native_and(A:bool, B:bool) -> (C:bool))
-A && B -> ./C
+def native_and(A:bool, B:bool) -> (C:bool) {
+    A && B -> ./C
+}

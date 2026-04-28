@@ -1,0 +1,4 @@
+# callee: a simple function called by caller
+def callee(X:int, Y:int) -> (Z:int) {
+    X + Y -> ./Z
+}

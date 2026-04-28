@@ -133,12 +133,18 @@ func handleReturn(ctx context.Context, rdb *redis.Client, vtid string, pc string
 
 // parseSignature 解析函数签名
 //
-//	"(add_test(A, B) -> (C))"           → Reads:["A","B"], Writes:["C"]
-//	"(gemm(A,B,alpha,beta,C) -> (Y))"   → Reads:["A","B","alpha","beta","C"], Writes:["Y"]
+//	"def add_test(A:int, B:int) -> (C:int)"   → Reads:["A","B"], Writes:["C"]
+//	"(add_test(A, B) -> (C))"                 → Reads:["A","B"], Writes:["C"] (legacy)
 func parseSignature(sig string) FormalParams {
 	var fp FormalParams
 	sig = strings.TrimSpace(sig)
 
+	// strip "def " prefix (new format)
+	if strings.HasPrefix(sig, "def ") {
+		sig = strings.TrimSpace(sig[4:])
+	}
+
+	// strip outer parens (legacy format)
 	if len(sig) >= 2 && sig[0] == '(' && sig[len(sig)-1] == ')' {
 		sig = sig[1 : len(sig)-1]
 	}

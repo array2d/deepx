@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
+	"strconv"
+	"strings"
 
 	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
 	"github.com/redis/go-redis/v9"
@@ -11,13 +14,43 @@ import (
 
 // mgetAll 批量读取指定 base 路径下的所有编译层/源码层指令
 // base 格式: "/op/op-metal/func/gemm" 或 "/src/func/gemm"
+// 注意: KEYS 返回顺序不确定，必须按数字后缀排序以保证指令顺序
 func mgetAll(ctx context.Context, rdb *redis.Client, base string) []string {
 	keys, err := rdb.Keys(ctx, base+"/*").Result()
 	if err != nil || len(keys) == 0 {
 		return nil
 	}
 
-	vals, err := rdb.MGet(ctx, keys...).Result()
+	// 过滤并排序: 只保留 base/<number> 格式的 key，按数字后缀升序
+	type indexedKey struct {
+		key   string
+		index int
+	}
+	var sorted []indexedKey
+	basePrefix := base + "/"
+	for _, k := range keys {
+		if !strings.HasPrefix(k, basePrefix) {
+			continue
+		}
+		suffix := k[len(basePrefix):]
+		n, err := strconv.Atoi(suffix)
+		if err != nil {
+			continue // 跳过非数字后缀的 key (如签名本身)
+		}
+		sorted = append(sorted, indexedKey{key: k, index: n})
+	}
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].index < sorted[j].index })
+
+	orderedKeys := make([]string, len(sorted))
+	for i, sk := range sorted {
+		orderedKeys[i] = sk.key
+	}
+
+	if len(orderedKeys) == 0 {
+		return nil
+	}
+
+	vals, err := rdb.MGet(ctx, orderedKeys...).Result()
 	if err != nil {
 		return nil
 	}
