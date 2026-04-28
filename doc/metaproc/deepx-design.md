@@ -321,7 +321,43 @@ VM 执行时的效果（透明受益）：
 
 TODO: 编译器融合规则的实现，待编译器设计阶段确定。
 
-**(d) VM 本地子栈缓存：**
+**(d) Tensor 并行拆分 — 编译器在 /funcs/ 层等价拆分：**
+
+当单个算子涉及的 tensor 过大、超出单卡显存或需要跨卡并行时，编译器将其拆分为
+多个等价的子算子，分布到多张卡上执行，结果再聚合。同样是 `/funcs/` 层的源码变换。
+
+```
+拆分前 (/funcs/forward 的原始代码):
+  /funcs/forward/0 = matmul(A, W) -> ./out
+
+编译器分析 → 发现 A 跨 2 张卡 → 拆分替换 → 重写 /funcs/:
+
+拆分后:
+  /funcs/forward/0 = slice(A, 0, 512) -> ./A_shard0
+  /funcs/forward/1 = slice(A, 512, 1024) -> ./A_shard1
+  /funcs/forward/2 = matmul(./A_shard0, W) -> ./out0       ← 可发到 GPU0
+  /funcs/forward/3 = matmul(./A_shard1, W) -> ./out1       ← 可发到 GPU1
+  /funcs/forward/4 = concat(./out0, ./out1) -> ./out
+```
+
+编译器的职责包括：
+- **分片策略**：决定沿哪个维度拆分（batch 维 / hidden 维）
+- **设备指派**：为拆分后的子算子标注目标设备
+- **通信插入**：必要时插入跨卡通信指令（all-reduce、all-gather）
+
+VM 和 op-plat 对拆分无感知——VM 照常执行，只是指令序列变长了，
+但每条指令的 tensor 变小了，可以在不同卡上并行执行。
+
+融合与拆分是编译器的一对互补操作：
+
+```
+融合: 多条 → 一条  (减少调度次数, 适用于 GPU 内)
+拆分: 一条 → 多条  (增加并行度, 适用于跨 GPU)
+```
+
+TODO: 编译器拆分策略和设备拓扑感知，待编译器设计阶段确定。
+
+**(e) VM 本地子栈缓存：**
 
 ```
 VM 在执行一个 vthread 的某个栈帧时:
