@@ -290,23 +290,36 @@ CALL 翻译: 写入子栈               1 次 (Pipeline 批量写)
   → MGET /vthread/1/a, /vthread/1/b, /models/W  ← 1 次
 ```
 
-**(c) 算子融合 — 减少 VM 调度次数：**
+**(c) 算子融合 — 编译器在 /funcs/ 层等价替换：**
+
+算子融合是编译器的职责，发生在**源码层**。编译器分析 `/funcs/` 下的函数体，
+将可融合的连续算子替换为等价的一条融合指令，重写 `/funcs/`。VM 和 op-plat 对融合无感知。
 
 ```
-融合前 (VM 每条指令调度一次):
-  matmul(A,B)→mm  → VM PUSH → op-plat → VM BLPOP → PC++
-  add(mm,b)→mm    → VM PUSH → op-plat → VM BLPOP → PC++
-  relu(mm)→out   → VM PUSH → op-plat → VM BLPOP → PC++
-  → 3 次 VM↔Redis 往返 + 3 次 VM↔op-plat 往返
+融合前 (/funcs/forward 的原始代码):
+  /funcs/forward/0 = matmul(A, B) -> ./mm
+  /funcs/forward/1 = add(./mm, b) -> ./mm
+  /funcs/forward/2 = relu(./mm) -> ./out
 
-融合后 (编译器将三条融合为一个 fused kernel):
-  fused_matmul_add_relu(A,B,b)→out  → VM PUSH → op-plat → VM BLPOP
-  → 1 次调度
-  → 减少 2/3 的 VM 和 Redis 开销
-  → GPU 侧也减少 kernel launch 次数
+编译器分析 → 融合替换 → 重写 /funcs/:
+
+融合后:
+  /funcs/forward/0 = fused_matmul_add_relu(A, B, b) -> ./out
+  (原来 3 条指令 → 1 条)
 ```
 
-编译器优化后，func 的指令数显著减少，直接降低 VM 的调度解释开销。
+VM 执行时的效果（透明受益）：
+
+```
+融合前: VM PUSH matmul → 等 → PUSH add → 等 → PUSH relu → 等
+        → 3 次 VM↔Redis 往返 + 3 次 VM↔op-plat 往返
+
+融合后: VM PUSH fused_matmul_add_relu → 等
+        → 1 次调度, 减少 2/3 的 VM 和 Redis 开销
+        → GPU 侧也减少 kernel launch 次数 (3→1)
+```
+
+TODO: 编译器融合规则的实现，待编译器设计阶段确定。
 
 **(d) VM 本地子栈缓存：**
 
