@@ -8,12 +8,12 @@
 @protocol MTLCommandQueue;
 #endif
 
-namespace deepx::mps
+namespace deepx::metal
 {
-class MpsContext
+class MetalContext
 {
 public:
-    MpsContext();
+    MetalContext();
     bool is_valid() const;
     std::string device_name() const;
 

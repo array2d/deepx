@@ -2,12 +2,12 @@
 
 #include <string>
 
-namespace deepx::mps
+namespace deepx::metal
 {
 struct DeviceInfo
 {
     std::string name;
-    bool supports_mps{false};
+    bool supports_metal{false};
 };
 
 DeviceInfo get_default_device_info();

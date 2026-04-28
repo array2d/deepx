@@ -10,7 +10,7 @@
 #include <type_traits>
 
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/mps_common.hpp"
+#include "deepx/tensorfunc/metal_common.hpp"
 
 namespace deepx::tensorfunc::detail
 {
@@ -34,12 +34,12 @@ namespace deepx::tensorfunc::detail
     }
 }
 
-namespace deepx::mps::kernels
+namespace deepx::metal::kernels
 {
 #if defined(__APPLE__) && TARGET_OS_OSX && defined(__OBJC__)
-    inline deepx::mps::common::MetalKernelRuntime &elementwise_runtime()
+    inline deepx::metal::common::MetalKernelRuntime &elementwise_runtime()
     {
-        static deepx::mps::common::MetalKernelRuntime rt("elementwise_miaobyte.metal");
+        static deepx::metal::common::MetalKernelRuntime rt("elementwise_miaobyte.metal");
         return rt;
     }
 
@@ -89,6 +89,6 @@ namespace deepx::mps::kernels
     inline bool add_i64(const int64_t *, const int64_t *, int64_t *, int64_t) { return false; }
 
 #endif
-} // namespace deepx::mps::kernels
+} // namespace deepx::metal::kernels
 
 #endif // DEEPX_TENSORFUNC_ELEMENTWISE_COMMON_HPP

@@ -24,29 +24,29 @@ namespace deepx::tensorfunc
             bool ok = false;
             if constexpr (std::is_same_v<T, float>)
             {
-                ok = deepx::mps::kernels::add_f32(A.data, B.data, C.data, A.shape.size);
+                ok = deepx::metal::kernels::add_f32(A.data, B.data, C.data, A.shape.size);
             }
 #if defined(__FLT16_MANT_DIG__)
             else if constexpr (std::is_same_v<T, _Float16>)
             {
-                ok = deepx::mps::kernels::add_f16(A.data, B.data, C.data, A.shape.size);
+                ok = deepx::metal::kernels::add_f16(A.data, B.data, C.data, A.shape.size);
             }
 #endif
             else if constexpr (std::is_same_v<T, int8_t>)
             {
-                ok = deepx::mps::kernels::add_i8(A.data, B.data, C.data, A.shape.size);
+                ok = deepx::metal::kernels::add_i8(A.data, B.data, C.data, A.shape.size);
             }
             else if constexpr (std::is_same_v<T, int16_t>)
             {
-                ok = deepx::mps::kernels::add_i16(A.data, B.data, C.data, A.shape.size);
+                ok = deepx::metal::kernels::add_i16(A.data, B.data, C.data, A.shape.size);
             }
             else if constexpr (std::is_same_v<T, int32_t>)
             {
-                ok = deepx::mps::kernels::add_i32(A.data, B.data, C.data, A.shape.size);
+                ok = deepx::metal::kernels::add_i32(A.data, B.data, C.data, A.shape.size);
             }
             else if constexpr (std::is_same_v<T, int64_t>)
             {
-                ok = deepx::mps::kernels::add_i64(A.data, B.data, C.data, A.shape.size);
+                ok = deepx::metal::kernels::add_i64(A.data, B.data, C.data, A.shape.size);
             }
 
             if (ok)

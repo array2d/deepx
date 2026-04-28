@@ -4,4 +4,5 @@
 
 ## 构建
 - `/build-op-cuda`
-- `/build-op-mem-mps`
+- `/build-op-metal`
+- `/build-heapmem-metal`

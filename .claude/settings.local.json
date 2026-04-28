@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(printf '#!/usr/bin/env bash\\\\nset -euo pipefail\\\\nexec ./executor/op-cuda/build.sh \"$@\"\\\\n')",
+      "Bash(chmod +x /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/.claude/commands/build-op-cuda.sh)",
+      "Bash(printf '#!/usr/bin/env bash\\\\nset -euo pipefail\\\\nexec ./executor/op-metal/build.sh \"$@\"\\\\n')",
+      "Bash(chmod +x /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/.claude/commands/build-op-metal.sh)",
+      "Bash(printf '#!/usr/bin/env bash\\\\nset -euo pipefail\\\\nexec ./executor/heapmem-metal/build.sh \"$@\"\\\\n')",
+      "Bash(chmod +x /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/.claude/commands/build-heapmem-metal.sh)",
+      "Bash(cat)",
+      "Bash(chmod +x .claude/commands/*.sh)"
+    ]
+  }
+}

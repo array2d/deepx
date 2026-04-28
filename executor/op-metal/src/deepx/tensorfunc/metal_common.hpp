@@ -1,5 +1,5 @@
-#ifndef DEEPX_TENSORFUNC_MPS_COMMON_HPP
-#define DEEPX_TENSORFUNC_MPS_COMMON_HPP
+#ifndef DEEPX_TENSORFUNC_METAL_COMMON_HPP
+#define DEEPX_TENSORFUNC_METAL_COMMON_HPP
 
 #if defined(__APPLE__)
   #include <TargetConditionals.h>
@@ -19,7 +19,7 @@
   #endif
 #endif
 
-namespace deepx::mps::common
+namespace deepx::metal::common
 {
 #if defined(__APPLE__) && TARGET_OS_OSX && defined(__OBJC__)
     class MetalKernelRuntime final
@@ -100,7 +100,7 @@ namespace deepx::mps::common
             NSArray<NSString *> *libCandidates = @[
                 @"default.metallib",
                 @"build/default.metallib",
-                @"executor/op-mem-mps/build/default.metallib",
+                @"executor/op-metal/build/default.metallib",
             ];
 
             for (NSString *rel in libCandidates)
@@ -124,7 +124,7 @@ namespace deepx::mps::common
             NSArray<NSString *> *srcCandidates = @[
                 [NSString stringWithUTF8String:src.c_str()],
                 [@"src/deepx/tensorfunc" stringByAppendingPathComponent:[NSString stringWithUTF8String:src.c_str()]],
-                [@"executor/op-mem-mps/src/deepx/tensorfunc" stringByAppendingPathComponent:[NSString stringWithUTF8String:src.c_str()]],
+                [@"executor/op-metal/src/deepx/tensorfunc" stringByAppendingPathComponent:[NSString stringWithUTF8String:src.c_str()]],
             ];
 
             for (NSString *rel in srcCandidates)
@@ -187,6 +187,6 @@ namespace deepx::mps::common
         std::unordered_map<NSString *, id<MTLComputePipelineState>> pipeline_cache_;
     };
 #endif
-} // namespace deepx::mps::common
+} // namespace deepx::metal::common
 
-#endif // DEEPX_TENSORFUNC_MPS_COMMON_HPP
+#endif // DEEPX_TENSORFUNC_METAL_COMMON_HPP

@@ -6,7 +6,7 @@
 
 #include "stdutil/fs.hpp"
 #include "deepx/tensor.hpp"
-#include "deepx/dtype_mps.hpp"
+#include "deepx/dtype_metal.hpp"
 #include "deepx/tensorfunc/tensorlife.hpp"
 
 namespace deepx::tensorfunc

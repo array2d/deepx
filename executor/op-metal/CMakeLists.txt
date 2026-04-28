@@ -17,7 +17,6 @@ file(GLOB_RECURSE DEEPX_SOURCES "src/deepx/*.cpp" "src/deepx/*.mm" "src/deepx/*.
 file(GLOB_RECURSE CLIENT_SOURCES "src/client/*.cpp" "src/client/*.mm")
 
 find_library(METAL Metal REQUIRED)
-find_library(MPS MetalPerformanceShaders REQUIRED)
 find_library(FOUNDATION Foundation REQUIRED)
 
 # shm_tensor 实现 (shared with heapmem-metal)
@@ -25,7 +24,7 @@ set(SHMEM_SRC ../heapmem-metal/src/shmem/shm_tensor.mm)
 
 add_library(deepx_metal SHARED ${DEEPX_SOURCES} ${SHMEM_SRC})
 target_link_libraries(deepx_metal
-    PUBLIC ${METAL} ${MPS} ${FOUNDATION}
+    PUBLIC ${METAL} ${FOUNDATION}
 )
 set_target_properties(deepx_metal PROPERTIES
     XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES

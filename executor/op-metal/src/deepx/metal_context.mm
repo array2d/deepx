@@ -1,11 +1,11 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
-#include "deepx/mps_context.hpp"
+#include "deepx/metal_context.hpp"
 
-namespace deepx::mps
+namespace deepx::metal
 {
-MpsContext::MpsContext()
+MetalContext::MetalContext()
 {
     device_ = MTLCreateSystemDefaultDevice();
     if (device_)
@@ -14,12 +14,12 @@ MpsContext::MpsContext()
     }
 }
 
-bool MpsContext::is_valid() const
+bool MetalContext::is_valid() const
 {
     return device_ != nil;
 }
 
-std::string MpsContext::device_name() const
+std::string MetalContext::device_name() const
 {
     if (!device_)
     {
@@ -28,12 +28,12 @@ std::string MpsContext::device_name() const
     return std::string([[device_ name] UTF8String]);
 }
 
-id<MTLDevice> MpsContext::device() const
+id<MTLDevice> MetalContext::device() const
 {
     return device_;
 }
 
-id<MTLCommandQueue> MpsContext::command_queue() const
+id<MTLCommandQueue> MetalContext::command_queue() const
 {
     return command_queue_;
 }

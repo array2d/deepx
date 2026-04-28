@@ -1,10 +1,9 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
-#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
 
-#include "deepx/mps_device.hpp"
+#include "deepx/metal_device.hpp"
 
-namespace deepx::mps
+namespace deepx::metal
 {
 DeviceInfo get_default_device_info()
 {
@@ -14,12 +13,12 @@ DeviceInfo get_default_device_info()
     if (!device)
     {
         info.name = "none";
-        info.supports_mps = false;
+        info.supports_metal = false;
         return info;
     }
 
     info.name = std::string([[device name] UTF8String]);
-    info.supports_mps = true;
+    info.supports_metal = true;
     return info;
 }
 }
