@@ -1,36 +1,44 @@
 # DeepX 元程实现设计
 
-> DeepX 是元程规范的第一种实现。本文档定义 DeepX 如何用 Redis + op-cuda/metal + heapmem-cuda/metal + VM 进程
+> DeepX 是元程规范的第一种实现。本文档定义 DeepX 如何用 5 个核心组件
 > 将元程的抽象模型落地为可运行的分布式计算系统。
 
 ## 1. 架构总览
 
-### 1.1 四个核心进程
+### 1.1 五个核心
+
+| 核心 | 角色 | 变体 |
+|------|------|------|
+| Redis | KV 空间 — 全局状态存储、命名空间、命令队列、锁 | — |
+| pysdk | 算法前端 — 注册源代码到 `/src/func/`，创建 vthread | — |
+| op-plat | 计算 — 被动消费指令，执行 GPU/CPU 张量运算 | op-cuda, op-metal, op-cpu |
+| heapmem-plat | 堆管理 — tensor 对象生命周期：创建/删除/克隆 shm | heapmem-cuda, heapmem-metal, heapmem-cpu |
+| VM | 解释执行 — CALL 翻译、指令路由、状态推进 | — |
 
 ```
-┌─ pysdk (算法前端) ─────────────────────────────────────────────┐
-│  deepx/nn/  → 定义模型结构                                      │
-│  发送 /src/func/ 源码; 或经编译器→/op/<backend>/func/            │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │ SET /src/func/..., SET /vthread/...
+┌─ pysdk ───────────────────────────────────────────────────────┐
+│  注册源代码到 /src/func/                                       │
+│  创建 vthread 到 /vthread/                                     │
+└──────────────────────┬─────────────────────────────────────────┘
+                       │
                        ▼
-┌─ Redis (KV 空间) ──────────────────────────────────────────────┐
-│  /src/func/  函数源码                                           │
-│  /op/.../func/ 编译产物                                         │
-│  /vthread/   所有线程的执行状态                                  │
-│  堆变量      模型权重、训练数据、checkpoint                       │
-│  List        命令队列 (VM→op-plat, op-plat→VM)                   │
-│  Lock        互斥锁                                              │
-└──┬────────────┬──────────────┬──────────────────────────────────┘
+┌─ Redis (KV 空间) ─────────────────────────────────────────────┐
+│  /src/func/  源码  │  /op/.../func/  编译  │  /vthread/  执行  │
+│  堆变量           │  List 命令队列        │  Lock 互斥锁       │
+└──┬────────────┬──────────────┬─────────────────────────────────┘
    │            │              │
    ▼            ▼              ▼
 ┌──────┐  ┌──────────┐  ┌───────────┐
 │  VM  │  │ op-plat  │  │ heap-plat │
-│ 进程 │  │ 进程     │  │ 进程      │
 │      │  │          │  │           │
 │ 解释 │  │ 执行张量  │  │ 管理tensor│
 │ 调度 │  │ 计算      │  │ 生命周期  │
-│      │  │ GPU kernel│  │ shm分配   │
+│      │  │ op-cuda   │  │ heapmem-  │
+│      │  │ op-metal  │  │ cuda      │
+│      │  │ op-cpu    │  │ heapmem-  │
+│      │  │           │  │ metal     │
+│      │  │           │  │ heapmem-  │
+│      │  │           │  │ cpu       │
 └──────┘  └──────────┘  └───────────┘
 ```
 
@@ -41,7 +49,7 @@
 | 进程 | 驱动方式 | 消费来源 |
 |------|---------|---------|
 | VM | BLPOP 等待通知 | `notify:vm` (新 vthread 创建) + `done:<vtid>` (op-plat 完成) |
-| op-plat | RPOP 或 BLPOP | `cmd:op-cuda:<device>` (计算指令) |
+| op-plat | RPOP 或 BLPOP | `cmd:op-<backend>:<instance>` (计算指令) |
 | heap-plat | RPOP 或 BLPOP | `cmd:heapmem:<device>` (生命周期指令) |
 
 ## 2. Redis Key 路径约定
@@ -102,9 +110,11 @@
 ### 2.4 命令队列
 
 ```
-cmd:op-cuda:<device_id>            op-cuda 的命令队列 (如 cmd:op-cuda:0)
-cmd:op-metal:<device_id>           op-metal 的命令队列
-cmd:heapmem:<device_id>            heap-plat 的命令队列
+cmd:op-cuda:<instance>             op-cuda 的命令队列 (如 cmd:op-cuda:0)
+cmd:op-metal:<instance>            op-metal 的命令队列
+cmd:op-cpu:<instance>              op-cpu 的命令队列
+cmd:heapmem-cuda:<device>          heapmem-cuda 的命令队列
+cmd:heapmem-metal:<device>         heapmem-metal 的命令队列
 done:<vtid>                        vthread 的完成通知队列
 notify:vm                          VM 的唤醒通知队列
 ```
