@@ -1,0 +1,3 @@
+# native_sub: test subtraction (infix)
+(native_sub(A:int, B:int) -> (C:int))
+A - B -> ./C

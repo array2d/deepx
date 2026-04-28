@@ -1,0 +1,3 @@
+# native_eq: test equality (infix)
+(native_eq(A:int, B:int) -> (C:bool))
+A == B -> ./C

@@ -1,0 +1,3 @@
+# native_arith: test binary addition (infix)
+(native_arith(A:int, B:int) -> (C:int))
+A + B -> ./C

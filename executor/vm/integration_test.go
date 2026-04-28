@@ -1,0 +1,318 @@
+//go:build integration
+
+package vm_test
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"git.array2d.com/ai/deepx/executor/vm/internal/engine"
+	"git.array2d.com/ai/deepx/executor/vm/testutil"
+	"github.com/redis/go-redis/v9"
+)
+
+// mockOpPlat 模拟 op-plat
+func mockOpPlat(ctx context.Context, rdb *redis.Client) {
+	reg := map[string]interface{}{
+		"program": "op-metal", "device": "mock",
+		"status": "running", "load": 0.1,
+		"pid": os.Getpid(), "started_at": time.Now().Unix(),
+	}
+	data, _ := json.Marshal(reg)
+	rdb.Set(ctx, "/sys/op-plat/op-metal:0", data, 0)
+	rdb.RPush(ctx, "/op/op-metal/list", "add", "sub", "mul", "matmul", "relu")
+	log.Println("[mock-op] registered")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		result, err := rdb.BRPop(ctx, 1*time.Second, "cmd:op-metal:0").Result()
+		if err != nil {
+			continue
+		}
+		if len(result) < 2 {
+			continue
+		}
+
+		var task struct {
+			Vtid    string                   `json:"vtid"`
+			PC      string                   `json:"pc"`
+			Opcode  string                   `json:"opcode"`
+			Inputs  []map[string]interface{} `json:"inputs"`
+			Outputs []map[string]interface{} `json:"outputs"`
+			Params  map[string]interface{}   `json:"params"`
+		}
+		if err := json.Unmarshal([]byte(result[1]), &task); err != nil {
+			continue
+		}
+
+		log.Printf("[mock-op] %s for vtid=%s pc=%s", task.Opcode, task.Vtid, task.PC)
+
+		if task.Opcode == "add" {
+			var a, b float64
+			for _, in := range task.Inputs {
+				key, _ := in["key"].(string)
+				if key != "" {
+					val, _ := rdb.Get(ctx, key).Result()
+					var f float64
+					fmt.Sscanf(val, "%f", &f)
+					if a == 0 {
+						a = f
+					} else {
+						b = f
+					}
+				}
+			}
+			resultVal := a + b
+			log.Printf("[mock-op] add: %v + %v = %v", a, b, resultVal)
+			if len(task.Outputs) > 0 {
+				outKey, _ := task.Outputs[0]["key"].(string)
+				if outKey != "" {
+					rdb.Set(ctx, outKey, fmt.Sprintf("%v", resultVal), 0)
+				}
+			}
+		}
+
+		done := map[string]interface{}{"pc": task.PC, "status": "ok"}
+		doneJSON, _ := json.Marshal(done)
+		rdb.LPush(ctx, "done:"+task.Vtid, doneJSON)
+		log.Printf("[mock-op] done vtid=%s", task.Vtid)
+	}
+}
+
+func connectRedis(t *testing.T) (*redis.Client, context.Context, context.CancelFunc) {
+	t.Helper()
+	addr := os.Getenv("REDIS_ADDR")
+	if addr == "" {
+		addr = "127.0.0.1:16379"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	rdb := redis.NewClient(&redis.Options{Addr: addr, PoolSize: 10, MinIdleConns: 2})
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		cancel()
+		t.Fatalf("Redis not available at %s: %v", addr, err)
+	}
+	return rdb, ctx, cancel
+}
+
+// waitVthread 轮询等待 vthread 完成，返回输出值。
+// VM 不清理 vthread key，调用方 (pysdk / 测试) 负责清理。
+func waitVthread(t *testing.T, rdb *redis.Client, vtid string, timeout time.Duration) (bool, map[string]string) {
+	t.Helper()
+	ctx := context.Background()
+	ticker := time.NewTicker(20 * time.Millisecond)
+	defer ticker.Stop()
+	deadline := time.Now().Add(timeout)
+
+	for time.Now().Before(deadline) {
+		<-ticker.C
+
+		val, err := rdb.Get(ctx, "/vthread/"+vtid).Result()
+		if err == redis.Nil {
+			continue // 还没创建或已被外部删除
+		}
+
+		var s struct {
+			Status string `json:"status"`
+			PC     string `json:"pc"`
+		}
+		json.Unmarshal([]byte(val), &s)
+
+		switch s.Status {
+		case "done":
+			outputs := readVThreadOutputs(t, rdb, vtid)
+			return true, outputs
+		case "error":
+			var full map[string]interface{}
+			json.Unmarshal([]byte(val), &full)
+			t.Logf("  vtid=%s error: %v", vtid, full["error"])
+			return false, nil
+		}
+	}
+
+	// timeout diagnostics
+	val, _ := rdb.Get(ctx, "/vthread/"+vtid).Result()
+	t.Logf("timeout state: %s", val)
+	return false, nil
+}
+
+func readVThreadOutputs(t *testing.T, rdb *redis.Client, vtid string) map[string]string {
+	t.Helper()
+	ctx := context.Background()
+	keys, err := rdb.Keys(ctx, "/vthread/"+vtid+"/*").Result()
+	if err != nil || len(keys) == 0 {
+		return nil
+	}
+
+	pipe := rdb.Pipeline()
+	cmds := make([]*redis.StringCmd, len(keys))
+	for i, k := range keys {
+		cmds[i] = pipe.Get(ctx, k)
+	}
+	pipe.Exec(ctx)
+
+	outputs := make(map[string]string)
+	prefix := "/vthread/" + vtid + "/"
+	for i, cmd := range cmds {
+		val, err := cmd.Result()
+		if err != nil {
+			continue
+		}
+		slot := keys[i][len(prefix):]
+		if len(slot) > 0 && slot[0] != '[' {
+			outputs[slot] = val
+		}
+	}
+	return outputs
+}
+
+type nativeTestCase struct {
+	dxFile   string
+	reads    []string
+	writes   []string
+	inputs   map[string]string
+	wantKey  string
+	wantVal  string
+}
+
+func TestIntegration_EndToEnd(t *testing.T) {
+	rdb, ctx, cancel := connectRedis(t)
+	defer cancel()
+	rdb.FlushDB(ctx)
+
+	dxPath := filepath.Join("testdata", "add_test.dx")
+	fn, err := testutil.LoadDxFile(dxPath)
+	if err != nil {
+		t.Fatalf("LoadDxFile: %v", err)
+	}
+	t.Logf("loaded %s (sig=%s, body=%d lines)", fn.Name, fn.Signature, len(fn.Body))
+
+	if err := fn.RegisterFunc(ctx, rdb); err != nil {
+		t.Fatalf("RegisterFunc: %v", err)
+	}
+
+	vtid, err := testutil.CreateVThread(ctx, rdb, "add_test",
+		[]string{"./a", "./b"}, []string{"./c"})
+	if err != nil {
+		t.Fatalf("CreateVThread: %v", err)
+	}
+	rdb.Set(ctx, "/vthread/"+vtid+"/a", "1", 0)
+	rdb.Set(ctx, "/vthread/"+vtid+"/b", "2", 0)
+	t.Logf("vtid=%s", vtid)
+
+	mockCtx, mockCancel := context.WithCancel(ctx)
+	defer mockCancel()
+	go mockOpPlat(mockCtx, rdb)
+	time.Sleep(300 * time.Millisecond)
+
+	vmCtx, vmCancel := context.WithCancel(ctx)
+	defer vmCancel()
+	go engine.RunWorker(vmCtx, rdb, 0)
+	time.Sleep(200 * time.Millisecond)
+
+	rdb.RPush(ctx, "notify:vm", `{"event":"new_vthread","vtid":"`+vtid+`"}`)
+
+	done, outputs := waitVthread(t, rdb, vtid, 10*time.Second)
+	if !done {
+		t.Fatal("vthread did not complete")
+	}
+	t.Logf("outputs: %v", outputs)
+	if outputs["c"] != "3" {
+		t.Errorf("c = %q, want '3'", outputs["c"])
+	}
+}
+
+func TestIntegration_NativeOps(t *testing.T) {
+	rdb, ctx, cancel := connectRedis(t)
+	defer cancel()
+	rdb.FlushDB(ctx)
+
+	vmCtx, vmCancel := context.WithCancel(ctx)
+	defer vmCancel()
+	go engine.RunWorker(vmCtx, rdb, 0)
+	time.Sleep(200 * time.Millisecond)
+
+	cases := []nativeTestCase{
+		// 算术
+		{dxFile: "native_arith.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "2", "b": "3"}, wantKey: "c", wantVal: "5"},
+		{dxFile: "native_sub.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "10", "b": "3"}, wantKey: "c", wantVal: "7"},
+		{dxFile: "native_mul.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "4", "b": "5"}, wantKey: "c", wantVal: "20"},
+		{dxFile: "native_div.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "7", "b": "2"}, wantKey: "c", wantVal: "3.5"},
+		// 比较
+		{dxFile: "native_eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "5", "b": "5"}, wantKey: "c", wantVal: "true"},
+		{dxFile: "native_eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "3", "b": "7"}, wantKey: "c", wantVal: "false"},
+		{dxFile: "native_lt.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "3", "b": "7"}, wantKey: "c", wantVal: "true"},
+		{dxFile: "native_lt.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "10", "b": "2"}, wantKey: "c", wantVal: "false"},
+		// 逻辑
+		{dxFile: "native_and.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "true", "b": "true"}, wantKey: "c", wantVal: "true"},
+		{dxFile: "native_and.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "true", "b": "false"}, wantKey: "c", wantVal: "false"},
+		{dxFile: "native_not.dx", reads: []string{"./a"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "true"}, wantKey: "c", wantVal: "false"},
+		{dxFile: "native_not.dx", reads: []string{"./a"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "false"}, wantKey: "c", wantVal: "true"},
+		// 链式
+		{dxFile: "native_chain.dx", reads: []string{"./a", "./b", "./c"}, writes: []string{"./d"},
+			inputs: map[string]string{"a": "2", "b": "3", "c": "4"}, wantKey: "d", wantVal: "20"},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("%s_%d", fileToFuncName(tc.dxFile), i), func(t *testing.T) {
+			funcName := fmt.Sprintf("%s_%d", fileToFuncName(tc.dxFile), i)
+
+			dxPath := filepath.Join("testdata", tc.dxFile)
+			fn, err := testutil.LoadDxFile(dxPath)
+			if err != nil {
+				t.Fatalf("LoadDxFile: %v", err)
+			}
+			fn.Name = funcName
+			if err := fn.RegisterFunc(ctx, rdb); err != nil {
+				t.Fatalf("RegisterFunc: %v", err)
+			}
+
+			vtid, err := testutil.CreateVThread(ctx, rdb, funcName, tc.reads, tc.writes)
+			if err != nil {
+				t.Fatalf("CreateVThread: %v", err)
+			}
+					for slot, val := range tc.inputs {
+				rdb.Set(ctx, "/vthread/"+vtid+"/"+slot, val, 0)
+			}
+
+			rdb.RPush(ctx, "notify:vm", `{"event":"new_vthread","vtid":"`+vtid+`"}`)
+
+			done, outputs := waitVthread(t, rdb, vtid, 10*time.Second)
+			if !done {
+				t.Fatal("vthread did not complete")
+			}
+
+			got := outputs[tc.wantKey]
+			t.Logf("%s = %q (want %q)", tc.wantKey, got, tc.wantVal)
+			if got != tc.wantVal {
+				t.Errorf("%s: got %q, want %q", tc.wantKey, got, tc.wantVal)
+			}
+		})
+	}
+}
+
+func fileToFuncName(filename string) string {
+	base := filepath.Base(filename)
+	return base[:len(base)-len(filepath.Ext(base))]
+}

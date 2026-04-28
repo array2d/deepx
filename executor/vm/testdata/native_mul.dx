@@ -1,0 +1,3 @@
+# native_mul: test multiplication (infix)
+(native_mul(A:int, B:int) -> (C:int))
+A * B -> ./C

@@ -1,0 +1,4 @@
+# native_chain: D = (A + B) * C (infix)
+(native_chain(A:int, B:int, C:int) -> (D:int))
+A + B -> ./tmp
+./tmp * C -> ./D
