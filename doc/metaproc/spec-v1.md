@@ -26,7 +26,7 @@ vthread 拥有私有的调用栈，但共享元程的堆数据。
 
 ### 1.3 函数 (Func)
 
-定义在 `/funcs/` 下的可复用代码单元。由指令序列组成。
+定义在 `/func/` 下的可复用代码单元。由指令序列组成。
 所有 vthread 可以 CALL 同一个 func。
 
 类比：共享库中的函数，或 ELF 的 .text 段中的代码。
@@ -98,7 +98,7 @@ KV 空间必须能直接存储以下基础类型（无需外部存储）：
 | 路径 | 用途 |
 |------|------|
 | `/vthread/` | 所有 vthread 的执行状态 |
-| `/funcs/` | 全局函数定义 |
+| `/func/` | 全局函数定义 |
 | `/sys/` | 系统信息（op-plat、heap-plat 注册等） |
 
 ### 3.2 堆的隐式命名空间
@@ -112,7 +112,7 @@ KV 空间必须能直接存储以下基础类型（无需外部存储）：
   /data/cifar10/train     ← 堆
   /checkpoints/step1000   ← 堆
   /vthread/1/...          ← 栈 (保留)
-  /funcs/forward          ← 函数 (保留)
+  /func/forward          ← 函数 (保留)
 ```
 
 ### 3.3 相对路径
@@ -134,16 +134,16 @@ vthread 栈内使用 `./` 前缀表示相对路径，解析为 `/vthread/<vtid>/
 ### 4.1 路径结构
 
 ```
-/funcs/<func_name>          → 函数签名 (类型信息)
-/funcs/<func_name>/0        → 第 0 条指令
-/funcs/<func_name>/1        → 第 1 条指令
-/funcs/<func_name>/2        → 第 2 条指令
+/func/<func_name>          → 函数签名 (类型信息)
+/func/<func_name>/0        → 第 0 条指令
+/func/<func_name>/1        → 第 1 条指令
+/func/<func_name>/2        → 第 2 条指令
 ...
 ```
 
 ### 4.2 函数签名
 
-`/funcs/<func_name>` 的值定义函数的类型签名：
+`/func/<func_name>` 的值定义函数的类型签名：
 
 ```
 (func_name((ro_p1:type1, ro_p2:type2, ...) -> (w_p1:type3, w_p2:type4, ...))
@@ -154,7 +154,7 @@ vthread 栈内使用 `./` 前缀表示相对路径，解析为 `/vthread/<vtid>/
 
 ### 4.3 指令
 
-`/funcs/<func_name>/N` 的值是一条指令。
+`/func/<func_name>/N` 的值是一条指令。
 
 **指令格式（左读右写）：**
 
@@ -170,22 +170,22 @@ opcode(read_param_1, read_param_2, ...) -> write_param_1, write_param_2
 
 ```
 if(cond) ->                    ← 分支入口
-  /funcs/<name>/N/true/0      ← true 分支第一条指令
-  /funcs/<name>/N/false/0     ← false 分支第一条指令
+  /func/<name>/N/true/0      ← true 分支第一条指令
+  /func/<name>/N/false/0     ← false 分支第一条指令
 
 for(iterator) ->               ← 循环入口
-  /funcs/<name>/N/body/0      ← 循环体第一条指令
+  /func/<name>/N/body/0      ← 循环体第一条指令
 ```
 
 ### 4.4 示例
 
 ```
-/funcs/gemm = (gemm(A:tensor<f32>, B:tensor<f32>, alpha:f32, beta:f32, C:tensor<f32>) -> (Y:tensor<f32>))
+/func/gemm = (gemm(A:tensor<f32>, B:tensor<f32>, alpha:f32, beta:f32, C:tensor<f32>) -> (Y:tensor<f32>))
 
-/funcs/gemm/0 = matmul(A, B) -> ./Y
-/funcs/gemm/1 = mul(./Y, alpha) -> ./Y
-/funcs/gemm/2 = mul(C, beta) -> ./C
-/funcs/gemm/3 = add(./Y, ./C) -> ./Y
+/func/gemm/0 = matmul(A, B) -> ./Y
+/func/gemm/1 = mul(./Y, alpha) -> ./Y
+/func/gemm/2 = mul(C, beta) -> ./C
+/func/gemm/3 = add(./Y, ./C) -> ./Y
 ```
 
 ### 4.5 两层表示：源码层与执行层
@@ -194,10 +194,10 @@ for(iterator) ->               ← 循环入口
 
 | 层 | 位置 | 格式 | 目标 |
 |----|------|------|------|
-| 源码层 | `/funcs/` | dxlang 文本字符串 | 人类可读、可编辑、可 diff |
+| 源码层 | `/func/` | dxlang 文本字符串 | 人类可读、可编辑、可 diff |
 | 执行层 | `/vthread/` | `[addr0, addr1]` 二维坐标 | 机器高效寻址、零解析开销 |
 
-**源码层示例（`/funcs/gemm/0`）：**
+**源码层示例（`/func/gemm/0`）：**
 
 ```
 matmul(A, B) -> ./Y
@@ -216,7 +216,7 @@ matmul(A, B) -> ./Y
 
 一条指令展开为多个 key，opcode 和参数分离。参数中的形参已替换为实参（绝对路径或 `./` 命名槽位）。
 
-**VM 翻译：** CALL 时将 `/funcs/` 的源码层指令翻译为 `/vthread/` 的执行层指令（详见 §6.2）。
+**VM 翻译：** CALL 时将 `/func/` 的源码层指令翻译为 `/vthread/` 的执行层指令（详见 §6.2）。
 
 ## 5. Vthread 执行模型
 
@@ -309,22 +309,22 @@ Vthread 状态是 `/vthread/<vtid>` 的 value 中的 `status` 字段：
 
 ### 6.2 子栈创建 — VM 翻译 (eager)
 
-VM 在 CALL 时**一次性**将 `/funcs/<func_name>/` 的源码层指令翻译为执行层格式，
+VM 在 CALL 时**一次性**将 `/func/<func_name>/` 的源码层指令翻译为执行层格式，
 复制到 vthread 的子栈。
 
 **翻译是 eager 的**（而非 lazy）：所有指令在 CALL 时完成翻译，执行时零解析开销。
 
 ```
-翻译前 (/funcs/ 源码层):                 翻译后 (/vthread/ 执行层, 子栈):
+翻译前 (/func/ 源码层):                 翻译后 (/vthread/ 执行层, 子栈):
 ────────────────────────                ──────────────────────────────
-/funcs/gemm = (gemm(A, B, ...) -> (Y))   /vthread/1/[n,0]/  ← 子栈根
+/func/gemm = (gemm(A, B, ...) -> (Y))   /vthread/1/[n,0]/  ← 子栈根
 
-/funcs/gemm/0 = matmul(A, B) -> ./Y      /vthread/1/[n,0]/[0,0] = matmul
+/func/gemm/0 = matmul(A, B) -> ./Y      /vthread/1/[n,0]/[0,0] = matmul
                                           /vthread/1/[n,0]/[0,-1] = /models/A   (形参 A → 实参)
                                           /vthread/1/[n,0]/[0,-2] = /models/B
                                           /vthread/1/[n,0]/[0, 1] = ./Y
 
-/funcs/gemm/1 = mul(./Y, alpha) -> ./Y   /vthread/1/[n,0]/[1,0] = mul
+/func/gemm/1 = mul(./Y, alpha) -> ./Y   /vthread/1/[n,0]/[1,0] = mul
                                           /vthread/1/[n,0]/[1,-1] = ./Y
                                           /vthread/1/[n,0]/[1,-2] = 1.0        (形参 alpha → 实参)
                                           /vthread/1/[n,0]/[1, 1] = ./Y
@@ -333,10 +333,10 @@ VM 在 CALL 时**一次性**将 `/funcs/<func_name>/` 的源码层指令翻译�
 **翻译步骤：**
 
 ```
-1. GET /funcs/<func_name> → 函数签名，获得形参列表 (A, B, alpha, beta, C)
+1. GET /func/<func_name> → 函数签名，获得形参列表 (A, B, alpha, beta, C)
 2. 从 CALL 指令的读参数中提取实参: [n,-2]=/models/A, [n,-3]=/models/B, ...
 3. 建立形参→实参映射: {A: /models/A, B: /models/B, alpha: 1.0, ...}
-4. 逐条读取 /funcs/<func_name>/0, /funcs/<func_name>/1, ...
+4. 逐条读取 /func/<func_name>/0, /func/<func_name>/1, ...
 5. 对每条源码指令:
    a) 解析 dxlang 字符串: opcode + 读参数列表 + 写参数列表
    b) 形参替换: 将读/写参数中的形参名替换为实参值
@@ -552,7 +552,7 @@ DONE:
 | 虚拟地址空间 | KV 空间 |
 | 进程 | 一个 KV 空间实例 |
 | 线程 | Vthread |
-| 代码段 (.text) | /funcs/ |
+| 代码段 (.text) | /func/ |
 | 堆段 (.data/.bss) | 非保留路径 (堆变量) |
 | 栈段 | /vthread/<vtid>/ 子树 |
 | 程序计数器 (PC) | /vthread/<vtid> 的 value.pc 字段 |
@@ -580,7 +580,7 @@ DONE:
 |------|------|------|
 | 元程 | Metaproc | 一个 KV 空间实例，分布式计算的边界 |
 | 元线程 | Vthread | 元程内的执行流 |
-| 函数 | Func | /funcs/ 下的可复用代码单元 |
+| 函数 | Func | /func/ 下的可复用代码单元 |
 | 堆变量 | Heap Variable | 全局共享的长生命周期数据 |
 | 栈帧 | Stack Frame | CALL 产生的子维度 |
 | 二维寻址 | 2D Addressing | [addr0, addr1] 指令坐标系统 |

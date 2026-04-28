@@ -16,7 +16,7 @@
    - addr1 = 0(操作码) / 负(读参数) / 正(写参数)
    - 命名槽位直挂 vthread 下：`/vthread/<vtid>/a = 1`
 
-3. **CALL 语义**：复制 `/funcs/<name>/` 指令到 vthread 子栈，产生新维度。
+3. **CALL 语义**：复制 `/func/<name>/` 指令到 vthread 子栈，产生新维度。
    RETURN 时递归 DELETE 子栈。
 
 4. **异步执行**：
@@ -24,7 +24,7 @@
    - op-plat LPUSH → done:<vtid> → VM BLPOP 唤醒
    - 四个核心进程全部被动执行，遵循 IR 管道机制
 
-5. **堆的隐式命名空间**：除 `/vthread/`、`/funcs/`、`/sys/`、命令队列外，默认即堆。
+5. **堆的隐式命名空间**：除 `/vthread/`、`/func/`、`/sys/`、命令队列外，默认即堆。
 
 6. **两个模式并存**：pysdk 直接发送 IR (当前) + 经编译器 (未来)。
 

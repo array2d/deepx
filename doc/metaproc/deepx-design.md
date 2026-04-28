@@ -12,10 +12,10 @@
 │  deepx/nn/  → 定义模型结构                                      │
 │  直接发送 IR 序列到 Redis，或经编译器编译后发送                   │
 └──────────────────────┬──────────────────────────────────────────┘
-                       │ SET /funcs/..., SET /vthread/...
+                       │ SET /func/..., SET /vthread/...
                        ▼
 ┌─ Redis (KV 空间) ──────────────────────────────────────────────┐
-│  /funcs/   函数定义                                              │
+│  /func/   函数定义                                              │
 │  /vthread/ 所有线程的执行状态                                     │
 │  堆变量    模型权重、训练数据、checkpoint                         │
 │  List      命令队列 (VM→op-plat, op-plat→VM)                    │
@@ -48,7 +48,7 @@
 ### 2.1 保留路径
 
 ```
-/funcs/                 全局函数定义
+/func/                 全局函数定义
 /vthread/               所有 vthread 执行状态
 /sys/                   系统信息
 /cmd/                   命令队列前缀
@@ -58,18 +58,18 @@
 
 ### 2.2 函数路径 (源码层)
 
-`/funcs/` 存储**人类可读**的 dxlang 文本源码。每条指令一个 key，value 是自包含的 dxlang 字符串。
+`/func/` 存储**人类可读**的 dxlang 文本源码。每条指令一个 key，value 是自包含的 dxlang 字符串。
 
 ```
-/funcs/<name>                      函数签名 (dxlang 文本)
-/funcs/<name>/0                    第 0 条指令, 如 "matmul(A, B) -> ./Y"
-/funcs/<name>/1                    第 1 条指令, 如 "mul(./Y, alpha) -> ./Y"
-/funcs/<name>/1/true/0             分支 true 的第 0 条
-/funcs/<name>/1/false/0            分支 false 的第 0 条
-/funcs/<name>/2/body/0             循环体的第 0 条
+/func/<name>                      函数签名 (dxlang 文本)
+/func/<name>/0                    第 0 条指令, 如 "matmul(A, B) -> ./Y"
+/func/<name>/1                    第 1 条指令, 如 "mul(./Y, alpha) -> ./Y"
+/func/<name>/1/true/0             分支 true 的第 0 条
+/func/<name>/1/false/0            分支 false 的第 0 条
+/func/<name>/2/body/0             循环体的第 0 条
 ```
 
-注：`/funcs/` 是**源码层**，`/vthread/` 是**执行层**。VM 在 CALL 时将源码翻译为执行层格式（§3.2）。
+注：`/func/` 是**源码层**，`/vthread/` 是**执行层**。VM 在 CALL 时将源码翻译为执行层格式（§3.2）。
 
 ### 2.3 Vthread 路径 (执行层)
 
@@ -184,7 +184,7 @@ notify:vm                          VM 的唤醒通知队列
    [控制流指令]
      call (VM 翻译: 源码层→执行层, eager):
        → 读取 [n,-1] func_name, [n,-2..] args, [n,1] return_slot
-       → 批读取 /funcs/<func_name>/ 下所有指令 (一次 Redis MGET/Pipeline)
+       → 批读取 /func/<func_name>/ 下所有指令 (一次 Redis MGET/Pipeline)
        → 逐条翻译: 解析 dxlang → 形参替换为实参 → 展开为 [i,0],[i,-1]...[i,1]
        → 批写入 /vthread/<vtid>/[n,0]/ 子栈
        → SET /vthread/<vtid> = {pc: "[n,0]/[0,0]", status: "running", ...}  (进入子栈)
@@ -290,21 +290,21 @@ CALL 翻译: 写入子栈               1 次 (Pipeline 批量写)
   → MGET /vthread/1/a, /vthread/1/b, /models/W  ← 1 次
 ```
 
-**(c) 算子融合 — 编译器在 /funcs/ 层等价替换：**
+**(c) 算子融合 — 编译器在 /func/ 层等价替换：**
 
-算子融合是编译器的职责，发生在**源码层**。编译器分析 `/funcs/` 下的函数体，
-将可融合的连续算子替换为等价的一条融合指令，重写 `/funcs/`。VM 和 op-plat 对融合无感知。
+算子融合是编译器的职责，发生在**源码层**。编译器分析 `/func/` 下的函数体，
+将可融合的连续算子替换为等价的一条融合指令，重写 `/func/`。VM 和 op-plat 对融合无感知。
 
 ```
-融合前 (/funcs/forward 的原始代码):
-  /funcs/forward/0 = matmul(A, B) -> ./mm
-  /funcs/forward/1 = add(./mm, b) -> ./mm
-  /funcs/forward/2 = relu(./mm) -> ./out
+融合前 (/func/forward 的原始代码):
+  /func/forward/0 = matmul(A, B) -> ./mm
+  /func/forward/1 = add(./mm, b) -> ./mm
+  /func/forward/2 = relu(./mm) -> ./out
 
-编译器分析 → 融合替换 → 重写 /funcs/:
+编译器分析 → 融合替换 → 重写 /func/:
 
 融合后:
-  /funcs/forward/0 = fused_matmul_add_relu(A, B, b) -> ./out
+  /func/forward/0 = fused_matmul_add_relu(A, B, b) -> ./out
   (原来 3 条指令 → 1 条)
 ```
 
@@ -321,23 +321,23 @@ VM 执行时的效果（透明受益）：
 
 TODO: 编译器融合规则的实现，待编译器设计阶段确定。
 
-**(d) Tensor 并行拆分 — 编译器在 /funcs/ 层等价拆分：**
+**(d) Tensor 并行拆分 — 编译器在 /func/ 层等价拆分：**
 
 当单个算子涉及的 tensor 过大、超出单卡显存或需要跨卡并行时，编译器将其拆分为
-多个等价的子算子，分布到多张卡上执行，结果再聚合。同样是 `/funcs/` 层的源码变换。
+多个等价的子算子，分布到多张卡上执行，结果再聚合。同样是 `/func/` 层的源码变换。
 
 ```
-拆分前 (/funcs/forward 的原始代码):
-  /funcs/forward/0 = matmul(A, W) -> ./out
+拆分前 (/func/forward 的原始代码):
+  /func/forward/0 = matmul(A, W) -> ./out
 
-编译器分析 → 发现 A 跨 2 张卡 → 拆分替换 → 重写 /funcs/:
+编译器分析 → 发现 A 跨 2 张卡 → 拆分替换 → 重写 /func/:
 
 拆分后:
-  /funcs/forward/0 = slice(A, 0, 512) -> ./A_shard0
-  /funcs/forward/1 = slice(A, 512, 1024) -> ./A_shard1
-  /funcs/forward/2 = matmul(./A_shard0, W) -> ./out0       ← 可发到 GPU0
-  /funcs/forward/3 = matmul(./A_shard1, W) -> ./out1       ← 可发到 GPU1
-  /funcs/forward/4 = concat(./out0, ./out1) -> ./out
+  /func/forward/0 = slice(A, 0, 512) -> ./A_shard0
+  /func/forward/1 = slice(A, 512, 1024) -> ./A_shard1
+  /func/forward/2 = matmul(./A_shard0, W) -> ./out0       ← 可发到 GPU0
+  /func/forward/3 = matmul(./A_shard1, W) -> ./out1       ← 可发到 GPU1
+  /func/forward/4 = concat(./out0, ./out1) -> ./out
 ```
 
 编译器的职责包括：
@@ -573,16 +573,16 @@ TODO: 引用计数机制 (refcount) 是否在 heap-plat 侧实现，还是由 VM
 
 ### 7.1 当前模式：直接发送 IR 序列
 
-pysdk 直接将 deepxIR 序列写入 `/funcs/` 和 `/vthread/`：
+pysdk 直接将 deepxIR 序列写入 `/func/` 和 `/vthread/`：
 
 ```python
 # front/py/deepx/nn/functional/ 下的代码模式 (当前)
 kv = KVSpace()
 
 # 1. 定义 func
-kv.set("/funcs/forward", "(forward(A, B) -> (C))")
-kv.set("/funcs/forward/0", "matmul(A, B) -> ./mm")
-kv.set("/funcs/forward/1", "relu(./mm) -> C")
+kv.set("/func/forward", "(forward(A, B) -> (C))")
+kv.set("/func/forward/0", "matmul(A, B) -> ./mm")
+kv.set("/func/forward/1", "relu(./mm) -> C")
 
 # 2. 创建 vthread
 vtid = kv.alloc_vtid()
@@ -604,7 +604,7 @@ kv.push("notify:vm", {"event": "new_vthread", "vtid": vtid})
 ```
 pysdk 发送全局 func 定义 → 编译器 (dxlang compiler)
   → 依赖分析 → 插入 deltensor → 算子融合 → 数据并行标注
-  → 输出优化后的 /funcs/
+  → 输出优化后的 /func/
   → 创建 /vthread/
 ```
 
@@ -619,9 +619,9 @@ class FuncCache:
     def set_func(self, name, signature, instructions):
         if self._cache.get(name) == hash(instructions):
             return  # 未变化，跳过
-        kv.set(f"/funcs/{name}", signature)
+        kv.set(f"/func/{name}", signature)
         for i, inst in enumerate(instructions):
-            kv.set(f"/funcs/{name}/{i}", inst)
+            kv.set(f"/func/{name}/{i}", inst)
         self._cache[name] = hash(instructions)
 ```
 
