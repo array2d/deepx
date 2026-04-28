@@ -1,3 +1,3 @@
 # 项目智能体
 
-deepx 专用 agent。
+开发指引见 `.claude/CLAUDE.md` 的文档表。
