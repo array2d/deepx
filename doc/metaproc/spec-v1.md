@@ -117,13 +117,17 @@ KV 空间必须能直接存储以下基础类型（无需外部存储）：
 
 ### 3.3 相对路径
 
-vthread 栈内使用 `./` 前缀表示相对路径，解析基点为当前栈帧。
+vthread 栈内使用 `./` 前缀表示相对路径，解析为 `/vthread/<vtid>/` 下的平级命名槽位。
 
 ```
-./mm       → 当前栈帧下的局部变量 mm
-./bias     → 当前栈帧下的局部变量 bias
-../a       → 上一级栈帧的局部变量 a (不推荐，但技术上可行)
+./mm       → /vthread/<vtid>/mm       (命名槽位, 与 [0,0] 等指令坐标平级)
+./bias     → /vthread/<vtid>/bias
+../a       → /vthread/<vtid>/../a     (不推荐，但技术上可行)
 ```
+
+命名槽位和指令坐标 `[addr0, addr1]` 是 `/vthread/<vtid>/` 下的**平级子 key**：
+- 命名槽位：人读的命名空间，存放 tensor 元信息
+- 指令坐标：机器执行的指令序列，VM 据此推进 PC
 
 ## 4. 函数定义
 
@@ -184,21 +188,56 @@ for(iterator) ->               ← 循环入口
 /funcs/gemm/3 = add(./Y, ./C) -> ./Y
 ```
 
+### 4.5 两层表示：源码层与执行层
+
+元程指令有两种表示形式，分别服务于不同的目标：
+
+| 层 | 位置 | 格式 | 目标 |
+|----|------|------|------|
+| 源码层 | `/funcs/` | dxlang 文本字符串 | 人类可读、可编辑、可 diff |
+| 执行层 | `/vthread/` | `[addr0, addr1]` 二维坐标 | 机器高效寻址、零解析开销 |
+
+**源码层示例（`/funcs/gemm/0`）：**
+
+```
+matmul(A, B) -> ./Y
+```
+
+一条指令 = 一个 key，value 是自包含的 dxlang 字符串。`->` 左侧为读参数，右侧为写参数。
+
+**执行层示例（`/vthread/1/[0,0]`, `[0,-1]`, `[0,1]`）：**
+
+```
+/vthread/1/[0, 0] = matmul
+/vthread/1/[0,-1] = /models/A
+/vthread/1/[0,-2] = /models/B
+/vthread/1/[0, 1] = ./Y
+```
+
+一条指令展开为多个 key，opcode 和参数分离。参数中的形参已替换为实参（绝对路径或 `./` 命名槽位）。
+
+**VM 翻译：** CALL 时将 `/funcs/` 的源码层指令翻译为 `/vthread/` 的执行层指令（详见 §6.2）。
+
 ## 5. Vthread 执行模型
 
 ### 5.1 Vthread 路径结构
 
 ```
 /vthread/<vtid>              → {"pc":"[2,0]", "status":"running"}   ← vthread 自身 (含 PC 和状态)
-/vthread/<vtid>/[0,0]        ← 栈帧 #0，指令 #0 的操作码
-/vthread/<vtid>/[0,-1]       ← 栈帧 #0，指令 #0 的读参数 #1
-/vthread/<vtid>/[0,-2]       ← 栈帧 #0，指令 #0 的读参数 #2
-/vthread/<vtid>/[0, 1]       ← 栈帧 #0，指令 #0 的写参数 #1
-/vthread/<vtid>/[1,0]        ← 栈帧 #0，指令 #1 的操作码
+/vthread/<vtid>/[0,0]        ← 指令 #0 的操作码
+/vthread/<vtid>/[0,-1]       ← 指令 #0 的读参数 #1
+/vthread/<vtid>/[0,-2]       ← 指令 #0 的读参数 #2
+/vthread/<vtid>/[0, 1]       ← 指令 #0 的写参数 #1
+/vthread/<vtid>/[1,0]        ← 指令 #1 的操作码
 ...
-/vthread/<vtid>/a            ← 栈帧 #0 的命名槽位 a 的值
-/vthread/<vtid>/b            ← 栈帧 #0 的命名槽位 b 的值
+/vthread/<vtid>/a            ← 命名槽位 a (与 [0,0] 平级，非嵌套)
+/vthread/<vtid>/b            ← 命名槽位 b
+/vthread/<vtid>/mm           ← 局部变量 mm (./mm 解析结果)
+/vthread/<vtid>/[2,0]/[0,0]  ← 子栈: 指令 #2 是 CALL，其子栈的指令 #0
 ```
+
+命名槽位 (`/vthread/<vtid>/a`) 与指令坐标 (`/vthread/<vtid>/[0,0]`) 是 `/vthread/<vtid>/` 下的**平级子 key**。
+它们互不嵌套：命名槽位供 tensor 读写，指令坐标供 VM 推进 PC。
 
 ### 5.2 二维寻址
 
@@ -214,10 +253,18 @@ addr0 是序列维，表示指令在栈帧内的顺序位置。
 
 ### 5.3 命名槽位
 
-vthread 栈帧下可以有命名槽位（如 `/vthread/<vtid>/a`），用于存放局部变量的值。
+命名槽位是 `/vthread/<vtid>/` 下的平级子 key（如 `/vthread/<vtid>/a`），
+与指令坐标 `[addr0, addr1]` 互不嵌套，用于存放局部变量的值。
 
 基础类型（int, float, bool, 短 string）的值直接存储在槽位中。
 Tensor 类型的值存储 tensor 元信息（dtype, shape, 物理地址）。
+
+命名槽位在 `/vthread/` 下的路径名与 dxlang 源码中的变量名一致，保证可调试性：
+```
+源码: matmul(A, B) -> ./mm
+执行: /vthread/1/[0,0] = matmul, /vthread/1/[0,-1] = /models/A, ...
+      /vthread/1/mm = {dtype:"f32", shape:[1024,256], address:{...}}
+```
 
 ### 5.4 程序计数器 (PC)
 
@@ -260,24 +307,50 @@ Vthread 状态是 `/vthread/<vtid>` 的 value 中的 `status` 字段：
 /vthread/<vtid>/[n, 1]  = <ret1>           ← 返回值绑定的槽位
 ```
 
-### 6.2 子栈创建
+### 6.2 子栈创建 — VM 翻译 (eager)
 
-VM 将 `/funcs/<func_name>/` 下的指令序列**复制**到 vthread 的子栈中，形成新的维度：
+VM 在 CALL 时**一次性**将 `/funcs/<func_name>/` 的源码层指令翻译为执行层格式，
+复制到 vthread 的子栈。
+
+**翻译是 eager 的**（而非 lazy）：所有指令在 CALL 时完成翻译，执行时零解析开销。
 
 ```
-复制前:                           复制后:
-/vthread/<vtid>/[n,0]             /vthread/<vtid>/[n,0]  = call
-                                  /vthread/<vtid>/[n,0]/[0,0]  = <func 的第0条 opcode>
-                                  /vthread/<vtid>/[n,0]/[0,-1] = <参数>
-                                  /vthread/<vtid>/[n,0]/[0, 1] = <返回槽位>
-                                  /vthread/<vtid>/[n,0]/[1,0]  = <func 的第1条 opcode>
-                                  ...
+翻译前 (/funcs/ 源码层):                 翻译后 (/vthread/ 执行层, 子栈):
+────────────────────────                ──────────────────────────────
+/funcs/gemm = (gemm(A, B, ...) -> (Y))   /vthread/1/[n,0]/  ← 子栈根
+
+/funcs/gemm/0 = matmul(A, B) -> ./Y      /vthread/1/[n,0]/[0,0] = matmul
+                                          /vthread/1/[n,0]/[0,-1] = /models/A   (形参 A → 实参)
+                                          /vthread/1/[n,0]/[0,-2] = /models/B
+                                          /vthread/1/[n,0]/[0, 1] = ./Y
+
+/funcs/gemm/1 = mul(./Y, alpha) -> ./Y   /vthread/1/[n,0]/[1,0] = mul
+                                          /vthread/1/[n,0]/[1,-1] = ./Y
+                                          /vthread/1/[n,0]/[1,-2] = 1.0        (形参 alpha → 实参)
+                                          /vthread/1/[n,0]/[1, 1] = ./Y
 ```
 
-复制规则：
-- func 内部的 `./` 相对路径参数，保持为 `./` 形式不变（解析基点自动变为子栈）
-- func 引用外部堆变量的绝对路径参数，保持原样
-- 调用者传入的实参（如 `A`），替换 func 中对应的形参
+**翻译步骤：**
+
+```
+1. GET /funcs/<func_name> → 函数签名，获得形参列表 (A, B, alpha, beta, C)
+2. 从 CALL 指令的读参数中提取实参: [n,-2]=/models/A, [n,-3]=/models/B, ...
+3. 建立形参→实参映射: {A: /models/A, B: /models/B, alpha: 1.0, ...}
+4. 逐条读取 /funcs/<func_name>/0, /funcs/<func_name>/1, ...
+5. 对每条源码指令:
+   a) 解析 dxlang 字符串: opcode + 读参数列表 + 写参数列表
+   b) 形参替换: 将读/写参数中的形参名替换为实参值
+   c) 展开为执行层 key: [i,0]=opcode, [i,-1]=param1, [i,1]=out1, ...
+   d) SET 到子栈路径 /vthread/<vtid>/[n,0]/
+6. VM 设置 PC 指向子栈第一条指令: SET pc = "[n,0]/[0,0]"
+```
+
+**复制规则：**
+
+- func 内部的 `./` 相对路径参数，保持 `./` 形式不变（如 `./Y` → `./Y`）
+- func 引用外部堆变量的形参（如 `C`），替换为调用者传入的实参
+- 立即数形参（如 `alpha:f32`）替换为具体数值
+- 命名槽位（如 `./mm`）的 key 在 `/vthread/<vtid>/` 下创建（平级），不受子栈嵌套影响
 
 ### 6.3 嵌套调用
 

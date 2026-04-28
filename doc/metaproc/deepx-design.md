@@ -56,27 +56,34 @@
 /done/                  完成通知队列前缀
 ```
 
-### 2.2 函数路径
+### 2.2 函数路径 (源码层)
+
+`/funcs/` 存储**人类可读**的 dxlang 文本源码。每条指令一个 key，value 是自包含的 dxlang 字符串。
 
 ```
-/funcs/<name>                      函数签名
-/funcs/<name>/0                    第 0 条指令
-/funcs/<name>/1                    第 1 条指令
+/funcs/<name>                      函数签名 (dxlang 文本)
+/funcs/<name>/0                    第 0 条指令, 如 "matmul(A, B) -> ./Y"
+/funcs/<name>/1                    第 1 条指令, 如 "mul(./Y, alpha) -> ./Y"
 /funcs/<name>/1/true/0             分支 true 的第 0 条
 /funcs/<name>/1/false/0            分支 false 的第 0 条
 /funcs/<name>/2/body/0             循环体的第 0 条
 ```
 
-### 2.3 Vthread 路径
+注：`/funcs/` 是**源码层**，`/vthread/` 是**执行层**。VM 在 CALL 时将源码翻译为执行层格式（§3.2）。
+
+### 2.3 Vthread 路径 (执行层)
+
+`/vthread/` 存储**机器优化**的执行层格式。指令展开为 `[addr0, addr1]` 二维坐标。
+命名槽位 (`./mm`) 与指令坐标是平级子 key，互不嵌套。
 
 ```
-/vthread/<vtid>                     → {"pc":"[3,0]", "status":"running"}  ← vthread 自身 (含 PC/状态)
+/vthread/<vtid>                     → {"pc":"[3,0]", "status":"running"}  ← vthread 自身
 /vthread/<vtid>/[0,0]              指令 #0 操作码
 /vthread/<vtid>/[0,-1]             指令 #0 读参数 #1
 /vthread/<vtid>/[0,1]              指令 #0 写参数 #1
 /vthread/<vtid>/[0,0]/[0,0]        子栈 (CALL 产生)
-/vthread/<vtid>/a                  命名槽位 (局部变量)
-/vthread/<vtid>/b                  命名槽位
+/vthread/<vtid>/a                  命名槽位 (与 [0,0] 平级)
+/vthread/<vtid>/mm                 局部变量 (./mm 解析结果)
 ```
 
 注：`pc` 和 `status` 是 `/vthread/<vtid>` 的 value 中的字段，不是独立的子 key。
@@ -175,10 +182,11 @@ notify:vm                          VM 的唤醒通知队列
      → SET /vthread/<vtid> = {pc: "[n+1,0]", status: "running", ...}
    
    [控制流指令]
-     call:
+     call (VM 翻译: 源码层→执行层, eager):
        → 读取 [n,-1] func_name, [n,-2..] args, [n,1] return_slot
-       → 复制 /funcs/<func_name>/ 到 /vthread/<vtid>/[n,0]/ 子栈
-       → 将 args 绑定到子栈指令的形参位置
+       → 批读取 /funcs/<func_name>/ 下所有指令 (一次 Redis MGET/Pipeline)
+       → 逐条翻译: 解析 dxlang → 形参替换为实参 → 展开为 [i,0],[i,-1]...[i,1]
+       → 批写入 /vthread/<vtid>/[n,0]/ 子栈
        → SET /vthread/<vtid> = {pc: "[n,0]/[0,0]", status: "running", ...}  (进入子栈)
      
      return:
@@ -229,6 +237,91 @@ VM-3 空闲 → BLPOP notify:vm
 ```
 
 TODO: 多 VM 间的负载均衡策略，待开发时确定。
+
+### 3.4 性能关键：批读取与本地缓存
+
+VM 每次从 Redis GET 一个 key 都有网络往返延迟 (~100μs)。
+相比之下，VM 读自己进程内存仅 ~ns 级。减少 Redis 访问是性能关键。
+
+**当前设计的 Redis 访问次数（逐条执行 20 条指令的 func）：**
+
+```
+每步操作                        Redis 访问次数
+──────────────────────────     ──────────────
+CALL 翻译: 读取 func 源码          1 次 (MGET 批量取所有指令)
+CALL 翻译: 写入子栈               1 次 (Pipeline 批量写)
+逐条执行: GET pc + GET opcode    20 × 2 = 40 次
+发射到 op-plat: PUSH             20 次
+等待完成: BLPOP                  20 次
+更新 PC: SET                     20 次
+总计                             ~102 次 Redis 往返
+```
+
+**优化方向：**
+
+**(a) 批读取 — 减少执行循环的 Redis 次数：**
+
+```
+当前 (逐条):
+  GET /vthread/1 → pc=[0,0]     ← 1 次
+  GET /vthread/1/[0,0] → opcode      ← 1 次
+  SET /vthread/1 = {pc:[0,0], status:"wait"}
+  ...等 op-plat...
+  GET /vthread/1 → pc=[1,0]     ← 1 次
+  GET /vthread/1/[1,0] → opcode      ← 1 次
+
+优化后 (VM 本地预取一批指令):
+  MGET /vthread/1, /vthread/1/[0,0], /vthread/1/[0,-1], /vthread/1/[0,1],
+       /vthread/1/[1,0], /vthread/1/[1,-1], /vthread/1/[1,1], ...
+       /vthread/1/[19,0], /vthread/1/[19,-1], /vthread/1/[19,1]
+  → 1 次往返，拿到整个子栈的所有指令，缓存到 VM 本地内存
+  → 后续逐条执行时从本地缓存读取，零 Redis 访问
+  → 每批只改 PC 和 status (SET /vthread/<vtid>)
+```
+
+**(b) MGET 批量取 tensor 元信息：**
+
+```
+发射指令前，需要读取参数指向的 tensor 元信息 (dtype, shape, shm):
+  GET /vthread/1/a   ← 1 次
+  GET /vthread/1/b   ← 1 次
+  GET /models/W      ← 1 次
+  
+  → MGET /vthread/1/a, /vthread/1/b, /models/W  ← 1 次
+```
+
+**(c) 算子融合 — 减少 VM 调度次数：**
+
+```
+融合前 (VM 每条指令调度一次):
+  matmul(A,B)→mm  → VM PUSH → op-plat → VM BLPOP → PC++
+  add(mm,b)→mm    → VM PUSH → op-plat → VM BLPOP → PC++
+  relu(mm)→out   → VM PUSH → op-plat → VM BLPOP → PC++
+  → 3 次 VM↔Redis 往返 + 3 次 VM↔op-plat 往返
+
+融合后 (编译器将三条融合为一个 fused kernel):
+  fused_matmul_add_relu(A,B,b)→out  → VM PUSH → op-plat → VM BLPOP
+  → 1 次调度
+  → 减少 2/3 的 VM 和 Redis 开销
+  → GPU 侧也减少 kernel launch 次数
+```
+
+编译器优化后，func 的指令数显著减少，直接降低 VM 的调度解释开销。
+
+**(d) VM 本地子栈缓存：**
+
+```
+VM 在执行一个 vthread 的某个栈帧时:
+  1. CALL 翻译完成后，整个子栈的 [i,j] key 一次性 MGET 到本地 map
+  2. 执行期间，opcode 和参数查找全走本地内存 (O(1) hash)
+  3. 仅以下操作写 Redis:
+     - 更新 PC (SET /vthread/<vtid>)
+     - PUSH 到 op-plat 命令队列
+     - BLPOP 完成通知
+  4. RETURN 时 DELETE 子栈 (1 次批量操作)
+```
+
+TODO: 本地缓存的失效策略（当外部 WATCH 修改了 vthread 状态时），待开发时确定。
 
 ## 4. op-plat 协议
 
