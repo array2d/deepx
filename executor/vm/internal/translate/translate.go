@@ -90,8 +90,13 @@ func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 	if len(formalParams.Writes) > 0 {
 		retIdx := bodyCount
 		retSlot := formalParams.Writes[0] // e.g., "C"
+		retRef := retSlot
+		// 绝对路径直接使用, 形参名称加 ./前缀 (相对 vthread 空间)
+		if !strings.HasPrefix(retSlot, "/") {
+			retRef = "./" + retSlot
+		}
 		pipe.Set(ctx, fmt.Sprintf("%s[%d,0]", substackRoot, retIdx), "return", 0)
-		pipe.Set(ctx, fmt.Sprintf("%s[%d,-1]", substackRoot, retIdx), "./"+retSlot, 0)
+		pipe.Set(ctx, fmt.Sprintf("%s[%d,-1]", substackRoot, retIdx), retRef, 0)
 	}
 
 	_, err = pipe.Exec(ctx)

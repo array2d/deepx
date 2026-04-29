@@ -7,10 +7,10 @@
 #include <atomic>
 #include <mutex>
 
+namespace deepx::heap {
+
 // 从 "[10,20,30]" 解析 element count
 int64_t parse_shape_size(const std::string &shape_str);
-
-namespace deepx::heap {
 
 struct LifecycleCommand {
     std::string op;      // "newtensor", "gettensor", "deltensor"
