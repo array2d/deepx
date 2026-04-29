@@ -819,7 +819,8 @@ front/
 
 doc/
 └── metaproc/              元程设计文档
-    ├── spec-v1.md         控制流与前端代码生成 v1 整合设计 (6 套方案)
+    ├── spec-v1.md              元程规范 v1 (抽象模型)
+    ├── spec-control-flow-v1.md  控制流与前端代码生成 v1 整合设计 (6 套方案)
     ├── deepx-design.md    本文件 (DeepX 实现设计)
     └── CONVERSATION.md    设计对话记录
 ```

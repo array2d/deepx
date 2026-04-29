@@ -1,802 +1,707 @@
-# DeepX 控制流与前端代码生成 — v1 整合设计
+# 元程规范 (Metaproc Specification) v1
 
-> 整合 `control-flow.md` 与 `frontend-control-flow.md` 两份设计文档，
-> 提出 6 套不同深度的重构方案，覆盖从渐进改良到完全重写的全光谱。
+> 元程是一种基于 KV 寻址空间的分布式计算模型。
+> 本规范定义元程的抽象语义，不依赖任何具体实现（Redis、CUDA、Metal 等）。
+> 实现方只需提供一个满足 §2 要求的 KV 空间，即可运行元程程序。
 
----
+元程系统由 5 个核心组成：
 
-## 1. 现状总结
-
-### 1.1 当前 deepxir 执行模型 (VM)
-
-```
-pysdk → Redis /src/func/<name>/[i] = "dxlang line"   (编译层)
-        │
-VM → CALL func → translate.go → eager inline
-        │                        形参绑定: {A:"./a", B:"./b"}
-        ▼                        坐标化: /vthread/<vtid>/[pc]/[i,j]
-  /vthread/<vtid>/[0,0] = "add"                            (执行层)
-  /vthread/<vtid>/[0,-1] = "./a"
-  /vthread/<vtid>/[0,1] = "./c"
-```
-
-| 已有能力 | 缺失 |
-|---------|------|
-| `call` + eager inline + 隐式 return | 无条件跳转 (`jump`) |
-| `if cond → true/false 子树` (无合并) | 循环 (`for`/`while`) |
-| 原生算子求值 (18 个) | 分支合并 (`phi`) |
-| op-plat 后端路由 | 基本块抽象 |
-| heap-plat 生命周期 | 结构化控制流语法 |
-
-### 1.2 当前 pysdk 代码生成模型
-
-```
-Python Tensor op → rtf_*() → DeepxIR → UDP → [外部调度器] → Redis
-
-特点:即刻发射, 无计算图缓存, 无延迟发射, 无函数边界, 无控制流抽象
-```
-
----
-
-## 2. 方案总览
-
-```
-方案                              修改深度        VM 改动      前端改动       Redis schema
-──────────────────────────────────────────────────────────────────────────────────
-A. 渐进改良 (Incremental)          浅            中            中            微调
-B. SSA 统一 IR                     深            全重写        全重写        大改
-C. 二层 IR + 调度器 lowering       中            中            中            中改
-D. 纯图模式 (无控制流 IR)          最浅          最小          中            不变
-E. Redis 原生控制流                中            中            小            大改
-F. 全编译器模型                    最深          全重写        重写          大改
-```
-
----
-
-## 3. 方案 A：渐进改良 (Incremental Evolution)
-
-> 在现有基础上增加 block-based CFG + @compile 编译模式。两份设计文档 `control-flow.md`
-> 和 `frontend-control-flow.md` 的合并与精炼。
-
-### 3.1 deepxir 侧：基本块控制流
-
-**核心变化**：将 `if`/`for`/`while` 翻译为基本块（`@0`, `@1`）+ 终止指令（`br`/`jump`）。
-
-```
-编译层 (/src/func/<name>):            执行层 (/vthread/<vtid>/<pc>/):
-                                      (translate.go eager inline 后)
-@0:                                   
-  newtensor("f32","[4]") -> ./x       @0/0 = "newtensor", @0/0,1 = "/data/a"
-  br ./cond, @1, @2                   @0 = "br", @0/-1 = "./cond", @0/-2 = "@1", @0/-3 = "@2"
-
-@1:                                   
-  add(./x, 1) -> ./y                  @1/0 = "add", @1/0,-1 = "./x", @1/0,1 = "./y"
-  jump @3                             @1 = "jump", @1/-1 = "@3"
-
-@2:
-  mul(./x, -1) -> ./y                 ...
-  jump @3
-
-@3:
-  deltensor(./x)                      ...
-  return
-```
-
-**VM 执行循环变化**：
-
-```go
-// 旧: 线性遍历 [i,0] → [i+1,0]
-// 新: block 图遍历
-func Execute(vtid) {
-    block := loadBlock(vtid, "@0")
-    for block != nil {
-        for _, inst := range block.instructions {
-            dispatch(inst)
-        }
-        switch block.terminator.opcode {
-        case "br":
-            block = eval(terminator.cond) ? loadBlock(vtid, terminator.trueBlock) : loadBlock(vtid, terminator.falseBlock)
-        case "jump":
-            block = loadBlock(vtid, terminator.target)
-        case "return":
-            popFrame(); block = parentFrame.afterCall
-        case "call":
-            pushFrame(terminator.funcName); block = newFrame.entryBlock
-        }
-    }
-}
-```
-
-### 3.2 pysdk 侧：Hybrid Eager+Defer
-
-```
-即刻模式 (不变):                      编译模式 (新增):
-                                      @deepxir.compile
-Tensor.__add__                        def f(x):
-  → rtf_add()                           if x > 0:
-  → DeepxIR("add", ...)                   y = branch_a(x)
-  → UDP send                             else:
-  ✅ 向后兼容                              y = branch_b(x)
-                                        return y
-                                      ↓
-                                      SymbolicTensor 拦截操作
-                                      IfContext 捕获分支
-                                      IRBuilder 构建 CFG
-                                      finalize → /src/func/f
-```
-
-**新增模块**：`compiler.py`, `ir_builder.py`, `tracer.py`, `control_flow.py`
-
-**关键约束**：
-- `SymbolicTensor` 必须与真实 `Tensor` API 完全一致（所有 `__add__`/`__matmul__`/`.relu()` 等方法）
-- `@compile` 内无法调用未标注的即刻模式代码（两种模式不混用）
-- 嵌套 CALL 需要编译器感知（被调函数也必须 `@compile` 或被注册到 `/src/func/`）
-
-### 3.3 改动清单
-
-| 组件 | 文件 | 改动 |
+| 核心 | 角色 | 说明 |
 |------|------|------|
-| VM | `ir/instruction.go` | `IsControlOp` 新增 `br`, `jump` |
-| VM | `ir/instruction.go` | `Decode` 支持 `@N` block 前缀 |
-| VM | `engine/engine.go` | `Execute` 改为 block-loop |
-| VM | `translate/translate.go` | block-based eager inline |
-| VM | `dispatch/dispatch.go` | 新增 `Br`, `Jump` handler |
-| pysdk | `nn/compiler.py` | 新文件：`@compile` 装饰器 |
-| pysdk | `nn/ir_builder.py` | 新文件：`IRBuilder` + `Block` |
-| pysdk | `nn/tracer.py` | 新文件：`SymbolicTensor` |
-| pysdk | `nn/control_flow.py` | 新文件：`IfContext`/`WhileContext` |
-| Redis | schema | 执行层 key 从 `[i,j]` 迁至 `@N/i,j` |
-
-**工作量估算**：2-3 人月
-**风险**：低。保留现有架构，增量添加能力。
-**收益**：获得完整动态控制流能力，97% 现有代码保持不变。
+| KV 空间 | 全局状态存储 | 命名空间、命令队列、锁 |
+| 算法前端 | 源码注册 | 将 func 定义写入 KV 空间，创建执行单元 |
+| op-plat | 计算 | 被动消费指令，执行张量运算 |
+| heap-plat | 堆管理 | tensor 对象生命周期：创建/删除/克隆 |
+| VM | 解释执行 | CALL 翻译、指令路由、状态推进 |
 
 ---
 
-## 4. 方案 B：SSA 统一 IR (SSA-based Unified IR)
+# 第一部分：元程模型
 
-> 完全重新设计 deepxir 为 SSA 形式的 IR，对标 MLIR 的 `cf` + `arith` dialect。
-> 放弃 Redis 路径引用（`./x`），改用虚拟寄存器编号（`%0`, `%1`）。
+## 1. 核心概念
 
-### 4.1 IR 设计
+### 1.1 元程 (Metaproc)
+
+一个 **KV 空间** 就是一个元程。
+
+类比：一个虚拟地址空间就是一个 OS 进程。
+KV 空间内的所有路径属于同一个元程，所有 vthread 共享该空间内的堆数据。
+
+### 1.2 元线程 (Vthread)
+
+元程内的执行流。一个元程可以有一个或多个 vthread 并行执行。
+vthread 拥有私有的调用栈，但共享元程的堆数据。
+
+类比：OS 进程内的线程。线程私有栈，共享堆。
+
+### 1.3 函数 (Func)
+
+定义在 `/src/func/` 下的可复用代码单元。编译器优化后存于 `/op/<backend>/func/`。
+所有 vthread 可以 CALL 同一个 func。
+
+类比：共享库中的函数，或 ELF 的 .text 段中的代码。
+
+### 1.4 堆 (Heap)
+
+元程内全局共享的长生命周期数据。所有非保留路径默认即堆。
+堆数据的 value 包含 dtype、shape、物理地址等元信息。
+
+类比：OS 进程的 .data / .bss 段 + mmap 区域。
+
+### 1.5 栈 (Stack)
+
+每个 vthread 私有的执行状态。包括指令序列、局部变量、PC。
+栈在 CALL 时扩展（创建子维度），RETURN 时收缩（删除子维度）。
+
+类比：OS 线程的调用栈 (call stack)。
+
+## 2. KV 空间要求
+
+元程要求 KV 空间提供以下能力。实现方可使用任何满足这些要求的存储系统。
+
+### 2.1 基本操作
+
+| 操作 | 语义 |
+|------|------|
+| `GET(key)` | 读取 key 对应的 value |
+| `SET(key, value)` | 写入 value，覆盖或新建 |
+| `DELETE(key)` | 删除 key 及其所有子 key（递归） |
+| `EXISTS(key)` | 判断 key 是否存在 |
+
+### 2.2 通知队列
+
+KV 空间必须提供类似消息队列的通知机制：
+
+| 操作 | 语义 |
+|------|------|
+| `PUSH(list_key, value)` | 向队列尾部追加一条消息 |
+| `POP(list_key, timeout)` | 阻塞地从队列头部取出一条消息。超时返回空 |
+| `LEN(list_key)` | 返回队列当前长度 |
+
+队列是 FIFO 的。支持多个消费者竞争 POP（每条消息仅被一个消费者获取）。
+
+### 2.3 锁
+
+| 操作 | 语义 |
+|------|------|
+| `LOCK(key, holder, ttl)` | 尝试获取排他锁。若已被持有则失败。支持 TTL 自动释放 |
+| `UNLOCK(key, holder)` | 释放锁 |
+
+### 2.4 值类型
+
+KV 空间必须能直接存储以下基础类型（无需外部存储）：
+
+- 整数 (int32, int64)
+- 浮点数 (float32, float64)
+- 布尔值
+- 短字符串 (建议 < 1KB)
+- 结构化数据 (JSON 或等价格式)
+
+对于超大二进制数据（如 tensor 的实际数据），KV 空间仅存**引用**（物理地址），数据本身存于外部存储系统。
+
+## 3. 路径空间约定
+
+### 3.1 保留路径
+
+以下路径前缀由元程运行时保留：
+
+| 路径 | 用途 |
+|------|------|
+| `/src/func/` | 函数源码 (平台无关的 dxlang 文本) |
+| `/op/<backend>/func/` | 后端编译产物 (融合、拆分、设备标注后的 func) |
+| `/vthread/` | 所有 vthread 的执行状态 |
+| `/sys/` | 系统信息（op-plat、heap-plat 注册等） |
+
+### 3.2 堆的隐式命名空间
+
+除保留路径外，KV 空间中的所有其他路径均为堆路径。
+堆路径的具体命名空间划分由上层（如 pysdk）自行管理。
 
 ```
-// 新 deepxir (SSA 形式)
+例:
+  /models/bert/weights          ← 堆
+  /data/cifar10/train           ← 堆
+  /checkpoints/step1000         ← 堆
+  /src/func/forward             ← 函数源码 (保留)
+  /op/op-cuda/func/forward      ← 编译产物 (保留)
+  /vthread/1/...                ← 栈 (保留)
+```
 
-def example(%x: tensor<f32>[4]) -> (%y: tensor<f32>[4]) {
-@0:
-  %0 = newtensor f32, [4]                    // 分配
-  %1 = sum %x                                // reduce
-  %2 = greater %1, 0                         // 比较 → bool
-  br %2, @1, @2                              // 条件分支
+### 3.3 相对路径
 
-@1:
-  %3 = add %x, 1                             // true 分支
-  jump @3(%3)                                // 带值跳转 (代替 phi)
+vthread 栈内使用 `./` 前缀表示相对路径，解析为 `/vthread/<vtid>/` 下的平级命名槽位。
 
-@2:
-  %4 = mul %x, -1                            // false 分支
-  jump @3(%4)
+```
+./mm       → /vthread/<vtid>/mm       (命名槽位, 与 [0,0] 等指令坐标平级)
+./bias     → /vthread/<vtid>/bias
+../a       → /vthread/<vtid>/../a     (不推荐，但技术上可行)
+```
 
-@3(%5: tensor<f32>[4]):                      // merge, %5 = phi(%3, %4)
-  deltensor %0
-  return %5
+命名槽位和指令坐标 `[addr0, addr1]` 是 `/vthread/<vtid>/` 下的**平级子 key**：
+- 命名槽位：人读的命名空间，存放 tensor 元信息
+- 指令坐标：机器执行的指令序列，VM 据此推进 PC
+
+## 4. 函数定义
+
+### 4.1 三层架构
+
+函数有三种表示形式，分别服务于不同的角色：
+
+| 层 | 位置 | 角色 | 格式 |
+|----|------|------|------|
+| 源码层 | `/src/func/<name>` | pysdk 写入，人类可读 | dxlang 文本 |
+| 编译层 | `/op/<backend>/func/<name>` | 编译器产出，VM 读取 | 后端优化后的 dxlang 文本 |
+| 执行层 | `/vthread/<vtid>/` | VM 翻译后，机器执行 | `[addr0, addr1]` 二维坐标 |
+
+```
+数据流:
+  pysdk → /src/func/forward           (源码)
+              │
+              ▼ 编译器 (融合、拆分、设备标注)
+  /op/op-cuda/func/forward            (CUDA 编译产物)
+  /op/op-metal/func/forward           (Metal 编译产物, 可能不同)
+              │
+              ▼ VM CALL 时读取 + eager 翻译
+  /vthread/<vtid>/[n,0]/[0,0]...     (执行层)
+```
+
+### 4.2 路径结构
+
+```
+/src/func/<func_name>               → 函数签名 (dxlang 文本)
+/src/func/<func_name>/0             → 第 0 条指令
+/src/func/<func_name>/1             → 第 1 条指令
+...
+
+/op/op-cuda/func/<func_name>        → 编译后的函数签名
+/op/op-cuda/func/<func_name>/0      → 第 0 条指令 (可能已融合/拆分)
+...
+```
+
+### 4.3 函数签名
+
+`/src/func/<func_name>` 的值定义函数的类型签名：
+
+```
+(func_name((ro_p1:type1, ro_p2:type2, ...) -> (w_p1:type3, w_p2:type4, ...))
+```
+
+- 左侧 `()` 内为只读参数
+- 右侧 `()` 内为写入参数（返回值）
+
+### 4.4 指令
+
+`/src/func/<func_name>/N` 的值是一条指令。
+
+**指令格式（左读右写）：**
+
+```
+opcode(read_param_1, read_param_2, ...) -> write_param_1, write_param_2
+```
+
+- `->` 左侧为读取的输入
+- `->` 右侧为写入的输出
+- 参数可以是 `./` 相对路径（局部变量）、绝对堆路径、或立即数
+
+**控制流指令：**
+
+```
+if(cond) ->                    ← 分支入口
+  /src/func/<name>/N/true/0   ← true 分支第一条指令
+  /src/func/<name>/N/false/0  ← false 分支第一条指令
+
+for(iterator) ->               ← 循环入口
+  /src/func/<name>/N/body/0   ← 循环体第一条指令
+```
+
+### 4.5 编译层
+
+编译器读取 `/src/func/` 的源码，产出后端专属的编译产物到 `/op/<backend>/func/`：
+
+```
+/src/func/gemm/0 = matmul(A, B) -> ./Y
+/src/func/gemm/1 = mul(./Y, alpha) -> ./Y
+/src/func/gemm/2 = mul(C, beta) -> ./C
+/src/func/gemm/3 = add(./Y, ./C) -> ./Y
+
+     ↓ 编译器: 算子融合
+
+/op/op-cuda/func/gemm/0 = fused_matmul_mul_mul_add(A, B, alpha, C, beta) -> ./Y
+/op/op-metal/func/gemm/0 = matmul(A, B) -> ./tmp1
+/op/op-metal/func/gemm/1 = mul(./tmp1, alpha) -> ./tmp2
+/op/op-metal/func/gemm/2 = mul(C, beta) -> ./tmp3
+/op/op-metal/func/gemm/3 = add(./tmp2, ./tmp3) -> ./Y
+```
+
+不同后端的编译产物可以不同（CUDA 融合了 4→1，Metal 保持 4 条）。
+VM 在 CALL 时读取对应后端的 `/op/<backend>/func/`，而非 `/src/func/`。
+
+### 4.6 示例
+
+```
+/src/func/gemm = (gemm(A:tensor<f32>, B:tensor<f32>, alpha:f32, beta:f32, C:tensor<f32>) -> (Y:tensor<f32>))
+
+/src/func/gemm/0 = matmul(A, B) -> ./Y
+/src/func/gemm/1 = mul(./Y, alpha) -> ./Y
+/src/func/gemm/2 = mul(C, beta) -> ./C
+/src/func/gemm/3 = add(./Y, ./C) -> ./Y
+```
+
+### 4.7 源码层与执行层
+
+源码层（`/src/func/`、`/op/<backend>/func/`）与执行层（`/vthread/`）的对比：
+
+| | 源码层 / 编译层 | 执行层 |
+|---|---|---|
+| 格式 | dxlang 文本：`matmul(A,B)->./Y` | 二维坐标：`[0,0]=matmul`, `[0,-1]=/models/A` |
+| 目标 | 人读 / 编译器读写 | 机器高效寻址、零解析 |
+| 翻译 | — | VM CALL 时 eager 翻译（§6.2） |
+
+### 4.8 op-plat 算子注册
+
+op-plat **程序**（如 op-cuda）定义了一套算子能力。该程序的多个**进程实例**
+（如 GPU0 上的 op-cuda、GPU1 上的 op-cuda）共享同一套算子注册。
+
+**程序级路径（静态能力，所有实例共享）：**
+
+```
+/op/<program>/list           → ["matmul", "add", "relu", "fused_matmul_add_relu", ...]
+/op/<program>/<opname>       → 算子元数据
+/op/<program>/func/          → 该程序专属的编译产物
+```
+
+**进程级路径（动态状态，每个实例独立）：**
+
+```
+/sys/op-plat/<instance>      → {pid, device, status, load, started_at}
+```
+
+例：一台机器有 2 张 GPU，运行 2 个 op-cuda 实例：
+
+```
+程序级 (共享):
+  /op/op-cuda/list = ["matmul", "add", "relu", "fused_matmul_add_relu"]
+  /op/op-cuda/matmul = {"category":"matmul", "dtype":["f32","f16"], ...}
+  /op/op-cuda/func/forward/0 = fused_matmul_add_relu(A,B,b)->./out
+
+进程级 (独立):
+  /sys/op-plat/cuda:0 = {"device":"gpu0", "status":"running", "load":0.3}
+  /sys/op-plat/cuda:1 = {"device":"gpu1", "status":"running", "load":0.7}
+```
+
+**算子元数据：**
+
+```
+/op/op-cuda/matmul = {
+    "category": "matmul",
+    "dtype": ["f32", "f16", "bf16"],
+    "max_shape": [8192, 8192, 8192],
+    "fusion_group": "linear"
+}
+
+/op/op-cuda/fused_matmul_add_relu = {
+    "category": "fused",
+    "dtype": ["f32", "f16"],
+    "replaces": ["matmul", "add", "relu"]
 }
 ```
 
-**关键变化**：
-- 所有值有唯一编号（`%0`, `%1` ...）
-- `reads`/`writes` 数组 → SSA 操作数/结果
-- block arguments 替代 phi 节点（MLIR 风格）
-- 无路径绑定——值本身就是引用
-
-### 4.2 Redis 存储格式
+**编译器使用注册信息：**
 
 ```
-/src/func/example           → "def example(%x:tensor<f32>[4]) -> (%y:tensor<f32>[4])"
-/src/func/example/@0/0      → "newtensor f32, [4]"     ; result = %0
-/src/func/example/@0/1      → "sum %x"                  ; result = %1
-/src/func/example/@0/2      → "greater %1, 0"           ; result = %2
-/src/func/example/@0/term   → "br %2, @1, @2"
+融合决策:
+  1. GET /op/op-cuda/list → 过滤 category="fused" 的算子
+  2. 对每个 fused 算子，读取 replaces 列表
+  3. 扫描 /src/func/ 指令序列，滑动窗口匹配 replaces 模式
+  4. 匹配成功 → 等价替换 → 写入 /op/op-cuda/func/<name>
 
-/src/func/example/@1/0      → "add %x, 1"               ; result = %3
-/src/func/example/@1/term   → "jump @3(%3)"
-
-/src/func/example/@2/0      → "mul %x, -1"              ; result = %4
-/src/func/example/@2/term   → "jump @3(%4)"
-
-/src/func/example/@3/args   → "%5: tensor<f32>[4]"      ; block argument
-/src/func/example/@3/0      → "deltensor %0"
-/src/func/example/@3/term   → "return %5"
+拆分决策:
+  1. GET /op/op-cuda/<op>/max_shape → 单卡能力上限
+  2. 对比 tensor 实际 shape → 超出则拆分为多个子算子
+  3. 子算子标注目标设备 → 写入 /op/op-cuda/func/<name>
 ```
 
-### 4.3 执行模型
-
-```go
-// SSA 解释器
-type SSAValue struct {
-    ID    int
-    Type  string
-    Data  interface{}  // 指向 Redis key 或内存值
-}
-
-func Execute(vtid) {
-    block := entryBlock(func)
-    values := map[int]SSAValue{}  // 虚拟寄存器文件
-
-    for block != nil {
-        // 分解 block arguments
-        for i, arg := range block.args {
-            values[arg.ID] = incomingValues[i]
-        }
-
-        for _, inst := range block.instructions {
-            // 解析操作数: %0 → values[0].Data
-            operands := resolveSSA(inst.operands, values)
-            result := dispatchSSA(inst.opcode, operands)
-            values[inst.resultID] = result  // 写回寄存器文件
-        }
-
-        // 终止指令
-        switch block.terminator.opcode {
-        case "br":
-            block = eval(values, terminator.cond) ? loadBlock(terminator.trueBlock) : loadBlock(terminator.falseBlock)
-        case "jump @N(%v)":
-            block = loadBlock(terminator.target)
-            incomingValues = resolveSSA(terminator.args, values)
-        case "return %v":
-            popFrame; returnResult = resolveSSA(values, terminator.val)
-        }
-    }
-}
-```
-
-### 4.4 pysdk 端
-
-```python
-# SSA 模式下，@compile 生成的 IR 直接使用 SSA 格式
-# SymbolicTensor 的方法返回 SSA 编号而非路径名
-
-class SymbolicTensor:
-    def __init__(self, ssa_id: int, shape, dtype):
-        self._ssa_id = ssa_id
-
-    def __add__(self, other):
-        result_id = builder.alloc_ssa()
-        builder.emit("add", [self._ssa_id, other._ssa_id], result_id)
-        return SymbolicTensor(result_id, ...)
-```
-
-### 4.5 评估
-
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| 学术严谨性 | ⭐⭐⭐⭐⭐ | SSA 是编译器 IR 黄金标准 |
-| 与 MLIR 对齐度 | ⭐⭐⭐⭐⭐ | 直接对标，未来可互操作 |
-| 实现复杂度 | ⭐ (最高) | translate.go、ir/、engine/、dispatch/ 全部重写 |
-| 调试可观测性 | ⭐⭐ | SSA 编号不直观（需要符号表映射） |
-| Redis 使用效率 | ⭐⭐⭐ | 仍需大量 key 存取 SSA 值 |
-| 前端迁移成本 | ⭐⭐ | pysdk + Go 前端均需适配 SSA 格式 |
-
-**工作量估算**：6-8 人月
-**风险**：高。完全推倒现有 translate + dispatch 逻辑，回归测试覆盖全部算子。
-**适用场景**：如果 deepxir 长期目标是成为 MLIR 兼容的方言，这是必经之路。
-
----
-
-## 5. 方案 C：二层 IR + 调度器 Lowering (Two-Level IR)
-
-> 引入调度器（Scheduler）作为编译服务，负责 lowering：
-> 结构化控制流（if/for/while as 嵌套 Region）→ 平铺基本块（br/jump）。
-> VM 只看到最终的基本块格式，前端只生成结构化格式。
-
-### 5.1 架构
+**VM 使用注册信息：**
 
 ```
-┌──────────┐    结构化 IR        ┌──────────────┐    平铺基本块       ┌─────┐
-│  pysdk   │ ──────────────────→ │   Scheduler  │ ────────────────→ │  VM │
-│ (@compile│   if/for/while as   │  (新增服务)   │   br/jump only    │     │
-│  模式)   │   nested regions    │              │                   │     │
-└──────────┘                     │  lowering:   │                   └─────┘
-                                 │  region→flat  │
-┌──────────┐                     │  inline CALL  │
-│  Go 前端 │ ──────────────────→ │  dead-code    │
-│ (图模式) │   结构化 IR         │  elimination  │
-└──────────┘                     └──────────────┘
+指令路由:
+  GET /op/op-cuda/list → 含 "matmul"
+  GET /op/op-metal/list → 不含 "matmul"
+  → VM 将 matmul 路由到 op-cuda 的某个空闲实例
+  → 实例选择基于 /sys/op-plat/cuda:* 的 load 信息
 ```
 
-**设计原则**：
-- 前端只生成高层结构化 IR（接近用户意图）
-- Scheduler 执行 lowering pass（结构→块、优化）
-- VM 只执行最基本指令（br/jump + 计算/生命周期指令）
-- 每一层有独立可测试的接口
+## 5. Vthread 执行模型
 
-### 5.2 结构化 IR 格式（前端输出）
+### 5.1 Vthread 路径结构
 
-```json
-{
-  "name": "example",
-  "signature": "def example(x:tensor<f32>[4]) -> (y:tensor<f32>[4])",
-  "body": {
-    "type": "seq",
-    "ops": [
-      {"op": "newtensor", "args": ["f32", "[4]"], "result": "./a"},
-      {
-        "type": "if",
-        "cond": {"op": "greater", "args": ["./s", "0"], "result": "./cond"},
-        "then": {
-          "type": "seq",
-          "ops": [
-            {"op": "add", "args": ["./x", "1"], "result": "./y"}
-          ]
-        },
-        "else": {
-          "type": "seq",
-          "ops": [
-            {"op": "mul", "args": ["./x", "-1"], "result": "./y"}
-          ]
-        }
-      },
-      {"op": "deltensor", "args": ["./a"], "result": null}
+```
+/vthread/<vtid>              → {"pc":"[2,0]", "status":"running"}   ← vthread 自身 (含 PC 和状态)
+/vthread/<vtid>/[0,0]        ← 指令 #0 的操作码
+/vthread/<vtid>/[0,-1]       ← 指令 #0 的读参数 #1
+/vthread/<vtid>/[0,-2]       ← 指令 #0 的读参数 #2
+/vthread/<vtid>/[0, 1]       ← 指令 #0 的写参数 #1
+/vthread/<vtid>/[1,0]        ← 指令 #1 的操作码
+...
+/vthread/<vtid>/a            ← 命名槽位 a (与 [0,0] 平级，非嵌套)
+/vthread/<vtid>/b            ← 命名槽位 b
+/vthread/<vtid>/mm           ← 局部变量 mm (./mm 解析结果)
+/vthread/<vtid>/[2,0]/[0,0]  ← 子栈: 指令 #2 是 CALL，其子栈的指令 #0
+```
+
+命名槽位 (`/vthread/<vtid>/a`) 与指令坐标 (`/vthread/<vtid>/[0,0]`) 是 `/vthread/<vtid>/` 下的**平级子 key**。
+它们互不嵌套：命名槽位供 tensor 读写，指令坐标供 VM 推进 PC。
+
+### 5.2 二维寻址
+
+vthread 的指令序列使用二维坐标 `[addr0, addr1]` 寻址：
+
+| addr1 | 含义 | 示例 |
+|-------|------|------|
+| `0` | 操作码 | `call`, `add`, `matmul`, `newtensor` |
+| `-1, -2, ...` | 读取参数 (左值) | func 名、输入 tensor、立即数 |
+| `1, 2, ...` | 写入参数 (右值) | 输出 tensor、返回值 |
+
+addr0 是序列维，表示指令在栈帧内的顺序位置。
+
+### 5.3 命名槽位
+
+命名槽位是 `/vthread/<vtid>/` 下的平级子 key（如 `/vthread/<vtid>/a`），
+与指令坐标 `[addr0, addr1]` 互不嵌套，用于存放局部变量的值。
+
+基础类型（int, float, bool, 短 string）的值直接存储在槽位中。
+Tensor 类型的值存储 tensor 元信息（dtype, shape, 物理地址）。
+
+命名槽位在 `/vthread/` 下的路径名与 dxlang 源码中的变量名一致，保证可调试性：
+```
+源码: matmul(A, B) -> ./mm
+执行: /vthread/1/[0,0] = matmul, /vthread/1/[0,-1] = /models/A, ...
+      /vthread/1/mm = {dtype:"f32", shape:[1024,256], address:{...}}
+```
+
+### 5.4 程序计数器 (PC)
+
+PC 是 `/vthread/<vtid>` 的 value 中的 `pc` 字段，指向当前待执行指令的坐标。
+
+```
+/vthread/1 = {"pc": "[3,0]", "status": "running"}
+```
+
+`pc` 的值如 `[3,0]` 表示当前位于栈帧指令序列的第 3 条指令。
+
+### 5.5 Vthread 状态
+
+Vthread 状态是 `/vthread/<vtid>` 的 value 中的 `status` 字段：
+
+```
+/vthread/1 = {"pc": "[3,0]", "status": "wait"}
+```
+
+| 状态 | 含义 |
+|------|------|
+| `init` | 已创建，待 VM 拾取 |
+| `running` | VM 正在调度执行 |
+| `wait` | 等待异步操作（op-plat 完成 / 锁释放） |
+| `error` | 执行出错 |
+| `done` | 执行完毕，栈待 GC |
+
+## 6. CALL 与子栈
+
+### 6.1 CALL 指令
+
+当 vthread 执行到 `call` 指令时：
+
+```
+/vthread/<vtid>/[n, 0]  = call
+/vthread/<vtid>/[n,-1]  = <func_name>      ← 被调用的函数名
+/vthread/<vtid>/[n,-2]  = <arg1>           ← 只读参数
+/vthread/<vtid>/[n,-3]  = <arg2>
+...
+/vthread/<vtid>/[n, 1]  = <ret1>           ← 返回值绑定的槽位
+```
+
+### 6.2 子栈创建 — VM 翻译 (eager)
+
+VM 在 CALL 时**一次性**将 `/op/<backend>/func/<func_name>/` 的编译层指令翻译为执行层格式，
+复制到 vthread 的子栈。
+
+**翻译是 eager 的**（而非 lazy）：所有指令在 CALL 时完成翻译，执行时零解析开销。
+
+VM 读取的是编译层（`/op/<backend>/func/`），而非源码层（`/src/func/`）。
+编译层已经是编译器优化后的产物（融合、拆分、设备标注已完成），
+VM 只需做形参替换和坐标展开。
+
+```
+翻译前 (/op/op-cuda/func/ 编译层):      翻译后 (/vthread/ 执行层, 子栈):
+────────────────────────────────        ──────────────────────────────
+/op/op-cuda/func/gemm = (签名)           /vthread/1/[n,0]/  ← 子栈根
+
+/op/op-cuda/func/gemm/0                  /vthread/1/[n,0]/[0,0] = matmul
+  = matmul(A, B) -> ./Y                  /vthread/1/[n,0]/[0,-1] = /models/A
+                                          /vthread/1/[n,0]/[0,-2] = /models/B
+                                          /vthread/1/[n,0]/[0, 1] = ./Y
+
+/op/op-cuda/func/gemm/1                  /vthread/1/[n,0]/[1,0] = mul
+  = mul(./Y, alpha) -> ./Y               /vthread/1/[n,0]/[1,-1] = ./Y
+                                          /vthread/1/[n,0]/[1,-2] = 1.0
+                                          /vthread/1/[n,0]/[1, 1] = ./Y
+```
+
+**翻译步骤：**
+
+```
+1. 从 CALL 指令的读参数中获取 backend 和 func_name
+2. GET /op/<backend>/func/<func_name> → 函数签名，获得形参列表
+3. 从 CALL 指令的读参数中提取实参: [n,-2]=/models/A, [n,-3]=/models/B, ...
+4. 建立形参→实参映射: {A: /models/A, B: /models/B, alpha: 1.0, ...}
+5. 批量 MGET /op/<backend>/func/<func_name>/0, /op/.../1, ... (一次 Redis 往返)
+6. 对每条编译层指令:
+   a) 解析 dxlang 字符串: opcode + 读参数列表 + 写参数列表
+   b) 形参替换: 将形参名替换为实参值
+   c) 展开为执行层 key: [i,0]=opcode, [i,-1]=param1, [i,1]=out1, ...
+   d) 批量 SET 到子栈路径 /vthread/<vtid>/[n,0]/
+7. VM 设置 PC 指向子栈第一条指令: SET pc = "[n,0]/[0,0]"
+```
+
+**复制规则：**
+
+- 编译层内部的 `./` 相对路径参数，保持 `./` 形式不变
+- 编译层引用外部堆变量的形参，替换为调用者传入的实参
+- 立即数形参替换为具体数值
+- 命名槽位（如 `./mm`）的 key 在 `/vthread/<vtid>/` 下创建（平级），不受子栈嵌套影响
+
+### 6.3 嵌套调用
+
+func A CALL func B，func B CALL func C，形成多层嵌套：
+
+```
+/vthread/<vtid>/[0,0]/                  ← A 调用 B 的子栈
+/vthread/<vtid>/[0,0]/[3,0]/            ← B 调用 C 的子栈 (假设 B 的第3条指令是 call)
+```
+
+最大嵌套深度由实现定义（建议 ≥ 32）。
+
+### 6.4 RETURN 语义
+
+当 func 执行完毕（到达指令序列末尾，或遇到 `return` 指令）：
+
+1. 返回值写入调用者 CALL 指令指定的写参数槽位
+2. 子栈的 KV 路径被 DELETE（递归删除所有子 key）
+3. PC 恢复到调用者 CALL 指令的下一条指令（addr0 + 1）
+
+## 7. 异步执行模型
+
+元程的执行是全异步的。VM 不直接执行计算，而是将计算指令分发给 op-plat。
+
+### 7.1 执行循环
+
+```
+VM 循环:
+  1. GET /vthread/<vtid> → {pc: "[n,0]", status: "running", ...}
+  2. 读取 /vthread/<vtid>/[n,0] → opcode
+  3. 判断指令类型:
+     a) 张量计算指令 (add, matmul, relu, ...):
+        → 将指令 + 参数打包，PUSH 到目标 op-plat 的命令队列
+        → SET /vthread/<vtid> = {pc: "[n,0]", status: "wait", ...}
+        → BLPOP vthread 的完成通知队列
+        → op-plat 计算完毕，LPUSH 完成事件
+        → VM 醒来，SET /vthread/<vtid> = {pc: "[n+1,0]", status: "running", ...}
+        
+     b) 控制流指令 (call, if, for, return):
+        → VM 直接处理 (无需 op-plat)
+        → call: 读取 /op/<backend>/func/<name> (编译层), eager 翻译到子栈
+        → 更新 /vthread/<vtid> 的 pc 字段
+        
+     c) 生命周期指令 (newtensor, deltensor):
+        → PUSH 到 heap-plat 的命令队列
+        → 轻量操作，通常同步完成
+```
+
+### 7.2 异步通知机制
+
+```
+VM 与 op-plat 之间的通信:
+
+  VM                            op-plat 命令队列                   op-plat
+  ──                            ──────────────                    ───────
+  PUSH cmd:<op-plat-id>  ───→  [cmd1, cmd2, cmd3]  ───→  RPOP 消费
+                                                                    │
+                                                               GPU 计算
+                                                                    │
+  BLPOP done:<vtid>  ←───  [done_event]  ←──────────────  LPUSH 完成事件
+  │
+  醒来，PC++
+```
+
+### 7.3 批量发射
+
+VM 可分析指令序列，将连续的多条无依赖指令批量 PUSH 到 op-plat 队列，减少往返。
+
+```
+无依赖序列: [add(a,b)->c, mul(d,e)->f, relu(g)->h]
+  → 三条指令的输入互不依赖对方的输出
+  → VM 一次 PUSH 三条，op-plat 可并行或流水线执行
+  → 三条全部完成后，一次 LPUSH 通知
+```
+
+## 8. op-plat 抽象契约
+
+op-plat 是执行张量计算指令的被动进程。
+
+### 8.1 必须实现
+
+| 能力 | 说明 |
+|------|------|
+| 指令消费 | 从指定的通知队列 RPOP 消费指令 |
+| 张量计算 | 执行至少一种张量运算（如 elementwise、matmul、reduce） |
+| 完成通知 | 计算完成后 LPUSH 完成事件到指定队列 |
+| Tensor 访问 | 根据 tensor 元信息中的物理地址，访问外部存储中的实际数据 |
+
+### 8.2 指令格式
+
+```
+op-plat 消费的指令包含:
+  {
+    "opcode": "add",              ← 操作码
+    "vtid": "1",                  ← 所属 vthread
+    "pc": "[3,0]",                ← 对应 vthread 中的指令坐标
+    "inputs": [                   ← 输入 tensor 元信息
+      {"key": "/vthread/1/a", "dtype": "f32", "shape": [1024], 
+       "address": {"node": "n1", "device": "gpu0", "shm": "/deepx_t_xxx"}}
+    ],
+    "outputs": [                  ← 输出 tensor 元信息
+      {"key": "/vthread/1/c", "dtype": "f32", "shape": [1024],
+       "address": {"node": "n1", "device": "gpu0", "shm": "/deepx_t_yyy"}}
     ]
   }
-}
 ```
 
-### 5.3 Lowering Pass 流程
+### 8.3 完成通知格式
 
 ```
-Pass 1: Region Flattening
-  结构化 if/for/while → 基本块图 (entry/true/false/merge blocks)
-  
-Pass 2: Block Merging
-  连续无条件跳转消除: @1 jump @2, @2 jump @3 → @1 jump @3
-  
-Pass 3: Dead Block Elimination
-  不可达 block 移除
-  
-Pass 4: Eager Inline (CALL 展开)
-  被调用函数体展开到调用位置，形参替换
-  
-Pass 5: Coordinate Assignment
-  基本块 → Redis key 坐标 (/vthread/<vtid>/@N/i,j)
+op-plat 计算完成后:
+  LPUSH done:<vtid> {
+    "pc": "[3,0]",
+    "status": "ok",
+    "outputs_updated": ["/vthread/1/c"]
+  }
 ```
 
-### 5.4 Redis Schema（不变）
+## 9. heap-plat 抽象契约
 
-Scheduler lowering 后输出给 VM 的格式与方案 A 完全相同。VM 不需要感知 lowering 的存在。
+heap-plat 管理 tensor 的生命周期。
 
-### 5.5 评估
+### 9.1 必须实现
 
-| 维度 | 评分 | 说明 |
+| 能力 | 说明 |
+|------|------|
+| Tensor 创建 | 分配外部存储空间，返回物理地址 |
+| Tensor 删除 | 释放外部存储空间 |
+| Tensor 克隆 | 在指定设备上创建 tensor 副本 |
+| 元信息查询 | 根据 key 返回 tensor 的 dtype、shape、物理地址 |
+
+### 9.2 指令格式
+
+```
+heap-plat 消费的指令:
+  newtensor:  {op: "newtensor", key: "/models/weights", dtype: "f32", shape: [1024,512], device: "gpu0"}
+  deltensor:  {op: "deltensor", key: "/models/weights"}
+  clone:      {op: "clone", src: "/models/weights", dst: "/models/weights_copy", device: "gpu1"}
+```
+
+## 10. 生命周期
+
+### 10.1 Vthread 生命周期
+
+```
+CREATE:
+  pysdk 或编译器在 /vthread/ 下创建新的 vtid 子树
+  SET /vthread/<vtid> = {"pc": "[0,0]", "status": "init"}
+  写入入口指令 (call main)
+
+EXECUTE:
+  VM 拾取 status="init" 的 vthread
+  进入执行循环 (§7.1)
+  SET /vthread/<vtid> = {..., "status": "running"}
+
+WAIT:
+  张量计算指令发射后
+  SET /vthread/<vtid> = {..., "status": "wait"}
+  VM 阻塞在完成通知队列上
+
+ERROR:
+  指令执行失败
+  SET /vthread/<vtid> = {..., "status": "error", "error": "..."}
+
+DONE:
+  vthread 执行完毕
+  SET /vthread/<vtid> = {..., "status": "done"}
+  VM 清理 /vthread/<vtid>/ 子树 (GC)
+```
+
+### 10.2 堆变量生命周期
+
+```
+创建: newtensor → heap-plat 分配外部存储 → SET 元信息到堆路径
+使用: vthread 通过堆路径引用 tensor
+删除: deltensor → heap-plat 释放外部存储 → DELETE 堆路径
+
+引用计数 (实现可选):
+  多个 vthread 可能引用同一堆 tensor
+  实现方可使用引用计数管理，refcount=0 时自动回收
+```
+
+---
+
+# 第二部分：DeepX 实现（待起草）
+
+> 本部分将定义元程模型在 DeepX 中的具体实现，包括：
+> - Redis 作为 KV 空间的具体 key 路径约定
+> - op-cuda / op-metal 的具体协议
+> - heap-cuda / heap-metal 的具体协议
+> - VM 进程的启动与调度实现
+> - pysdk 与编译器的接口
+
+---
+
+## 附录 A：与 OS 进程的对照
+
+| OS 进程概念 | 元程对应 |
+|------------|---------|
+| 虚拟地址空间 | KV 空间 |
+| 进程 | 一个 KV 空间实例 |
+| 线程 | Vthread |
+| 代码段 (.text) | /src/func/ (源码) + /op/<backend>/func/ (编译) |
+| 堆段 (.data/.bss) | 非保留路径 (堆变量) |
+| 栈段 | /vthread/<vtid>/ 子树 |
+| 程序计数器 (PC) | /vthread/<vtid> 的 value.pc 字段 |
+| 栈帧 | CALL 产生的子维度 |
+| 系统调用 | heap-plat / op-plat 命令 |
+| 文件描述符 | 堆 tensor 引用 |
+| 互斥锁 | LOCK/UNLOCK |
+
+## 附录 B：与 x86 指令的对照
+
+| x86 指令 | 元程等价 |
+|----------|---------|
+| `mov [addr], value` | `SET /heap/x = value` |
+| `add eax, ebx` | `add(./a, ./b) -> ./c` |
+| `push rax` | 写入命名槽位 |
+| `call func` | `call` 指令 → 复制 func 到子栈 |
+| `ret` | RETURN → 删除子栈 |
+| `jmp label` | PC 跳转 |
+| `cmp + jcc` | `if(cond) ->` |
+| `int 0x80` | PUSH 到 op-plat 命令队列 |
+
+## 附录 C：术语表
+
+| 术语 | 英文 | 定义 |
 |------|------|------|
-| 分层清晰度 | ⭐⭐⭐⭐⭐ | 前端/Scheduler/VM 三层独立可测试 |
-| 实现复杂度 | ⭐⭐⭐ | Scheduler 是新增服务，VM 改动中等 |
-| 可扩展性 | ⭐⭐⭐⭐⭐ | 新的 lowering pass 独立添加 |
-| 调试可观测性 | ⭐⭐⭐⭐ | 每层输出可单独检查 |
-| 运维复杂度 | ⭐⭐⭐ | 新增 Scheduler 服务需要部署/监控 |
-
-**工作量估算**：4-5 人月
-**风险**：中。Scheduler 是新服务，需要定义接口协议（Redis-based? gRPC?）。
-**适用场景**：追求清晰架构分层，未来有多个前端（Python+Go+C++）需要统一 lowering。
-
----
-
-## 6. 方案 D：纯图模式 (Graph-only — No Control Flow in IR)
-
-> **deepxir 不引入任何控制流原语。** 所有控制流由前端在生成 IR 之前处理。
-> deepxir 保持纯粹的 DAG（有向无环图）计算语义。
-
-### 6.1 原理
-
-三种控制流处理策略在**前端**完成：
-
-```
-1. 结构化控制流 (if self.bias is not None):
-   → 前端 if 自然处理（图构建期），不变
-
-2. 固定次数循环 (for i in range(10)):
-   → 前端展开为 10 次指令副本（类似 C++ template unrolling）
-
-3. 动态控制流 (while loss > 1e-6):
-   → 前端转换为 "control flow tensor ops"
-     例如 deepx.while_loop(cond_fn, body_fn, init_tensors)
-     作为特殊算子发送给 op-plat 或 VM 的专用 handler
-```
-
-### 6.2 动态控制流算子的实现
-
-```python
-# pysdk 中暴露高层 API
-def training_loop(model, data, epochs):
-    # 这被 @compile 展开为 while_loop 算子
-    def cond(state):
-        return state.epoch < epochs
-    def body(state):
-        loss = model(state.x)
-        state = optimizer.step(state, loss)
-        state.epoch += 1
-        return state
-    return deepx.while_loop(cond, body, init_state)
-```
-
-对应的 deepxir：
-```
-# while_loop 在 IR 中是一个原子算子（op-plat 负责实现）
-while_loop(cond_fn_body, body_fn_body, init_state) -> final_state
-```
-
-VM 看到的是：
-```
-/vthread/<vtid>/[0,0] = "while_loop"
-/vthread/<vtid>/[0,-1] = "/src/func/cond_fn"    # 指向函数定义
-/vthread/<vtid>/[0,-2] = "/src/func/body_fn"
-/vthread/<vtid>/[0,-3] = "./init_state"
-/vthread/<vtid>/[0,1] = "./final_state"
-```
-
-**while_loop 算子在哪个后端执行？**
-- 如果循环体全是 tensor 操作 → op-plat 可以实现为 GPU-side loop
-- 如果循环体有控制逻辑 → VM 的 dispatch 实现（类似一个"微 VM"）
-
-### 6.3 评估
-
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| VM 简洁性 | ⭐⭐⭐⭐⭐ | VM 完全不感知控制流 |
-| deepxir 纯粹性 | ⭐⭐⭐⭐⭐ | 纯粹的 DAG 计算图 |
-| 动态控制流 | ⭐⭐ | 只能通过特殊算子，表达能力受限 |
-| GPU 优化机会 | ⭐⭐⭐⭐ | 循环在 GPU 端执行，无 host-device 往返 |
-| 前端复杂度 | ⭐⭐⭐ | while_loop API 需要设计 |
-| 调试 | ⭐⭐ | 控制流被掩盖在算子内部 |
-
-**工作量估算**：1-2 人月（新增 while_loop/if_else 算子 + op-plat 支持）
-**风险**：低。VM 改动最小。但动态控制流的表达能力受限于算子实现。
-**适用场景**：绝大多数推理 + 简单训练循环的场景。不适合需要复杂控制流的算法（如 beam search、动态路由网络）。
-
----
-
-## 7. 方案 E：Redis 原生控制流 (Redis-Native Control Flow)
-
-> 控制流表达为 Redis key 结构，不通过文本 dxlang。
-> 前端直接写 Redis key，VM 直接读 Redis key 执行。
-
-### 7.1 核心思路
-
-放弃"文本 dxlang → 解析 → 执行"路径，改为"Redis 结构化数据 → 直接执行"路径。
-
-```python
-# pysdk 不再生成 dxlang 文本，而是直接操作 Redis
-# 通过 redis-py 直接写 key
-
-rdb = redis.Redis()
-
-# 函数定义
-rdb.set("/src/func/example", json.dumps({
-    "name": "example",
-    "params": [{"name": "x", "type": "tensor", "precision": "f32"}],
-    "returns": [{"name": "y", "type": "tensor", "precision": "f32"}]
-}))
-
-# if block (Redis 原生嵌套)
-rdb.hset("/src/func/example/blocks", "@0", json.dumps({
-    "type": "entry",
-    "instructions": [
-        {"op": "newtensor", "reads": ["f32", "[4]"], "writes": ["./a"]},
-        {"op": "greater", "reads": ["./s", "0"], "writes": ["./cond"]}
-    ],
-    "terminator": {
-        "type": "branch",
-        "cond": "./cond",
-        "true_block": "@1",
-        "false_block": "@2"
-    }
-}))
-
-rdb.hset("/src/func/example/blocks", "@1", json.dumps({
-    "type": "then",
-    "instructions": [
-        {"op": "add", "reads": ["./x", "1"], "writes": ["./y"]}
-    ],
-    "terminator": {"type": "jump", "target": "@3"}
-}))
-```
-
-### 7.2 VM 执行
-
-```go
-func Execute(vtid) {
-    blockID := "@0"
-    for blockID != "" {
-        // 直接 GET JSON，零解析成本（相比文本 parsing）
-        blockJSON := rdb.HGet(ctx, "/src/func/"+funcName+"/blocks", blockID).Val()
-        block := parseBlockJSON(blockJSON)  // 一次性解析
-
-        for _, inst := range block.Instructions {
-            dispatch(inst)
-        }
-
-        switch block.Terminator.Type {
-        case "branch":
-            cond := evalSlot(vtid, block.Terminator.Cond)
-            blockID = cond ? block.Terminator.TrueBlock : block.Terminator.FalseBlock
-        case "jump":
-            blockID = block.Terminator.Target
-        case "return":
-            popFrame()
-            blockID = ""
-        }
-    }
-}
-```
-
-### 7.3 评估
-
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| 解析开销 | ⭐⭐⭐⭐⭐ | JSON 解析比文本解析快 |
-| 类型安全 | ⭐⭐⭐⭐ | JSON 有 schema，可验证 |
-| 前端复杂度 | ⭐⭐⭐⭐ | 直接操作 Redis，无中间格式 |
-| 人可读性 | ⭐ | Redis 中的 JSON blob 完全不可读 |
-| 调试体验 | ⭐ | 没有 .dx 文件，调试困难 |
-| 跨语言兼容 | ⭐⭐⭐⭐ | JSON 天然跨语言 |
-| 扩展性 | ⭐⭐⭐⭐⭐ | 新增 block type 只需新增 JSON schema |
-
-**工作量估算**：3-4 人月
-**风险**：中高。放弃文本 dxlang → 新的生态工具需要重建（语法高亮、格式化、lint）。
-**适用场景**：如果 deepxir 从不需要人类直接编写，纯机器生成，这是最高效的方案。
-
----
-
-## 8. 方案 F：全编译器模型 (Full Compiler Model)
-
-> deepxir 从 **解释型** IR 变为 **编译型** IR。
-> 前端生成 dxlang → 编译器编译为字节码/机器码 → VM 执行编译产物。
-> Redis 回归为纯状态存储（不再存指令）。
-
-### 8.1 架构
-
-```
-┌──────────┐    dxlang     ┌──────────────┐    bytecode     ┌─────┐
-│  pysdk   │ ───────────→  │   Compiler   │ ─────────────→  │  VM │
-│ (@compile│               │  (Go/Rust)   │  .dxc 文件      │     │
-│  模式)   │               │              │                  │     │
-└──────────┘               │ lex → parse  │                  └─────┘
-                           │ → CFG → opt  │
-┌──────────┐               │ → codegen    │
-│  Go 前端 │ ───────────→  │              │
-│ (图模式) │    dxlang     └──────────────┘
-└──────────┘
-```
-
-### 8.2 字节码设计（.dxc）
-
-```
-// 指令格式: [opcode:u8] [operands...]
-// 常量池 + 指令流 + 基本块偏移表
-
-.dxc header:
-  magic:     "DXC\0"
-  version:   1
-  num_blocks: 4
-  num_constants: 3
-
-constants:
-  [0] "f32"
-  [1] "[4]"
-  [2] 1.0
-
-blocks:
-  @0: offset=0x0040, instructions=4
-    0x10 0x00 0x01 0xFF        // NEWTENSOR const[0], const[1] → slot[0xFF]
-    0x20 0xFE 0xFD              // SUM slot[0xFE] → slot[0xFD]
-    0x30 0xFD 0x02 0xFC         // CMP_GT slot[0xFD], const[2] → slot[0xFC]
-    0xA0 0xFC 0x01 0x02         // BR slot[0xFC], @1, @2
-
-  @1: offset=0x0054, instructions=2
-    0x40 0xFE 0x02 0xFF         // ADD slot[0xFE], const[2] → slot[0xFF]
-    0xB0 0x03                   // JMP @3
-
-  @2: offset=0x0060, instructions=2
-    0x50 0xFE 0x02 0xFF         // MUL slot[0xFE], const[2] → slot[0xFF]
-    0xB0 0x03                   // JMP @3
-
-  @3: offset=0x006C, instructions=2
-    0x15 0x00                   // DELTENSOR slot[0x00]
-    0xC0 0xFF                   // RET slot[0xFF]
-```
-
-### 8.3 VM 执行
-
-```go
-func Execute(vtid, dxcPath string) {
-    prog := LoadDXC(dxcPath)  // 一次加载字节码到内存
-    
-    block := prog.EntryBlock
-    slots := make([]interface{}, prog.MaxSlots)  // 槽位数组（代替 Redis key）
-
-    for block != nil {
-        ip := block.StartOffset
-        end := block.EndOffset
-        
-        for ip < end {
-            opcode := prog.Code[ip]
-            operands := prog.Code[ip+1 : ip+opLen(opcode)]
-            dispatch(opcode, operands, slots)  // 零 Redis 访问！
-            ip += 1 + len(operands)
-        }
-        
-        switch block.Terminator.Opcode {
-        case OP_BR:
-            block = slots[block.Terminator.CondSlot].(bool) ? prog.Blocks[block.Terminator.TrueID] : prog.Blocks[block.Terminator.FalseID]
-        case OP_JMP:
-            block = prog.Blocks[block.Terminator.TargetID]
-        case OP_RET:
-            popFrame()
-            block = parentFrame.AfterCallBlock
-        }
-    }
-}
-```
-
-### 8.4 评估
-
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| 执行性能 | ⭐⭐⭐⭐⭐ | 字节码解释（甚至 JIT）远超 Redis KV 访问 |
-| 指令存储成本 | ⭐⭐⭐⭐⭐ | 单个文件 vs 每条指令多个 Redis key |
-| 实现复杂度 | ⭐ (最高) | 完整的编译器前后端 + 字节码解释器 |
-| 调试工具 | ⭐⭐⭐⭐ | .dxc dump → 文本格式可检查 |
-| 热更新 | ⭐⭐⭐ | 需要重新编译 + reload，不如 Redis 即时生效 |
-| 分布式 | ⭐⭐ | .dxc 需要在多个 VM 节点上分发 |
-| Redis 依赖 | ⭐⭐⭐⭐ | 仅用于状态存储（张量值），不用于指令 |
-
-**工作量估算**：8-12 人月
-**风险**：最高。完全重写执行引擎。
-**适用场景**：生产级高性能部署，执行延迟要求 <1ms 的场景。
-
----
-
-## 9. 六方案横向对比
-
-### 9.1 核心维度
-
-| 维度 | A: 渐进 | B: SSA | C: 二层 | D: 纯图 | E: Redis Native | F: 编译 |
-|------|--------|--------|---------|---------|-----------------|--------|
-| VM 改动量 | 中 | 全重写 | 中 | 最小 | 中 | 全重写 |
-| 前端改动量 | 中 | 重写 | 中 | 小 | 小 | 重写 |
-| 新增服务 | 无 | 无 | Scheduler | 无 | 无 | Compiler |
-| 控制流表达力 | 完整 | 完整 | 完整 | 受限 | 完整 | 完整 |
-| 执行性能 | 中 | 中 | 中 | 中 | 中 | 高 |
-| Redis RT 次数/op | ~5 | ~5 | ~5 | ~5 | ~2 | 0 |
-| 可观测性 | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐ | ⭐⭐⭐ |
-| 风险 | 低 | 高 | 中 | 低 | 中高 | 最高 |
-| 人月估算 | 2-3 | 6-8 | 4-5 | 1-2 | 3-4 | 8-12 |
-
-### 9.2 迁移路径
-
-```
-当前 ──→ A (渐进) ──→ C (二层) ──→ B (SSA) ──→ F (编译)
-  │         │              │              │
-  │         │              │              └── MLIR dialect 兼容
-  │         │              └── 分层清晰, lowering 独立演进
-  │         └── 最低风险, 最快可用
-  │
-  └── E (Redis Native) 可随时切入（与 A/C 并行）
-  
-  D (纯图) 是 A 的一个子集——如果不需要动态控制流, A 退化为 D
-```
-
-### 9.3 决策树
-
-```
-需要多久上线控制流?
-  ├── < 2 个月 → 方案 A (渐进改良)
-  └── 可接受 4+ 个月
-      ├── 多前端 (Python+Go+未来) → 方案 C (二层 IR)
-      ├── MLIR 生态对齐          → 方案 B (SSA)
-      ├── 高性能低延迟           → 方案 F (编译)
-      └── 纯机器生成, 不需人类可读 → 方案 E (Redis Native)
-
-控制流需求范围?
-  ├── 仅推理 (静态图)       → 方案 D (纯图) 足够
-  └── 训练 + 复杂控制流     → 方案 A/B/C/E/F
-```
-
----
-
-## 10. 推荐路径
-
-### 短期（本季度）：方案 A — 渐进改良
-
-1. 引入 `jump`/`br` opcode + block-based VM 执行循环
-2. 实现 `@deepxir.compile` 装饰器 (SymbolicTensor + IfContext)
-3. 向后兼容：即刻模式不受影响
-
-### 中期（下季度）：方案 C — 引入 Scheduler 服务
-
-1. 将 `@compile` 的 CFG 构建逻辑从 pysdk 中抽出，放入独立的 Scheduler
-2. Scheduler 接收结构化 IR (JSON)，执行 lowering pass
-3. Go 前端也通过 Scheduler 生成控制流（不再只生成 DOT 图）
-4. 获得 clean 的三层架构：前端 → Scheduler → VM
-
-### 长期（明年）：方案 B/F — SSA / 编译
-
-1. 根据性能需求决定：SSA 化（方案 B）或编译化（方案 F）
-2. 如果 deepxir 生态成熟且需要与 MLIR 互操作 → 方案 B
-3. 如果 deepxir 部署规模扩大且延迟敏感 → 方案 F
-
----
-
-## 11. 附录：关键数据结构定义
-
-### 11.1 Block (Go, 方案 A/C/E 通用)
-
-```go
-type Block struct {
-    ID           string        // "@0", "@1", ...
-    Instructions []Instruction // 顺序指令列表
-    Terminator   Terminator    // 恰好一条终止指令
-}
-
-type Terminator struct {
-    Opcode    string   // "br" | "jump" | "return" | "call"
-    Reads     []string // 操作数
-    TrueBlock string   // br 的 true 目标
-    FalseBlock string  // br 的 false 目标
-    Target    string   // jump 的目标
-}
-```
-
-### 11.2 Frame (Go, 方案 A/C/E 通用)
-
-```go
-type Frame struct {
-    FuncName       string
-    CurrentBlockID string
-    ParentFrame    *Frame
-    AfterCallBlock string  // CALL 之后的下一个 block
-    Vtid           string
-}
-```
-
-### 11.3 SSA Instruction (Go, 方案 B 专用)
-
-```go
-type SSAInstruction struct {
-    Opcode    string
-    Operands  []int   // SSA ID 列表
-    ResultID  int     // SSA 结果编号
-}
-
-type SSABlock struct {
-    ID           string
-    Args         []SSAArg      // block arguments (替代 phi)
-    Instructions []SSAInstruction
-    Terminator   SSATerminator
-}
-```
-
-### 11.4 DXC 字节码 (Go, 方案 F 专用)
-
-```go
-const (
-    OP_NEWTENSOR byte = 0x10
-    OP_DELTENSOR byte = 0x15
-    OP_ADD       byte = 0x40
-    OP_MUL       byte = 0x50
-    OP_BR        byte = 0xA0
-    OP_JMP       byte = 0xB0
-    OP_RET       byte = 0xC0
-    // ...
-)
-
-type DXCProgram struct {
-    Magic      [4]byte
-    Version    uint32
-    Blocks     []DXCBlock
-    Constants  []interface{}
-    Code       []byte  // 指令流
-    MaxSlots   uint16
-}
-```
+| 元程 | Metaproc | 一个 KV 空间实例，分布式计算的边界 |
+| 元线程 | Vthread | 元程内的执行流 |
+| 函数 | Func | /src/func/ 下的可复用代码单元 (编译器优化后→/op/<backend>/func/) |
+| 堆变量 | Heap Variable | 全局共享的长生命周期数据 |
+| 栈帧 | Stack Frame | CALL 产生的子维度 |
+| 二维寻址 | 2D Addressing | [addr0, addr1] 指令坐标系统 |
+| 计算平面 | op-plat | 执行张量计算的后端进程 |
+| 堆平面 | heap-plat | 管理 tensor 生命周期的后端进程 |

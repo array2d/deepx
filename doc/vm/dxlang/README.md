@@ -42,7 +42,7 @@ type[]
 list 可以与基础类型与 tensor 组合
 ## 2.控制流
 
-> **v1 整合设计**：[spec-v1.md](../../metaproc/spec-v1.md) — 6 套重构方案全光谱对比 (渐进 → SSA → 编译)。
+> **v1 整合设计**：[spec-control-flow-v1.md](../../metaproc/spec-control-flow-v1.md) — 6 套重构方案全光谱对比 (渐进 → SSA → 编译)。
 > 详细方案见 [control-flow.md](./control-flow.md) 和 [frontend-control-flow.md](./frontend-control-flow.md)。
 
 dxlang 支持分支与循环，控制流以“语义块”表达，执行时由解释器按块索引跳转。
