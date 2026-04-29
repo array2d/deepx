@@ -163,7 +163,7 @@ SSA (MLIR 风格):                   ->/<- (slot 复用):
 合流点以 merge 显式标注。
 
 格式:
-  slot "@" base (":" branch)*
+  slot "@" base ("/" branch)*
 
   base   = INT                          # 根版本号 (0, 1, 2...)
   branch = "then" | "else"             # if/else 分支来源
@@ -171,10 +171,10 @@ SSA (MLIR 风格):                   ->/<- (slot 复用):
          | "merge"                     # 合流点 (隐式 φ)
 
 设计原则:
-  - @ 标记版本域起点: /data/W@0  堆变量 W 的版本 0
-  - : 作为版本层级分隔: x@0:then  直读为 "x 在版本 0 的 then 分支"
-  - merge 显式标注合流: x@0:merge 直读为 "x 在版本 0 的合流结果"
-  - 嵌套自然可读: x@0:then:else = "版本 0 → outer.then → inner.else"
+  - @ 标记版本域起点:  /data/W@0/then  = "堆变量 W 版本 0 → then 分支"
+  - @ 之后 / 为版本层级:  x@0/then  直读为 "x 在版本 0 的 then 分支"
+  - merge 显式标注合流: x@0/merge 直读为 "x 在版本 0 的合流结果"
+  - 嵌套自然可读:  x@0/then/else = "版本 0 → outer.then → inner.else"
   - 全单词, 无缩写: then/else/loop/body/step/merge
 ```
 
@@ -190,7 +190,7 @@ SSA (MLIR 风格):                   ->/<- (slot 复用):
 2. 线形写入 (-> 右侧): 产生新 base 版本 slot@N
    读取 (-> 左侧): 使用当前可见版本
 3. 进入控制流分支: 在当前版本上追加分支标签 (:then / :else / :loop 等)
-   嵌套: slot@0:then:then  (outer then → inner then)
+   嵌套: slot@0/then/then  (outer then → inner then)
 4. 控制流合流: 自动产生合并版本 slot@N:merge = φ(分支来源...)
    合流后 base 计数器 +1 (合流结果视为新 base)
 ```
@@ -206,41 +206,41 @@ SSA (MLIR 风格):                   ->/<- (slot 复用):
 带分支:
   a@0 + 1.0 -> x@0              # 合流前写入 → base 0
   if flag {
-    x@0 * 2.0 -> x@0:then       # then 分支: "版本 0 的 then 结果"
+    x@0 * 2.0 -> x@0/then       # then 分支: "版本 0 的 then 结果"
   } else {
-    x@0 * 3.0 -> x@0:else       # else 分支: "版本 0 的 else 结果"
+    x@0 * 3.0 -> x@0/else       # else 分支: "版本 0 的 else 结果"
   }
-  # 合流: x@0:merge = φ(x@0:then, x@0:else)
-  x@0:merge + 4.0 -> y@0        # 读合流结果, 写入输出参数 y@0 = 隐式返回
+  # 合流: x@0/merge = φ(x@0/then, x@0/else)
+  x@0/merge + 4.0 -> y@0        # 读合流结果, 写入输出参数 y@0 = 隐式返回
 
 嵌套分支:
   a@0 + 1.0 -> x@0
   if outer {
     if inner {
-      x@0 * 2.0 -> x@0:then:then    # outer then → inner then
+      x@0 * 2.0 -> x@0/then/then    # outer then → inner then
     } else {
-      x@0 * 3.0 -> x@0:then:else    # outer then → inner else
+      x@0 * 3.0 -> x@0/then/else    # outer then → inner else
     }
-    # inner merge: x@0:then:merge = φ(x@0:then:then, x@0:then:else)
-    x@0:then:merge + 1.0 -> x@0:then:body
+    # inner merge: x@0/then/merge = φ(x@0/then/then, x@0/then/else)
+    x@0/then/merge + 1.0 -> x@0/then/body
   } else {
-    x@0 * 4.0 -> x@0:else           # outer else
+    x@0 * 4.0 -> x@0/else           # outer else
   }
-  # outer merge: x@0:merge = φ(x@0:then:body, x@0:else)
-  x@0:merge / 2.0 -> y@0
+  # outer merge: x@0/merge = φ(x@0/then/body, x@0/else)
+  x@0/merge / 2.0 -> y@0
 
 可读性对比:
   旧: x#0.t.e        →  阅读时脑内翻译 "dot-t-dot-e" → 难读
-  新: x@0:then:else  →  直接读 "版本 0 的 then 分支的 else 分支"
+  新: x@0/then/else  →  直接读 "版本 0 的 then 分支的 else 分支"
 
 循环:
   0.0 -> acc@0
   for i in 0..100 {
-    # 循环头合流: acc@0:loop = φ(acc@0, acc@0:loop:body)
-    data[i] + acc@0:loop -> acc@0:loop:body
+    # 循环头合流: acc@0/loop = φ(acc@0, acc@0/loop/body)
+    data[i] + acc@0/loop -> acc@0/loop/body
   }
-  # 循环退出: acc@0:merge = φ(acc@0, acc@0:loop:body)
-  acc@0:merge -> total@0
+  # 循环退出: acc@0/merge = φ(acc@0, acc@0/loop/body)
+  acc@0/merge -> total@0
 ```
 
 **VM 行为**: VM 忽略 `@` 及之后全部内容。只看 slot 名，slot 复用语义不变。
@@ -251,22 +251,22 @@ SSA (MLIR 风格):                   ->/<- (slot 复用):
 merge 标签使合流识别退化为前缀匹配，无需回溯控制流结构:
 
 判定规则:
-  1. :merge 后缀 → 直接识别为合流版本
-  2. 合流来源 = 去掉末尾 :merge 后, 以前缀匹配的所有分支版本
-     例: x@0:then:merge → 前缀 x@0:then: → 来源 = x@0:then:then, x@0:then:else
-     例: x@0:merge → 前缀 x@0: → 来源 = x@0:then, x@0:else, x@0:then:body
+  1. /merge 后缀 → 直接识别为合流版本
+  2. 合流来源 = 去掉末尾 /merge 后, 以前缀匹配的所有分支版本
+     例: x@0/then/merge → 前缀 x@0/then/ → 来源 = x@0/then/then, x@0/then/else
+     例: x@0/merge → 前缀 x@0/ → 来源 = x@0/then, x@0/else, x@0/then/body
   3. 若某分支无写入 → 来源为进入控制流前的版本 (base 版本)
 
 算法:
 
   func resolve_merge(version_str):
-    slot, ver_path = parse(version_str)   // "x@0:then:merge" → slot="x", path=[0,then,merge]
+    slot, ver_path = parse(version_str)   // "x@0/then/merge" → slot="x", path=[0,then,merge]
 
     if not ver_path.ends_with("merge"):
       return  // 非合流版本
 
-    // 提取前缀: "x@0:then:merge" → "x@0:then:"
-    prefix = version_str.strip_suffix(":merge") + ":"
+    // 提取前缀: "x@0/then/merge" → "x@0/then/"
+    prefix = version_str.strip_suffix("/merge") + "
 
     // 收集所有匹配前缀的版本 → φ 来源集合
     sources = find_all_versions_with_prefix(prefix)
@@ -286,17 +286,12 @@ merge 标签使合流识别退化为前缀匹配，无需回溯控制流结构:
 KV 路径使用 / 分隔层级, 版本号使用 @ 分隔变量与版本:
 
   /models/W@0              ← 堆变量 W 的 base 版本 0
-  /vthread/vt1/x@0:then    ← 栈变量 x 的 base 0 → then 分支版本
-  ./tmp@0:then:else        ← 局部变量 tmp 的 base 0 → then → else 版本
+  /vthread/vt1/x@0/then    ← 栈变量 x 的 base 0 → then 分支版本
+  ./tmp@0/then/else        ← 局部变量 tmp 的 base 0 → then → else 版本
 
 解析规则:
   最后一个 @ 之前 = 变量 KV 路径
-  @ 之后 = 版本号 (: 分隔多级版本)
-```
-
-解析规则:
-  最后一个 # 之前 = 变量 KV 路径
-  # 之后 = 版本号 (多级用 : 连接)
+  @ 之后 = 版本号 ( / 分隔多级版本)
 ```
 
 ## 5. 完整编译器分析验证
@@ -306,18 +301,18 @@ KV 路径使用 / 分隔层级, 版本号使用 @ 分隔变量与版本:
 ```
 a@0 + 1.0 -> x@0
 if flag {
-  x@0 * 2.0 -> x@0:then
-  b@0 * 3.0 -> dead@0:then     ← 仅在 then 分支被定义
+  x@0 * 2.0 -> x@0/then
+  b@0 * 3.0 -> dead@0/then     ← 仅在 then 分支被定义
 } else {
-  x@0 * 4.0 -> x@0:else
+  x@0 * 4.0 -> x@0/else
 }
-# 合流: x@0:merge = φ(x@0:then, x@0:else)
-x@0:merge + 3.0 -> y@0           ← 写入输出参数 y@0 = 隐式返回
+# 合流: x@0/merge = φ(x@0/then, x@0/else)
+x@0/merge + 3.0 -> y@0           ← 写入输出参数 y@0 = 隐式返回
 
 编译器分析:
-  1. 扫描所有读侧: x@0:merge 被使用, y@0 是输出参数 → 活
-  2. dead@0:then 从未被读 → dead@0:then 是死代码 → 删除
-  3. x@0:merge 是合流版本 → 其 φ 来源 x@0:then 和 x@0:else 都活
+  1. 扫描所有读侧: x@0/merge 被使用, y@0 是输出参数 → 活
+  2. dead@0/then 从未被读 → dead@0/then 是死代码 → 删除
+  3. x@0/merge 是合流版本 → 其 φ 来源 x@0/then 和 x@0/else 都活
   4. 精确度等同 SSA 的 use-count DCE
 
 结论: ✅ 完全支持
@@ -327,19 +322,19 @@ x@0:merge + 3.0 -> y@0           ← 写入输出参数 y@0 = 隐式返回
 
 ```
 if flag {
-  a@0 + b@0 -> x@0:then        ← add(a@0, b@0)
+  a@0 + b@0 -> x@0/then        ← add(a@0, b@0)
 } else {
-  a@0 + b@0 -> x@0:else        ← add(a@0, b@0) — 相同操作数和操作码!
+  a@0 + b@0 -> x@0/else        ← add(a@0, b@0) — 相同操作数和操作码!
 }
-# 合流: x@0:merge = φ(x@0:then, x@0:else)
-x@0:merge * 2.0 -> y@0
+# 合流: x@0/merge = φ(x@0/then, x@0/else)
+x@0/merge * 2.0 -> y@0
 
 编译器分析:
-  1. x@0:then 的定义: op=add, args=[a@0, b@0]
-  2. x@0:else 的定义: op=add, args=[a@0, b@0]
-  3. 操作数和操作码完全相同 → x@0:then 和 x@0:else 是同一值
-  4. x@0:merge = φ(x@0:then, x@0:else) → 但两者等同 → φ 退化为 x@0:then
-  5. 消除 x@0:else (else 分支直接用 x@0:then)
+  1. x@0/then 的定义: op=add, args=[a@0, b@0]
+  2. x@0/else 的定义: op=add, args=[a@0, b@0]
+  3. 操作数和操作码完全相同 → x@0/then 和 x@0/else 是同一值
+  4. x@0/merge = φ(x@0/then, x@0/else) → 但两者等同 → φ 退化为 x@0/then
+  5. 消除 x@0/else (else 分支直接用 x@0/then)
 
 结论: ✅ 完全支持。版本号暴露操作数身份 → 直接比较
 ```
@@ -350,20 +345,20 @@ x@0:merge * 2.0 -> y@0
 a@0 + b@0 -> t@0
 c@0 + d@0 -> u@0
 if flag {
-  a@0 + b@0 -> x@0:then        ← VN = hash(add, a@0, b@0) = 42 (同 t@0)
+  a@0 + b@0 -> x@0/then        ← VN = hash(add, a@0, b@0) = 42 (同 t@0)
 } else {
-  c@0 + d@0 -> x@0:else        ← VN = hash(add, c@0, d@0) = 17 (同 u@0)
+  c@0 + d@0 -> x@0/else        ← VN = hash(add, c@0, d@0) = 17 (同 u@0)
 }
-# 合流: x@0:merge = φ(x@0:then, x@0:else)
-x@0:merge + 1.0 -> y@0
+# 合流: x@0/merge = φ(x@0/then, x@0/else)
+x@0/merge + 1.0 -> y@0
 
 编译器分析:
   分配 VN:
     t@0 = hash(add, a@0, b@0) = 42
     u@0 = hash(add, c@0, d@0) = 17
-    x@0:then = 42  ← 与 t@0 相同 → 可互相替换
-    x@0:else = 17  ← 与 u@0 相同 → 可互相替换
-    x@0:merge = φ(42, 17) → VN = hash(φ, 42, 17) = 99
+    x@0/then = 42  ← 与 t@0 相同 → 可互相替换
+    x@0/else = 17  ← 与 u@0 相同 → 可互相替换
+    x@0/merge = φ(42, 17) → VN = hash(φ, 42, 17) = 99
     y@0 = hash(add, 99, 1.0)
 
 结论: ✅ 完全支持。φ 的 VN 由来源 VN 唯一确定
@@ -374,20 +369,20 @@ x@0:merge + 1.0 -> y@0
 ```
 constant(true) -> flag@0
 if flag@0 {
-  constant(5.0) -> x@0:then
+  constant(5.0) -> x@0/then
 } else {
-  constant(3.0) -> x@0:else    ← 不可达! flag=true 永不走 else
+  constant(3.0) -> x@0/else    ← 不可达! flag=true 永不走 else
 }
-# 合流: x@0:merge = φ(x@0:then, x@0:else)
-x@0:merge + 1.0 -> y@0
+# 合流: x@0/merge = φ(x@0/then, x@0/else)
+x@0/merge + 1.0 -> y@0
 
 编译器分析:
   1. all values = ⊤ (top, unknown)
   2. flag@0 = true → 常量
   3. if true → then 可达到, else 不可达
-  4. then: x@0:then = 5.0 → 常量
-  5. else: 不可达 → x@0:else = ⊥ (从未定义)
-  6. x@0:merge = φ(x@0:then=5.0, x@0:else=⊥) = 5.0
+  4. then: x@0/then = 5.0 → 常量
+  5. else: 不可达 → x@0/else = ⊥ (从未定义)
+  6. x@0/merge = φ(x@0/then=5.0, x@0/else=⊥) = 5.0
      (不可达来源被忽略)
   7. y@0 = 5.0 + 1.0 = 6.0 → 常量
 
@@ -400,13 +395,13 @@ x@0:merge + 1.0 -> y@0
 a@0 * b@0 -> inv@0          ← 定义在循环外
 0.0 -> acc@0
 for i in 0..n {
-  # 循环头合流: acc@0:loop = φ(acc@0, acc@0:loop:body)
-  inv@0 + acc@0:loop -> acc@0:loop:body
+  # 循环头合流: acc@0/loop = φ(acc@0, acc@0/loop/body)
+  inv@0 + acc@0/loop -> acc@0/loop/body
 }
 
 编译器分析:
   1. inv@0 定义在循环外
-  2. 循环内无 inv 的新版本 (无 inv@0:loop...)
+  2. 循环内无 inv 的新版本 (无 inv@0/loop...)
   3. → inv@0 是循环不变量
   4. 无需外提 (已在循环外)
 
@@ -419,23 +414,23 @@ for i in 0..n {
 a@0 + b@0 -> t1@0
 t1@0 * 2 -> t2@0
 if flag {
-  t1@0 + 5 -> t3@0:then
+  t1@0 + 5 -> t3@0/then
 } else {
-  t2@0 + 3 -> t3@0:else
+  t2@0 + 3 -> t3@0/else
 }
-# 合流: t3@0:merge = φ(t3@0:then, t3@0:else)
-t3@0:merge * t1@0 -> z@0
+# 合流: t3@0/merge = φ(t3@0/then, t3@0/else)
+t3@0/merge * t1@0 -> z@0
 
 编译器分析:
   1. 活性区间:
-     t1@0:    [1, 7]  (定义→最后使用)
-     t2@0:    [2, 5]
-     t3@0:then:  [4, 6]  (then 分支内)
-     t3@0:else:  [5, 6]  (else 分支内)
-     t3@0:merge:  [7, 7]  (合流后)
+     t1@0/    [1, 7]  (定义→最后使用)
+     t2@0/    [2, 5]
+     t3@0/then:  [4, 6]  (then 分支内)
+     t3@0/else:  [5, 6]  (else 分支内)
+     t3@0/merge:  [7, 7]  (合流后)
   2. 干涉:
-     t1@0 与 t3@0:merge 干涉 (区间 [1,7] ∩ [7,7])
-     t3@0:then 与 t3@0:else 不干涉 (不同分支，活性不重叠)
+     t1@0 与 t3@0/merge 干涉 (区间 [1,7] ∩ [7,7])
+     t3@0/then 与 t3@0/else 不干涉 (不同分支，活性不重叠)
   3. 图着色: 精确分配寄存器
 
 结论: ✅ 完全支持。版本号提供精确活性区间
@@ -448,7 +443,7 @@ t3@0:merge * t1@0 -> z@0
 │                                                                 │
 │  纯 SSA (MLIR cf dialect):                                      │
 │                                                                 │
-│  @0:                                                            │
+│  @0/                                                            │
 │    %0 = add %a, %b                                              │
 │    br %flag ? @1 : @2              ← 基本块分割                 │
 │  @1:                                                            │
@@ -466,11 +461,11 @@ t3@0:merge * t1@0 -> z@0
 │  fn example(flag: bool, a: f32) -> y: f32 {                     │
 │    a@0 + b@0 -> x@0                                              │
 │    if flag {                                                     │
-│      a@0 + 2.0 -> x@0:then          ← base 0 → then 分支           │
+│      a@0 + 2.0 -> x@0/then          ← base 0 → then 分支           │
 │    } else {                                                      │
-│      a@0 - 2.0 -> x@0:else          ← base 0 → else 分支           │
+│      a@0 - 2.0 -> x@0/else          ← base 0 → else 分支           │
 │    }                                                            │
-│    x@0:merge * 3.0 -> y@0            ← x@0:merge = φ(x@0:then, x@0:else)     │
+│    x@0/merge * 3.0 -> y@0            ← x@0/merge = φ(x@0/then, x@0/else)     │
 │  }                                ↑ 写入 y@0 = 隐式返回         │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -496,18 +491,18 @@ Phase 1: 前端版本号生成
   ┌─────────────────────────────────────────────┐
   │ 每个 slot 维护: slot → current_base          │
   │ 线形写入: 输出 "slot@N"                      │
-  │ 进入分支: 追加分支标签 "slot#N:then" / "@N:else"   │
-  │ 嵌套分支: 逐级追加 ":then" / ":else"              │
-  │ 合流点: 自动产生 "slot@N:merge"                  │
+  │ 进入分支: 追加分支标签 "slot@N/then" / "@N/else"   │
+  │ 嵌套分支: 逐级追加 "/then" / "/else"              │
+  │ 合流点: 自动产生 "slot@N/merge"                  │
   │                                              │
   │ 新增代码量: ~100-200 行                      │
-  │ VM: 0 行 (忽略 # 及之后全部内容)             │
+  │ VM: 0 行 (忽略 @ 及之后全部内容)             │
   └─────────────────────────────────────────────┘
 
 Phase 2: 编译器合流识别
   ┌─────────────────────────────────────────────┐
   │ 解析 slot@path 格式 (@ 分隔 slot 与版本)     │
-  │ :merge 后缀直接识别为合流版本                    │
+  │ /merge 后缀直接识别为合流版本                    │
   │ 分支标签驱动: 前缀匹配查找 φ 来源集合        │
   │ 无需回溯控制流结构 → 版本号自描述分支来源    │
   │                                              │
