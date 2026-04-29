@@ -42,6 +42,8 @@ type[]
 list 可以与基础类型与 tensor 组合
 ## 2.控制流
 
+> 详细设计方案见 [control-flow.md](./control-flow.md) —— 三层对比 (Assembly IR / deepxir / C) + 基本块模型 + 实现路线图。
+
 dxlang 支持分支与循环，控制流以“语义块”表达，执行时由解释器按块索引跳转。
 
 ### 分支

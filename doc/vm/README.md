@@ -169,9 +169,10 @@ func tryPick(vtid) bool {
 
 子栈 PC 格式: `[parent_addr0,0]/[child_addr0,0]`
 
-**ParseDxlang** 支持两种格式:
+**ParseDxlang** 支持三种格式:
 - 前缀: `add(A, B) -> ./C`
 - 中缀: `A + B -> ./C`
+- C风格: `./C <- A + B`
 
 ```go
 type Instruction struct {
