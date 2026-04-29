@@ -39,7 +39,7 @@ std::string LifecycleManager::generate_shm_name() const {
 }
 
 std::string LifecycleManager::handle(const LifecycleCommand &cmd, std::string &error) {
-    if (cmd.op == "create") {
+    if (cmd.op == "newtensor") {
         // 计算 byte_size
         int64_t element_count = cmd.element_count > 0
             ? cmd.element_count
@@ -96,7 +96,7 @@ std::string LifecycleManager::handle(const LifecycleCommand &cmd, std::string &e
                cmd.name.c_str(), shm_name.c_str(), total_bytes);
         return shm_name;
     }
-    else if (cmd.op == "get") {
+    else if (cmd.op == "gettensor") {
         TensorMeta meta;
         if (!registry_->get_meta(cmd.name, meta)) {
             error = "tensor not found: " + cmd.name;
@@ -117,7 +117,7 @@ std::string LifecycleManager::handle(const LifecycleCommand &cmd, std::string &e
         }
         return meta.shm_name;
     }
-    else if (cmd.op == "delete") {
+    else if (cmd.op == "deltensor") {
         int64_t ref = registry_->ref_dec(cmd.name);
         printf("[heap] delete '%s' → refcount=%lld\n", cmd.name.c_str(), ref);
 

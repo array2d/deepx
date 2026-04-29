@@ -83,13 +83,7 @@ static LifecycleCommand parse_command(const json &j, std::string &error) {
         error = "missing 'op' field";
         return cmd;
     }
-    std::string ext_op = j["op"].get<std::string>();
-
-    // 外部 op 名称 → 内部 LifecycleManager op 名称
-    if (ext_op == "newtensor")      cmd.op = "create";
-    else if (ext_op == "deltensor") cmd.op = "delete";
-    else if (ext_op == "clonetensor") cmd.op = "clone";
-    else                            cmd.op = ext_op;
+    cmd.op = j["op"].get<std::string>();
 
     if (j.contains("key")) {
         cmd.name = j["key"].get<std::string>();
@@ -178,7 +172,7 @@ static void handle_clonetensor(LifecycleManager &mgr, const json &task, redisCon
     std::string dst = task["dst"];
 
     // GET src → tensor meta, 然后在 dest 创建同名 shm 并拷贝数据
-    // (简化实现: 重用 create—如果不存在则创建，存在则 ref_inc)
+    // (简化实现: 重用 newtensor—如果不存在则创建，存在则 ref_inc)
     redisReply *r = redis_cmd(redis, "GET %s", src.c_str());
     std::string error;
     if (!r || r->type != REDIS_REPLY_STRING) {
@@ -187,7 +181,7 @@ static void handle_clonetensor(LifecycleManager &mgr, const json &task, redisCon
         json src_meta = json::parse(r->str);
 
         LifecycleCommand cmd;
-        cmd.op = "create";
+        cmd.op = "newtensor";
         cmd.name = dst;
         cmd.dtype = src_meta["dtype"];
         cmd.shape = src_meta["shape"].dump();

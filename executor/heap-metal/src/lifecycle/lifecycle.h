@@ -13,7 +13,7 @@ int64_t parse_shape_size(const std::string &shape_str);
 namespace deepx::heap {
 
 struct LifecycleCommand {
-    std::string op;      // "create", "get", "delete"
+    std::string op;      // "newtensor", "gettensor", "deltensor"
     std::string name;    // tensor name
     std::string dtype;
     std::string shape;
