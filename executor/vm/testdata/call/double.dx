@@ -1,0 +1,4 @@
+# double: multiply by 2
+def double(X:int) -> (Y:int) {
+    X * 2 -> ./Y
+}

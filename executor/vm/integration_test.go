@@ -176,12 +176,12 @@ func readVThreadOutputs(t *testing.T, rdb *redis.Client, vtid string) map[string
 }
 
 type nativeTestCase struct {
-	dxFile   string
-	reads    []string
-	writes   []string
-	inputs   map[string]string
-	wantKey  string
-	wantVal  string
+	dxFile  string
+	reads   []string
+	writes  []string
+	inputs  map[string]string
+	wantKey string
+	wantVal string
 }
 
 func TestIntegration_EndToEnd(t *testing.T) {
@@ -189,7 +189,7 @@ func TestIntegration_EndToEnd(t *testing.T) {
 	defer cancel()
 	rdb.FlushDB(ctx)
 
-	dxPath := filepath.Join("testdata", "add_test.dx")
+	dxPath := filepath.Join("testdata", "call", "add_test.dx")
 	fn, err := testutil.LoadDxFile(dxPath)
 	if err != nil {
 		t.Fatalf("LoadDxFile: %v", err)
@@ -243,80 +243,80 @@ func TestIntegration_NativeOps(t *testing.T) {
 
 	cases := []nativeTestCase{
 		// 算术
-		{dxFile: "native_arith.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/add.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "2", "b": "3"}, wantKey: "c", wantVal: "5"},
-		{dxFile: "native_sub.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/sub.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "10", "b": "3"}, wantKey: "c", wantVal: "7"},
-		{dxFile: "native_mul.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/mul.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "4", "b": "5"}, wantKey: "c", wantVal: "20"},
-		{dxFile: "native_div.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/div.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "7", "b": "2"}, wantKey: "c", wantVal: "3.5"},
 		// 比较
-		{dxFile: "native_eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/compare/eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "5", "b": "5"}, wantKey: "c", wantVal: "true"},
-		{dxFile: "native_eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/compare/eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "3", "b": "7"}, wantKey: "c", wantVal: "false"},
-		{dxFile: "native_lt.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/compare/lt.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "3", "b": "7"}, wantKey: "c", wantVal: "true"},
-		{dxFile: "native_lt.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/compare/lt.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "10", "b": "2"}, wantKey: "c", wantVal: "false"},
 		// 逻辑
-		{dxFile: "native_and.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/logic/and.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "true", "b": "true"}, wantKey: "c", wantVal: "true"},
-		{dxFile: "native_and.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/logic/and.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "true", "b": "false"}, wantKey: "c", wantVal: "false"},
-		{dxFile: "native_not.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/logic/not.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "true"}, wantKey: "c", wantVal: "false"},
-		{dxFile: "native_not.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/logic/not.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "false"}, wantKey: "c", wantVal: "true"},
 		// 链式
-		{dxFile: "native_chain.dx", reads: []string{"./a", "./b", "./c"}, writes: []string{"./d"},
+		{dxFile: "native/chain/chain.dx", reads: []string{"./a", "./b", "./c"}, writes: []string{"./d"},
 			inputs: map[string]string{"a": "2", "b": "3", "c": "4"}, wantKey: "d", wantVal: "20"},
 
 		// ── 数学 built-in ──
-		{dxFile: "native_abs.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/abs.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-5"}, wantKey: "c", wantVal: "5"},
-		{dxFile: "native_abs.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/abs.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "3"}, wantKey: "c", wantVal: "3"},
-		{dxFile: "native_pow.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/pow.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "2", "b": "3"}, wantKey: "c", wantVal: "8"},
-		{dxFile: "native_pow.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/pow.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "10", "b": "0"}, wantKey: "c", wantVal: "1"},
-		{dxFile: "native_min.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/min.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "7", "b": "3"}, wantKey: "c", wantVal: "3"},
-		{dxFile: "native_min.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/min.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-2", "b": "5"}, wantKey: "c", wantVal: "-2"},
-		{dxFile: "native_max.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/max.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "7", "b": "3"}, wantKey: "c", wantVal: "7"},
-		{dxFile: "native_max.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{dxFile: "native/arith/max.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-9", "b": "0"}, wantKey: "c", wantVal: "0"},
-		{dxFile: "native_sqrt.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/sqrt.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "16"}, wantKey: "c", wantVal: "4"},
-		{dxFile: "native_exp.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/exp.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "1"}, wantKey: "c", wantVal: "2.718281828459045"},
-		{dxFile: "native_log.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/log.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "1"}, wantKey: "c", wantVal: "0"},
-		{dxFile: "native_neg.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/neg.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "5"}, wantKey: "c", wantVal: "-5"},
-		{dxFile: "native_neg.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/neg.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-3"}, wantKey: "c", wantVal: "3"},
-		{dxFile: "native_sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "5"}, wantKey: "c", wantVal: "1"},
-		{dxFile: "native_sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-8"}, wantKey: "c", wantVal: "-1"},
-		{dxFile: "native_sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/arith/sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "0"}, wantKey: "c", wantVal: "0"},
 
 		// ── 类型转换 built-in ──
-		{dxFile: "native_int.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/cast/int.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "3.7"}, wantKey: "c", wantVal: "3"},
-		{dxFile: "native_int.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/cast/int.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-2.9"}, wantKey: "c", wantVal: "-2"},
-		{dxFile: "native_float.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/cast/float.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "42"}, wantKey: "c", wantVal: "42.0"},
-		{dxFile: "native_bool.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/logic/bool.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "1"}, wantKey: "c", wantVal: "true"},
-		{dxFile: "native_bool.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{dxFile: "native/logic/bool.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "0"}, wantKey: "c", wantVal: "false"},
 	}
 
@@ -338,7 +338,7 @@ func TestIntegration_NativeOps(t *testing.T) {
 			if err != nil {
 				t.Fatalf("CreateVThread: %v", err)
 			}
-					for slot, val := range tc.inputs {
+			for slot, val := range tc.inputs {
 				rdb.Set(ctx, "/vthread/"+vtid+"/"+slot, val, 0)
 			}
 
@@ -466,12 +466,12 @@ func TestIntegration_CrossCall(t *testing.T) {
 	rdb.FlushDB(ctx)
 
 	// 1. 加载 callee 和 caller
-	calleePath := filepath.Join("testdata", "callee.dx")
+	calleePath := filepath.Join("testdata", "call", "callee.dx")
 	callee, err := testutil.LoadDxFile(calleePath)
 	if err != nil {
 		t.Fatalf("Load callee: %v", err)
 	}
-	callerPath := filepath.Join("testdata", "caller.dx")
+	callerPath := filepath.Join("testdata", "call", "caller.dx")
 	caller, err := testutil.LoadDxFile(callerPath)
 	if err != nil {
 		t.Fatalf("Load caller: %v", err)
@@ -524,7 +524,7 @@ func TestIntegration_LifecycleNewtensor(t *testing.T) {
 	defer cancel()
 	rdb.FlushDB(ctx)
 
-	dxPath := filepath.Join("testdata", "lifecycle_newtensor.dx")
+	dxPath := filepath.Join("testdata", "lifecycle", "newtensor.dx")
 	fn, err := testutil.LoadDxFile(dxPath)
 	if err != nil {
 		t.Fatalf("LoadDxFile: %v", err)
@@ -581,7 +581,7 @@ func TestIntegration_LifecycleDelete(t *testing.T) {
 	defer cancel()
 	rdb.FlushDB(ctx)
 
-	dxPath := filepath.Join("testdata", "lifecycle_del.dx")
+	dxPath := filepath.Join("testdata", "lifecycle", "del.dx")
 	fn, err := testutil.LoadDxFile(dxPath)
 	if err != nil {
 		t.Fatalf("LoadDxFile: %v", err)
@@ -630,7 +630,7 @@ func TestIntegration_LifecycleFull(t *testing.T) {
 	defer cancel()
 	rdb.FlushDB(ctx)
 
-	dxPath := filepath.Join("testdata", "lifecycle_full.dx")
+	dxPath := filepath.Join("testdata", "lifecycle", "full.dx")
 	fn, err := testutil.LoadDxFile(dxPath)
 	if err != nil {
 		t.Fatalf("LoadDxFile: %v", err)

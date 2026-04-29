@@ -1,0 +1,9 @@
+# compute: create 2 tensors, compute their sum into a 3rd, cleanup inputs
+def compute() -> (/data/c) {
+    newtensor("f32", "[8]") -> /data/a
+    newtensor("f32", "[8]") -> /data/b
+    newtensor("f32", "[8]") -> /data/c
+    add(/data/a, /data/b) -> /data/c
+    deltensor(/data/a)
+    deltensor(/data/b)
+}

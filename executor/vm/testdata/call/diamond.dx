@@ -1,0 +1,6 @@
+# diamond: splits into double+triple, then sums results
+def diamond(A:int) -> (R:int) {
+    double(A) -> ./d
+    triple(A) -> ./t
+    ./d + ./t -> ./R
+}

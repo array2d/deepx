@@ -1,0 +1,4 @@
+# leaf: multiplies input by 2
+def leaf(X:int) -> (Y:int) {
+    X * 2 -> ./Y
+}
