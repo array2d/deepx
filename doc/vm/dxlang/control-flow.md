@@ -1,6 +1,6 @@
 # deepxir 控制流设计
 
-> **方案分析**：[spec-control-flow-v1.md](../../metaproc/spec-control-flow-v1.md) — 5 种 C 子方案架构对比。
+> **方案分析**：[spec-control-flow-v1.md](spec-control-flow-v1.md) — 5 种 C 子方案架构对比。
 > 本文提供 MLIR 对比 + 基本块模型 + C1 关键字 IR 具体设计。
 
 ## 1. 四层对比：Assembly IR、deepxir、MLIR、C 语言
@@ -150,7 +150,7 @@ if    → dispatch.If()
 ## 3. 设计方案：基本块模型（C 方案通用基础）
 
 > C1~C5 五种方案共享核心的基本块模型，区别在于 lowering 位置和 IR 层数。
-> 详见 [spec-control-flow-v1.md](../../metaproc/spec-control-flow-v1.md)。
+> 详见 [spec-control-flow-v1.md](spec-control-flow-v1.md)。
 
 ### 3.1 C 方案核心思想
 

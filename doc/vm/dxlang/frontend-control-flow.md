@@ -1,6 +1,6 @@
 # pysdk 控制流代码生成方案
 
-> **方案分析**：[spec-control-flow-v1.md](../../metaproc/spec-control-flow-v1.md) — C1~C5 架构对比。
+> **方案分析**：[spec-control-flow-v1.md](spec-control-flow-v1.md) — C1~C5 架构对比。
 > 本文分析 `front/py` 实现 + C1 关键字 IR 的具体生成设计。
 
 ## 1. 当前 front/py 架构分析
