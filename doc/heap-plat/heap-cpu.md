@@ -1,4 +1,4 @@
-# heapmem-cpu
+# heap-cpu
 
 > 纯 CPU 内存的 heap-plat 实现。待开发。
 
@@ -45,7 +45,7 @@
 ## 4. 进程注册
 
 ```
-/sys/heap-plat/cpu:0 = {"program":"heapmem-cpu", "device":"cpu", "status":"running", "pid":<pid>}
+/sys/heap-plat/cpu:0 = {"program":"heap-cpu", "device":"cpu", "status":"running", "pid":<pid>}
 ```
 
 ## 5. 待开发

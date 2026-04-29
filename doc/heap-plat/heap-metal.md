@@ -1,4 +1,4 @@
-# heapmem-metal
+# heap-metal
 
 > macOS Metal 统一内存的 heap-plat 实现。
 > Apple Silicon 上 CPU/GPU 共享物理内存，shm_open + mmap 的指针
@@ -17,7 +17,7 @@
 ## 2. 代码位置
 
 ```
-executor/heapmem-metal/
+executor/heap-metal/
 ├── CMakeLists.txt
 ├── src/
 │   ├── main.mm                   入口: Redis 连接, 主循环
@@ -98,7 +98,7 @@ id<MTLBuffer> gpu_buf = [device newBufferWithBytesNoCopy:cpu_ptr
 ```
 启动时:
   SET /sys/heap-plat/metal:0 = {
-      "program": "heapmem-metal",
+      "program": "heap-metal",
       "device": "gpu0",
       "status": "running",
       "pid": <getpid()>,
@@ -113,8 +113,8 @@ id<MTLBuffer> gpu_buf = [device newBufferWithBytesNoCopy:cpu_ptr
 
 | Key | 说明 |
 |-----|------|
-| `cmd:heapmem-metal:0` | 默认实例的命令队列 (监听) |
-| `cmd:heapmem-metal:1` | 第 2 个实例 (如有) |
+| `cmd:heap-metal:0` | 默认实例的命令队列 (监听) |
+| `cmd:heap-metal:1` | 第 2 个实例 (如有) |
 | `done:<vtid>` | 完成通知 (写入) |
 
 ## 8. 依赖
@@ -130,11 +130,11 @@ CMakeLists.txt 需链接:
 ## 9. 测试
 
 ```bash
-# 终端1: heapmem-metal
-./heapmem_metal
+# 终端1: heap-metal
+./heap_metal
 
 # 终端2: redis-cli 模拟
-redis-cli RPUSH cmd:heapmem-metal:0 \
+redis-cli RPUSH cmd:heap-metal:0 \
   '{"vtid":"t","pc":"[0,0]","op":"newtensor","key":"/test/x","dtype":"f32","shape":[10,10],"device":"gpu0"}'
 
 redis-cli GET /test/x
@@ -142,7 +142,7 @@ redis-cli GET /test/x
 
 redis-cli BLPOP done:t 1
 
-redis-cli RPUSH cmd:heapmem-metal:0 \
+redis-cli RPUSH cmd:heap-metal:0 \
   '{"vtid":"t","pc":"[1,0]","op":"deltensor","key":"/test/x"}'
 
 redis-cli GET /test/x

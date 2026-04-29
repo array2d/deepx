@@ -15,7 +15,7 @@
 | VM | 将 newtensor/deltensor 指令路由到 heap-plat |
 
 ```
-VM PUSH newtensor ──→ cmd:heapmem-<backend>:<instance>
+VM PUSH newtensor ──→ cmd:heap-<backend>:<instance>
                          │
                     heap-plat 消费
                          │
@@ -41,7 +41,7 @@ VM BLPOP done:<vtid> ←── LPUSH 完成通知
 ### 2.2 通信模型
 
 ```
-消费: RPOP / BLPOP cmd:heapmem-<backend>:<instance>
+消费: RPOP / BLPOP cmd:heap-<backend>:<instance>
       ↓
 执行: POSIX shm_open / shm_unlink + mmap
       ↓
@@ -113,7 +113,7 @@ VM BLPOP done:<vtid> ←── LPUSH 完成通知
 启动时向 `/sys/heap-plat/` 注册：
 
 ```
-/sys/heap-plat/metal:0 = {"program":"heapmem-metal", "device":"gpu0", "status":"running", "pid":<pid>, "started_at":<ts>}
+/sys/heap-plat/metal:0 = {"program":"heap-metal", "device":"gpu0", "status":"running", "pid":<pid>, "started_at":<ts>}
 ```
 
 命名规则: `<program>:<instance>`，实例编号从 0 开始。
@@ -123,10 +123,10 @@ VM BLPOP done:<vtid> ←── LPUSH 完成通知
 VM 通过指定队列向特定实例发送指令：
 
 ```
-cmd:heapmem-metal:0     → heapmem-metal 实例 0 (gpu0)
-cmd:heapmem-metal:1     → heapmem-metal 实例 1 (gpu1)
-cmd:heapmem-cuda:0      → heapmem-cuda 实例 0 (gpu0)
-cmd:heapmem-cpu:0       → heapmem-cpu 实例 0 (cpu)
+cmd:heap-metal:0     → heap-metal 实例 0 (gpu0)
+cmd:heap-metal:1     → heap-metal 实例 1 (gpu1)
+cmd:heap-cuda:0      → heap-cuda 实例 0 (gpu0)
+cmd:heap-cpu:0       → heap-cpu 实例 0 (cpu)
 ```
 
 ### 2.7 消费者循环 (所有实现共用)
@@ -134,7 +134,7 @@ cmd:heapmem-cpu:0       → heapmem-cpu 实例 0 (cpu)
 ```
 1. 启动 → 注册 /sys/heap-plat/<instance>
 2. 循环:
-   a) BLPOP cmd:heapmem-<backend>:<instance> (超时 5s)
+   a) BLPOP cmd:heap-<backend>:<instance> (超时 5s)
    b) 解析 JSON 命令
    c) 根据 op 字段分发:
       "newtensor" → handle_newtensor(req)
@@ -191,9 +191,9 @@ cmd:heapmem-cpu:0       → heapmem-cpu 实例 0 (cpu)
 
 | 实现 | 目录 | 状态 | 说明 |
 |------|------|------|------|
-| [heapmem-metal](heapmem-metal.md) | executor/heapmem-metal/ | 待开发 | macOS Metal 统一内存 |
-| [heapmem-cuda](heapmem-cuda.md) | executor/heapmem-cuda/ | 待开发 | Linux CUDA GPU 显存 |
-| [heapmem-cpu](heapmem-cpu.md) | executor/heapmem-cpu/ | 待开发 | 纯 CPU 内存 |
+| [heap-metal](heap-metal.md) | executor/heap-metal/ | 待开发 | macOS Metal 统一内存 |
+| [heap-cuda](heap-cuda.md) | executor/heap-cuda/ | 待开发 | Linux CUDA GPU 显存 |
+| [heap-cpu](heap-cpu.md) | executor/heap-cpu/ | 待开发 | 纯 CPU 内存 |
 
 ## 5. 待确定问题
 

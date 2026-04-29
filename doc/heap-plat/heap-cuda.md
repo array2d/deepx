@@ -1,4 +1,4 @@
-# heapmem-cuda
+# heap-cuda
 
 > Linux CUDA GPU 显存的 heap-plat 实现。待开发。
 
@@ -59,8 +59,8 @@ shm (CPU 可访问) ←→ cudaMemcpy ←→ VRAM (GPU 可访问)
 每张 GPU 独立一个实例:
 
 ```
-heapmem-cuda:0 → gpu0 → 管理 /dev/nvidia0
-heapmem-cuda:1 → gpu1 → 管理 /dev/nvidia1
+heap-cuda:0 → gpu0 → 管理 /dev/nvidia0
+heap-cuda:1 → gpu1 → 管理 /dev/nvidia1
 ```
 
 CUDA context 与实例一一绑定。clonetensor 跨卡时:

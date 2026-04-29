@@ -1,11 +1,11 @@
-# heapmem-plat 开发指南
+# heap-plat 开发指南
 
-> 开发 heapmem-metal (macOS 统一内存)。heapmem-cuda / heapmem-cpu 暂不开发。
+> 开发 heap-metal (macOS 统一内存)。heap-cuda / heap-cpu 暂不开发。
 > Redis 连通测试后，最先开发此组件——先有内存，才能计算。
 
 ## 1. 角色与职责
 
-heapmem-plat 管理 tensor 对象的生命周期：创建、删除、克隆。
+heap-plat 管理 tensor 对象的生命周期：创建、删除、克隆。
 
 | 能力 | 说明 |
 |------|------|
@@ -17,7 +17,7 @@ heapmem-plat 管理 tensor 对象的生命周期：创建、删除、克隆。
 ## 2. 当前状态
 
 ```
-executor/heapmem-metal/
+executor/heap-metal/
 ├── src/
 │   ├── main.mm                   入口 (已连接 Redis, 有主循环)
 │   └── lifecycle/
@@ -33,9 +33,9 @@ executor/heapmem-metal/
 ## 3. 通信模型
 
 ```
-          VM                           heapmem-metal
+          VM                           heap-metal
           ──                           ─────────────
-          PUSH cmd:heapmem-metal:0  ──→ RPOP/BLPOP 消费
+          PUSH cmd:heap-metal:0  ──→ RPOP/BLPOP 消费
                                           │
                                       分配/释放 shm
                                       写入 Redis 元信息
@@ -50,7 +50,7 @@ executor/heapmem-metal/
 ```cpp
 // 伪代码
 while (true) {
-    auto cmd = redis.blpop("cmd:heapmem-metal:0", timeout_sec=5);
+    auto cmd = redis.blpop("cmd:heap-metal:0", timeout_sec=5);
     if (!cmd) continue;  // 超时，下一轮
 
     auto req = json::parse(cmd);
@@ -140,7 +140,7 @@ Mac Apple Silicon 上 CPU 和 GPU 共享物理内存。shm_open + mmap 返回的
 
 ```
 SET /sys/heap-plat/metal:0 = {
-    "program": "heapmem-metal",
+    "program": "heap-metal",
     "device": "gpu0",
     "status": "running",
     "pid": <getpid()>,
@@ -160,22 +160,22 @@ DELETE /sys/heap-plat/metal:0
 brew install hiredis
 
 # 构建
-cd executor/heapmem-metal
+cd executor/heap-metal
 mkdir -p build && cd build
 cmake .. && make
 
 # 运行
-./heapmem_metal
+./heap_metal
 ```
 
 ## 6. 验证方法
 
 ```bash
-# 终端1: 启动 heapmem-metal
-./heapmem_metal
+# 终端1: 启动 heap-metal
+./heap_metal
 
 # 终端2: 通过 redis-cli 发送测试命令
-redis-cli RPUSH cmd:heapmem-metal:0 '{"vtid":"test1","pc":"[0,0]","op":"newtensor","key":"/test/x","dtype":"f32","shape":[100,100],"device":"gpu0"}'
+redis-cli RPUSH cmd:heap-metal:0 '{"vtid":"test1","pc":"[0,0]","op":"newtensor","key":"/test/x","dtype":"f32","shape":[100,100],"device":"gpu0"}'
 
 # 查看结果
 redis-cli GET /test/x
@@ -186,7 +186,7 @@ redis-cli BLPOP done:test1 1
 # 应返回: {"pc":"[0,0]","status":"ok"}
 
 # 删除
-redis-cli RPUSH cmd:heapmem-metal:0 '{"vtid":"test1","pc":"[1,0]","op":"deltensor","key":"/test/x"}'
+redis-cli RPUSH cmd:heap-metal:0 '{"vtid":"test1","pc":"[1,0]","op":"deltensor","key":"/test/x"}'
 ```
 
 ## 7. 开发量评估

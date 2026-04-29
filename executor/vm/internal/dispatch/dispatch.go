@@ -201,11 +201,11 @@ func Lifecycle(ctx context.Context, rdb *redis.Client, vtid string, pc string, i
 	task := buildHeapTask(vtid, pc, inst)
 	taskJSON, _ := json.Marshal(task)
 
-	if err := rdb.RPush(ctx, "cmd:heapmem-metal:0", taskJSON).Err(); err != nil {
+	if err := rdb.RPush(ctx, "cmd:heap-metal:0", taskJSON).Err(); err != nil {
 		return fmt.Errorf("push heap task: %w", err)
 	}
 
-	log.Printf("[%s] PUSH %s → cmd:heapmem-metal:0", vtid, inst.Opcode)
+	log.Printf("[%s] PUSH %s → cmd:heap-metal:0", vtid, inst.Opcode)
 
 	done, err := state.WaitDone(ctx, rdb, vtid, 5*time.Second)
 	if err != nil {

@@ -658,7 +658,7 @@ DONE:
 > 本部分将定义元程模型在 DeepX 中的具体实现，包括：
 > - Redis 作为 KV 空间的具体 key 路径约定
 > - op-cuda / op-metal 的具体协议
-> - heapmem-cuda / heapmem-metal 的具体协议
+> - heap-cuda / heap-metal 的具体协议
 > - VM 进程的启动与调度实现
 > - pysdk 与编译器的接口
 

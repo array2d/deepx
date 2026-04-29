@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 
-namespace deepx::heapmem {
+namespace deepx::heap {
 
 // 基于文件的简单 Registry 实现（验证用）
 // 生产环境替换为 RedisRegistry
@@ -118,4 +118,4 @@ private:
     std::mutex mutex_;
 };
 
-} // namespace deepx::heapmem
+} // namespace deepx::heap

@@ -258,7 +258,7 @@ addr0 是序列维整数，表示指令在栈帧内的顺序位置。
 /sys/op-plat/cuda:0    = {"program":"op-cuda", "device":"gpu0", "status":"running", "load":0.3, "pid":12345, "started_at":1714000000}
 /sys/op-plat/cuda:1    = {"program":"op-cuda", "device":"gpu1", "status":"running", "load":0.7, "pid":12346, "started_at":1714000001}
 /sys/op-plat/metal:0   = {"program":"op-metal", "device":"gpu0", "status":"running", "load":0.1, "pid":12347, "started_at":1714000002}
-/sys/heap-plat/metal:0 = {"program":"heapmem-metal", "device":"gpu0", "status":"running", "pid":12348, "started_at":1714000003}
+/sys/heap-plat/metal:0 = {"program":"heap-metal", "device":"gpu0", "status":"running", "pid":12348, "started_at":1714000003}
 /sys/vm/0              = {"status":"running", "pid":12349, "started_at":1714000004}
 ```
 
@@ -330,9 +330,9 @@ addr0 是序列维整数，表示指令在栈帧内的顺序位置。
 
 | Key | 消费方 | 说明 |
 |-----|--------|------|
-| `cmd:heapmem-metal:0` | heapmem-metal | Metal 内存管理指令 |
-| `cmd:heapmem-cuda:0` | heapmem-cuda | CUDA 内存管理指令 |
-| `cmd:heapmem-cpu:0` | heapmem-cpu | CPU 内存管理指令 |
+| `cmd:heap-metal:0` | heap-metal | Metal 内存管理指令 |
+| `cmd:heap-cuda:0` | heap-cuda | CUDA 内存管理指令 |
+| `cmd:heap-cpu:0` | heap-cpu | CPU 内存管理指令 |
 
 **newtensor:**
 ```json
@@ -510,7 +510,7 @@ addr0 是序列维整数，表示指令在栈帧内的顺序位置。
 
 # 命令队列 (List)
 cmd:op-<backend>:<instance>              list      op-plat 命令队列
-cmd:heapmem-<backend>:<instance>         list      heap-plat 命令队列
+cmd:heap-<backend>:<instance>         list      heap-plat 命令队列
 done:<vtid>                              list      完成通知队列
 notify:vm                                list      VM 唤醒通知
 

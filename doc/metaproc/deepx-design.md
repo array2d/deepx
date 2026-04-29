@@ -12,7 +12,7 @@
 | Redis | KV 空间 — 全局状态存储、命名空间、命令队列、锁 | — |
 | pysdk | 算法前端 — 注册源代码到 `/src/func/`，创建 vthread | — |
 | op-plat | 计算 — 被动消费指令，执行 GPU/CPU 张量运算 | op-cuda, op-metal, op-cpu |
-| heapmem-plat | 堆管理 — tensor 对象生命周期：创建/删除/克隆 shm | heapmem-cuda, heapmem-metal, heapmem-cpu |
+| heap-plat | 堆管理 — tensor 对象生命周期：创建/删除/克隆 shm | heap-cuda, heap-metal, heap-cpu |
 | VM | 解释执行 — CALL 翻译、指令路由、状态推进 | — |
 
 ```
@@ -33,11 +33,11 @@
 │      │  │          │  │           │
 │ 解释 │  │ 执行张量  │  │ 管理tensor│
 │ 调度 │  │ 计算      │  │ 生命周期  │
-│      │  │ op-cuda   │  │ heapmem-  │
+│      │  │ op-cuda   │  │ heap-  │
 │      │  │ op-metal  │  │ cuda      │
-│      │  │ op-cpu    │  │ heapmem-  │
+│      │  │ op-cpu    │  │ heap-  │
 │      │  │           │  │ metal     │
-│      │  │           │  │ heapmem-  │
+│      │  │           │  │ heap-  │
 │      │  │           │  │ cpu       │
 └──────┘  └──────────┘  └───────────┘
 ```
@@ -50,7 +50,7 @@
 |------|---------|---------|
 | VM | BLPOP 等待通知 | `notify:vm` (新 vthread 创建) + `done:<vtid>` (op-plat 完成) |
 | op-plat | RPOP 或 BLPOP | `cmd:op-<backend>:<instance>` (计算指令) |
-| heap-plat | RPOP 或 BLPOP | `cmd:heapmem:<device>` (生命周期指令) |
+| heap-plat | RPOP 或 BLPOP | `cmd:heap:<device>` (生命周期指令) |
 
 ## 2. Redis Key 路径约定
 
@@ -113,8 +113,8 @@
 cmd:op-cuda:<instance>             op-cuda 的命令队列 (如 cmd:op-cuda:0)
 cmd:op-metal:<instance>            op-metal 的命令队列
 cmd:op-cpu:<instance>              op-cpu 的命令队列
-cmd:heapmem-cuda:<device>          heapmem-cuda 的命令队列
-cmd:heapmem-metal:<device>         heapmem-metal 的命令队列
+cmd:heap-cuda:<device>          heap-cuda 的命令队列
+cmd:heap-metal:<device>         heap-metal 的命令队列
 done:<vtid>                        vthread 的完成通知队列
 notify:vm                          VM 的唤醒通知队列
 ```
@@ -299,11 +299,11 @@ TODO: 编译器实现细节，待编译器设计阶段确定。
    
    [生命周期指令]
      newtensor:
-       → PUSH cmd:heapmem:<device>
+       → PUSH cmd:heap:<device>
        → 等待完成 (或同步)
      
      deltensor:
-       → PUSH cmd:heapmem:<device>
+       → PUSH cmd:heap:<device>
      
      var:
        → SET /vthread/<vtid>/<name> = <value>  (基础类型直存 Redis)
@@ -581,11 +581,11 @@ TODO: 批量发射的依赖分析由编译器完成还是 VM 运行时分析，�
 
 ```
 1. 启动 → 注册到 /sys/heap-plat/<id>:
-   { "type": "heapmem-cuda", "device": "gpu0", "status": "idle" }
+   { "type": "heap-cuda", "device": "gpu0", "status": "idle" }
 
 2. 进入消费循环:
    while true:
-     RPOP cmd:heapmem:0  (或 BLPOP)
+     RPOP cmd:heap:0  (或 BLPOP)
      解析指令
      执行 shm 分配/释放/克隆
      回复到 done:<vtid> 或直接 SET 元信息到堆路径
@@ -809,8 +809,8 @@ executor/
 │   └── src/main.mm
 ├── op-metal/              op-plat (Metal 实现, 已有)
 ├── op-cuda/               op-plat (CUDA 实现, 待开发)
-├── heapmem-metal/         heap-plat (Metal 实现, 已有)
-├── heapmem-cuda/          heap-plat (CUDA 实现, 待开发)
+├── heap-metal/         heap-plat (Metal 实现, 已有)
+├── heap-cuda/          heap-plat (CUDA 实现, 待开发)
 └── common-metal/          共享库 (已有)
 
 front/

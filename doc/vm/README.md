@@ -22,7 +22,7 @@ pysdk ──写入──→ /src/func/  +  /vthread/  +  notify:vm
 | Redis | 全部状态存储、命令队列、通知阻塞 |
 | pysdk | VM 拾取 pysdk 创建的 vthread，通过 notify:vm 唤醒 |
 | op-plat | VM PUSH 计算指令到 cmd:op-*，BLPOP done:\<vtid\> 等待 |
-| heap-plat | VM PUSH 生命周期指令到 cmd:heapmem-* |
+| heap-plat | VM PUSH 生命周期指令到 cmd:heap-* |
 
 ## 2. 项目结构
 

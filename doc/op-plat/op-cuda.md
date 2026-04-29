@@ -80,12 +80,12 @@ executor/op-cuda/       (47 文件, 已成熟)
 ```
 
 **VRAM 指针共享方式:**
-heapmem-cuda 分配 VRAM 后，将 `vram_ptr` 写入 shm 头部固定 offset。
+heap-cuda 分配 VRAM 后，将 `vram_ptr` 写入 shm 头部固定 offset。
 op-cuda 通过 shm_open 读取该字段获得 VRAM 指针，无需重新 cudaMalloc。
 
 ```
 shm layout:
-  [0..7]:   uint64 vram_ptr         ← heapmem-cuda 写入
+  [0..7]:   uint64 vram_ptr         ← heap-cuda 写入
   [8..15]:  uint64 cuda_context
   [16..]:   tensor 实际数据 (CPU 可见副本, 可选)
 ```
@@ -98,7 +98,7 @@ shm layout:
 ```
 
 每个进程实例绑定一张 GPU (cudaSetDevice)。跨 GPU 的数据通过编译器插入的
-clonetensor (heapmem-cuda P2P) 或 cudaMemcpyPeer 完成。
+clonetensor (heap-cuda P2P) 或 cudaMemcpyPeer 完成。
 
 ## 7. 待改造
 

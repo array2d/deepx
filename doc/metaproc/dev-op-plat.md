@@ -1,7 +1,7 @@
 # op-plat 开发指南
 
 > 开发 op-metal (macOS Metal GPU)。op-cuda / op-cpu 暂不开发。
-> heapmem-plat 完成后，有内存分配能力了再开发此组件。
+> heap-plat 完成后，有内存分配能力了再开发此组件。
 
 ## 1. 角色与职责
 
@@ -266,7 +266,7 @@ cmake .. && make
 redis-cli GET /op/op-metal/list
 # → ["add","sub","mul","div","relu","sigmoid","tanh","gelu","zeros","ones","arange"]
 
-# 发送测试指令 (需先通过 heapmem-plat 创建 tensor)
+# 发送测试指令 (需先通过 heap-plat 创建 tensor)
 redis-cli RPUSH cmd:op-metal:0 '{
   "vtid":"test1",
   "pc":"[0,0]",

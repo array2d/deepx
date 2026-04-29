@@ -11,7 +11,7 @@
 
 namespace deepx::mem {
 
-// Metal 侧 Mem 实现 — tensor 数据来自 POSIX shm (heapmem-metal 分配)
+// Metal 侧 Mem 实现 — tensor 数据来自 POSIX shm (heap-metal 分配)
 class MemMetal : public MemBase {
 public:
     MemMetal() = default;
@@ -33,7 +33,7 @@ public:
         tensors_[name]  = info;
     }
 
-    // 导入 heapmem-metal 已创建的 tensor
+    // 导入 heap-metal 已创建的 tensor
     bool import(const std::string &name, const std::string &shm_name,
                 size_t byte_size, const Shape &shape) {
         deepx::shmem::ShmTensor st;
@@ -53,7 +53,7 @@ public:
         auto result = std::make_shared<Tensor<void>>();
         result->shape   = info->shape;
         result->data    = info->addr;
-        result->deleter = nullptr; // shm 生命周期由 heapmem 管理
+        result->deleter = nullptr; // shm 生命周期由 heap 管理
         result->copyer  = nullptr;
         result->newer   = nullptr;
         return result;

@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <cstdio>
 
-namespace deepx::heapmem {
+namespace deepx::heap {
 
 static int64_t parse_shape_size(const std::string &shape_str) {
     // "[2,3,4]" → 2*3*4 = 24
@@ -92,7 +92,7 @@ std::string LifecycleManager::handle(const LifecycleCommand &cmd, std::string &e
             open_tensors_[shm_name] = st;
         }
 
-        printf("[heapmem] created tensor '%s' → shm=%s bytes=%lld\n",
+        printf("[heap] created tensor '%s' → shm=%s bytes=%lld\n",
                cmd.name.c_str(), shm_name.c_str(), total_bytes);
         return shm_name;
     }
@@ -119,7 +119,7 @@ std::string LifecycleManager::handle(const LifecycleCommand &cmd, std::string &e
     }
     else if (cmd.op == "delete") {
         int64_t ref = registry_->ref_dec(cmd.name);
-        printf("[heapmem] delete '%s' → refcount=%lld\n", cmd.name.c_str(), ref);
+        printf("[heap] delete '%s' → refcount=%lld\n", cmd.name.c_str(), ref);
 
         if (ref <= 0) {
             TensorMeta meta;
@@ -156,4 +156,4 @@ void LifecycleManager::shutdown() {
     open_tensors_.clear();
 }
 
-} // namespace deepx::heapmem
+} // namespace deepx::heap

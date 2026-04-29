@@ -30,7 +30,7 @@ deepx可以划分为前端与统一存算面（中端与后端），分别是为
 
 
   + 统一寻址空间
-    * 当前采用redis存储tensor元信息，配合heapmem进程，负责管理堆tensor的生命周期。
+    * 当前采用redis存储tensor元信息，配合heap进程，负责管理堆tensor的生命周期。
     
   + 调度层：编译替换与分布式调度层：注册了多轮不同类型的IR编译器，实现等价替换，可以以插件的形式增加自定义能力如定制kvcache，实现对计算图进行局部替换，获得新的能力。
     * 算子注册： 收集当前已就绪的执行器的算子列表,收集算子时耗和存储占用信息。计算图编译器优化器:fusion算子，计算图节点消除,自动生成tensor拆分并行的计算子图并替代原节点
@@ -38,9 +38,9 @@ deepx可以划分为前端与统一存算面（中端与后端），分别是为
     * 执行调度器：负责数据并行，流水线并行(前向反向并行)，模型并行
 
   + 执行器层：绑定具体的加速硬件，实现真正的tensor的储存、计算、网络通信，大规模并行化。
-      * heapmem-cuda：实现了nv平台的tensor生命周期管理，是统一寻址空间中的tensor的具体实现。
-      当我们在统一寻址空间删除一个key对应的tensor，实际的tensor会通过heapmem-cuda进程进行删除，创建同理。
-      heapmem管理的tensor，通常是持久的权重，可能被很多个不同进程访问，。
+      * heap-cuda：实现了nv平台的tensor生命周期管理，是统一寻址空间中的tensor的具体实现。
+      当我们在统一寻址空间删除一个key对应的tensor，实际的tensor会通过heap-cuda进程进行删除，创建同理。
+      heap管理的tensor，通常是持久的权重，可能被很多个不同进程访问，。
       相对应的，随着函数执行完毕自动回收的中间变量tensor，可以被称之为stacktensor，这些tensor交给op进程自行管理。
       * op-cuda:实现了nv平台的常用基础算子。[cuda](docs/executor/op-mem-cuda/list.md)
 
@@ -55,7 +55,7 @@ deepx可以划分为前端与统一存算面（中端与后端），分别是为
 |数据区、代码区|kv存储管理|
 |上层程序设:func和struct| deepxIR和tensor|
 |cpu执行底层机器码/字节码| deepx执行器执行deepxIR|
-|存储-堆 |kv存储tensor元信息，heapmem管理gpu、内存上的tensordata| 
+|存储-堆 |kv存储tensor元信息，heap管理gpu、内存上的tensordata| 
 |线程栈|计算进程自行管理|
 
 

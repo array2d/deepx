@@ -1,4 +1,4 @@
-# heapmem-cuda 方案草案
+# heap-cuda 方案草案
 
 本目录用于设计/实现单机多进程的 GPU Tensor 统一存储面（CUDA IPC），并通过 Redis 做 name → IPC handle 的集中注册与控制。
 
@@ -89,7 +89,7 @@ mem-cuda/
 graph LR
   subgraph 单机
     RM["Redis (元数据 + 指令队列)"]
-    HMC["heapmem-cuda 进程"]
+    HMC["heap-cuda 进程"]
     CP["计算进程 (多进程)"]
     GPU["GPU"]
   end

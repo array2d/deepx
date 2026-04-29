@@ -161,7 +161,7 @@ func TestParseSignature(t *testing.T) {
 
 func TestIntegration_AddVthread(t *testing.T) {
 	// 完整的集成测试 (需要 Redis + op-plat 运行)
-	t.Skip("requires full stack: redis + heapmem + op-plat + vm")
+	t.Skip("requires full stack: redis + heap + op-plat + vm")
 
 	ctx := context.Background()
 	rdb := redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379"})

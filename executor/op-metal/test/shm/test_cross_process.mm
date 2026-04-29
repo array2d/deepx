@@ -1,7 +1,7 @@
-// 集成验证: heapmem-metal 创建 tensor → op-metal 通过 shm 访问并 GPU 计算
+// 集成验证: heap-metal 创建 tensor → op-metal 通过 shm 访问并 GPU 计算
 //
 // 用法:
-//   模拟 heapmem 先创建 tensor 并写入数据:
+//   模拟 heap 先创建 tensor 并写入数据:
 //     ./test_cross_process create <shm_name> <count>
 //   模拟 op-metal 访问 tensor 并 GPU 计算:
 //     ./test_cross_process compute <shm_name> <count>
@@ -30,7 +30,7 @@ static size_t page_align(size_t n) {
     return (n + ps - 1) & ~(ps - 1);
 }
 
-// ── heapmem 角色：创建 shm tensor ──────────────────────────────────
+// ── heap 角色：创建 shm tensor ──────────────────────────────────
 static int create_tensor(const char *shm_name, int count) {
     size_t single  = count * sizeof(float);
     size_t off_a   = 0;
@@ -54,7 +54,7 @@ static int create_tensor(const char *shm_name, int count) {
         A[i] = (float)(i + 1);
         B[i] = (float)(count - i);
     }
-    printf("[heapmem] tensor created: shm=%s count=%d A[0]=%f B[0]=%f\n",
+    printf("[heap] tensor created: shm=%s count=%d A[0]=%f B[0]=%f\n",
            shm_name, count, A[0], B[0]);
     munmap(base, total);
     return 0;

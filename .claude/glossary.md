@@ -49,7 +49,7 @@
 | `/sys/heap-plat/<instance>` | heap-plat 进程注册 |
 | `/sys/vtid_counter` | vthread ID 自增计数器 |
 | `cmd:op-<backend>:<instance>` | op-plat 命令队列 (Redis List) |
-| `cmd:heapmem-<backend>:<instance>` | heap-plat 命令队列 |
+| `cmd:heap-<backend>:<instance>` | heap-plat 命令队列 |
 | `done:<vtid>` | vthread 完成通知队列 |
 | `notify:vm` | VM 唤醒通知队列 |
 | 其他非保留路径 | 堆变量 (tensor 元信息) |

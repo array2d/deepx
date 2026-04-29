@@ -7,7 +7,7 @@
 #include <atomic>
 #include <mutex>
 
-namespace deepx::heapmem {
+namespace deepx::heap {
 
 struct LifecycleCommand {
     std::string op;      // "create", "get", "delete"
@@ -42,4 +42,4 @@ private:
     mutable std::atomic<uint64_t> counter_{0};
 };
 
-} // namespace deepx::heapmem
+} // namespace deepx::heap

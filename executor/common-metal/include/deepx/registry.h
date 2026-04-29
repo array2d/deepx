@@ -3,7 +3,7 @@
 #include <string>
 #include <cstdint>
 
-namespace deepx::heapmem {
+namespace deepx::heap {
 
 // 一个 tensor 的 Redis 元数据
 struct TensorMeta {
@@ -45,4 +45,4 @@ public:
     virtual bool get_meta(const std::string &name, TensorMeta &out) = 0;
 };
 
-} // namespace deepx::heapmem
+} // namespace deepx::heap
