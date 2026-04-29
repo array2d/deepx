@@ -1,291 +1,63 @@
-# 元程 — 数据结构篇
+# 元程 — 数据结构
 
-> 分布式计算系统中，数据结构即架构。
-> 元程的 KV 路径空间就是它的"地址总线"，
-> 路径约定就是它的"ABI"。本文档定义元程的全部数据结构及其关系。
+> 定义元程的基础数据类型、扩展数据类型，以及在 KV 空间中的布局。
 
 ---
 
-## 1. 核心命题
+## 1. 为什么单列一篇数据结构
 
-```
-程序 = 数据结构 + 函数 + 数据
-       ↑            ↑       ↑
-    元程的骨架    执行逻辑   流动内容
-```
+C 语言的数据结构定义在 `<stdint.h>` 和 `struct` 中，编译器在编译期确定每个变量的
+字节偏移。CUDA 继承了 C 的类型体系，加上 `__shared__` / `__constant__` 内存空间标注。
+这些类型定义是语言的基石——写了 `int x`，编译器就知道分配 4 字节。
 
-在传统 OS 中，数据结构是编译器实现细节：栈帧、堆段、代码段由 OS + 编译器联合管理，
-程序员不可见。但在分布式系统中，**数据结构必须被显式定义并共享**——因为进程分布在
-不同机器上，它们只能通过约定的数据结构来理解和协作。
-
-元程的做法：把所有数据结构放在一个 **KV 空间** 里，用**路径**作为全局地址。
-数据结构定义 = 路径空间的划分规则 + 每条路径上 value 的类型约定。
+元程没有编译器。数据类型不是编译器规则，而是**所有进程之间共享的约定**。
+基础类型（int / float / bool / string）直接存为 KV 空间的 value。
+扩展类型（tensor）的 value 是元信息 JSON，实际数据通过 shm 指针引用。
+KV 空间的路径布局就是元程的"内存映射"。
 
 ---
 
-## 2. KV 空间 — 元程的地址空间
+## 2. 基础数据类型
 
-KV 空间是元程的**第一数据结构**。它等同于 OS 进程的虚拟地址空间，但有两个关键区别：
+元程的基础类型直接以字面量或短字符串形式存储在 KV value 中，无需额外编码：
 
-| | OS 虚拟地址空间 | 元程 KV 空间 |
+| 类型 | 示例 value | value 大小 | 对应 C 类型 | 对应 CUDA |
+|------|-----------|-----------|------------|----------|
+| `int` | `1`, `-42`, `0` | ~1-11 字节（字符串） | `int` (4B) | `int` |
+| `float` | `3.14`, `-0.5`, `1e-5` | ~4-15 字节 | `float` (4B) / `double` (8B) | `float` / `double` |
+| `bool` | `true` / `false` | 4-5 字节 | `bool` (1B，通常) | `bool` |
+| `string` | `"hello"`, `"f32"` | 取决于内容，建议 < 1KB | `char[]` / `char*` | `char*` |
+
+**基础类型可以直接作为 KV 的 value**：
+
+```
+/vthread/1/flag    = true        ← bool
+/vthread/1/count   = 42          ← int
+/vthread/1/rate    = 0.001       ← float
+/vthread/1/name    = "f32"       ← string
+```
+
+与 C 的关键区别：
+
+| | C / CUDA | 元程 KV |
 |---|---|---|
-| 寻址方式 | 64位线性地址 | 字符串路径（`/` 分层） |
-| 可见性 | 进程私有 | 集群全局共享 |
-| 读取粒度 | 字节 | key-value 对 |
-| 组织方式 | 段（.text / .data / 栈） | 路径树（`/src/` `/vthread/` `/models/`） |
-| 并发模型 | 线程 + 锁 | WATCH/MULTI/EXEC 事务 + 锁 |
+| 存储位置 | 栈 / 寄存器 / 显存 | Redis key 的 value |
+| 寻址方式 | 指针 / 偏移量 | 字符串路径 |
+| 类型检查 | 编译期 | 运行时（VM 解析 value） |
+| 生命周期 | 作用域退出即释放 | 显式 DELETE |
+| 精度控制 | `int` vs `int32_t` 编译器决定 | 约定决定（建议标注 dtype string） |
 
-```
-/ (根)
-├── src/func/         函数源码层
-├── op/               算子注册与编译产物
-│   ├── op-cuda/
-│   ├── op-metal/
-│   └── op-cpu/
-├── vthread/          vthread 执行状态（栈）
-├── sys/              系统信息
-├── cmd/              命令队列
-├── notify/           通知队列
-├── done/             完成通知队列
-├── lock/             互斥锁
-├── models/           堆变量（示例）
-├── data/             堆变量（示例）
-└── checkpoints/      堆变量（示例）
-```
-
-KV 空间本身不规定路径语义——它是"白纸"。路径语义由**保留路径约定**赋予。
+**注意**：基础类型的 value 在 Redis 中存为字符串。Redis 的 int 操作（INCR）可用，
+但建议统一走 GET→解析→运算→SET 路径以保证类型安全。
 
 ---
 
-## 3. 保留路径 — 元程的"段"
+## 3. 扩展数据类型：Tensor
 
-如同 OS 的虚拟地址空间有 .text / .data / 栈 / 堆等固定区域，
-元程的 KV 空间也有**保留路径**，每一段有明确的读写角色：
+### 3.1 定义
 
-### 3.1 源码层 `/src/func/`
-
-| 角色 | 内容 | 写入者 | 读取者 |
-|---|---|---|---|
-| 函数签名 | `(gemm(A, B) -> (Y))` dxlang 文本 | pysdk | VM, 编译器 |
-| 指令序列 | `matmul(A, B) -> ./Y` dxlang 文本 | pysdk | VM, 编译器 |
-| 控制流嵌套 | `/N/true/0`, `/N/body/0` 等 | pysdk | VM |
-
-```
-/src/func/<name>              → 函数签名
-/src/func/<name>/0            → 第 0 条指令
-/src/func/<name>/1            → 第 1 条指令
-/src/func/<name>/N/true/0     → if 分支 true 子块
-/src/func/<name>/N/body/0     → for 循环体
-```
-
-**属性**: 人类可读、平台无关。这是函数的"源文件"。
-
-### 3.2 编译层 `/op/<backend>/func/`
-
-| 角色 | 内容 | 写入者 | 读取者 |
-|---|---|---|---|
-| 编译后签名 | 同源码层或优化后签名 | 编译器 | VM |
-| 编译后指令 | 融合/拆分/设备标注后的指令 | 编译器 | VM |
-
-```
-/op/op-cuda/func/<name>       → 编译后签名
-/op/op-cuda/func/<name>/0     → 编译后第 0 条指令
-/op/op-metal/func/<name>/0    → Metal 编译产物（可能不同）
-```
-
-**属性**: 后端专属。同一函数在不同设备上可能有不同的编译产物。
-
-### 3.3 执行层 `/vthread/`
-
-| 角色 | 内容 | 写入者 | 读取者 |
-|---|---|---|---|
-| vthread 状态 | `{"pc": "[3,0]", "status": "running"}` | VM | VM, pysdk |
-| 指令坐标 | `[addr0, 0]` = opcode, `[addr0, -1]` = 读参数 | VM | VM |
-| 命名槽位 | 局部变量的值（int/float/tensor 元信息） | VM, op-plat | VM, op-plat |
-| 子栈 | CALL 产生的嵌套指令序列 | VM | VM |
-
-```
-/vthread/<vtid>                           → {pc, status}
-/vthread/<vtid>/[0,0]                     → 操作码
-/vthread/<vtid>/[0,-1]                    → 读参数 #1
-/vthread/<vtid>/[0, 1]                    → 写参数 #1
-/vthread/<vtid>/a                         → 命名槽位 (局部变量)
-/vthread/<vtid>/mm                        → 命名槽位 (局部变量)
-/vthread/<vtid>/[n,0]/[0,0]              → 子栈指令
-```
-
-**属性**: 机器执行层。指令展开为二维坐标 `[addr0, addr1]`，运行时零解析开销。
-
-### 3.4 系统路径 `/sys/`
-
-| 路径 | 内容 | 职责 |
-|---|---|---|
-| `/sys/vtid_counter` | int 计数器 | vthread ID 自增分配 |
-| `/sys/config` | JSON | 全局配置 |
-| `/sys/op-plat/<instance>` | JSON | op-plat 进程注册（存活性、负载） |
-| `/sys/heap-plat/<instance>` | JSON | heap-plat 进程注册 |
-| `/sys/vm/<id>` | JSON | VM 实例注册 |
-
-### 3.5 命令队列 `/cmd/` `/notify/` `/done/`
-
-使用 Redis List (FIFO)，是进程间异步通信的数据结构。
-
-| 队列 | 生产者 | 消费者 | 用途 |
-|---|---|---|---|
-| `cmd:op-<backend>:<instance>` | VM | op-plat | 计算指令 |
-| `cmd:heap-<backend>:<instance>` | VM | heap-plat | 生命周期指令 |
-| `done:<vtid>` | op-plat, heap-plat | VM | 完成通知 |
-| `notify:vm` | pysdk | VM | 新 vthread 唤醒 |
-
-### 3.6 堆（隐式命名空间）
-
-除保留路径外，KV 空间中的所有其他路径均为**堆变量**。按命名约定自行管理。
-
-```
-/models/bert/encoder_0/weights     → {"dtype":"f32", "shape":[768,3072], ...}
-/data/cifar10/train                → {"dtype":"f32", "shape":[50000,3,32,32], ...}
-/checkpoints/run_001/step_1000     → ...
-```
-
----
-
-## 4. Vthread — 执行流的数据结构
-
-### 4.1 Vthread = 状态 + 栈 + 槽位
-
-```
-/vthread/<vtid>                 ← vthread 自身 (状态: pc + status)
-/vthread/<vtid>/[0,0]           ← 指令坐标 (栈内指令序列)
-/vthread/<vtid>/[0,-1]          ← 指令坐标 (读参数)
-/vthread/<vtid>/[0, 1]          ← 指令坐标 (写参数)
-/vthread/<vtid>/a               ← 命名槽位 (局部变量)
-/vthread/<vtid>/mm              ← 命名槽位 (局部变量, ./mm 解析)
-/vthread/<vtid>/[n,0]/[0,0]    ← 子栈 (CALL 产生)
-```
-
-**三个组成部分**：
-
-| 组成部分 | 路径模式 | 存储内容 | 类比 |
-|---|---|---|---|
-| vthread 状态 | `/vthread/<vtid>` 本身的 value | `{"pc":..., "status":...}` | 线程控制块 (TCB) |
-| 指令序列 | `/vthread/<vtid>/[addr0, addr1]` | 操作码 + 参数 | 栈中的指令 |
-| 命名槽位 | `/vthread/<vtid>/<name>` | 变量值 (int/float/tensor元信息) | 栈中局部变量 |
-
-### 4.2 二维寻址 `[addr0, addr1]`
-
-指令坐标 `[addr0, addr1]` 是元程的核心寻址发明：
-
-| addr1 的值 | 含义 | 示例 |
-|---|---|---|
-| `0` | 操作码 | `"matmul"`, `"call"`, `"add"` |
-| `-1, -2, ...` | 读取参数（左值） | `"/models/A"`, `"./a"`, `"3.14"` |
-| `1, 2, ...` | 写入参数（右值） | `"./Y"`, `"./out"` |
-
-**设计意图**：
-- addr0 是**序列维**：表示指令在栈帧中的顺序位置，PC 沿此维推进
-- addr1 是**角色维**：将一条指令的操作码和参数展开为平级 key，VM 零解析读取
-
-```
-指令: matmul(A, B) -> ./Y
-↓ 展开为执行层坐标:
-/vthread/1/[0, 0] = "matmul"      ← 操作码
-/vthread/1/[0,-1] = "/models/A"   ← 读参数 #1
-/vthread/1/[0,-2] = "/models/B"   ← 读参数 #2
-/vthread/1/[0, 1] = "./Y"         ← 写参数 #1
-```
-
-### 4.3 命名槽位与指令坐标的平级关系
-
-命名槽位（`/vthread/<vtid>/<name>`）与指令坐标（`/vthread/<vtid>/[addr0, addr1]`）
-是 `/vthread/<vtid>/` 下的**平级子 key**，互不嵌套：
-
-```
-/vthread/1/              ← vtid 自身（含 pc 和 status）
-/vthread/1/[0,0]         ← 指令坐标
-/vthread/1/[0,-1]        ← 指令坐标
-/vthread/1/[0,1]         ← 指令坐标
-/vthread/1/a             ← 命名槽位 (平级)
-/vthread/1/mm            ← 命名槽位 (平级)
-/vthread/1/[0,0]/[0,0]   ← 子栈 (嵌套，仅在 CALL 时存在)
-```
-
-**关键洞察**: 命名槽位不受 CALL/RETURN 嵌套影响。`./mm` 始终解析为 `/vthread/<vtid>/mm`，
-无论当前处于第几层子栈。这使得 VM 在翻译编译层指令时不需要处理嵌套路径重写。
-
-### 4.4 子栈 — CALL 的嵌套
-
-```
-根栈:           pc = "[0,0]"
-根栈 CALL n 后: pc = "[n,0]/[0,0]"
-子栈 CALL m 后: pc = "[n,0]/[m,0]/[0,0]"
-```
-
-子栈在路径上形成嵌套树，PC 字符串携带完整嵌套路径。
-RETURN 时 DELETE 子栈子树 +PC 回到父栈。
-
-### 4.5 Vthread 状态机
-
-| 状态 | 含义 | PC 位置 |
-|---|---|---|
-| `init` | 已创建，待 VM 拾取 | 入口指令 |
-| `running` | VM 正在调度执行 | 当前指令 |
-| `wait` | 等待 op-plat / heap-plat 完成 | 已发射但未完成的指令 |
-| `error` | 执行出错 | 出错指令 |
-| `done` | 执行完毕 | 末尾 + 1 |
-
----
-
-## 5. Func — 代码单元的数据结构
-
-### 5.1 三层架构
-
-函数有三种表示形式，分别服务于不同的角色：
-
-| 层 | 位置 | 格式 | 角色 | 受众 |
-|---|---|---|---|---|
-| 源码层 | `/src/func/<name>` | dxlang 文本 | 人类可读、平台无关 | pysdk 写入、编译器读取 |
-| 编译层 | `/op/<backend>/func/<name>` | dxlang 文本（融合/拆分后） | 后端优化后 | VM 读取执行 |
-| 执行层 | `/vthread/<vtid>/` | `[addr0, addr1]` 二维坐标 | 机器直接执行 | VM |
-
-```
-数据流:
-  pysdk → /src/func/             (源码)
-            ↓ 编译器
-  /op/op-cuda/func/              (CUDA 编译产物)
-  /op/op-metal/func/             (Metal 编译产物)
-            ↓ VM CALL 时 eager 翻译
-  /vthread/<vtid>/[n,0]/...      (执行层)
-```
-
-### 5.2 指令格式
-
-```
-opcode(read_param_1, read_param_2, ...) -> write_param_1, write_param_2
-```
-
-`->` 左侧为输入（只读），右侧为输出（写入）。
-参数可以是绝对路径 `"/models/A"`、相对路径 `"./a"`、或立即数 `"3.14"`。
-
-### 5.3 控制流嵌套
-
-```
-/src/func/<name>/N               = "if" 或 "for"  ← 关键字
-/src/func/<name>/N/cond          = 条件表达式
-/src/func/<name>/N/true/0        = true 分支第 0 条
-/src/func/<name>/N/false/0       = false 分支第 0 条
-/src/func/<name>/N/body/0        = 循环体第 0 条
-```
-
-指令的嵌套结构与 Redis key 的嵌套结构**完全同构**。
-
----
-
-## 6. Tensor — 数据的数据结构
-
-### 6.1 Tensor 元信息
-
-Tensor 的实际数据存于外部存储（POSIX shm、GPU 显存）。
-KV 空间中仅存**元信息引用**：
+Tensor 是元程唯一的一级扩展数据类型。它是一个多维数组，其实际数据存储于外部内存
+（POSIX shm / GPU 显存），KV 空间中仅存储**元信息引用**：
 
 ```json
 {
@@ -303,139 +75,287 @@ KV 空间中仅存**元信息引用**：
 }
 ```
 
-| 字段 | 说明 |
-|---|---|
-| `dtype` | 数据类型：f32, f16, i32, ... |
-| `shape` | 形状数组 |
-| `byte_size` | 总字节数 = element_count × dtype_size |
-| `device` | 所在设备：gpu0, gpu1, cpu |
-| `address` | 物理地址信息 (shm 名称、机器标识) |
-| `version` | 每次写入递增的版本号 |
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `dtype` | string | 是 | `f16`, `f32`, `f64`, `bf16`, `bf8`, `i8`, `i16`, `i32`, `i64`, `u8`, `bool` |
+| `shape` | array[int] | 是 | 如 `[1024, 512]`, `[2, 3, 224, 224]` |
+| `byte_size` | int | 是 | element_count × dtype_size。对于 bool，1 bit → 向上取整到字节 |
+| `device` | string | 是 | `gpu0`, `gpu1`, `cpu` |
+| `address` | object | 是 | 物理地址信息 |
+| `address.node` | string | 是 | 机器标识，如 `"n1"` |
+| `address.type` | string | 是 | `"shm"` (POSIX共享内存) 或 `"gpu"` (GPU显存直接引用) |
+| `address.shm_name` | string | 是 | POSIX shm 名称，如 `"/deepx_t_abc123"` |
+| `ctime` | int | 否 | 创建时间戳 |
+| `version` | int | 否 | 每次写入后递增 |
 
-### 6.2 Tensor 在系统中的流转
+### 3.2 dtype 字节宽度
 
-```
-模型权重（堆）:
-  /models/bert/weights    ← 长生命周期，全局共享
-
-计算中间结果（栈）:
-  /vthread/1/mm           ← 短生命周期，vthread 内可见
-
-输入/输出（堆或栈）:
-  取决于 pysdk 的用户设计
-```
-
-### 6.3 基础类型存储
-
-对于非 Tensor 的简单值（int、float、bool），直接存为 value：
-
-```
-/vthread/1/a       = 1
-/vthread/1/b       = 3.14
-/vthread/1/flag    = true
-```
-
----
-
-## 7. 命令队列 — 通信数据结构
-
-命令队列使用 FIFO List（如 Redis RPUSH/BLPOP），是进程间异步通信的核心机制：
+| dtype | 字节数 | C/CUDA 对应 | 说明 |
+|-------|--------|-----------|------|
+| `f16` | 2 | `half` / `__half` | IEEE 754 half |
+| `f32` | 4 | `float` | IEEE 754 single |
+| `f64` | 8 | `double` | IEEE 754 double |
+| `bf16` | 2 | `__nv_bfloat16` | Brain floating point |
+| `bf8` | 1 | — | 8-bit brain float (E4M3 / E5M2) |
+| `i8` | 1 | `int8_t` / `char` | |
+| `i16` | 2 | `int16_t` / `short` | |
+| `i32` | 4 | `int` / `int32_t` | |
+| `i64` | 8 | `long long` / `int64_t` | |
+| `u8` | 1 | `uint8_t` | |
+| `bool` | 1 | `bool` | 每元素 1 bit，byte_size = ceil(n/8) |
 
 ```
-生产者                  队列                       消费者
-──────                  ────                       ──────
-VM          → PUSH →  cmd:op-cuda:0    → RPOP →  op-cuda
-VM          → PUSH →  cmd:heap-metal:0 → RPOP →  heap-metal
-op-plat     → LPUSH → done:<vtid>      → BLPOP→  VM
-pysdk       → LPUSH → notify:vm        → BLPOP→  VM
+byte_size 计算:
+  element_count = prod(shape)                                    // shape 各维乘积
+  byte_size     = element_count * dtype_size                     // 普通类型
+  byte_size     = ceil(element_count / 8)                        // bool 类型
 ```
 
-每条消息携带完整上下文（vtid, pc, 参数），消费者**无需回查**其他数据源即可执行。
+### 3.3 与 C / CUDA 的数据结构对比
 
-### 7.1 op-plat 指令
+#### 3.3.1 数组声明对比
 
-```json
+```
+C:
+  float A[1024][512];                      ← 编译期确定大小，栈或数据段
+  float* A = malloc(1024 * 512 * 4);       ← 运行时分配，堆
+
+CUDA:
+  float* d_A;
+  cudaMalloc(&d_A, 1024 * 512 * 4);        ← 显存分配
+  __shared__ float s_A[256];               ← 共享内存
+
+元程:
+  GET /models/A → {dtype:"f32", shape:[1024,512], address:{shm_name:"/deepx_t_xxx"}}
+                                              ← KV 中存元信息
+  shm_open("/deepx_t_xxx") → ptr              ← 实际数据在 shm 中
+```
+
+#### 3.3.2 核心差异
+
+| 维度 | C | CUDA | 元程 |
+|------|---|------|------|
+| **数据位置** | 栈/堆(CPU 内存) | global/shared/constant 显存 | POSIX shm / GPU 显存（由 device 字段决定） |
+| **寻址方式** | 指针 `float*` + 偏移 | 指针 `float*` + 偏移 | KV 路径 `GET /models/A` → 元信息 → shm ptr |
+| **形状信息** | 丢失（退化为指针） | 丢失（退化为指针） | **保留**（shape 字段始终可查） |
+| **类型信息** | 编译期已知，运行期丢失 | 同 C | **保留**（dtype 字段始终可查） |
+| **跨进程传递** | 需序列化 + IPC | 需 cudaIpcOpenMemHandle | 路径字符串 + shm name（元程原生） |
+| **生命周期** | 作用域/手动 free | 手动 cudaFree | heap-plat 管理 newtensor/deltensor |
+| **多设备** | 不涉及 | 单 GPU，显式 cudaMemcpy | 元信息标注 device，heap-plat 负责跨设备克隆 |
+| **并发安全** | 锁 | 原子操作 + 同步 | Redis LOCK / WATCH + 原子操作 |
+
+#### 3.3.3 形状/类型不丢失的设计收益
+
+C 和 CUDA 中，数组一旦传给函数就退化为指针，丢失 shape 和类型信息：
+
+```c
+// C: 函数签名看不到 shape
+void matmul(float* A, float* B, float* C, int M, int N, int K);
+//          ↑ 仅指针            ↑ shape 靠额外参数传递
+
+// CUDA: 同样问题，加上显存地址语义
+__global__ void matmul_kernel(float* A, float* B, float* C, int M, int N, int K);
+```
+
+元程中，shape 和 dtype 是 tensor 元信息的**一等字段**，不会丢失：
+
+```
+op-plat 收到的指令:
 {
-    "vtid": "1",
-    "pc": "[3,0]",
-    "opcode": "matmul",
-    "inputs": [{"key": "...", "dtype": "f32", "address": {...}}],
-    "outputs": [{"key": "...", "dtype": "f32", "address": {...}}],
-    "params": {"transpose_a": false}
+  "opcode": "matmul",
+  "inputs": [
+    {"key": "/models/A", "dtype": "f32", "shape": [1024, 512], "address": {...}},
+    {"key": "/models/B", "dtype": "f32", "shape": [512, 256],  "address": {...}}
+  ],
+  "outputs": [
+    {"key": "/vthread/1/c", "dtype": "f32", "shape": [1024, 256], "address": {...}}
+  ]
 }
 ```
 
-### 7.2 heap-plat 指令
+op-plat 从指令中直接获取 shape 和 dtype，无需额外查询。这消除了 C/CUDA 中
+"传指针的同时还要传 shape 参数"的惯例。
 
-```json
-// newtensor
-{"op": "newtensor", "key": "/models/weights", "dtype": "f32", "shape": [1024,512]}
-// deltensor
-{"op": "deltensor", "key": "/models/weights"}
-// clonetensor
-{"op": "clonetensor", "src": "/models/weights", "dst": "/models/weights_gpu1"}
+---
+
+## 4. KV 空间中的类型布局
+
+### 4.1 概念上的"内存映射"
+
+KV 空间的路径不是线性的字节地址，而是一棵键值树。不同类型的值分布在不同的子树中：
+
+```
+/ (根)
+│
+├── 基础类型存放在 vthread 栈或系统路径中，value 是字面量
+├── Tensor 元信息分布在堆路径和 vthread 栈中，value 是 JSON
+└── Tensor 实际数据不存 KV 空间，通过 shm_name 引用
 ```
 
-### 7.3 完成通知
+### 4.2 各路径区间的类型分布
 
-```json
-{"pc": "[3,0]", "status": "ok", "outputs_updated": [{"key": "..."}]}
+| 路径区间 | 存放类型 | value 形式 | 读写者 |
+|----------|---------|-----------|--------|
+| `/vthread/<vtid>/<name>` | **基础类型** 或 **tensor 元信息** | 字面量 或 JSON | VM, op-plat |
+| `/vthread/<vtid>` | **JSON**（状态对象） | `{"pc":"...","status":"..."}` | VM（写），pysdk（读） |
+| `/vthread/<vtid>/[addr0, addr1]` | **string**（指令片段） | `"matmul"`, `"./a"`, `"3.14"` | VM（读写） |
+| `/models/*`, `/data/*` | **tensor 元信息** | JSON | heap-plat（写），VM/op-plat（读） |
+| `/src/func/<name>/N` | **string**（指令文本） | `"add(A, B) -> ./C"` | pysdk（写），VM（读） |
+| `/op/<backend>/func/<name>/N` | **string**（编译后指令） | 同上 | 编译器（写），VM（读） |
+| `/sys/*` | **基础类型** 或 **JSON** | int 或 JSON | 各进程（注册/读取） |
+| `/cmd/*`, `/done/*`, `/notify/*` | **JSON**（消息） | 见下方 | 各进程 |
+
+### 4.3 具体布局示例
+
+```
+# === 基础类型 ===
+/vthread/1/flag        = true                      ← bool, 直接存
+/vthread/1/iter        = 0                         ← int, 直接存
+/vthread/1/lr          = 0.001                     ← float, 直接存
+/sys/vtid_counter      = 42                        ← int, 直接存 (Redis INCR 可用)
+
+# === Tensor 元信息 (JSON) ===
+/models/bert/W         = {"dtype":"f32","shape":[768,3072],"device":"gpu0","address":{...},"byte_size":...}
+/models/bert/b         = {"dtype":"f32","shape":[3072],"device":"gpu0","address":{...},"byte_size":...}
+/vthread/1/mm          = {"dtype":"f32","shape":[1024,256],"device":"gpu0","address":{...},"byte_size":...}
+/vthread/1/out         = {"dtype":"f32","shape":[1024,10],"device":"cpu","address":{...},"byte_size":...}
+
+# === 指令 (string) ===
+/src/func/gemm/0       = "matmul(A, B) -> ./Y"
+/vthread/1/[0,0]       = "matmul"
+/vthread/1/[0,-1]      = "/models/A"
+/vthread/1/[0,-2]      = "/models/B"
+/vthread/1/[0, 1]      = "./Y"
+
+# === vthread 状态 (JSON) ===
+/vthread/1             = {"pc":"[0,0]","status":"running"}
+
+# === 系统注册 (JSON) ===
+/sys/op-plat/cuda:0    = {"program":"op-cuda","device":"gpu0","status":"running","load":0.3}
+/sys/config            = {"max_vthreads":100,"timeout_ms":30000}
+
+# === 命令消息 (JSON, 存储在 List 中) ===
+cmd:op-cuda:0          ← RPUSH {"vtid":"1","pc":"[0,0]","opcode":"matmul","inputs":[...],"outputs":[...]}
+done:1                 ← LPUSH {"pc":"[0,0]","status":"ok"}
+```
+
+### 4.4 值大小约束
+
+| 类型 | 最大 value 大小 | 原因 |
+|------|----------------|------|
+| 基础类型 (int/float/bool) | ~15 字节 | 字面量字符串 |
+| string | 1 KB | 避免 Redis 大 key 性能问题 |
+| Tensor 元信息 (JSON) | ~10 KB | 主要是 address 字段，shm_name 通常 < 64B |
+| Tensor 实际数据 | **不存 KV** | 存外部 shm/显存，KV 仅存引用 |
+| 命令消息 (JSON) | ~10 KB | 包含 tensor 元信息的完整拷贝 |
+
+**设计原则**：KV 空间存**描述**，外部存储存**数据**。这是元程与 C/CUDA 的又一
+根本差异——C 的 struct 是数据本身，元程的 value 是数据的**引用和描述**。
+
+---
+
+## 5. Tensor 元信息 vs C struct vs CUDA 内存描述符
+
+### 5.1 三方对照
+
+```
+C struct (在 CPU 内存中表示一个数组):
+  struct {
+      float* data;          ← 指向实际数据
+      int dims[4];          ← 形状（可选，取决于库）
+      int ndim;             ← 维度数（可选）
+      int dtype;            ← 类型枚举（可选，通常编译期已知）
+  }
+  问题: 每个库自己定义 (PyTorch ATen, NumPy, Eigen 各不同)
+
+CUDA 内存描述符:
+  struct cudaPointerAttributes {
+      enum cudaMemoryType memoryType;    ← host / device / managed
+      int device;                        ← GPU 编号
+      void* devicePointer;               ← 设备指针
+      void* hostPointer;                 ← 主机指针（统一内存时）
+  }
+  问题: 没有 shape / dtype，仅描述"指针属性"，不是"数组属性"
+
+元程 Tensor 元信息 (JSON, 存于 KV):
+  {
+      "dtype": "f32",                    ← 类型始终可查
+      "shape": [1024, 512],              ← 形状始终可查
+      "byte_size": 2097152,              ← 预计算，O(1) 获取
+      "device": "gpu0",                  ← 设备标注
+      "address": {
+          "node": "n1",                  ← 机器
+          "type": "shm",                 ← 内存类型
+          "shm_name": "/deepx_t_xxx"     ← 全局唯一标识
+      },
+      "version": 5                       ← 变更追踪
+  }
+  优势: 自包含、跨语言、跨进程、携带完整描述
+```
+
+### 5.2 跨设备传递对比
+
+```
+场景: GPU0 上的 tensor 需要传给 GPU1
+
+CUDA:
+  cudaMemcpyPeer(dst, 1, src, 0, size);    ← 显式 P2P 拷贝
+  // 需要知道: 源指针, 目标指针, 大小, 两个 GPU 编号
+  // 调用者自己管理这些信息
+
+元程:
+  1. VM 发送 clonetensor 到 heap-plat:
+     {"op":"clonetensor", "src":"/models/W", "dst":"/models/W_gpu1", "device":"gpu1"}
+  2. heap-plat GET /models/W → 获取完整元信息 (含当前 device)
+  3. heap-plat 在 gpu1 上分配 shm → memcpy → 写入新元信息
+  4. 完成
+
+  // VM 只需要知道路径和目标 device，heap-plat 处理其余全部
 ```
 
 ---
 
-## 8. 锁 — 并发控制数据结构
+## 6. 类型安全与运行时检查
 
-```
-/lock/<resource>   → holder 标识符, TTL 自动释放
-```
+C/CUDA 的类型检查在编译期，运行时只有原始字节。元程的类型检查在运行时：
 
-使用场景：
-- 保护堆 tensor 的并发修改: `/lock/tensor:/models/weights`
-- 保护 vthread 拾取的原子性: VM 用 WATCH/MULTI/EXEC 事务
-
----
-
-## 9. 数据结构关系总图
-
-```
-┌───────────────────────────────────────────────── KV 空间 ──────────────────────────────────────────────────┐
-│                                                                                                             │
-│  /src/func/                    /op/<backend>/func/              /vthread/<vtid>/                             │
-│  ┌──────────────────┐         ┌───────────────────┐           ┌──────────────────────┐                      │
-│  │ 函数签名 (text)   │         │ 编译后签名 (text)  │           │ {pc, status}          │                      │
-│  │ func/gemm/0        │ 编译器  │ func/gemm/0        │ VM eager  │ [0,0] = "matmul"      │                      │
-│  │ func/gemm/1        │ ──────→ │ ...                │ ────────→ │ [0,-1] = "/models/A"  │                      │
-│  │ ...                │         │                    │  翻译     │ mm = tensor元信息      │                      │
-│  └──────────────────┘         └───────────────────┘           │ /[n,0]/... (子栈)     │                      │
-│                                                                 └──────────────────────┘                      │
-│  /models/                      /cmd/ /notify/ /done/           /sys/                                         │
-│  ┌──────────────────┐         ┌───────────────────┐           ┌──────────────────────┐                      │
-│  │ 堆变量 (tensor)    │         │ 命令队列 (List)    │           │ 系统状态 (JSON)       │                      │
-│  │ weights → {dtype,  │         │ cmd:op-cuda:0      │           │ vtid_counter = 42     │                      │
-│  │  shape, shm}       │         │ done:<vtid>        │           │ op-plat/cuda:0 → {...}│                      │
-│  │ data/cifar10 → ... │         │ notify:vm          │           │ heap-plat/metal:0→{..}│                      │
-│  └──────────────────┘         └───────────────────┘           └──────────────────────┘                      │
-│                                                                                                             │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 10. 数据结构设计原则
-
-| 原则 | 说明 | 体现 |
+| | C / CUDA | 元程 |
 |---|---|---|
-| **同构性** | 路径树的嵌套结构与语义层级一致 | 控制流嵌套 = key 嵌套 |
-| **平级不嵌套** | 不同角色的数据不互相嵌套 | 命名槽位 ⊥ 指令坐标 |
-| **自描述** | 每条数据携带完整上下文，消费者无需回查 | 命令队列消息包含 vtid+pc+完整参数 |
-| **分离关注点** | 源码/编译/执行三层独立演进 | `/src/func/` ⊥ `/op/.../func/` ⊥ `/vthread/` |
-| **值大小约束** | 大对象不存 KV 空间，仅存引用 | Tensor 数据存 shm，KV 存 meta |
-| **异步优先** | 所有跨进程通信通过队列，天然异步 | 命令队列 + 完成通知 |
+| 检查时机 | 编译期 `float* p = (float*)malloc(...)` | 运行时 op-plat 解析 dtype 字段 |
+| 类型错误后果 | 编译失败（安全）或未定义行为（cast） | op-plat 返回 error: `"dtype mismatch: f32 vs f16"` |
+| shape 不匹配 | 段错误 / 静默错误 | op-plat 返回 error: `"shape mismatch: [10] vs [20]"` |
+| 内存越界 | 段错误 / 安全漏洞 | shm 大小由 byte_size 约束，op-plat 可做边界检查 |
+
+---
+
+## 7. 汇总：元程数据类型体系
+
+```
+元程数据类型
+├── 基础类型 (value = 字面量)
+│   ├── int       → "42"
+│   ├── float     → "3.14"
+│   ├── bool      → "true"
+│   └── string    → "hello"
+│
+├── 扩展类型 (value = JSON 元信息，数据在外部)
+│   └── tensor
+│       ├── dtype    : f16 | f32 | f64 | bf16 | bf8 | i8 | i16 | i32 | i64 | u8 | bool
+│       ├── shape    : [d1, d2, ...]
+│       ├── byte_size: element_count × dtype_size
+│       ├── device   : gpu0 | gpu1 | cpu
+│       └── address  : {node, type, shm_name}
+│
+└── 结构化类型 (value = JSON 对象，数据在 KV 中)
+    ├── vthread 状态  : {pc, status, error?}
+    ├── 进程注册      : {program, device, status, load}
+    ├── 算子元数据    : {category, dtype, max_shape, replaces?}
+    └── 命令消息      : {vtid, pc, opcode, inputs, outputs}
+```
 
 ---
 
 > **关联文档**:
+> - [README.md](README.md) — 元程总篇（核心思想：程序=数据结构+函数+数据）
 > - [spec-v1.md](spec-v1.md) — 元程规范 v1（抽象模型）
-> - [deepx-design.md](deepx-design.md) — DeepX 实现设计（五个核心）
-> - [redis-keys.md](redis-keys.md) — Redis Key 设计速查表
+> - [redis-keys.md](redis-keys.md) — Redis Key 布局速查表
