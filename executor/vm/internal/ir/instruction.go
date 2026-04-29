@@ -135,7 +135,10 @@ func extractAddr0(coord string) int {
 	s := strings.Trim(coord, "[]")
 	parts := strings.Split(s, ",")
 	if len(parts) > 0 {
-		n, _ := strconv.Atoi(strings.TrimSpace(parts[0]))
+		n, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+		if err != nil {
+			return 0
+		}
 		return n
 	}
 	return 0

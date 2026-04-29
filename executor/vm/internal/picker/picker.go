@@ -82,7 +82,10 @@ func tryPick(ctx context.Context, rdb *redis.Client, vtid string) bool {
 	}, key)
 
 	if err != nil && err != errSkip {
-		log.Printf("tryPick %s error: %v", vtid, err)
+		log.Printf("tryPick %s error (vthread will be marked error): %v", vtid, err)
+		// 标记 vthread 为 error 状态，避免被反复尝试
+		errData, _ := json.Marshal(state.VThreadState{PC: "[0,0]", Status: "error"})
+		rdb.Set(ctx, key, errData, 0)
 	}
 	return err == nil
 }

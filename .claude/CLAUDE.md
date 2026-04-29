@@ -30,3 +30,13 @@
 - `/build-op-metal` — 构建 Metal 计算平面
 - `/build-heap-metal` — 构建 Metal 堆管理平面
 - `/reset-redis` — 重置 Redis 测试环境 (FLUSHDB)
+
+## 代码审计
+- `@audit-vm` — VM 代码质量审计 agent，检查 6 条强制规则：
+  0. 零 panic（VM 是常驻服务，任何 panic 都会导致崩溃）
+  1. 严禁吞错误（所有 error 返回值必须检查，禁用 `_` 丢弃）
+  2. 严禁裸 continue 吞错误（循环中错误必须至少 log）
+  3. IF 条件显式求值（不允许隐式 truthiness）
+  4. 错误必须可追溯（SetError 必须含 vtid/pc/msg 上下文）
+  5. JSON 序列化/反序列化错误必须检查
+  6. Redis 操作返回的 error 必须检查

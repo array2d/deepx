@@ -71,6 +71,9 @@ static void notify_done(redisContext *c, const std::string &vtid, const std::str
     }
     std::string key = "done:" + vtid;
     redisReply *r = redis_cmd(c, "LPUSH %s %s", key.c_str(), done.dump().c_str());
+    if (!r || r->type == REDIS_REPLY_ERROR) {
+        std::cerr << "[heap] notify_done LPUSH failed for " << vtid << ": " << (r ? r->str : "NULL") << "\n";
+    }
     REDIS_FREE(r);
     std::cout << "[heap] done " << vtid << " pc=" << pc << " status=" << status << "\n";
 }

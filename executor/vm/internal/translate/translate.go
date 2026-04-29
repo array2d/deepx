@@ -7,17 +7,19 @@ package translate
 import (
 	"context"
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
 
 	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
 	"git.array2d.com/ai/deepx/executor/vm/internal/route"
+	"git.array2d.com/ai/deepx/executor/vm/internal/state"
 	"github.com/redis/go-redis/v9"
 )
 
 // handleCall 执行 CALL 指令的 eager 翻译。
-// 返回子栈第一条指令的 PC。
+// 返回子栈第一条指令的 PC；致命错误时设置 error 状态并返回当前 pc。
 func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) string {
 	funcName := inst.Reads[0]
 
@@ -29,7 +31,10 @@ func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 	if err != nil {
 		sig, err = rdb.Get(ctx, "/src/func/"+funcName).Result()
 		if err != nil {
-			panic(fmt.Sprintf("func %s not found in /op/%s/func/ or /src/func/", funcName, backend))
+			msg := fmt.Sprintf("func %s not found in /op/%s/func/ or /src/func/", funcName, backend)
+			log.Printf("[%s] CALL error: %s", vtid, msg)
+			state.SetError(ctx, rdb, vtid, pc, msg)
+			return pc
 		}
 	}
 
@@ -63,7 +68,10 @@ func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 	for i, dxlangLine := range compiled {
 		parsed, err := ir.ParseDxlang(dxlangLine)
 		if err != nil {
-			continue
+			msg := fmt.Sprintf("parse error at body[%d]: %v", i, err)
+			log.Printf("[%s] CALL translate error: %s", vtid, msg)
+			state.SetError(ctx, rdb, vtid, pc, msg)
+			return pc
 		}
 
 		replaceParams(parsed.Reads, bindings)
@@ -88,7 +96,10 @@ func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		panic(fmt.Sprintf("CALL translate pipeline failed: %v", err))
+		msg := fmt.Sprintf("CALL translate pipeline failed: %v", err)
+		log.Printf("[%s] CALL error: %s", vtid, msg)
+		state.SetError(ctx, rdb, vtid, pc, msg)
+		return pc
 	}
 
 	// 8. 返回子栈第一条指令的 PC
@@ -128,9 +139,13 @@ func HandleReturn(ctx context.Context, rdb *redis.Client, vtid string, pc string
 	}
 
 	// 2. 删除当前子栈
-	keys, _ := rdb.Keys(ctx, "/vthread/"+vtid+"/"+parentPC+"/*").Result()
-	if len(keys) > 0 {
-		rdb.Del(ctx, keys...)
+	keys, err := rdb.Keys(ctx, "/vthread/"+vtid+"/"+parentPC+"/*").Result()
+	if err != nil {
+		log.Printf("[%s] RETURN KEYS error: %v", vtid, err)
+	} else if len(keys) > 0 {
+		if err := rdb.Del(ctx, keys...).Err(); err != nil {
+			log.Printf("[%s] RETURN DEL error: %v", vtid, err)
+		}
 	}
 
 	// 3. PC 恢复到父栈 CALL 的下一条
@@ -210,7 +225,11 @@ func extractParamNames(s string) []string {
 // KEYS 返回顺序不确定，按数字后缀排序以保证指令顺序。
 func mgetAll(ctx context.Context, rdb *redis.Client, base string) []string {
 	keys, err := rdb.Keys(ctx, base+"/*").Result()
-	if err != nil || len(keys) == 0 {
+	if err != nil {
+		log.Printf("mgetAll KEYS error for %s: %v", base, err)
+		return nil
+	}
+	if len(keys) == 0 {
 		return nil
 	}
 
@@ -227,6 +246,7 @@ func mgetAll(ctx context.Context, rdb *redis.Client, base string) []string {
 		suffix := k[len(basePrefix):]
 		n, err := strconv.Atoi(suffix)
 		if err != nil {
+			log.Printf("mgetAll skip non-numeric key: %s", k)
 			continue
 		}
 		sorted = append(sorted, indexedKey{key: k, index: n})
@@ -244,6 +264,7 @@ func mgetAll(ctx context.Context, rdb *redis.Client, base string) []string {
 
 	vals, err := rdb.MGet(ctx, orderedKeys...).Result()
 	if err != nil {
+		log.Printf("mgetAll MGET error for %s: %v", base, err)
 		return nil
 	}
 

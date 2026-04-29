@@ -213,7 +213,7 @@ func Compute(ctx context.Context, rdb *redis.Client, vtid string, pc string, ins
 		return err
 	}
 
-	if status, _ := done["status"].(string); status == "error" {
+	if status, ok := done["status"].(string); ok && status == "error" {
 		errInfo := fmt.Sprintf("%v", done["error"])
 		state.SetError(ctx, rdb, vtid, pc, errInfo)
 		return fmt.Errorf("op error: %s", errInfo)
@@ -227,7 +227,10 @@ func Compute(ctx context.Context, rdb *redis.Client, vtid string, pc string, ins
 // Lifecycle 分发生命周期指令到 heap-plat。
 func Lifecycle(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) error {
 	task := buildHeapTask(vtid, pc, inst)
-	taskJSON, _ := json.Marshal(task)
+	taskJSON, err := json.Marshal(task)
+	if err != nil {
+		return fmt.Errorf("marshal heap task: %w", err)
+	}
 
 	if err := rdb.RPush(ctx, "cmd:heap-metal:0", taskJSON).Err(); err != nil {
 		return fmt.Errorf("push heap task: %w", err)
@@ -240,7 +243,12 @@ func Lifecycle(ctx context.Context, rdb *redis.Client, vtid string, pc string, i
 		state.SetError(ctx, rdb, vtid, pc, fmt.Sprintf("heap op timeout: %v", err))
 		return err
 	}
-	_ = done
+
+	if status, ok := done["status"].(string); ok && status == "error" {
+		errInfo := fmt.Sprintf("%v", done["error"])
+		state.SetError(ctx, rdb, vtid, pc, errInfo)
+		return fmt.Errorf("heap op error: %s", errInfo)
+	}
 
 	state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 	return nil

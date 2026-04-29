@@ -1,6 +1,7 @@
 #include "lifecycle.h"
 
 #include <cctype>
+#include <iostream>
 
 namespace memcuda {
 
@@ -26,7 +27,12 @@ static std::string ExtractString(const std::string& json, const std::string& key
 static long long ExtractInt(const std::string& json, const std::string& key) {
     auto s = ExtractString(json, key);
     if (s.empty()) return 0;
-    return std::stoll(s);
+    try {
+        return std::stoll(s);
+    } catch (...) {
+        std::cerr << "[lifecycle] ExtractInt failed for key=" << key << " value=" << s << "\n";
+        return 0;
+    }
 }
 
 LifecycleWorker::LifecycleWorker(Registry* registry, const std::string& queue_key)
@@ -44,15 +50,15 @@ bool LifecycleWorker::Parse(const std::string& json, LifecycleCommand& out) cons
 }
 
 void LifecycleWorker::Handle(const LifecycleCommand& cmd) {
-    if (cmd.op == "create") {
+    if (cmd.op == "newtensor") {
         registry_->CreateOrGet(cmd.name, cmd.dtype, cmd.shape, cmd.device, 0, cmd.node, cmd.pid, 0, "");
         return;
     }
-    if (cmd.op == "get") {
+    if (cmd.op == "gettensor") {
         registry_->RefInc(cmd.name);
         return;
     }
-    if (cmd.op == "delete") {
+    if (cmd.op == "deltensor") {
         registry_->RefDec(cmd.name);
         return;
     }
@@ -68,6 +74,7 @@ void LifecycleWorker::RunOnce(int timeout_seconds) {
     }
     LifecycleCommand cmd;
     if (!Parse(msg, cmd)) {
+        std::cerr << "[lifecycle] failed to parse command: " << msg << "\n";
         return;
     }
     Handle(cmd);

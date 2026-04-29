@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"strings"
 
@@ -69,7 +70,10 @@ func Select(ctx context.Context, rdb *redis.Client, opcode string) (string, erro
 			continue
 		}
 		var info instInfo
-		json.Unmarshal([]byte(val), &info)
+		if err := json.Unmarshal([]byte(val), &info); err != nil {
+			log.Printf("route.Select: unmarshal instance info %s: %v", instKey, err)
+			continue
+		}
 
 		if info.Status != "running" {
 			continue
@@ -93,7 +97,11 @@ func Select(ctx context.Context, rdb *redis.Client, opcode string) (string, erro
 // DetermineBackend 判断 func 的编译后端 (按优先级)
 func DetermineBackend(ctx context.Context, rdb *redis.Client, funcName string) string {
 	for _, b := range []string{"op-metal", "op-cuda", "op-cpu"} {
-		exists, _ := rdb.Exists(ctx, fmt.Sprintf("/op/%s/func/%s", b, funcName)).Result()
+		exists, err := rdb.Exists(ctx, fmt.Sprintf("/op/%s/func/%s", b, funcName)).Result()
+		if err != nil {
+			log.Printf("route.DetermineBackend: EXISTS error for %s: %v", b, err)
+			continue
+		}
 		if exists > 0 {
 			return b
 		}
