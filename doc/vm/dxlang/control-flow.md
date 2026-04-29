@@ -1,39 +1,110 @@
 # deepxir 控制流设计方案
 
-## 1. 三层对比：Assembly IR、deepxir、C 语言
+## 1. 四层对比：Assembly IR、deepxir、MLIR、C 语言
+
+> **MLIR** (Multi-Level Intermediate Representation) 与 deepxir 的设计目标高度重合：
+> 都面向深度学习计算场景，都需要在计算图和指令级之间提供可组合的中间表示。
+> deepxir 可以视为 MLIR 在 **KV 存储原生、分布式调度、多后端异构** 方向上的一个垂直领域方言实现。
 
 ### 1.1 函数抽象
 
-| 维度 | Assembly IR | deepxir | C 语言 |
-|------|-----------|---------|--------|
-| 函数单元 | label + 指令序列 | `func name(params) -> (rets) { body }` | `ret_type name(params) { body }` |
-| 调用约定 | 手动 push/pop 寄存器、手动跳转 | CALL 指令 + VM 自动管理子栈帧 | 函数调用表达式，编译器管理栈帧 |
-| 参数传递 | 寄存器 / 栈偏移 | Redis KV 路径绑定（形参→实参） | 按值 / 按引用，编译器分配 |
-| 返回值 | rax/eax 寄存器 或 栈 | 隐式 RETURN 将输出形参值回传父栈 | `return` 表达式 |
-| 栈帧 | push rbp; sub rsp, N | `/vthread/<vtid>/<pc>/` 子键空间 | 连续栈内存 |
+| 维度 | Assembly IR | deepxir | MLIR | C 语言 |
+|------|-----------|---------|------|--------|
+| 函数单元 | label + 指令序列 | `def name(params) -> (rets) { body }` | `func.func @name(%arg: T) -> T { body }` | `ret_type name(params) { body }` |
+| 调用约定 | 手动 push/pop 寄存器、手动跳转 | CALL 指令 + VM 自动管理子栈帧 | `func.call @callee(%args)` + 显式 SSA 结果 | 函数调用表达式，编译器管理栈帧 |
+| 参数传递 | 寄存器 / 栈偏移 | Redis KV 路径绑定（形参→实参） | Block arguments (SSA 值), 支持 memref 传递 | 按值 / 按引用，编译器分配 |
+| 返回值 | rax/eax 寄存器 或 栈 | 隐式 RETURN 将输出形参值回传父栈 | `func.return %val : T` 显式返回 SSA 值 | `return` 表达式 |
+| 栈帧 | push rbp; sub rsp, N | `/vthread/<vtid>/<pc>/` 子键空间 | Region + block hierarchy, alloc 可下沉 | 连续栈内存 |
+| 类型系统 | 无 (原始字节) | 签名标注型别，运行时类型感知求值 | 完整类型体系 (tensor/memref/vector/...) | 编译期静态类型 |
 
-**deepxir 的定位**：比汇编多了一层 KV 空间抽象——函数的"栈帧"是 Redis 中的子树，参数通过路径绑定传递。比 C 少了一层编译优化——没有寄存器分配、没有 SSA、没有复杂的调用约定。
+**deepxir 的定位**：在汇编之上抽象了 KV 空间——函数帧是 Redis 子树，参数通过路径绑定传递。与 MLIR 共享"深度学习 IR"的目标，但 MLIR 侧重编译优化（SSA、dialect 混用、pass pipeline），deepxir 侧重运行时调度（Redis 原生、多后端路由、vthread 并发）。比 C 少一层编译复杂度，比 MLIR 少一层类型和 SSA 的抽象约束。
 
 ### 1.2 控制流原语
 
-| 原语 | Assembly IR | deepxir (当前) | deepxir (目标) | C 语言 |
-|------|-----------|--------------|--------------|--------|
-| 顺序执行 | PC++ | `[i,0] → [i+1,0]` | 同左 | `;` 分隔 |
-| 无条件跳转 | `jmp label` | — (缺失) | `jump <block>` | `goto label` |
-| 条件分支 | `cmp; je/jne label` | `if cond → true/false 子树` (部分) | `if (cond) block1 else block2` | `if/else` |
-| 循环 | `jmp` 回跳 | — (缺失) | `for` / `while` 展开为基本块 | `for` / `while` |
-| 函数调用 | `call func` | `CALL func → eager inline 翻译` | 同左 | `func(args)` |
-| 函数返回 | `ret` | 隐式 RETURN + 子栈清除 | 同左 | `return expr` |
-| 多路分支 | `jmp [table]` | — | `switch` → 跳转表 | `switch/case` |
+| 原语 | Assembly IR | deepxir (当前) | deepxir (目标) | MLIR | C 语言 |
+|------|-----------|--------------|--------------|------|--------|
+| 顺序执行 | PC++ | `[i,0] → [i+1,0]` | 同左 | block 内顺序 op | `;` 分隔 |
+| 无条件跳转 | `jmp label` | — (缺失) | `jump <block>` | `cf.br ^block` | `goto label` |
+| 条件分支 | `cmp; je/jne label` | `if cond → true/false 子树` (部分) | `if (cond) block1 else block2` | `scf.if` / `cf.cond_br ^t, ^f` | `if/else` |
+| 循环 | `jmp` 回跳 | — (缺失) | `for` / `while` 展开为基本块 | `scf.for` / `scf.while` / `affine.for` | `for` / `while` |
+| 函数调用 | `call func` | `CALL func → eager inline 翻译` | 同左 | `func.call @callee(%args)` | `func(args)` |
+| 函数返回 | `ret` | 隐式 RETURN + 子栈清除 | 同左 | `func.return %val` | `return expr` |
+| 多路分支 | `jmp [table]` | — | `switch` → 跳转表 | `cf.switch` / `scf.index_switch` | `switch/case` |
+| 结构化抽象 | — | — | if/for 语法糖翻译为基本块 | `scf.` dialect (高层) ↔ `cf.` dialect (底层) | 原生结构化 |
 
 ### 1.3 状态管理
 
-| 维度 | Assembly IR | deepxir | C 语言 |
-|------|-----------|---------|--------|
-| 变量存储 | 寄存器 / 内存地址 | Redis key (`/vthread/<vtid>/<slot>`) | 栈 / 堆 内存 |
-| 作用域 | 全局（label 可见） | vthread 子树内全局 | 词法作用域 `{}` |
-| 活跃分析 | 程序员 / 编译器负责 | VM 不追踪（调用方清理子栈） | 编译器 RA + 析构 |
-| 并发安全 | 原子指令 + 内存屏障 | Redis WATCH/MULTI/EXEC (picker) | mutex / atomic |
+| 维度 | Assembly IR | deepxir | MLIR | C 语言 |
+|------|-----------|---------|------|--------|
+| 变量存储 | 寄存器 / 内存地址 | Redis key (`/vthread/<vtid>/<slot>`) | SSA Value (虚拟寄存器编号) → 可下沉到 memref | 栈 / 堆 内存 |
+| 作用域 | 全局（label 可见） | vthread 子树内全局 | Block/Region 隔离, SSA 支配规则 | 词法作用域 `{}` |
+| 活跃分析 | 程序员 / 编译器负责 | VM 不追踪（调用方清理子栈） | SSA use-def chain 自动推导, 编译器负责 | 编译器 RA + 析构 |
+| 并发安全 | 原子指令 + 内存屏障 | Redis WATCH/MULTI/EXEC (picker) | 显式 async/await dialect, gpu.async 等 | mutex / atomic |
+| 数据流 | 隐式 (side effect) | 显式 (reads/writes 路径数组) | 显式 SSA (操作数 ↔ 结果 编号链接) | 隐式 + 指针别名 |
+
+**MLIR 的 SSA 模型**是其核心设计：每个值有唯一编号（`%0`, `%1`），use-def 链天然形成数据流图。deepxir 的数据流则通过 Redis key 路径（`reads`/`writes` 数组）显式编码，适合分布式场景，但缺少编译期 use-def 验证的严格性。
+
+### 1.4 MLIR 核心创新对 deepxir 的启发
+
+MLIR 的三个核心设计对 deepxir 有直接参考价值：
+
+#### Dialect 方言体系 vs deepxir 算子分类
+
+```
+MLIR:                              deepxir (类比):
+                               
+  func dialect  (函数定义)          def ... -> () { }  ← 函数层
+  scf dialect  (结构化控制流)        if / for / while  ← 控制流层 (目标)
+  cf dialect   (底层控制流)          br / jump / switch ← CFG 层 (目标)
+  linalg dialect (线性代数)          matmul, add, conv  ← 计算层
+  gpu dialect  (GPU 抽象)            op-metal / op-cuda ← 后端调度 (隐性)
+  memref dialect (内存抽象)           newtensor/deltensor ← 生命周期层
+  arith dialect (算术)               + - * / % + 原生算子 ← 求值层
+```
+
+MLIR 的 **dialect 混用** 允许在同一函数中混合不同抽象层的操作（如在 `scf.for` 循环内调用 `linalg.matmul`），deepxir 当前已经隐式实现了类似能力——生命周期 (`newtensor`)、计算 (`add`)、控制 (`if`) 可以在同一函数体中混用。**但 deepxir 缺少 dialect 的显式声明和校验机制**。
+
+#### Region / Block 层级模型
+
+```
+MLIR:                              deepxir (目标):
+                               
+  func @main {                     def main(...) -> (...) {
+    ^bb0(%arg0: f32):                @0:                      ← entry block
+      %0 = arith.addf %arg0, %cst    newtensor(...) -> /data
+      cf.br ^bb1(%0)                 br ... → @1/@2
+                                    
+    ^bb1(%1: f32):                  @1:                      ← loop header
+      scf.for %i = %lb to %ub {      ... (block body)
+        %2 = linalg.matmul ...       
+        ...
+      }
+  }                                }
+```
+
+MLIR 的 **Region** 是其关键抽象——`scf.for` 的循环体是一个嵌套的 Region，与父函数的 value 作用域隔离。deepxir 当前用 **PC 路径嵌套** (`/vthread/<vtid>/<pc>/`) 实现了类似隔离，但控制流跳转（jump）跨越嵌套时需要更明确的 frame/region 边界语义。
+
+#### Pass Pipeline 与 deepxir 的翻译阶段
+
+```
+MLIR 编译流程:                    deepxir 当前 + 目标流程:
+                               
+  前端 (C++/PyTorch)      →       pysdk 写入 /src/func/ (dxlang)
+    │                                │
+  dialect lowering          →       ParseDxlang → ir.Instruction (语法→结构)
+    │                                │
+  canonicalization           →       eager inline translate (形参绑定, 坐标化)
+    │                                │
+  loop/affine optimization   →       基本块合并 / 死代码消除 (Phase 3 目标)
+    │                                │
+  gpu mapping                →       route.Select(backend) → op-plat
+    │                                │
+  LLVM lowering              →       heap-plat 生命周期指令
+    │                                │
+  机器码                     →       GPU kernel 执行
+```
+
+deepxir 的当前流程已经是一条隐式的 "pass pipeline"，但缺少 MLIR 的 **可组合性** 和 **可验证性**：每个 pass 的输入输出格式没有形式化定义，变换的正确性依赖人工保证而非结构化约束。
 
 ---
 
@@ -292,16 +363,21 @@ Execute(vtid):
 - frame 管理独立于 block 寻址
 - 同一函数的不同调用实例共享 block 结构，frame 区分上下文
 
-### 3.7 与 C 语言的关键差异总结
+### 3.7 四层关键差异总结
 
-| 特性 | C 语言 | deepxir |
-|------|--------|---------|
-| 变量生命周期 | 栈帧自动管理（`{}` 作用域） | Redis key 显式管理（newtensor/deltensor） |
-| 控制流嵌套 | 任意深度词法嵌套 | 翻译为平铺基本块 + jump |
-| 短路求值 | `&&` `||` 编译为条件跳转 | 当前不支持（需展开为 if 嵌套） |
-| 异常处理 | `try/catch` + 栈展开 | 不支持（错误标记为 vthread error） |
-| 函数指针 | 支持（虚表/函数指针） | 不支持（函数名静态绑定） |
-| 闭包 | 捕获环境变量 | 不支持 |
+| 特性 | Assembly IR | deepxir | MLIR | C 语言 |
+|------|-----------|---------|------|--------|
+| 变量生命周期 | 手动管理 | Redis key 显式（newtensor/deltensor） | SSA + memref alloc/dealloc | 栈帧自动（`{}` 作用域） |
+| 控制流嵌套 | 无限制 flat label | 翻译为平铺基本块 + jump | 结构化 ↔ CFG dialect 可互转 | 任意深度词法嵌套 |
+| 短路求值 | `cmp; je` 链 | 当前不支持（需展开为 if 嵌套） | `scf.if` 内嵌 `arith.cmp` | `&&` `||` 编译为条件跳转 |
+| 异常处理 | 信号/中断 | 不支持（错误标记为 vthread error） | 不内置（可自定义 dialect） | `try/catch` + 栈展开 |
+| 函数指针 | `call [addr]` | 不支持（函数名静态绑定） | `func.call_indirect` | 支持（虚表/函数指针） |
+| 闭包 | 无 | 不支持 | `llvm.mlir.undef` / dialect 自定义 | 捕获环境变量 |
+| 可扩展性 | 新指令集扩展 | 新 opcode 注册 + 后端路由 | **dialect 注册** (核心创新) | 宏 / 内联汇编 |
+| 异构计算 | 无 | op-plat 多后端路由 | gpu dialect + 目标代码生成 | CUDA/OpenCL 库调用 |
+| 内存模型 | 无/arch 定义 | heap-plat 堆管理 | memref dialect + 视图/别名分析 | 指针 + malloc/free |
+
+**MLIR 最独特的优势** — dialect 机制：在同一个 IR 框架内定义新的操作、类型、属性，无需修改核心框架。deepxir 如果要支持类似扩展性，需要在 Redis schema 层面预留 **算子分类前缀**（如 `op:linalg:`, `op:gpu:`, `op:scf:`），并允许不同 "方言" 的算子在 VM 内共存和互操作。
 
 ---
 
@@ -329,6 +405,13 @@ Execute(vtid):
 
 ### Phase 4: 高级控制流（可选）
 
-1. `switch/case` 多路分支
+1. `switch/case` 多路分支（对标 MLIR `cf.switch`）
 2. 短路求值 (`&&` / `||` 展开为 br 链)
 3. 尾调用优化 (tail call → jump)
+
+### Phase 5: MLIR 启发的能力（远期）
+
+1. **算子分类命名空间** — Redis key 引入 dialect 前缀: `/op/linalg:<opcode>`, `/op/scf:<opcode>`, 不同方言算子可共存互操作
+2. **Pass 验证** — 每个翻译阶段结束时执行 schema 验证（如 block 终止指令必须存在且唯一、SSA-like 定义-使用完整性检查）
+3. **渐进式 lowering** — 支持多层深度 lowering pipeline: `结构化控制流 → CFG → 单指令 dispatch`, 每层独立可测试
+4. **Dialect 注册机制** — 允许后端热注册新算子"方言"（如 `op:vision:conv2d`），route 层自动发现并调度
