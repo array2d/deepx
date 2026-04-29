@@ -44,7 +44,7 @@ list 可以与基础类型与 tensor 组合
 
 > **v1 整合设计**：[spec-control-flow-v1.md](spec-control-flow-v1.md) — 6 套重构方案全光谱对比 (渐进 → SSA → 编译) + SSA vs `->`/`<-` 语义对比。
 > 详细方案见 [control-flow.md](./control-flow.md)、[frontend-control-flow.md](./frontend-control-flow.md)。
-> 编译器分析：[compiler-analysis-ssa-vs-arrow.md](./compiler-analysis-ssa-vs-arrow.md) — `->`/`<-` 能否替代 SSA 做编译分析。
+> 编译器分析：[compiler-analysis-ssa-vs-arrow.md](./compiler-analysis-ssa-vs-arrow.md) — `->`/`<-` 能否替代 SSA 做编译分析 (§1-8) + 变量版本号方案 (§9) + **`resolve` 创新方案填补 φ 缺口 (§10)**。
 
 dxlang 支持分支与循环，控制流以“语义块”表达，执行时由解释器按块索引跳转。
 
