@@ -86,6 +86,56 @@ namespace deepx::metal::common
             }
         }
 
+        // dispatch_unary_1d: single input → output (e.g. relu, neg)
+        bool dispatch_unary_1d(const char *kernel_fn,
+                               const void *x,
+                               void *y,
+                               uint32_t n,
+                               size_t elem_bytes)
+        {
+            if (!valid() || !kernel_fn)
+            {
+                return false;
+            }
+
+            @autoreleasepool
+            {
+                NSError *error = nil;
+                id<MTLComputePipelineState> pso = pipeline(kernel_fn, &error);
+                if (!pso)
+                {
+                    return false;
+                }
+
+                const size_t bytes = static_cast<size_t>(n) * elem_bytes;
+                id<MTLBuffer> bufX = [device_ newBufferWithBytes:x length:bytes options:MTLResourceStorageModeShared];
+                id<MTLBuffer> bufY = [device_ newBufferWithLength:bytes options:MTLResourceStorageModeShared];
+                id<MTLBuffer> bufN = [device_ newBufferWithBytes:&n length:sizeof(n) options:MTLResourceStorageModeShared];
+                if (!bufX || !bufY || !bufN)
+                {
+                    return false;
+                }
+
+                id<MTLCommandBuffer> cmd = [queue_ commandBuffer];
+                id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
+                [enc setComputePipelineState:pso];
+                [enc setBuffer:bufX offset:0 atIndex:0];
+                [enc setBuffer:bufY offset:0 atIndex:1];
+                [enc setBuffer:bufN offset:0 atIndex:2];
+
+                const NSUInteger w = pso.maxTotalThreadsPerThreadgroup;
+                const MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
+                const MTLSize threadsPerGrid = MTLSizeMake(n, 1, 1);
+                [enc dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
+                [enc endEncoding];
+                [cmd commit];
+                [cmd waitUntilCompleted];
+
+                std::memcpy(y, [bufY contents], bytes);
+                return true;
+            }
+        }
+
     private:
         id<MTLLibrary> library(NSError **error)
         {
