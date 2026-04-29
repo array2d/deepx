@@ -1,7 +1,7 @@
 # pysdk 控制流代码生成方案
 
-> 如果 deepxir 的控制流语句设计得太复杂，pysdk 如何生成 deepxir 代码？
-> 本文分析当前 `front/py` 实现，提出控制流的生成方案。
+> **方案分析**：[spec-control-flow-v1.md](../../metaproc/spec-control-flow-v1.md) — C1~C5 架构对比。
+> 本文分析 `front/py` 实现 + C1 关键字 IR 的具体生成设计。
 
 ## 1. 当前 front/py 架构分析
 
@@ -174,109 +174,36 @@ PyTorch 也面临同样问题，解决方案是 `torch.jit.script` / `torch.comp
 
 ---
 
-## 3. 三种方案对比
+## 3. 前端方案：Hybrid Eager+Defer + C1 关键字 IR
 
-### 3.1 方案 A：Tracer 模式（参考 torch.jit.trace）
+> 前端生成 **C1 关键字 IR**（`if`/`for`/`while` 作为一等 opcode）。
+> 后端可选：VM 直接解释（C1）或 Scheduler lowering（C2）。
 
-```
-用户写普通 Python → Tracer 记录所有操作 → 还原为 deepxir 函数
-```
-
-**原理**：
-- 用户用真实的示例输入运行一次 Python forward
-- Tracer 拦截所有 `Tensor` 操作，记录为 IR 序列
-- Python 的 `if cond` 根据示例输入的具体值走一条路径 → 只记录一条路径
-- 无法捕获另一条分支（这是 trace 的固有限制）
-
-**优点**：
-- 零修改成本，用户代码完全不变
-- 适合静态模型图（大多数推理场景）
-
-**缺点**：
-- 无法处理动态控制流（trace 只走一条路径）
-- 示例输入必须覆盖所有分支
-- 不支持循环的可变次数（除非是 Python 级 for range(10)）
-
-**适用**：模型推理前向图（控制流主要是结构化的）
-
-### 3.2 方案 B：JIT Script 模式（参考 torch.jit.script）
-
-```
-用户写 deepxir 专用语法 → 编译器解析 → 生成含控制流的 deepxir 函数
-```
-
-**原理**：
-- 用户使用 `@deepxir.script` 装饰器
-- 函数内的 `if`/`for`/`while` 被拦截并转换为 deepxir 控制流 IR
-- Tensor 的比较运算（`>`, `<`, `==`）返回一个"符号布尔"对象
-- 符号布尔作为控制流条件 → 编译为 `if`/`else` 基本块
-
-**示例**：
-
-```python
-@deepxir.script
-def dynamic_clamp(x: Tensor, min_val: float, max_val: float) -> Tensor:
-    # 这是 deepxir 脚本，不是普通 Python
-    mask_low = x < min_val        # → 生成 less(x, min_val) → mask_low
-    if mask_low.any():             # → 编译为 if 控制流
-        x = where(mask_low, min_val, x)
-    
-    mask_high = x > max_val
-    if mask_high.any():
-        x = where(mask_high, max_val, x)
-    
-    return x
-```
-
-**优点**：
-- 支持完整动态控制流
-- 用户显式标注意图，编译器可验证
-- 生成的 IR 是完整的函数定义（有 `def` 签名、控制流块）
-
-**缺点**：
-- 用户需要学习新的脚本语法（受限的 Python 子集）
-- 与"即刻发射"模型不兼容（需要 deferred 模式）
-
-### 3.3 方案 C：Hybrid Eager+Defer 模式（推荐）
-
-```
-默认即刻发射 (兼容现有)  +  @deepxir.compile 装饰器 (控制流支持)
-```
-
-**原理**：保留现有 `rtf → DeepxIR → UDP` 即刻发射路径，新增编译模式。
+### 3.1 两种模式的边界
 
 ```python
 # 模式 1：即刻发射（现有，不变）
 x = a + b          # 立刻生成 add(a,b) -> tmp // send via UDP
 
-# 模式 2：编译模式
+# 模式 2：编译模式 → 生成 C1 关键字 IR
 @deepxir.compile
 def my_func(x: Tensor) -> Tensor:
-    if x.sum() > 0:           # 控制流 → 编译到 deepxir
+    if x.sum() > 0:           # 控制流 → 编译到关键字 IR
         y = self.branch_a(x)
     else:
         y = self.branch_b(x)
     return y
-
-# 调用方式不变，但内部走编译路径
-result = my_func(input_tensor)  # → 生成完整函数定义 + 注册到 /src/func/
 ```
-
-**两种模式的边界**：
 
 | 特性 | 即刻发射 (Eager) | 编译模式 (@compile) |
 |------|---------|---------|
 | 触发方式 | 默认（任何 Tensor op） | 装饰器显式标注 |
 | 发射时机 | 每个 op 立即 send | 函数调用时一次性生成 |
-| 输出位置 | UDP → 调度器 → Redis | Redis `/src/func/<name>` |
-| 控制流 | 仅结构化（Python if） | 完整动态（if/for/while） |
-| 函数签名 | 无（松散指令序列） | 有（`def name(params) -> (rets)`） |
-| 嵌套调用 | 不支持 | 支持（编译期展开 CALL） |
-| 与现有代码兼容 | 100% | 需要装饰器标注 |
+| 输出格式 | 单条 DeepxIR → UDP | C1 关键字 IR → Redis `/src/func/<name>` |
+| 控制流 | 仅结构化（Python if） | 完整动态（if/for/while/break/continue） |
+| 函数签名 | 无 | 有（`def name(params) -> (rets)`） |
 
----
-
-## 4. 推荐方案详解：Hybrid Eager+Defer
+## 4. C1 关键字 IR 生成设计
 
 ### 4.1 新增模块布局
 
@@ -299,39 +226,35 @@ front/py/deepx/
 ```
 @deepxir.compile
 def my_func(x: Tensor, threshold: float) -> Tensor:
-    cond = x.sum() > threshold          ← ① 每步生成 SymbolicOp
+    cond = x.sum() > threshold          ← ① SymbolicTensor 拦截
     if cond:                             ← ② IfContext 捕获
-        y = layer1(x)                   ← ③ 继续生成 SymbolicOp
-    else:                                ← ④ ElseContext
-        y = layer2(x)                   ← ⑤ 继续生成 SymbolicOp
-    return y                             ← ⑥ ReturnContext
+        y = layer1(x)
+    else:
+        y = layer2(x)
+    return y
 
-↓ 装饰器在函数定义时执行：
+↓ 装饰器编译流程：
 
 1. 提取签名: "def my_func(x:Tensor, threshold:float) -> (y:Tensor)"
-2. 运行函数体 → 全部操作被拦截为 SymbolicOp
-3. 构建 CFG: entry_block → if_block / else_block → merge_block
-4. 生成 dxlang: 写入 /src/func/my_func
-5. 注册到 VM: LPUSH notify:vm
+2. 运行函数体 → SymbolicTensor 拦截所有操作
+3. IfContext/WhileContext 捕获控制流为嵌套结构
+4. IRBuilder 收集为 C1 关键字 IR 树
+5. 序列化写入 /src/func/my_func
+6. LPUSH notify:vm
 
-生成的 dxlang:
---------------------------------------------------
-@0:
-    sum(x) -> ./sum_tmp
-    greater(./sum_tmp, threshold) -> ./cond
-    br ./cond, @1, @2
-
-@1:
-    layer1(x) -> ./y
-    jump @3
-
-@2:
-    layer2(x) -> ./y
-    jump @3
-
-@3:
+生成的 C1 关键字 IR:
+----------------------------------------------
+def my_func(x, threshold) -> (y) {
+    sum(./x) -> ./s
+    greater(./s, threshold) -> ./cond
+    if (./cond) {
+        call layer1(./x) -> ./y
+    } else {
+        call layer2(./x) -> ./y
+    }
     return(./y)
---------------------------------------------------
+}
+----------------------------------------------
 ```
 
 ### 4.3 核心组件设计
@@ -523,54 +446,45 @@ def example(x: Tensor, n: int) -> Tensor:
 
 ---
 
-## 5. Block 映射到 Redis 的格式
+## 5. Redis 存储格式（C1 关键字 IR）
 
-参考 `control-flow.md` 中的 block 方案，编译器输出的 Redis 写入格式：
+编译器输出的 C1 关键字 IR 在 Redis 中以嵌套 key 表达：
 
 ```
+C1 关键字 IR:
+----------------------------------------------
 def example(A:int, B:int) -> (C:int) {
-@0:
     newtensor("f32", "[4]") -> ./x
     sum(./x) -> ./s
     greater(./s, 0) -> ./cond
-    br ./cond, @1, @2
 
-@1:
-    add(./x, 1) -> ./y
-    jump @3
+    if (./cond) {
+        add(./x, 1) -> ./y
+    } else {
+        mul(./x, -1) -> ./y
+    }
 
-@2:
-    mul(./x, -1) -> ./y
-    jump @3
-
-@3:
+    deltensor(./x)
     return(./y)
 }
+----------------------------------------------
+
+对应的 Redis key（嵌套同构）:
+
+/src/func/example              = "def example(A:int, B:int) -> (C:int)"
+/src/func/example/0            = "newtensor(\"f32\", \"[4]\") -> ./x"
+/src/func/example/1            = "sum(./x) -> ./s"
+/src/func/example/2            = "greater(./s, 0) -> ./cond"
+/src/func/example/3            = "if"
+/src/func/example/3/cond       = "./cond"
+/src/func/example/3/then/0     = "add(./x, 1) -> ./y"
+/src/func/example/3/else/0     = "mul(./x, -1) -> ./y"
+/src/func/example/4            = "deltensor(./x)"
+/src/func/example/5            = "return(./y)"
 ```
 
-对应的 Redis key：
-
-```
-Redis: /src/func/example              = "def example(A:int, B:int) -> (C:int)"
-Redis: /src/func/example/@0/0         = "newtensor(\"f32\", \"[4]\") -> ./x"
-Redis: /src/func/example/@0/1         = "sum(./x) -> ./s"
-Redis: /src/func/example/@0/2         = "greater(./s, 0) -> ./cond"
-Redis: /src/func/example/@0           = "br"
-Redis: /src/func/example/@0/-1        = "./cond"
-Redis: /src/func/example/@0/-2        = "@1"
-Redis: /src/func/example/@0/-3        = "@2"
-
-Redis: /src/func/example/@1/0         = "add(./x, 1) -> ./y"
-Redis: /src/func/example/@1           = "jump"
-Redis: /src/func/example/@1/-1        = "@3"
-
-Redis: /src/func/example/@2/0         = "mul(./x, -1) -> ./y"
-Redis: /src/func/example/@2           = "jump"  
-Redis: /src/func/example/@2/-1        = "@3"
-
-Redis: /src/func/example/@3/0         = "return(./y)"
-Redis: /src/func/example/@3           = "return"
-```
+**关键属性**：IR 的嵌套结构与 Redis key 的嵌套结构完全同构。
+VM 在执行 `if`/`for`/`while` 时自然地按照 key 子树进入子作用域。
 
 ---
 
@@ -628,35 +542,33 @@ Go 的 `for` 循环在编译期展开（图构建期），生成的是**静态�
 
 ## 8. 实现路线图
 
-### Phase 1: IR Builder + Symbolic Tensor（底层，无控制流）
+### Phase 1: IR Builder + SymbolicTensor（线性函数）
 
-1. 实现 `SymbolicTensor` 类（`__add__`/`__mul__` 等拦截）
-2. 实现 `IRBuilder` 类（单 block 指令收集）
-3. 实现 `@deepxir.compile` 装饰器（无分支，纯线性函数）
-4. 实现 Redis 写入 (`/src/func/<name>`)
-5. 验证：`@compile def f(x) = x + 1` → 生成正确的 dxlang
+1. 实现 `SymbolicTensor`（`__add__`/`__mul__` 等拦截，生成 C1 IR）
+2. 实现 `IRBuilder`（单 scope 指令收集）
+3. 实现 `@deepxir.compile` 装饰器（无分支，纯线性）
+4. Redis 写入 (`/src/func/<name>`)
+5. VM `translate.go` 支持 C1 嵌套 key 格式
 
-### Phase 2: 控制流捕获
+### Phase 2: 控制流捕获（C1 关键字）
 
-1. 实现 `IfContext`（`if`/`else` → 基本块 + br + jump）
-2. 实现 `WhileContext`（`while` → header block + body + 回边）
-3. 实现 `ForContext`（`for` 动态边界 → init/header/body/exit blocks）
-4. 实现 `@compile` 装饰器支持控制流上下文
-5. 验证：带 if/else/while 的复杂函数 → 正确生成多 block IR
+1. 实现 `IfContext` → 生成 `if (cond) { ... } else { ... }` 关键字 IR
+2. 实现 `WhileContext` → 生成 `while (cond) { ... }`
+3. 实现 `ForContext` → 生成 `for (init; cond; step) { ... }`
+4. 实现 `break`/`continue` 上下文感知
+5. VM 实现嵌套作用域栈，直接解释关键字
 
-### Phase 3: VM 翻译层适配
+### Phase 3: 基本块执行（为 C2/C5 准备）
 
-1. `translate.go` 支持 block 格式（非线性的 `@0/@1` 前缀）
-2. CFG 构建：解析终止指令，建立 block 跳转图
-3. Eager inline 适配：block 内的指令坐标化，block 间跳转保持
-4. 验证：pysdk 生成的 dxlang → VM 正确执行控制流
+1. VM 新增 block-loop 执行模式
+2. 关键字 → 基本块 lowering 模块（先放在 VM 内）
+3. `jump`/`br` 终止指令
 
 ### Phase 4: 优化与生产化
 
-1. 死代码消除：不可达 block 清理
-2. 基本块合并：连续无条件跳转消除
-3. 即时刻模式 @compile 混用（调用 @compile 函数后继续即刻模式）
-4. context manager 改进：更自然的 Python if/for/while 语法
+1. Scheduler 服务（lowering 从 VM 抽出）
+2. 基本块合并、死代码消除
+3. Eager 与 @compile 混用
 
 ---
 

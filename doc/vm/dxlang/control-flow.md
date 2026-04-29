@@ -1,4 +1,7 @@
-# deepxir 控制流设计方案
+# deepxir 控制流设计
+
+> **方案分析**：[spec-control-flow-v1.md](../../metaproc/spec-control-flow-v1.md) — 5 种 C 子方案架构对比。
+> 本文提供 MLIR 对比 + 基本块模型 + C1 关键字 IR 具体设计。
 
 ## 1. 四层对比：Assembly IR、deepxir、MLIR、C 语言
 
@@ -144,39 +147,35 @@ if    → dispatch.If()
 
 ---
 
-## 3. 设计方案：deepxir 控制流
+## 3. 设计方案：基本块模型（C 方案通用基础）
 
-### 3.1 核心思路
+> C1~C5 五种方案共享核心的基本块模型，区别在于 lowering 位置和 IR 层数。
+> 详见 [spec-control-flow-v1.md](../../metaproc/spec-control-flow-v1.md)。
 
-将控制流下沉为**基本块（basic block）+ 跳转（jump）**的汇编级模型，同时在 deepxir 语法层保留结构化控制流（if/for/while），翻译时展开为基本块。
+### 3.1 C 方案核心思想
 
-```
-深层原理:                          deepxir 语法层:
-                               
-  block0:                        if (cond) {
-    inst1                          block1
-    br cond, block1, block2      } else {
-                                   block2
-  block1:                        }
-    inst2                         block3
-    jump block3
-                                 
-  block2:
-    inst3
-    jump block3
-                                 
-  block3:  (merge point)
-    inst4
-```
+> **控制流从"用户意图"到"机器执行"是一个语义等价的格式变换过程。**
 
-### 3.2 基本块模型
+不同 C 子方案对"几层 IR"和"lowering 在哪里"有不同选择：
+
+| 子方案 | IR 层数 | Lowering 位置 |
+|--------|--------|-------------|
+| C1 关键字 | 1 层 | 无（VM 直接解释） |
+| C2 二层+Scheduler | 2 层 | Scheduler 服务 |
+| C3 单层基本块 | 1 层 | 前端负责 |
+| C4 Region | 1 层 | VM 原生执行 region |
+| C5 关键字+VM内 | 1 层(外)/2 层(内) | VM 加载时内部 lowering |
+
+**C1 和 C2 是互补的**：C1 可作为 C2 的结构化 IR 层格式——先 C1 快速可用，需要全局优化时加 Scheduler 切换到 C2。
+
+### 3.2 基本块模型（所有 C 方案的执行层基础）
 
 每个基本块：
 - **入口标签**：唯一的 block id（如 `@0`, `@1`, `@2`）
 - **指令序列**：0 条或多条顺序指令
 - **终止指令**：恰好 1 条（`br` 条件跳转 / `jump` 无条件跳转 / `return` / `call`）
 
-#### 执行层存储格式（Redis）
+### 3.3 执行层存储格式（Redis）
 
 ```
 /vthread/<vtid>/<pc>/@0           → "br"        # block 0 的终止指令
@@ -209,209 +208,188 @@ if    → dispatch.If()
 - PC 不再需要 `/` 分隔符解析层级——层级由 CALL/RETURN 隐式管理
 - 控制流图更清晰：block 有明确的入边和出边
 
-### 3.3 结构化控制流 → 基本块翻译
+### 3.4 控制流 IR：两种表达方式
 
-#### 3.3.1 if/else → 基本块
+#### 3.4.1 C1/C5 风格：关键字 IR（结构化）
+
+控制流以关键字形式嵌入指令流，VM 直接解释（C1）或加载时 lowering（C5）。
 
 ```
-源代码:
-    newtensor("f32", "[4]") -> /data/a
-    if (cond) {
-        add(/data/a, 1) -> /data/b
+def example(x) -> (y) {
+    newtensor("f32", "[4]") -> ./a
+    sum(./x) -> ./s
+
+    if (greater(./s, 0)) {              ← 关键字
+        add(./x, 1.0) -> ./y
     } else {
-        sub(/data/a, 1) -> /data/b
+        mul(./x, -1.0) -> ./y
     }
-    deltensor(/data/a)
-```
 
-```
-翻译后基本块:
-    @0:                         # entry
-        newtensor("f32", "[4]") -> /data/a
-        br cond, @1, @2
-    
-    @1:                         # true branch
-        add(/data/a, 1) -> /data/b
-        jump @3
-    
-    @2:                         # false branch
-        sub(/data/a, 1) -> /data/b
-        jump @3
-    
-    @3:                         # merge
-        deltensor(/data/a)
-        return
-```
-
-#### 3.3.2 for 循环 → 基本块
-
-```
-源代码:
-    var i <- 0
-    for (i < 10) {
-        add(acc, i) -> acc
-        i <- i + 1
+    for (var i = 0; less(i, 10); add(i, 1) -> i) {
+        add(./y, i) -> ./y
     }
-```
 
-```
-翻译后基本块:
-    @0:                         # init
-        var i <- 0
-        jump @1
-    
-    @1:                         # header (条件判断)
-        br (i < 10), @2, @4
-    
-    @2:                         # body
-        add(acc, i) -> acc
-        i <- i + 1
-        jump @1                 # 回边
-    
-    @4:                         # exit (循环后)
-        ...
-```
-
-#### 3.3.3 while 循环 → 基本块
-
-while 与 for 结构相同：`header → body → back-edge → header`。
-
-```
-源代码:
-    while (cond) {
-        body
+    while (greater(./y, 100.0)) {
+        mul(./y, 0.5) -> ./y
     }
+
+    deltensor(./a)
+    return(./y)
+}
 ```
 
-```
-    @0:
-        jump @1
-    
-    @1:                         # header
-        br cond, @2, @3
-    
-    @2:                         # body
-        body
-        jump @1
-    
-    @3:                         # exit
-```
-
-### 3.4 新 opcode 定义
-
-| Opcode | 含义 | Reads | Writes | 语义 |
-|--------|------|-------|--------|------|
-| `br` | 条件分支 | `[cond, true_block, false_block]` | — | if cond → PC=true_block else PC=false_block |
-| `jump` | 无条件跳转 | `[target_block]` | — | PC = target_block |
-| `call` | 函数调用 | `[func_name, args...]` | `[rets...]` | 创建子栈帧, PC 入子栈 |
-| `return` | 函数返回 | `[ret_val]` | — | 清除当前栈帧, PC 回父栈 |
-| `switch` | 多路分支 (可选) | `[value, case0_block, case1_block, ...]` | — | 跳转到匹配的 case block |
-
-### 3.5 VM 执行循环 (新)
+**Redis 存储**（嵌套 key 天然表达控制流层次）：
 
 ```
-Execute(vtid):
-    frame = top_frame(vtid)
-    block = frame.current_block
-    
-    while block != nil:
-        // 1. 执行 block 内所有非终止指令
-        for inst in block.instructions:
-            exec(inst)  // newtensor, add, deltensor, ...
-        
-        // 2. 执行终止指令，确定下一个 block
-        switch block.terminator.opcode:
+/vthread/<vtid>/[1,0]         = "if"
+/vthread/<vtid>/[1,0]/cond    = "./cond"
+/vthread/<vtid>/[1,0]/then/0  = "add"
+/vthread/<vtid>/[1,0]/else/0  = "mul"
+
+/vthread/<vtid>/[2,0]         = "for"
+/vthread/<vtid>/[2,0]/init/0  = "var"
+/vthread/<vtid>/[2,0]/cond    = "less(./i, 10)"
+/vthread/<vtid>/[2,0]/step/0  = "add(./i, 1)"
+/vthread/<vtid>/[2,0]/body/0  = "add(./y, ./i)"
+```
+
+#### 3.4.2 C2/C3 风格：基本块 IR（平铺）
+
+结构化控制流 lowering 为基本块 + 终止指令。
+
+```
+@0:
+    newtensor("f32", "[4]") -> ./a
+    sum(./x) -> ./s
+    greater(./s, 0) -> ./cond
+    br ./cond, @1, @2
+
+@1:
+    add(./x, 1.0) -> ./y
+    jump @3
+
+@2:
+    mul(./x, -1.0) -> ./y
+    jump @3
+
+@3:
+    deltensor(./a)
+    return(./y)
+```
+
+### 3.5 控制流关键字定义（C1 专用）
+
+| 关键字 | 语义 | VM 行为 |
+|--------|------|--------|
+| `if (cond) { ... } [else { ... }]` | 条件分支 | 求值 cond → 进入 then 或 else 子作用域 |
+| `for (init; cond; step) { ... }` | 计数循环 | 执行 init → 循环: 求值 cond → 执行 body → 执行 step |
+| `while (cond) { ... }` | 条件循环 | 循环: 求值 cond → 执行 body |
+| `loop { ... }` | 无限循环 | 循环 body，直到内部 break |
+| `break` | 跳出最近循环 | 跳出当前循环作用域 |
+| `continue` | 跳过本次迭代 | 跳到循环条件判断 |
+| `switch (val) { case v1: ... default: ... }` | 多路分支 | 匹配 val 到 case |
+
+### 3.6 终止指令定义（C2/C3 专用）
+
+| Opcode | 含义 | Reads | 语义 |
+|--------|------|-------|------|
+| `br` | 条件分支 | `[cond, true_block, false_block]` | if cond → PC=true_block else PC=false_block |
+| `jump` | 无条件跳转 | `[target_block]` | PC = target_block |
+| `call` | 函数调用 | `[func_name, args...]` | 创建子栈帧, PC 入子栈 |
+| `return` | 函数返回 | `[ret_val]` | 清除当前栈帧, PC 回父栈 |
+
+### 3.7 VM 执行循环
+
+**C1/C4 模式**（VM 直接解释关键字/region）：
+
+```go
+func Execute(vtid) {
+    inst := decode(pc)
+    switch inst.Opcode {
+    case "if":
+        pushScope(vtid, eval(inst.Cond) ? inst.Then : inst.Else)
+    case "for":
+        pushLoopScope(vtid, inst.Init, inst.Cond, inst.Step, inst.Body)
+    case "while":
+        pushLoopScope(vtid, nil, inst.Cond, nil, inst.Body)
+    case "break":
+        popLoopScope(vtid)
+    case "return":
+        popFrame(vtid)
+    default:
+        dispatch(inst)  // op-plat / heap-plat / VM 求值
+    }
+}
+```
+
+**C2/C3 模式**（block-loop，最低 VM 复杂度）：
+
+```go
+func Execute(vtid) {
+    block := entryBlock
+    for block != nil {
+        for _, inst := range block.Instructions {
+            dispatch(inst)
+        }
+        switch block.Terminator.Opcode {
         case "br":
-            cond = eval(block.terminator.reads[0])
-            next_block = cond ? block.terminator.reads[1] : block.terminator.reads[2]
+            block = eval(terminator.Cond) ? loadBlock(terminator.True) : loadBlock(terminator.False)
         case "jump":
-            next_block = block.terminator.reads[0]
+            block = loadBlock(terminator.Target)
         case "return":
-            pop_frame(vtid)
-            frame = top_frame(vtid)
-            if frame == nil:  mark_vthread_done(vtid); return
-            next_block = frame.next_after_call
+            popFrame(); block = parent.AfterCall
         case "call":
-            push_frame(vtid, func=reads[0])
-            frame = top_frame(vtid)
-            next_block = frame.entry_block
-        
-        block = next_block
+            pushFrame(terminator.Func); block = newFrame.Entry
+        }
+    }
+}
 ```
 
-### 3.6 CALL/RETURN 栈帧模型 (改进)
+### 3.8 栈帧模型
 
 ```
-当前模型:                        改进模型:
-                                
-/vthread/vt1/                    /vthread/vt1/
-├── [0,0] = "CALL"              ├── frame:0           # 根栈帧
-├── [0,-1] = "myfunc"           │   ├── @0 = entry
-├── [0,0]/                       │   ├── @1 ...
-│   ├── [0,0] = "add"           │   └── call myfunc → frame:1
-│   └── ...                     │
-├── [0,0]/[1,0]/                 ├── frame:1          # 子栈帧 (myfunc)
-│   └── ...                     │   ├── @0 = entry
-                                │   ├── @1 ...
-嵌套路径 = 调用深度              │   └── return → pop
-                                │
-                                平铺路径 + frame 层次
+/vthread/vt1/
+├── frame:0                    # 根栈帧
+│   ├── @0 = entry block
+│   ├── @1 ...
+│   └── call myfunc → frame:1
+│
+├── frame:1                    # 子栈帧 (myfunc)
+│   ├── @0 = entry block
+│   ├── @1 ...
+│   └── return → pop
+│
+平铺路径 + frame 层次分离
+block id (@0, @1) 是平面索引，不与调用层级耦合
 ```
-
-**改进点**：
-- block id (`@0`, `@1`) 是平面索引，不与调用层级耦合
-- frame 管理独立于 block 寻址
-- 同一函数的不同调用实例共享 block 结构，frame 区分上下文
-
-### 3.7 四层关键差异总结
-
-| 特性 | Assembly IR | deepxir | MLIR | C 语言 |
-|------|-----------|---------|------|--------|
-| 变量生命周期 | 手动管理 | Redis key 显式（newtensor/deltensor） | SSA + memref alloc/dealloc | 栈帧自动（`{}` 作用域） |
-| 控制流嵌套 | 无限制 flat label | 翻译为平铺基本块 + jump | 结构化 ↔ CFG dialect 可互转 | 任意深度词法嵌套 |
-| 短路求值 | `cmp; je` 链 | 当前不支持（需展开为 if 嵌套） | `scf.if` 内嵌 `arith.cmp` | `&&` `||` 编译为条件跳转 |
-| 异常处理 | 信号/中断 | 不支持（错误标记为 vthread error） | 不内置（可自定义 dialect） | `try/catch` + 栈展开 |
-| 函数指针 | `call [addr]` | 不支持（函数名静态绑定） | `func.call_indirect` | 支持（虚表/函数指针） |
-| 闭包 | 无 | 不支持 | `llvm.mlir.undef` / dialect 自定义 | 捕获环境变量 |
-| 可扩展性 | 新指令集扩展 | 新 opcode 注册 + 后端路由 | **dialect 注册** (核心创新) | 宏 / 内联汇编 |
-| 异构计算 | 无 | op-plat 多后端路由 | gpu dialect + 目标代码生成 | CUDA/OpenCL 库调用 |
-| 内存模型 | 无/arch 定义 | heap-plat 堆管理 | memref dialect + 视图/别名分析 | 指针 + malloc/free |
-
-**MLIR 最独特的优势** — dialect 机制：在同一个 IR 框架内定义新的操作、类型、属性，无需修改核心框架。deepxir 如果要支持类似扩展性，需要在 Redis schema 层面预留 **算子分类前缀**（如 `op:linalg:`, `op:gpu:`, `op:scf:`），并允许不同 "方言" 的算子在 VM 内共存和互操作。
 
 ---
 
 ## 4. 实现路线图
 
-### Phase 1: 基本块 + 跳转 (当前 → 结构化 CFG)
+### Phase 1: C1 关键字 IR（快速可用）
 
-1. 引入 `jump` 和 `br` opcode
-2. 修改 `Execute` 循环支持 block 跳转
-3. 前端编译 if/else/for → 基本块图
-4. 保持现有 `call`/`return` 机制不变
+1. 引入控制流关键字 opcode：`if`, `for`, `while`, `break`, `continue`, `switch`
+2. VM 实现嵌套作用域栈（scope stack），直接解释关键字
+3. 前端 `@compile` 生成关键字 IR
+4. Redis 存储同构（嵌套 key）
 
-### Phase 2: 结构化语法支持
+### Phase 2: 基本块执行（为 C2/C5 做准备）
 
-1. 前端支持 `if (cond) { ... } else { ... }` 语法
-2. 前端支持 `for (init; cond; step) { ... }` 语法
-3. 前端支持 `while (cond) { ... }` 语法
-4. `parseDxlang` 识别控制流关键字，生成对应 block 结构
+1. 引入 `jump`/`br` 终止指令
+2. VM 实现 block-loop 执行模式（与关键字模式并存）
+3. 关键字 → 基本块 lowering（在 VM 内或 Scheduler 内）
+4. 前端可选择生成关键字 IR 或基本块 IR
 
-### Phase 3: 优化
+### Phase 3: Scheduler 服务（C2）
 
-1. 基本块合并（连续无条件跳转消除）
-2. 死代码消除（不可达 block 清理）
-3. 循环不变量外提
+1. lowering 逻辑从 VM 中抽出，放入独立 Scheduler
+2. Scheduler 实现：Region Flattening → 块内 SSA → 优化 pass
+3. 多前端（Python/Go）通过 Scheduler 统一 lowering
 
-### Phase 4: 高级控制流（可选）
+### Phase 4: 优化与高级控制流
 
-1. `switch/case` 多路分支（对标 MLIR `cf.switch`）
-2. 短路求值 (`&&` / `||` 展开为 br 链)
+1. 死代码消除、基本块合并、循环不变量外提
+2. 短路求值 (`&&`/`||` 展开为 br 链)
 3. 尾调用优化 (tail call → jump)
-
-### Phase 5: MLIR 启发的能力（远期）
-
-1. **算子分类命名空间** — Redis key 引入 dialect 前缀: `/op/linalg:<opcode>`, `/op/scf:<opcode>`, 不同方言算子可共存互操作
-2. **Pass 验证** — 每个翻译阶段结束时执行 schema 验证（如 block 终止指令必须存在且唯一、SSA-like 定义-使用完整性检查）
-3. **渐进式 lowering** — 支持多层深度 lowering pipeline: `结构化控制流 → CFG → 单指令 dispatch`, 每层独立可测试
-4. **Dialect 注册机制** — 允许后端热注册新算子"方言"（如 `op:vision:conv2d`），route 层自动发现并调度
+4. Dialect 命名空间预留 (`op:linalg:`, `op:scf:`)
