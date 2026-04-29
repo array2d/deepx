@@ -146,11 +146,13 @@ func extractAddr0(coord string) int {
 
 // ParseDxlang 解析 dxlang 指令字符串为 Instruction。
 //
-// 支持两种格式:
+// 支持三种赋值风格:
 //
 //	前缀 (命名函数):  add(A, B) -> ./C
 //	中缀 (符号算子):  A + B -> ./C
 //	                  !A -> ./C
+//	C风格 (左箭头):   ./C <- A + B
+//	                  ./C <- add(A, B)
 func ParseDxlang(line string) (*Instruction, error) {
 	line = strings.TrimSpace(line)
 	if line == "" {
@@ -159,9 +161,18 @@ func ParseDxlang(line string) (*Instruction, error) {
 
 	inst := &Instruction{}
 
-	// 1. 分离 -> 右侧的输出
+	// 1. 分离输出 (支持 -> 和 <- 两种箭头)
 	var expr string
-	if arrow := strings.Index(line, "->"); arrow >= 0 {
+	if larrow := findArrow(line, "<-"); larrow >= 0 {
+		// C风格: ./C <- A + B  → 输出在左, 表达式在右
+		writesStr := strings.TrimSpace(line[:larrow])
+		expr = strings.TrimSpace(line[larrow+2:])
+		if strings.HasPrefix(writesStr, "(") && strings.HasSuffix(writesStr, ")") {
+			writesStr = writesStr[1 : len(writesStr)-1]
+		}
+		inst.Writes = parseParamList(writesStr)
+	} else if arrow := strings.Index(line, "->"); arrow >= 0 {
+		// 传统风格: add(A, B) -> ./C  → 表达式在左, 输出在右
 		expr = strings.TrimSpace(line[:arrow])
 		writesStr := strings.TrimSpace(line[arrow+2:])
 		if strings.HasPrefix(writesStr, "(") && strings.HasSuffix(writesStr, ")") {
@@ -210,6 +221,20 @@ func ParseDxlang(line string) (*Instruction, error) {
 	}
 
 	return inst, nil
+}
+
+// findArrow 查找左箭头 <- (区别于 <= 和 <<)。
+// 返回 <- 中 < 的位置, 未找到返回 -1。
+func findArrow(s, arrow string) int {
+	for i := 0; i < len(s)-1; i++ {
+		if s[i] == arrow[0] {
+			// 排除 <=, <<, <>, < 后不是 - 的情况
+			if s[i+1] == arrow[1] {
+				return i
+			}
+		}
+	}
+	return -1
 }
 
 // parseInfix 尝试中缀表达式解析。支持二元和单目符号算子。

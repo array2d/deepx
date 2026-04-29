@@ -1,0 +1,4 @@
+# cstyle_add: C-style assignment with infix operator
+def cstyle_add(A:int, B:int) -> (C:int) {
+    ./C <- A + B
+}
