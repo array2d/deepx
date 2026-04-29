@@ -142,12 +142,18 @@ dxlang采用kv地址系统，从而实现跨节点的统一地址，而非传统
 
 
 
-## 5. 设计思考
+## 5. pysdk 代码生成
+
+> 详细设计方案见 [frontend-control-flow.md](./frontend-control-flow.md) —— 当前 front/py 架构分析 + 三种方案对比 + Hybrid Eager+Defer 推荐方案 + 实现路线图。
+
+核心结论：保留现有即刻发射模式不变；通过 `@deepxir.compile` 装饰器新增编译模式，支持 `if`/`for`/`while` 动态控制流的 deepxir 代码生成。
+
+## 6. 设计思考
 dxlang 采用简洁文本格式表达类型约束、运算定义与运算体，便于阅读与解析。  
 dxlang 不是 SSA，调用时遵循一侧读、另一侧写的规则，参数列表支持多个。  
 dxlang 作为调度语义与协议载体，不负责算子实现与存储生命周期。  
 
-## 6. 具体示例
+## 7. 具体示例
 
 ### 示例 1：融合 Linear + 归一化
 ```
