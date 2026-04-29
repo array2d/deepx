@@ -138,8 +138,17 @@ func buildHeapTask(vtid string, pc string, inst *ir.Instruction) *HeapTask {
 
 	switch inst.Opcode {
 	case "newtensor":
+		// Writes[0] = tensor key (e.g., "/data/x")
+		// Reads[0] = dtype (e.g., "f32")
+		// Reads[1] = shape (e.g., "[10,10]" or "[100]")
 		if len(inst.Writes) > 0 {
 			task.Key = inst.Writes[0]
+		}
+		if len(inst.Reads) > 0 {
+			task.Dtype = inst.Reads[0]
+		}
+		if len(inst.Reads) > 1 {
+			task.Shape = parseShapeParam(inst.Reads[1])
 		}
 	case "deltensor":
 		if len(inst.Reads) > 0 {
@@ -155,6 +164,25 @@ func buildHeapTask(vtid string, pc string, inst *ir.Instruction) *HeapTask {
 	}
 
 	return task
+}
+
+// parseShapeParam converts "[10,10]" or "[100]" to []int.
+func parseShapeParam(raw string) []int {
+	raw = strings.Trim(raw, "[] ")
+	if raw == "" {
+		return nil
+	}
+	var shape []int
+	for _, s := range strings.Split(raw, ",") {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		var n int
+		fmt.Sscanf(s, "%d", &n)
+		shape = append(shape, n)
+	}
+	return shape
 }
 
 // Compute 分发张量计算指令到 op-plat。

@@ -83,33 +83,45 @@ static LifecycleCommand parse_command(const json &j, std::string &error) {
         error = "missing 'op' field";
         return cmd;
     }
-    cmd.op = j["op"].get<std::string>();
+    std::string ext_op = j["op"].get<std::string>();
+
+    // 外部 op 名称 → 内部 LifecycleManager op 名称
+    if (ext_op == "newtensor")      cmd.op = "create";
+    else if (ext_op == "deltensor") cmd.op = "delete";
+    else if (ext_op == "clonetensor") cmd.op = "clone";
+    else                            cmd.op = ext_op;
 
     if (j.contains("key")) {
         cmd.name = j["key"].get<std::string>();
     } else if (j.contains("src")) {
-        cmd.name = j["src"].get<std::string>();  // clonetensor: src is the source
+        cmd.name = j["src"].get<std::string>();
     } else {
         error = "missing tensor key";
         return cmd;
     }
 
     if (j.contains("dtype")) cmd.dtype = j["dtype"].get<std::string>();
-    if (j.contains("shape") && j["shape"].is_array()) {
-        std::ostringstream oss;
-        oss << "[";
-        bool first = true;
-        for (const auto &d : j["shape"]) {
-            if (!first) oss << ",";
-            oss << d.get<int64_t>();
-            first = false;
-        }
-        oss << "]";
-        cmd.shape = oss.str();
+    if (j.contains("shape")) {
+        if (j["shape"].is_array()) {
+            std::ostringstream oss;
+            oss << "[";
+            bool first = true;
+            for (const auto &d : j["shape"]) {
+                if (!first) oss << ",";
+                oss << d.get<int64_t>();
+                first = false;
+            }
+            oss << "]";
+            cmd.shape = oss.str();
 
-        int64_t total = 1;
-        for (const auto &d : j["shape"]) total *= d.get<int64_t>();
-        cmd.element_count = total;
+            int64_t total = 1;
+            for (const auto &d : j["shape"]) total *= d.get<int64_t>();
+            cmd.element_count = total;
+        } else if (j["shape"].is_string()) {
+            // shape 也可能以字符串形式传入: "[10,10]"
+            cmd.shape = j["shape"].get<std::string>();
+            cmd.element_count = parse_shape_size(cmd.shape);
+        }
     }
     cmd.device = 0;
     cmd.pid = getpid();

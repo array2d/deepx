@@ -6,7 +6,7 @@
 
 namespace deepx::heap {
 
-static int64_t parse_shape_size(const std::string &shape_str) {
+int64_t parse_shape_size(const std::string &shape_str) {
     // "[2,3,4]" → 2*3*4 = 24
     int64_t total = 1;
     int64_t cur = 0;

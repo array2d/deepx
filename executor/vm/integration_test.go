@@ -358,6 +358,102 @@ func TestIntegration_NativeOps(t *testing.T) {
 	}
 }
 
+// mockHeapPlat 模拟 heap-plat (heap-metal)，处理 tensor 生命周期指令。
+// 与 mockOpPlat 协同: 创建真实 POSIX shm，写入 Redis 元信息。
+func mockHeapPlat(ctx context.Context, rdb *redis.Client) {
+	reg := map[string]interface{}{
+		"program": "heap-metal", "device": "gpu0",
+		"status": "running", "pid": os.Getpid(),
+		"started_at": time.Now().Unix(),
+	}
+	data, _ := json.Marshal(reg)
+	rdb.Set(ctx, "/sys/heap-plat/heap-metal:0", data, 0)
+	log.Println("[mock-heap] registered")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		result, err := rdb.BRPop(ctx, 1*time.Second, "cmd:heap-metal:0").Result()
+		if err != nil {
+			continue
+		}
+		if len(result) < 2 {
+			continue
+		}
+
+		var task struct {
+			Vtid  string `json:"vtid"`
+			PC    string `json:"pc"`
+			Op    string `json:"op"`
+			Key   string `json:"key"`
+			Dtype string `json:"dtype"`
+			Shape []int  `json:"shape"`
+		}
+		if err := json.Unmarshal([]byte(result[1]), &task); err != nil {
+			log.Printf("[mock-heap] parse error: %v", err)
+			continue
+		}
+
+		log.Printf("[mock-heap] %s vtid=%s key=%s pc=%s", task.Op, task.Vtid, task.Key, task.PC)
+
+		switch task.Op {
+		case "newtensor":
+			elemBytes := 4 // default f32
+			switch task.Dtype {
+			case "f64", "i64":
+				elemBytes = 8
+			case "f16", "i16":
+				elemBytes = 2
+			case "i8", "bool":
+				elemBytes = 1
+			}
+			totalElems := 1
+			for _, d := range task.Shape {
+				totalElems *= d
+			}
+			byteSize := totalElems * elemBytes
+
+			// Write tensor metadata to Redis
+			meta := map[string]interface{}{
+				"dtype":     task.Dtype,
+				"shape":     task.Shape,
+				"byte_size": byteSize,
+				"device":    "gpu0",
+				"address": map[string]interface{}{
+					"type":     "shm",
+					"shm_name": "/mock_shm_" + task.Key,
+					"node":     "n1",
+				},
+			}
+			metaJSON, _ := json.Marshal(meta)
+			rdb.Set(ctx, task.Key, metaJSON, 0)
+			log.Printf("[mock-heap] newtensor '%s' shape=%v bytes=%d", task.Key, task.Shape, byteSize)
+
+			done := map[string]interface{}{"pc": task.PC, "status": "ok"}
+			doneJSON, _ := json.Marshal(done)
+			rdb.LPush(ctx, "done:"+task.Vtid, doneJSON)
+
+		case "deltensor":
+			// Delete tensor metadata from Redis
+			rdb.Del(ctx, task.Key)
+			log.Printf("[mock-heap] deltensor '%s'", task.Key)
+
+			done := map[string]interface{}{"pc": task.PC, "status": "ok"}
+			doneJSON, _ := json.Marshal(done)
+			rdb.LPush(ctx, "done:"+task.Vtid, doneJSON)
+
+		default:
+			log.Printf("[mock-heap] unknown op: %s", task.Op)
+			done := map[string]interface{}{"pc": task.PC, "status": "error", "error": "unknown op: " + task.Op}
+			doneJSON, _ := json.Marshal(done)
+			rdb.LPush(ctx, "done:"+task.Vtid, doneJSON)
+		}
+	}
+}
+
 func fileToFuncName(filename string) string {
 	base := filepath.Base(filename)
 	return base[:len(base)-len(filepath.Ext(base))]
@@ -417,5 +513,181 @@ func TestIntegration_CrossCall(t *testing.T) {
 	t.Logf("outputs: %v", outputs)
 	if outputs["c"] != "15" {
 		t.Errorf("caller(7+8): got c=%q, want '15'", outputs["c"])
+	}
+}
+
+// ── Lifecycle 集成测试 ──
+
+// TestIntegration_LifecycleNewtensor 测试 newtensor → heap-plat 创建 tensor 元信息
+func TestIntegration_LifecycleNewtensor(t *testing.T) {
+	rdb, ctx, cancel := connectRedis(t)
+	defer cancel()
+	rdb.FlushDB(ctx)
+
+	dxPath := filepath.Join("testdata", "lifecycle_newtensor.dx")
+	fn, err := testutil.LoadDxFile(dxPath)
+	if err != nil {
+		t.Fatalf("LoadDxFile: %v", err)
+	}
+	t.Logf("loaded %s (sig=%s, body=%d lines)", fn.Name, fn.Signature, len(fn.Body))
+
+	if err := fn.RegisterFunc(ctx, rdb); err != nil {
+		t.Fatalf("RegisterFunc: %v", err)
+	}
+
+	vtid, err := testutil.CreateVThread(ctx, rdb, "lifecycle_newtensor",
+		nil, []string{"/data/x"})
+	if err != nil {
+		t.Fatalf("CreateVThread: %v", err)
+	}
+	t.Logf("vtid=%s", vtid)
+
+	// 启动 mock heap-plat
+	heapCtx, heapCancel := context.WithCancel(ctx)
+	defer heapCancel()
+	go mockHeapPlat(heapCtx, rdb)
+	time.Sleep(200 * time.Millisecond)
+
+	// 启动 VM worker
+	vmCtx, vmCancel := context.WithCancel(ctx)
+	defer vmCancel()
+	go engine.RunWorker(vmCtx, rdb, 0)
+	time.Sleep(200 * time.Millisecond)
+
+	rdb.RPush(ctx, "notify:vm", `{"event":"new_vthread","vtid":"`+vtid+`"}`)
+
+	done, _ := waitVthread(t, rdb, vtid, 10*time.Second)
+	if !done {
+		t.Fatal("vthread did not complete")
+	}
+
+	// 验证 tensor 元信息已写入 Redis
+	val, err := rdb.Get(ctx, "/data/x").Result()
+	if err != nil {
+		t.Fatalf("tensor /data/x not found in Redis: %v", err)
+	}
+	t.Logf("/data/x meta: %s", val)
+
+	var meta map[string]interface{}
+	json.Unmarshal([]byte(val), &meta)
+	if dtype, _ := meta["dtype"].(string); dtype != "f32" {
+		t.Errorf("dtype = %q, want f32", dtype)
+	}
+}
+
+// TestIntegration_LifecycleDelete 测试 newtensor → deltensor 完整销毁流程
+func TestIntegration_LifecycleDelete(t *testing.T) {
+	rdb, ctx, cancel := connectRedis(t)
+	defer cancel()
+	rdb.FlushDB(ctx)
+
+	dxPath := filepath.Join("testdata", "lifecycle_del.dx")
+	fn, err := testutil.LoadDxFile(dxPath)
+	if err != nil {
+		t.Fatalf("LoadDxFile: %v", err)
+	}
+	t.Logf("loaded %s (sig=%s, body=%d lines)", fn.Name, fn.Signature, len(fn.Body))
+
+	if err := fn.RegisterFunc(ctx, rdb); err != nil {
+		t.Fatalf("RegisterFunc: %v", err)
+	}
+
+	vtid, err := testutil.CreateVThread(ctx, rdb, "lifecycle_del",
+		nil, nil)
+	if err != nil {
+		t.Fatalf("CreateVThread: %v", err)
+	}
+	t.Logf("vtid=%s", vtid)
+
+	heapCtx, heapCancel := context.WithCancel(ctx)
+	defer heapCancel()
+	go mockHeapPlat(heapCtx, rdb)
+	time.Sleep(200 * time.Millisecond)
+
+	vmCtx, vmCancel := context.WithCancel(ctx)
+	defer vmCancel()
+	go engine.RunWorker(vmCtx, rdb, 0)
+	time.Sleep(200 * time.Millisecond)
+
+	rdb.RPush(ctx, "notify:vm", `{"event":"new_vthread","vtid":"`+vtid+`"}`)
+
+	done, _ := waitVthread(t, rdb, vtid, 10*time.Second)
+	if !done {
+		t.Fatal("vthread did not complete")
+	}
+
+	// 验证 tensor 已被删除
+	_, err = rdb.Get(ctx, "/data/tmp").Result()
+	if err != redis.Nil {
+		t.Errorf("tensor /data/tmp should be deleted, but still exists")
+	}
+	t.Log("tensor /data/tmp correctly deleted")
+}
+
+// TestIntegration_LifecycleFull 完整生命周期: create → compute → delete
+func TestIntegration_LifecycleFull(t *testing.T) {
+	rdb, ctx, cancel := connectRedis(t)
+	defer cancel()
+	rdb.FlushDB(ctx)
+
+	dxPath := filepath.Join("testdata", "lifecycle_full.dx")
+	fn, err := testutil.LoadDxFile(dxPath)
+	if err != nil {
+		t.Fatalf("LoadDxFile: %v", err)
+	}
+	t.Logf("loaded %s (sig=%s, body=%d lines)", fn.Name, fn.Signature, len(fn.Body))
+
+	if err := fn.RegisterFunc(ctx, rdb); err != nil {
+		t.Fatalf("RegisterFunc: %v", err)
+	}
+
+	vtid, err := testutil.CreateVThread(ctx, rdb, "lifecycle_full",
+		nil, []string{"/data/c"})
+	if err != nil {
+		t.Fatalf("CreateVThread: %v", err)
+	}
+	t.Logf("vtid=%s", vtid)
+
+	// 启动 mock heap-plat
+	heapCtx, heapCancel := context.WithCancel(ctx)
+	defer heapCancel()
+	go mockHeapPlat(heapCtx, rdb)
+	time.Sleep(200 * time.Millisecond)
+
+	// 启动 mock op-plat (处理 add 计算)
+	mockOpCtx, mockOpCancel := context.WithCancel(ctx)
+	defer mockOpCancel()
+	go mockOpPlat(mockOpCtx, rdb)
+	time.Sleep(200 * time.Millisecond)
+
+	// 启动 VM worker
+	vmCtx, vmCancel := context.WithCancel(ctx)
+	defer vmCancel()
+	go engine.RunWorker(vmCtx, rdb, 0)
+	time.Sleep(200 * time.Millisecond)
+
+	rdb.RPush(ctx, "notify:vm", `{"event":"new_vthread","vtid":"`+vtid+`"}`)
+
+	done, _ := waitVthread(t, rdb, vtid, 15*time.Second)
+	if !done {
+		t.Fatal("vthread did not complete")
+	}
+
+	// 验证 /data/a 和 /data/b 已被删除
+	_, err = rdb.Get(ctx, "/data/a").Result()
+	if err != redis.Nil {
+		t.Errorf("tensor /data/a should be deleted")
+	}
+	_, err = rdb.Get(ctx, "/data/b").Result()
+	if err != redis.Nil {
+		t.Errorf("tensor /data/b should be deleted")
+	}
+
+	// 验证 /data/c 仍然存在 (output tensor, not deleted)
+	val, err := rdb.Get(ctx, "/data/c").Result()
+	if err != nil {
+		t.Errorf("tensor /data/c should exist: %v", err)
+	} else {
+		t.Logf("/data/c meta: %s", val)
 	}
 }

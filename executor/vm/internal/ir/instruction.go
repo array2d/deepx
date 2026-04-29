@@ -261,12 +261,42 @@ func parseParamList(s string) []string {
 	if s == "" {
 		return nil
 	}
+	// Bracket-aware split: respect nested [], (), {}
 	var params []string
-	for _, p := range strings.Split(s, ",") {
-		p = strings.TrimSpace(p)
+	depth := 0
+	start := 0
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '[', '(', '{':
+			depth++
+		case ']', ')', '}':
+			if depth > 0 {
+				depth--
+			}
+		case ',':
+			if depth == 0 {
+				p := strings.TrimSpace(s[start:i])
+				if p != "" {
+					params = append(params, stripQuotes(p))
+				}
+				start = i + 1
+			}
+		}
+	}
+	// Last param
+	if start < len(s) {
+		p := strings.TrimSpace(s[start:])
 		if p != "" {
-			params = append(params, p)
+			params = append(params, stripQuotes(p))
 		}
 	}
 	return params
+}
+
+// stripQuotes removes surrounding double quotes.
+func stripQuotes(s string) string {
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		return s[1 : len(s)-1]
+	}
+	return s
 }
