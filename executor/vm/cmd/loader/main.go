@@ -80,11 +80,12 @@ func main() {
 		// If file has top-level calls, write /func/main to trigger VM execution
 		if len(df.TopLevelCalls) > 0 {
 			tc := df.TopLevelCalls[0] // first top-level call is the entry point
-			entryData, _ := json.Marshal(map[string]interface{}{
-				"entry":   tc.FuncName,
-				"reads":   tc.Args,
-				"writes":  tc.Outputs,
-			})
+			entryMap := map[string]interface{}{
+				"entry":  tc.FuncName,
+				"reads":  tc.Args,
+				"writes": tc.Outputs,
+			}
+			entryData, _ := json.Marshal(entryMap)
 			if err := rdb.Set(ctx, "/func/main", entryData, 0).Err(); err != nil {
 				logx.Error("FAIL %s: write /func/main: %v", f, err)
 				continue
@@ -147,6 +148,6 @@ func collectDxFiles(path string) ([]string, error) {
 			files = append(files, p)
 		}
 		return nil
-	})
+		})
 	return files, err
 }

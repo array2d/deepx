@@ -182,6 +182,13 @@ func run(flags RunFlags) error {
 	}
 	ok()
 
+
+		// Inject term config into /func/main so VM sets /vthread/<vtid>/term
+		// during vthread creation (avoids race condition with print/cerr).
+		if entryCreated {
+			injectTermIntoFuncMain(rdb)
+		}
+
 	// ── Manual entry override ──
 	// If --entry is specified, write /func/main directly
 	if flags.Entry != "" {
@@ -190,6 +197,7 @@ func run(flags RunFlags) error {
 			"entry":  flags.Entry,
 			"reads":  []string{},
 			"writes": []string{},
+				"term":   "deepxctlrun",
 		})
 		if err := rdb.Set(context.Background(), "/func/main", entryData, 0).Err(); err != nil {
 			errorX("write /func/main: %v", err)
@@ -263,6 +271,7 @@ func loadDx(loaderBin, path, redisAddr string) (funcs []string, entryCreated boo
 	logx.Debug("loading dx file", "path", path)
 
 	cmd := exec.Command(loaderBin, path, redisAddr)
+	cmd.Env = append(os.Environ(), "DEEPX_TERM=deepxctlrun")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -460,6 +469,25 @@ func setupTermWriters(rdb *goredis.Client) (string, error) {
 // collectAndCleanTermWriters reads captured stdout/stderr from the temp files,
 // pipes them to deepxctl's stdout/stderr, then removes Redis keys and temp files.
 // Intended to be called via defer after setupTermWriters.
+// injectTermIntoFuncMain adds the "term" field to /func/main so the VM
+// can set /vthread/<vtid>/term during vthread creation (atomic with
+// the vthread pipeline, avoiding the race condition with print/cerr).
+func injectTermIntoFuncMain(rdb *goredis.Client) {
+	ctx := context.Background()
+	val, err := rdb.Get(ctx, "/func/main").Result()
+	if err != nil {
+		return
+	}
+	var entry map[string]interface{}
+	if err := json.Unmarshal([]byte(val), &entry); err != nil {
+		return
+	}
+	entry["term"] = "deepxctlrun"
+	data, _ := json.Marshal(entry)
+	rdb.Set(ctx, "/func/main", data, 0)
+}
+
+
 func collectAndCleanTermWriters(rdb *goredis.Client, dir string) {
 	ctx := context.Background()
 
