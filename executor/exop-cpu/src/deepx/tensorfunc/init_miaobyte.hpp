@@ -8,9 +8,12 @@
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/init.hpp"
+#include "deepx/thread/parallel.hpp"
 
 namespace deepx::tensorfunc
-{   
+{
+    using namespace deepx::thread;
+
     //填充
     //constant
     template <typename T>
@@ -41,7 +44,7 @@ namespace deepx::tensorfunc
                     generator.seed(rd());
                 }
 
-                A.shape.rangeElementwiseParallel([&A, &p, &distribution, &generator](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &p, &distribution, &generator](int i, int i_end)
                                                  {
                                         for (int j = 0; j < i_end; j++)
                                         {

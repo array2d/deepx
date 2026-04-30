@@ -8,8 +8,11 @@
 #include "deepx/shape_changeshape.hpp"
 #include "deepx/tensorfunc/changeshape.hpp"
 #include "deepx/tensorfunc/authors.hpp"
+#include "deepx/thread/parallel.hpp"
 namespace deepx::tensorfunc
 {
+    using namespace deepx::thread;
+
     // reshape
     template <typename T>
     struct reshapeDispatcher<miaobyte, T>
@@ -56,7 +59,7 @@ namespace deepx::tensorfunc
             {
                 throw std::runtime_error("transpose error!shape");
             }
-            output.shape.rangeParallel(dim_order.size(), [&tensor, &output, &dim_order](int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+            rangeParallelMixed(output.shape, dim_order.size(), [&tensor, &output, &dim_order](int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                        {
                                         
                             for (size_t i = 0; i < dim_order.size(); ++i) {
@@ -77,7 +80,7 @@ namespace deepx::tensorfunc
                 throw TensorShapeError("Output tensor shape size must match the sum of input tensor shape sizes for concat");
             }
             int dimC = axis + 1;
-            result.shape.rangeParallel(dimC, [&](const int idx, const std::vector<int> &indices)
+            rangeParallelLinear(result.shape, dimC, [&](const int idx, const std::vector<int> &indices)
                                        {
                         int concatIdxCurrentTensor=indices[axis];;
                         int tensorIdx=0;
@@ -131,7 +134,7 @@ namespace deepx::tensorfunc
             }
             auto bmap = broadcastMap(A.shape.shape, new_shape);
 
-            B.shape.rangeParallel(B.shape.dim(), [&](const int idx, const std::vector<int> &bindices)
+            rangeParallelLinear(B.shape, B.shape.dim(), [&](const int idx, const std::vector<int> &bindices)
                                   {
                         vector<int> aindices=fromBroadcastIndices(bmap, bindices);
                         B.data[idx] = A.data[A.shape.linearat(aindices)]; });
@@ -168,7 +171,7 @@ namespace deepx::tensorfunc
             {
                 throw TensorShapeError("Indexselect shape mismatch");
             }
-            output.shape.rangeParallel(output.shape.dim(), [&](const int idx, const std::vector<int> &output_indices, ThreadLocalVectors &tlv)
+            rangeParallelMixed(output.shape, output.shape.dim(), [&](const int idx, const std::vector<int> &output_indices, ThreadLocalVectors &tlv)
                                        {  
                             fromIndexselectIndices(output_indices, index,tlv.get(1), gatherAxis, tlv.get(0));
                             output.data[idx] = input.data[input.shape.linearat(tlv.get(0))]; 
@@ -188,7 +191,7 @@ namespace deepx::tensorfunc
             {
                 throw TensorShapeError("Repeat shape mismatch");
             }
-            B.shape.rangeParallel(B.shape.dim(), [&A,&B,&repeats](const int idx, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+            rangeParallelMixed(B.shape, B.shape.dim(), [&A,&B,&repeats](const int idx, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                   {
                         for (size_t i = 0; i < A.shape.dim(); ++i) {
                             tlv.get(0)[i] = indices[i] / repeats[i];
@@ -203,7 +206,7 @@ namespace deepx::tensorfunc
     // template <typename T>
     // void split(const Tensor<T> &tensor, const int axis, std::vector<Tensor<T> *> &results)
     // {
-    //     tensor.shape.rangeParallel(axis, [&](const int idx, const std::vector<int> &indices)
+    //     rangeParallelLinear(tensor.shape, axis, [&](const int idx, const std::vector<int> &indices)
     //                                {
     //                     int splitIdxCurrentTensor=indices[axis];
     //                     int tensorIdx=0;
@@ -267,7 +270,7 @@ namespace deepx::tensorfunc
     //     if (last_expand_dim < output.shape.dim() - 1)
     //     {
     //         int copy_len = output.shape.strides[last_expand_dim + 1];
-    //         output.shape.rangeParallel(last_expand_dim + 1, [&bm, &output, &input, copy_len](int idx_linear, const std::vector<int> &indices, std::vector<int> &oldIndices)
+    //         rangeParallelLinear(output.shape, last_expand_dim + 1, [&bm, &output, &input, copy_len](int idx_linear, const std::vector<int> &indices, std::vector<int> &oldIndices)
     //                                    {
     //                 fromBroadcastIndices(bm, indices, oldIndices);
     //                 int idx_old = input.shape.linearat(oldIndices);
@@ -277,7 +280,7 @@ namespace deepx::tensorfunc
     //     }
     //     else
     //     {
-    //         output.shape.rangeParallel(output.shape.dim(), [&bm, &output, &input](int idx_linear, const std::vector<int> &indices, std::vector<int> &oldIndices)
+    //         rangeParallelLinear(output.shape, output.shape.dim(), [&bm, &output, &input](int idx_linear, const std::vector<int> &indices, std::vector<int> &oldIndices)
     //                                    {
     //                 fromBroadcastIndices(bm, indices, oldIndices);
     //                 int idx_old = input.shape.linearat(oldIndices);

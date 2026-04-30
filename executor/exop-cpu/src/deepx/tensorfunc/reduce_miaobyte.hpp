@@ -10,10 +10,12 @@
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/reduce.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
+#include "deepx/thread/parallel.hpp"
 
 namespace deepx::tensorfunc
 {
     using namespace hwy::HWY_NAMESPACE;
+    using namespace deepx::thread;
 
     // sum author=miaobyte
     template <typename T>
@@ -27,7 +29,7 @@ namespace deepx::tensorfunc
             const int minshape_1 = Lanes(ScalableTag<T>());
             if (checkeddims.rbegin()[0] == tensor.shape.dim() - 1 || tensor.shape.dim() > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
-                tensor.shape.rangeParallel(tensor.shape.dim(), [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                rangeParallelMixed(tensor.shape, tensor.shape.dim(), [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                     // 计算输出索引
                     for (size_t i = 0, j = 0; i < tensor.shape.dim(); ++i)
@@ -46,7 +48,7 @@ namespace deepx::tensorfunc
             else
             {
                 // 如果数据连续（对齐），则可以simd
-                tensor.shape.rangeParallel(tensor.shape.dim() - 1, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                rangeParallelMixed(tensor.shape, tensor.shape.dim() - 1, [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                     // 计算输出索引
                     for (size_t i = 0, j = 0; i < tensor.shape.dim(); ++i)
@@ -105,7 +107,7 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, T(1));
             if (reduced_dims.rbegin()[0] == tensor.shape.dim() - 1 || tensor.shape.dim() > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
-                tensor.shape.rangeParallel(tensor.shape.dim(), [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                rangeParallelMixed(tensor.shape, tensor.shape.dim(), [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                             // 计算输出索引
                          
@@ -125,7 +127,7 @@ namespace deepx::tensorfunc
             else
             {
                 // 如果数据连续（对齐），则可以simd
-                tensor.shape.rangeParallel(tensor.shape.dim() - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                rangeParallelMixed(tensor.shape, tensor.shape.dim() - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                                                // 计算输出索引
 
@@ -190,7 +192,7 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, std::numeric_limits<T>::lowest());
             if (reduced_dims.rbegin()[0] == tensor.shape.dim() - 1 || tensor.shape.dim() > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
-                tensor.shape.rangeParallel(tensor.shape.dim(), [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                rangeParallelMixed(tensor.shape, tensor.shape.dim(), [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                             // 计算输出索引
                          
@@ -209,7 +211,7 @@ namespace deepx::tensorfunc
             else
             {
                 // 如果数据连续（对齐），则可以simd
-                tensor.shape.rangeParallel(tensor.shape.dim() - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                rangeParallelMixed(tensor.shape, tensor.shape.dim() - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                                                // 计算输出索引
 
@@ -273,7 +275,7 @@ namespace deepx::tensorfunc
             constant<miaobyte, T>(result, std::numeric_limits<T>::max());
             if (reduced_dims.rbegin()[0] == tensor.shape.dim() - 1 || tensor.shape.dim() > reduced_dims.size() || tensor.shape[-1] >= minshape_1)
             {
-                tensor.shape.rangeParallel(tensor.shape.dim(), [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                rangeParallelMixed(tensor.shape, tensor.shape.dim(), [&tensor, &result, &reduced_dims, keepdims](const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                             // 计算输出索引
                          
@@ -293,7 +295,7 @@ namespace deepx::tensorfunc
             else
             {
                 // 如果数据连续（对齐），则可以simd
-                tensor.shape.rangeParallel(tensor.shape.dim() - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
+                rangeParallelMixed(tensor.shape, tensor.shape.dim() - 1, [&tensor, &result, &reduced_dims, keepdims](const int i, const std::vector<int> &indices, ThreadLocalVectors &tlv)
                                            {
                                                // 计算输出索引
 

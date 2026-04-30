@@ -6,42 +6,13 @@
 #include <functional>
 #include <fstream>
 #include <utility>
+#include <stdexcept>
 
 #include "stdutil/fs.hpp"
 #include "deepx/precision.hpp"
 
 namespace deepx
 {
-    // omp内线程局部变量
-    class ThreadLocalVectors
-    {
-    private:
-        std::vector<std::vector<int>> vectors;
-
-    public:
-        // 构造函数接收向量大小数组
-        explicit ThreadLocalVectors(const std::vector<int> &sizes)
-        {
-            vectors.resize(sizes.size());
-            for (size_t i = 0; i < sizes.size(); ++i)
-            {
-                vectors[i].resize(sizes[i], 0);
-            }
-        }
-
-        // 获取指定索引的向量引用
-        std::vector<int> &get(size_t index)
-        {
-            return vectors[index];
-        }
-
-        // 获取所有向量
-        std::vector<std::vector<int>> &getAll()
-        {
-            return vectors;
-        }
-    };
-
     struct Shape
     {
         Precision dtype;
@@ -60,20 +31,10 @@ namespace deepx
         int &operator[](int index);
         bool operator==(const Shape &shape) const { return shape.shape == shape.shape; }
         void print() const;
-        // range 不支持omp
         void range(int dimCount, std::function<void(const std::vector<int> &indices)> func) const;
         void range(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices)> func) const;
         void range(int dimCount, std::function<void(const int idx_linear)> func) const;
 
-        // rangeParallel 支持omp,但omp内无需线程local变量
-        void rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices)> func) const;
-        void rangeElementwiseParallel( std::function<void(const int idx_linear,const int idx_linear_end)> func) const;
-        void rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices)> func) const;
-
-        // 支持omp,但omp内需要线程local变量
-        void rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices, ThreadLocalVectors &tlv)> func, const std::vector<int> tlv_sizes) const;
-        void rangeParallel(int dimCount, std::function<void(const int idx_linear, ThreadLocalVectors &tlv)> func, const std::vector<int> tlv_sizes) const;
-        void rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)> func, const std::vector<int> tlv_sizes) const;
         int linearat(const std::vector<int> &indices) const;
         std::vector<int> linearto(int idx_linear) const;
 
@@ -84,6 +45,58 @@ namespace deepx
 
         static std::pair<std::string, Shape> loadShape(const std::string &path);
     };
+
+// ── range() serial, inline ──
+inline void Shape::range(int dimCount, std::function<void(const std::vector<int> &indices)> func) const
+{
+    if (dimCount < 0) dimCount += dim();
+    if (dimCount > dim()) throw std::invalid_argument("dimCount exceeds the number of dimensions");
+    int totalSize = 1;
+    for (int i = 0; i < dimCount; ++i) totalSize *= shape[i];
+    std::vector<int> indices(dimCount, 0);
+    for (int idx = 0; idx < totalSize; idx++)
+    {
+        int idx_ = idx;
+        for (int dim = dimCount - 1; dim >= 0; --dim)
+        {
+            indices[dim] = idx_ % shape[dim];
+            idx_ /= shape[dim];
+        }
+        func(indices);
+    }
+}
+
+inline void Shape::range(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices)> func) const
+{
+    if (dimCount < 0) dimCount += dim();
+    if (dimCount > dim()) throw std::invalid_argument("dimCount exceeds the number of dimensions");
+    int totalSize = 1, stride = 1;
+    for (int i = 0; i < dimCount; ++i) totalSize *= shape[i];
+    for (int i = dimCount; i < dim(); ++i) stride *= shape[i];
+    std::vector<int> indices(dimCount, 0);
+    for (int idx = 0; idx < totalSize; idx++)
+    {
+        int idx_ = idx;
+        for (int dim = dimCount - 1; dim >= 0; --dim)
+        {
+            indices[dim] = idx_ % shape[dim];
+            idx_ /= shape[dim];
+        }
+        func(idx * stride, indices);
+    }
+}
+
+inline void Shape::range(int dimCount, std::function<void(const int idx_linear)> func) const
+{
+    if (dimCount < 0) dimCount += dim();
+    if (dimCount > dim()) throw std::invalid_argument("dimCount exceeds the number of dimensions");
+    int totalSize = 1, stride = 1;
+    for (int i = 0; i < dimCount; ++i) totalSize *= shape[i];
+    for (int i = dimCount; i < dim(); ++i) stride *= shape[i];
+    for (int idx = 0; idx < totalSize; idx++)
+        func(idx * stride);
+}
+
 }
 
 #endif // DEEPX_SHAPE_HPP

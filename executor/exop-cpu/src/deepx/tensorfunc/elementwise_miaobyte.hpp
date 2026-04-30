@@ -8,10 +8,12 @@
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/elementwise.hpp"
 #include "deepx/tensorfunc/authors.hpp"
+#include "deepx/thread/parallel.hpp"
 
 namespace deepx::tensorfunc
 {
     using namespace hwy::HWY_NAMESPACE;
+    using namespace deepx::thread;
     // 通用元素级操作模板
     template <typename T, typename ScalarOpFunc, typename SimdOpFunc>
     void elementwise_A_B_C(const Tensor<T> &A, const Tensor<T> &B, Tensor<T> &C,
@@ -19,7 +21,7 @@ namespace deepx::tensorfunc
     {
         if (A.shape == B.shape && A.shape == C.shape)
         {
-            C.shape.rangeElementwiseParallel([&A, &B, &C, &scalar_op, &simd_op](int i, int i_end)
+            rangeElementwiseParallel(C.shape, [&A, &B, &C, &scalar_op, &simd_op](int i, int i_end)
                                              {
                                       
                                       const ScalableTag<T> tag;
@@ -63,7 +65,7 @@ namespace deepx::tensorfunc
     {
         if (A.shape == C.shape)
         {
-            C.shape.rangeElementwiseParallel([&A, &b, &C, &scalar_op, &simd_op](int i, int i_end)
+            rangeElementwiseParallel(C.shape, [&A, &b, &C, &scalar_op, &simd_op](int i, int i_end)
                                              {
                                       const ScalableTag<T> tag;
                                       const size_t lanes = Lanes(tag);
@@ -103,7 +105,7 @@ namespace deepx::tensorfunc
     template <typename T, typename Dtype>
     static void todtype(const Tensor<T> &A, Tensor<Dtype> &C)
     {
-        C.shape.rangeElementwiseParallel([&A, &C](int i, int i_end)
+        rangeElementwiseParallel(C.shape, [&A, &C](int i, int i_end)
                                          {
             for (int j = 0; j < i_end; j++)
             {
@@ -325,7 +327,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == C.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &C](int idx, int idx_end)
+                rangeElementwiseParallel(A.shape, [&A, &C](int idx, int idx_end)
                                                  {
                                            for (int j=0;j<idx_end;j++)
                                            {
@@ -346,7 +348,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == C.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &C](int idx, int idx_end)
+                rangeElementwiseParallel(A.shape, [&A, &C](int idx, int idx_end)
                                                 {
                                         for (int j=0;j<idx_end;j++)
                                         {
@@ -368,7 +370,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output](int i, int i_end)
                                                       {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
@@ -410,7 +412,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output](int i, int i_end)
                                                       {
                                                size_t j = 0;
 
@@ -435,7 +437,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, &B, &C](int i, int i_end)
+                rangeElementwiseParallel(C.shape, [&A, &B, &C](int i, int i_end)
                                                  {
                                          for (int j = 0; j < i_end; j++)
                                          C.data[i+j] = std::pow(A.data[i+j], B.data[i+j]); });
@@ -456,7 +458,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output, &value](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output, &value](int i, int i_end)
                                                       {
                                              for (int j = 0; j < i_end; j++)
                                                 output.data[i+j] = std::pow(input.data[i+j], value); });
@@ -476,7 +478,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output, &value](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output, &value](int i, int i_end)
                                                       {
                                                 for (int j = 0; j < i_end; j++)
                                                 output.data[i+j] = std::pow(value, input.data[i+j]); });
@@ -496,7 +498,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output](int i, int i_end)
                                                       { for (int j = 0; j < i_end; j++)
                                                 output.data[i+j] = std::log(input.data[i+j]); });
             }
@@ -515,7 +517,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output](int i, int i_end)
                                                       { for (int j = 0; j < i_end; j++)
                                                 output.data[i+j] = std::exp(input.data[i+j]); });
             }
@@ -534,7 +536,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output](int i, int i_end)
                                                       {
                     for (int j = 0; j < i_end; j++)
                     {
@@ -557,7 +559,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output](int i, int i_end)
                                                       {
                     for (int j = 0; j < i_end; j++)
                     {
@@ -580,7 +582,7 @@ namespace deepx::tensorfunc
         {
             if (input.shape == output.shape)
             {
-                output.shape.rangeElementwiseParallel([&input, &output](int i, int i_end)
+                rangeElementwiseParallel(output.shape, [&input, &output](int i, int i_end)
                                                       {
                     for (int j = 0; j < i_end; j++)
                     {
@@ -603,7 +605,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, &B, &C](int i, int i_end)
+                rangeElementwiseParallel(C.shape, [&A, &B, &C](int i, int i_end)
                                                  {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
@@ -645,7 +647,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, b, &C](int i, int i_end)
+                rangeElementwiseParallel(C.shape, [&A, b, &C](int i, int i_end)
                                                  {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
@@ -687,7 +689,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, &B, &C](int i, int i_end)
+                rangeElementwiseParallel(C.shape, [&A, &B, &C](int i, int i_end)
                                                  {
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
@@ -729,7 +731,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&A, b, &C](int i, int i_end)
+                rangeElementwiseParallel(C.shape, [&A, b, &C](int i, int i_end)
                                                  {   
                 const ScalableTag<T> tag;
                 const size_t lanes = Lanes(tag);
@@ -771,7 +773,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &B, &mask, epsilon](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &B, &mask, epsilon](int i, int i_end)
                                                  {
                                                              for (int j = 0; j < i_end; j++)
                                                              {
@@ -800,7 +802,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &mask, &scalar, epsilon](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &mask, &scalar, epsilon](int i, int i_end)
                                                  {
                 for (int j = 0; j < i_end; j++)
                 {
@@ -827,7 +829,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &B, &mask, epsilon](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &B, &mask, epsilon](int i, int i_end)
                                                  {
                     if (epsilon == 0)
                     {
@@ -860,7 +862,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &mask, &scalar, epsilon](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &mask, &scalar, epsilon](int i, int i_end)
                                                  {
                     if (epsilon == 0)
                     {
@@ -893,7 +895,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &B, &mask](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &B, &mask](int i, int i_end)
                                                  {
                 for (int j = 0; j < i_end; j++)
                 {
@@ -915,7 +917,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &mask, &scalar](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &mask, &scalar](int i, int i_end)
                                                  {
                 for (int j = 0; j < i_end; j++)
                 {
@@ -937,7 +939,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == B.shape && mask.shape == A.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &B, &mask](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &B, &mask](int i, int i_end)
                                                  {
                 for (int j = 0; j < i_end; j++)
                 {
@@ -959,7 +961,7 @@ namespace deepx::tensorfunc
         {
             if (A.shape == mask.shape)
             {
-                A.shape.rangeElementwiseParallel([&A, &mask, &scalar](int i, int i_end)
+                rangeElementwiseParallel(A.shape, [&A, &mask, &scalar](int i, int i_end)
                                                  {
                 for (int j = 0; j < i_end; j++)
                 {
@@ -981,7 +983,7 @@ namespace deepx::tensorfunc
         {
             if (cases.shape == C.shape)
             {
-                C.shape.rangeElementwiseParallel([&tensors, &cases, &C](int i, int i_end)
+                rangeElementwiseParallel(C.shape, [&tensors, &cases, &C](int i, int i_end)
                                                  {
                 for (int j = 0; j < i_end; j++)
                 {   
@@ -1010,7 +1012,7 @@ namespace deepx::tensorfunc
                     throw std::invalid_argument("For bool cases, tensors size must be 2");
                 }
 
-                C.shape.rangeElementwiseParallel([&tensors, &cases, &C](int i, int i_end)
+                rangeElementwiseParallel(C.shape, [&tensors, &cases, &C](int i, int i_end)
                 {
                     for (int j = 0; j < i_end; j++)
                     {   

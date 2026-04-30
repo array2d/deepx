@@ -2,9 +2,11 @@
 #define DEEPX_TENSORFUNC_MATMUL_MIAOBYTE_HPP
 
 #include "deepx/tensorfunc/matmul.hpp"
+#include "deepx/thread/parallel.hpp"
 
 namespace deepx::tensorfunc
 {
+    using namespace deepx::thread;
     template <typename T>
     struct matmulDispatcher<miaobyte,T>
     {
@@ -16,7 +18,7 @@ namespace deepx::tensorfunc
             }
             //TODO
             //这里需要进一步优化
-            C.shape.rangeParallel(C.shape.dim(), [&A,&B,&C](const int idx,const std::vector<int> &indices,ThreadLocalVectors &tlv) {
+            rangeParallelMixed(C.shape, C.shape.dim(), [&A,&B,&C](const int idx,const std::vector<int> &indices,ThreadLocalVectors &tlv) {
                 
                 // int m=A.shape[-2];
                 int k=A.shape[-1];
