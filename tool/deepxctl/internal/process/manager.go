@@ -17,6 +17,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
@@ -24,19 +25,21 @@ import (
 
 // Proc represents a managed subprocess.
 type Proc struct {
-	Name   string
-	cmd    *exec.Cmd
-	stdout bytes.Buffer
-	stderr bytes.Buffer
-	done   chan error
+	Name    string
+	cmd     *exec.Cmd
+	stdout  bytes.Buffer
+	stderr  bytes.Buffer
+	logFile *os.File // if set, stdout+stderr are also written to this file
+	done    chan error
 }
 
 // Manager tracks all subprocesses started by deepxctl.
 type Manager struct {
-	mu       sync.Mutex
-	procs    []*Proc
-	verbose  bool
-	workDir  string // if set, all subprocesses run with this CWD
+	mu      sync.Mutex
+	procs   []*Proc
+	verbose bool
+	workDir string // if set, all subprocesses run with this CWD
+	logDir  string // if set, each subprocess logs to <logDir>/<name>.log
 }
 
 // NewManager creates a process manager.
@@ -52,10 +55,23 @@ func (m *Manager) SetWorkDir(dir string) {
 	m.workDir = dir
 }
 
+// SetLogDir sets a directory for per-process log files.
+// Each subprocess gets <logDir>/<name>.log with combined stdout+stderr.
+// Files persist after the manager exits (safe for boot → detach → run workflows).
+func (m *Manager) SetLogDir(dir string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.logDir = dir
+}
+
 // Start launches a subprocess.
 //
 // binPath: path to the compiled binary
 // args: arguments passed to the binary
+//
+// If logDir is set, stdout+stderr are written directly to <logDir>/<name>.log.
+// This ensures logs survive after the manager exits (safe for boot → detach workflow).
+// If logDir is not set, stdout+stderr are captured in memory via pipes.
 func (m *Manager) Start(name, binPath string, args ...string) (*Proc, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -71,15 +87,36 @@ func (m *Manager) Start(name, binPath string, args ...string) (*Proc, error) {
 		done: make(chan error, 1),
 	}
 
-	if m.verbose {
-		cmd.Stdout = io.MultiWriter(&p.stdout, os.Stdout)
-		cmd.Stderr = io.MultiWriter(&p.stderr, os.Stderr)
+	// Case 1: log file redirection (survives parent exit).
+	if m.logDir != "" {
+		if err := os.MkdirAll(m.logDir, 0755); err != nil {
+			return nil, fmt.Errorf("create log dir %s: %w", m.logDir, err)
+		}
+		logPath := filepath.Join(m.logDir, name+".log")
+		f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("open log file %s: %w", logPath, err)
+		}
+		p.logFile = f
+		// Write directly to file — no pipes, so survives parent exit.
+		cmd.Stdout = f
+		cmd.Stderr = f
+		log.Printf("[process] %s logging to %s", name, logPath)
 	} else {
-		cmd.Stdout = &p.stdout
-		cmd.Stderr = &p.stderr
+		// Case 2: in-memory capture via pipes (for run command where parent stays alive).
+		if m.verbose {
+			cmd.Stdout = io.MultiWriter(&p.stdout, os.Stdout)
+			cmd.Stderr = io.MultiWriter(&p.stderr, os.Stderr)
+		} else {
+			cmd.Stdout = &p.stdout
+			cmd.Stderr = &p.stderr
+		}
 	}
 
 	if err := cmd.Start(); err != nil {
+		if p.logFile != nil {
+			p.logFile.Close()
+		}
 		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
 
@@ -88,6 +125,9 @@ func (m *Manager) Start(name, binPath string, args ...string) (*Proc, error) {
 	// Monitor exit in background
 	go func() {
 		p.done <- cmd.Wait()
+		if p.logFile != nil {
+			p.logFile.Close()
+		}
 	}()
 
 	m.procs = append(m.procs, p)
@@ -173,6 +213,16 @@ func (m *Manager) Stdout(name string) string {
 		}
 	}
 	return ""
+}
+
+// Detach clears the internal process list without stopping any processes.
+// Use this when the manager should exit but processes must keep running
+// (e.g., after boot, managed by PID file instead).
+func (m *Manager) Detach() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	log.Printf("[process] detaching %d subprocesses", len(m.procs))
+	m.procs = nil
 }
 
 // Stderr returns captured stderr for a named process.

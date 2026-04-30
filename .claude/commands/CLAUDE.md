@@ -26,7 +26,8 @@
 | 命令 | 说明 |
 |------|------|
 | `/boot` | 构建并启动所有服务 (deepxctl boot) |
-| `/run <file.dx>` | 运行 .dx 文件 (deepxctl run) |
+| `/run <file.dx>` | 加载 .dx 文件 (如有顶层调用则自动执行) → deepxctl run |
+| `/run --entry <f> <file.dx>` | 手动指定入口函数执行 |
 | `/shutdown` | 停止所有 booted 服务 (deepxctl shutdown) |
 | `/status` | 查看所有服务状态 → `make status` |
 | `/pipeline` | 完整联调流水线 → `make pipeline` |
@@ -46,8 +47,18 @@
 # 1. 构建并启动所有服务 (一次性)
 deepxctl boot
 
-# 2. 运行 .dx 文件 (可多次重复)
-deepxctl run example/dxlang/native/arith/add.dx
+# 2a. 加载纯定义文件 (只定义函数，不执行)
+deepxctl run example/dxlang/call/add_test.dx
+#  → "Loaded 1 function(s) into KV Space."
+#  → 没有顶层调用，VM 的 /func/main 监视器保持等待
+
+# 2b. 加载含顶层调用的文件 (自动执行)
+deepxctl run my_file_with_call.dx
+#  → loader 检测到顶层调用 → 写入 /func/main → VM 自动创建 vthread → 执行
+
+# 2c. 手动指定入口函数
+deepxctl run --entry native_arith example/dxlang/native/arith/add.dx
+#  → 绕过顶层调用检测，直接以 native_arith 为入口执行
 
 # 3. 停止所有服务
 deepxctl shutdown
@@ -94,6 +105,7 @@ plats (op-metal / heap-metal / io-metal / VM) 由 deepxctl 通过 subprocess 管
 | `cmd:heap-metal:0` | 业务 | 堆内存管理指令 |
 | `cmd:io-metal:0` | 业务 | I/O 指令 (print/save/load) |
 | `notify:vm` | 业务 | VThread 调度通知 |
+| `/func/main` | **入口** | loader→VM→deepxctl 三方协作: `{"entry":"f","reads":[...],"writes":[...]}` → `{"vtid":"...","status":"executing"}` → `{"vtid":"...","status":"done"}` |
 | `sys:cmd:op-metal:0` | 系统 | op-metal shutdown |
 | `sys:cmd:heap-metal:0` | 系统 | heap-metal shutdown |
 | `sys:cmd:io-metal:0` | 系统 | io-metal shutdown |

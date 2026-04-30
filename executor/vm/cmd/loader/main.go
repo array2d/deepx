@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -57,20 +58,45 @@ func main() {
 
 	log.Printf("found %d .dx file(s)", len(files))
 	loaded := 0
+	entryCreated := false
 	for _, f := range files {
-		fn, err := testutil.LoadDxFile(f)
+		df, err := testutil.ParseDxFile(f)
 		if err != nil {
 			log.Printf("SKIP %s: %v", f, err)
 			continue
 		}
-		if err := fn.RegisterFunc(ctx, rdb); err != nil {
-			log.Printf("FAIL %s: %v", f, err)
-			continue
+
+		// Register all function definitions
+		for i := range df.Funcs {
+			fn := &df.Funcs[i]
+			if err := fn.RegisterFunc(ctx, rdb); err != nil {
+				log.Printf("FAIL %s: %v", f, err)
+				continue
+			}
+			loaded++
+			log.Printf("OK   %-50s → /src/func/%-30s (%d body lines)", f, fn.Name, len(fn.Body))
 		}
-		loaded++
-		log.Printf("OK   %-50s → /src/func/%-30s (%d body lines)", f, fn.Name, len(fn.Body))
+
+		// If file has top-level calls, write /func/main to trigger VM execution
+		if len(df.TopLevelCalls) > 0 {
+			tc := df.TopLevelCalls[0] // first top-level call is the entry point
+			entryData, _ := json.Marshal(map[string]interface{}{
+				"entry":   tc.FuncName,
+				"reads":   tc.Args,
+				"writes":  tc.Outputs,
+			})
+			if err := rdb.Set(ctx, "/func/main", entryData, 0).Err(); err != nil {
+				log.Printf("FAIL %s: write /func/main: %v", f, err)
+				continue
+			}
+			entryCreated = true
+			log.Printf("ENTRY /func/main → %s (reads=%v writes=%v)", tc.FuncName, tc.Args, tc.Outputs)
+		}
 	}
 	log.Printf("loaded %d/%d functions into Redis", loaded, len(files))
+	if entryCreated {
+		log.Printf("ENTRY /func/main set — VM will auto-execute")
+	}
 }
 
 func printUsage() {

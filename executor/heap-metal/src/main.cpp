@@ -16,9 +16,12 @@
 using namespace deepx::heap;
 using json = nlohmann::json;
 
-static const char *HEAP_QUEUE = "cmd:heap-metal:0";
-static const char *INSTANCE_KEY = "/sys/heap-plat/heap-metal:0";
-static const int BLOCK_TIMEOUT_SEC = 5;
+static const char *HEAP_QUEUE    = "cmd:heap-metal:0";
+static const char *SYS_QUEUE     = "sys:cmd:heap-metal:0";
+static const char *INSTANCE_KEY  = "/sys/heap-plat/heap-metal:0";
+static const char *HEARTBEAT_KEY = "/sys/heartbeat/heap-metal:0";
+static const int   BLOCK_TIMEOUT_SEC = 5;
+static const int   HEARTBEAT_INTERVAL_SEC = 2;
 
 // ── Redis helpers ──
 
@@ -48,6 +51,15 @@ static bool redis_set(redisContext *c, const std::string &key, const std::string
     bool ok = r && r->type == REDIS_REPLY_STATUS;
     REDIS_FREE(r);
     return ok;
+}
+
+static void update_heartbeat(redisContext *c, const std::string &status) {
+    json hb;
+    hb["ts"] = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    hb["status"] = status;
+    hb["pid"] = getpid();
+    redis_set(c, HEARTBEAT_KEY, hb.dump());
 }
 
 static void register_instance(redisContext *c) {
@@ -248,11 +260,17 @@ int main(int argc, char **argv) {
     FileRegistry reg(registry_path);
     LifecycleManager mgr(&reg);
 
-    std::cout << "[heap] listening on " << HEAP_QUEUE << "\n";
+    std::cout << "[heap] listening on " << HEAP_QUEUE << " + " << SYS_QUEUE << "\n";
+    std::cout << "[heap] heartbeat → " << HEARTBEAT_KEY << " (every " << HEARTBEAT_INTERVAL_SEC << "s)\n";
 
-    // 消费循环
-    while (true) {
-        redisReply *r = redis_cmd(redis, "BLPOP %s %d", HEAP_QUEUE, BLOCK_TIMEOUT_SEC);
+    // 初始心跳
+    update_heartbeat(redis, "running");
+
+    // 消费循环 (同时监听业务队列和系统命令队列)
+    std::atomic<bool> running{true};
+    auto last_heartbeat = std::chrono::steady_clock::now();
+    while (running) {
+        redisReply *r = redis_cmd(redis, "BLPOP %s %s %d", HEAP_QUEUE, SYS_QUEUE, BLOCK_TIMEOUT_SEC);
         if (!r) {
             // Redis 断连 → 无限重连（不自退，heap-plat 由元程控制退出）
             std::cerr << "[heap] Redis disconnected, reconnecting...\n";
@@ -266,7 +284,16 @@ int main(int argc, char **argv) {
                 }
             }
             register_instance(redis);
+            last_heartbeat = std::chrono::steady_clock::now();
+            update_heartbeat(redis, "running");
             continue;
+        }
+
+        // ── 心跳上报 ──
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_heartbeat).count() >= HEARTBEAT_INTERVAL_SEC) {
+            update_heartbeat(redis, "running");
+            last_heartbeat = now;
         }
 
         if (r->type == REDIS_REPLY_NIL) {
@@ -280,9 +307,28 @@ int main(int argc, char **argv) {
             continue;
         }
 
+        std::string queue_name(r->element[0]->str);
         std::string payload(r->element[1]->str);
         REDIS_FREE(r);
 
+        // ── 系统命令处理 ──
+        if (queue_name == SYS_QUEUE) {
+            try {
+                json sys_cmd = json::parse(payload);
+                std::string cmd = sys_cmd.value("cmd", "");
+                if (cmd == "shutdown") {
+                    std::cout << "[heap] received sys shutdown command, exiting...\n";
+                    running = false;
+                } else {
+                    std::cerr << "[heap] unknown sys command: " << cmd << "\n";
+                }
+            } catch (const std::exception &e) {
+                std::cerr << "[heap] sys cmd JSON parse error: " << e.what() << "\n";
+            }
+            continue;
+        }
+
+        // ── 业务命令处理 ──
         // 解析 JSON
         json task;
         try {
@@ -318,7 +364,10 @@ int main(int argc, char **argv) {
     }
 
     mgr.shutdown();
+    // 上报 stopped 心跳，然后注销
     if (redis) {
+        update_heartbeat(redis, "stopped");
+        std::cout << "[heap] final heartbeat: stopped\n";
         redis_cmd(redis, "DEL %s", INSTANCE_KEY);
         redisFree(redis);
     }

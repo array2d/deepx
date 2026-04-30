@@ -15,12 +15,19 @@ func printUsage() {
 	execName := filepath.Base(os.Args[0])
 	fmt.Printf("Usage: %s [command] [arguments]\n\n", execName)
 	fmt.Println("Commands:")
-	fmt.Println("  run        Run a .dx file (one-shot: Redis → build → launch → load → exec)")
+	fmt.Println("  boot       Start services (Redis → build → launch op-metal + heap-metal + VM)")
+	fmt.Println("  run        Run a .dx file (requires prior boot)")
+	fmt.Println("  shutdown   Stop all booted services")
 	fmt.Println("  tensor     Tensor file operations (print)")
 	fmt.Println("  version    Show version")
 	fmt.Println("  help       Show this help")
 	fmt.Println()
-	fmt.Printf("Run '%s run --help' for run flags.\n", execName)
+	fmt.Println("Typical workflow:")
+	fmt.Printf("  %s boot                     # start services once\n", execName)
+	fmt.Printf("  %s run file.dx              # execute .dx (repeatable)\n", execName)
+	fmt.Printf("  %s shutdown                 # stop services when done\n", execName)
+	fmt.Println()
+	fmt.Printf("Run '%s [command] --help' for per-command flags.\n", execName)
 }
 
 func main() {
@@ -32,9 +39,14 @@ func main() {
 	subcmd := os.Args[1]
 
 	switch subcmd {
+	case "boot":
+		cmd.Boot(os.Args[2:])
+
 	case "run":
-		os.Args = os.Args[1:] // strip "deepxctl", keep "run ..."
-		cmd.Execute(os.Args[1:])
+		cmd.Run(os.Args[2:])
+
+	case "shutdown":
+		cmd.Shutdown()
 
 	case "tensor":
 		os.Args = os.Args[1:]

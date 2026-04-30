@@ -93,11 +93,82 @@ func main() {
 	}
 	log.Printf("VM-%s %d workers started", vmID, workers)
 
-	// 优雅退出
+	// ── 心跳上报 ──
+	heartbeatKey := fmt.Sprintf("/sys/heartbeat/vm:%s", vmID)
+	go func() {
+		updateVMHeartbeat(ctx, rdb, heartbeatKey, "running") // 初始心跳
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				updateVMHeartbeat(context.Background(), rdb, heartbeatKey, "stopped")
+				log.Printf("VM-%s final heartbeat: stopped", vmID)
+				return
+			case <-ticker.C:
+				updateVMHeartbeat(ctx, rdb, heartbeatKey, "running")
+			}
+		}
+	}()
+	log.Printf("VM-%s heartbeat → %s (every 2s)", vmID, heartbeatKey)
+
+	// ── /func/main 监听 ──
+	// 自动检测 loader 写入的入口点，创建 vthread 并执行。
+	// 如果没有 /func/main，则休息等待。
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				watchFuncMain(ctx, rdb, vmID)
+			}
+		}
+	}()
+	log.Printf("VM-%s /func/main watcher started (every 1s)", vmID)
+
+	// ── 系统命令监听 (Redis) ──
+	// VM 同时监听 OS 信号和 Redis 系统命令队列，二者任一触发即优雅退出。
+	sysQueue := fmt.Sprintf("sys:cmd:vm:%s", vmID)
+	go func() {
+		for {
+			result, err := rdb.BLPop(ctx, 5*time.Second, sysQueue).Result()
+			if err != nil {
+				// ctx cancelled 或 Redis 断连 → 退出监听
+				if ctx.Err() != nil {
+					return
+				}
+				continue
+			}
+			// result[0]=key, result[1]=value
+			var sysCmd struct {
+				Cmd string `json:"cmd"`
+			}
+			if err := json.Unmarshal([]byte(result[1]), &sysCmd); err != nil {
+				log.Printf("VM-%s sys cmd parse error: %v", vmID, err)
+				continue
+			}
+			if sysCmd.Cmd == "shutdown" {
+				log.Printf("VM-%s received sys shutdown via Redis, shutting down...", vmID)
+				cancel()
+				return
+			}
+			log.Printf("VM-%s unknown sys cmd: %s", vmID, sysCmd.Cmd)
+		}
+	}()
+
+	// ── OS 信号监听 (安全兜底) ──
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	sigName := <-sig
-	log.Printf("VM-%s received %s, shutting down...", vmID, sigName)
+
+	select {
+	case sigName := <-sig:
+		log.Printf("VM-%s received %s, shutting down...", vmID, sigName)
+	case <-ctx.Done():
+		log.Printf("VM-%s context cancelled, shutting down...", vmID)
+	}
 
 	// 取消 context → 所有 worker 退出
 	cancel()
@@ -109,6 +180,17 @@ func main() {
 		log.Printf("VM-%s deregister failed: %v", vmID, err)
 	}
 	log.Printf("VM-%s shutdown complete", vmID)
+}
+
+// updateVMHeartbeat writes a heartbeat to Redis.
+func updateVMHeartbeat(ctx context.Context, rdb *redis.Client, key, status string) {
+	hb := map[string]interface{}{
+		"ts":     time.Now().Unix(),
+		"status": status,
+		"pid":    os.Getpid(),
+	}
+	data, _ := json.Marshal(hb)
+	rdb.Set(ctx, key, data, 0)
 }
 
 // singleRun 执行单个 vthread 后退出 (调试/单步执行用)。
@@ -131,5 +213,108 @@ func singleRun(ctx context.Context, rdb *redis.Client, vtid string) {
 	fmt.Printf("  Status: %s\n", vs.Status)
 	if vs.Error != nil {
 		fmt.Printf("  Error:  %v\n", vs.Error)
+	}
+}
+
+// watchFuncMain polls /func/main and auto-creates vthreads when an entry is present.
+//
+// Protocol:
+//
+//	Loader writes:  SET /func/main {"entry":"funcName","reads":["...","..."],"writes":["...","..."]}
+//	VM detects:     GET /func/main → DEL /func/main (claim) → create vthread
+//	                → SET /func/main {"vtid":"<id>","status":"executing"} → LPUSH notify:vm
+//	After execution: SET /func/main {"vtid":"<id>","status":"done"} or {"status":"error",...}
+//
+// deepxctl polls /func/main for vtid → polls vthread → reads result → DEL /func/main.
+func watchFuncMain(ctx context.Context, rdb *redis.Client, vmID string) {
+	const key = "/func/main"
+
+	val, err := rdb.Get(ctx, key).Result()
+	if err != nil {
+		// Key doesn't exist — nothing to do, VM rests
+		return
+	}
+
+	var entry struct {
+		Entry  string   `json:"entry"`
+		Reads  []string `json:"reads"`
+		Writes []string `json:"writes"`
+		Vtid   string   `json:"vtid"`
+		Status string   `json:"status"`
+	}
+	if err := json.Unmarshal([]byte(val), &entry); err != nil {
+		log.Printf("VM-%s /func/main parse error: %v", vmID, err)
+		return
+	}
+
+	switch {
+	case entry.Entry != "":
+		// Phase 1: Loader wrote an entry point → claim and create vthread
+		log.Printf("VM-%s /func/main detected entry=%s (reads=%v writes=%v)", vmID, entry.Entry, entry.Reads, entry.Writes)
+
+		// Claim ownership (atomic DEL)
+		if err := rdb.Del(ctx, key).Err(); err != nil {
+			log.Printf("VM-%s failed to claim /func/main: %v", vmID, err)
+			return
+		}
+
+		// Allocate vtid
+		vtid, err := rdb.Incr(ctx, "/sys/vtid_counter").Result()
+		if err != nil {
+			log.Printf("VM-%s INCR vtid_counter failed: %v", vmID, err)
+			return
+		}
+		vtidStr := fmt.Sprintf("%d", vtid)
+
+		// Create vthread (same format as redis.CreateVThread)
+		base := fmt.Sprintf("/vthread/%d", vtid)
+		initState := `{"pc":"[0,0]","status":"init"}`
+		pipe := rdb.Pipeline()
+		pipe.Set(ctx, base, initState, 0)
+		pipe.Set(ctx, base+"/[0,0]", entry.Entry, 0)
+		pipe.Set(ctx, base+"/[0,1]", "./ret", 0)
+		if _, err := pipe.Exec(ctx); err != nil {
+			log.Printf("VM-%s create vthread %d failed: %v", vmID, vtid, err)
+			return
+		}
+
+		// Inform deepxctl of the vtid
+		statusData, _ := json.Marshal(map[string]string{
+			"vtid":   vtidStr,
+			"status": "executing",
+		})
+		rdb.Set(ctx, key, statusData, 0)
+
+		// Wake workers
+		notify, _ := json.Marshal(map[string]interface{}{
+			"event": "new_vthread",
+			"vtid":  vtidStr,
+		})
+		rdb.LPush(ctx, "notify:vm", notify)
+		log.Printf("VM-%s /func/main → vthread %d created, workers notified", vmID, vtid)
+
+	case entry.Vtid != "" && entry.Status == "executing":
+		// Phase 2: VThread is executing — check if it completed
+		vtidStr := entry.Vtid
+		vstate, err := rdb.Get(ctx, "/vthread/"+vtidStr).Result()
+		if err != nil {
+			return // vthread not yet created or already cleaned up
+		}
+
+		var vs struct {
+			Status string `json:"status"`
+		}
+		if err := json.Unmarshal([]byte(vstate), &vs); err != nil {
+			return
+		}
+
+		if vs.Status == "done" || vs.Status == "error" {
+			statusData, _ := json.Marshal(map[string]string{
+				"vtid":   vtidStr,
+				"status": vs.Status,
+			})
+			rdb.Set(ctx, key, statusData, 0)
+			log.Printf("VM-%s /func/main vtid=%s → status=%s", vmID, vtidStr, vs.Status)
+		}
 	}
 }

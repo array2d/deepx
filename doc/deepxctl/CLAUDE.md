@@ -148,45 +148,55 @@ deepxctl **绝对不能**读写的 key：
 
 ---
 
-## 5. `deepxctl run` 执行流程图
+## 5. 命令架构
+
+deepxctl 将生命周期拆分为三个独立命令：
 
 ```
-deepxctl run xxx.dx
+deepxctl boot       → 构建 + 启动 op-metal、heap-metal、VM，写入 PID 文件
+deepxctl run a.dx   → 检测 boot 状态 → 加载 dx → 创建 vthread → 轮询等待结果
+deepxctl shutdown   → 有序退出: plats → VM → 心跳验证 → 清理 PID 文件
+```
+
+### `deepxctl run` 执行流程
+
+```
+deepxctl run xxx.dx [--rm]
 │
 │  (deepxctl 负责的部分)
 │
-├─ connect Redis ───────────── PING
-├─ FLUSHDB ─────────────────── 重置 KV 空间
-├─ build (if needed) ───────── exec build.sh (子进程)
-├─ start op-plat ───────────── exec binary (子进程)
-├─ start heap-plat ─────────── exec binary (子进程)
-├─ start VM ────────────────── exec binary (子进程)
-├─ wait ready ──────────────── GET /sys/* (检查 status=running)
-├─ loader ──────────────────── exec loader binary (子进程加载 .dx)
+├─ [1/3] Check services ─────── 检查 boot PID 文件 + Redis 服务就绪
+├─ [2/3] Load dx ────────────── exec loader 二进制 (子进程加载 .dx 到 /src/func/)
+├─ [3/3] Execute ──────────────
+│   ├─ create vthread ───────── SET /vthread/<vtid> (初始状态)
+│   ├─ wake VM ──────────────── LPUSH notify:vm
+│   │                            │
+│   │                            ▼ (VM 接手 — deepxctl 不参与)
+│   │                       VM 拾取 → CALL 翻译 → dispatch → op/heap → PC++
+│   │
+│   └─ poll status ──────────── GET /vthread/<vtid> (轮询 status)
+│       ├─ done  → print result ✓
+│       └─ error → print error   ✗
 │
-│  (VM + op-plat + heap-plat 负责的部分 — deepxctl 不参与)
-│
-├─ create vthread ──────────── SET /vthread/<vtid> (deepxctl 只做初始创建)
-├─ wake VM ─────────────────── LPUSH notify:vm
-│                               │
-│                               ▼ (VM 接手)
-│                          VM 拾取 → CALL 翻译 → dispatch → op/heap
-│                               │
-│                               ▼ (op/heap 完成)
-│                          VM PC++ ... 循环直到 done/error
-│
-│  (deepxctl 恢复监控)
-│
-├─ poll status ─────────────── GET /vthread/<vtid> (轮询 status)
-├─ ┌ done  → print result ✓
-│  └ error → print error   ✗
-├─ kill all subprocesses ──── SIGTERM → SIGKILL
-└─ exit
+└─ [--rm] Cleanup (可选)
+    ├─ FLUSHDB ───────────────── 重置 Redis KV 空间
+    └─ ExecShutdown ──────────── 复用 shutdown 逻辑: plats → VM → 清理
 ```
 
 **关键分界线**：deepxctl 在 `notify:vm` 之后就不再参与执行——后续所有步骤（CALL 翻译、
 指令 dispatch、op 执行、done 通知）都是 VM/op-plat/heap-plat 之间通过 Redis 的协作。
 deepxctl 只是**旁观**：轮询 `/vthread/<vtid>` 的 status 字段，直到 `done` 或 `error`。
+
+### `--rm` 一键清理
+
+`deepxctl run a.dx --rm` 在 dx 代码执行成功后自动：
+1. **FLUSHDB** — 重置 Redis KV 空间
+2. **shutdown** — 复用 `deepxctl shutdown` 的完整退出逻辑（Redis sys:shutdown 命令 → 心跳验证 → 清理 PID 文件 → OS 信号兜底）
+
+等价于手动执行：
+```bash
+deepxctl run a.dx && make reset-redis && deepxctl shutdown
+```
 
 ---
 
@@ -243,29 +253,28 @@ VM 执行到 `[0,0]` 时：
 
 ---
 
-## 9. MVP 范围
-
-只实现 `deepxctl run xxx.dx`，文件清单：
+## 9. 当前文件清单
 
 ```
 tool/deepxctl/
 ├── main.go
 ├── go.mod
 ├── cmd/
-│   └── run.go              ← run 子命令入口
+│   ├── boot.go              ← boot 子命令 (构建 + 启动服务)
+│   ├── run.go               ← run 子命令 (加载 dx + 创建 vthread + 轮询)
+│   ├── shutdown.go          ← shutdown 子命令 (有序退出服务)
+│   └── common.go            ← 共享打印/辅助函数
 ├── internal/
-│   ├── redis/redis.go      ← 连接 + FLUSHDB + 状态检查
-│   ├── build/builder.go    ← exec build.sh
-│   ├── process/manager.go  ← 子进程生命周期
-│   ├── loader/loader.go    ← exec loader 二进制
+│   ├── redis/redis.go       ← 连接 + FLUSHDB + 状态检查 + vthread 管理
+│   ├── builder/builder.go   ← exec build.sh
+│   ├── process/manager.go   ← 子进程生命周期
 │   └── executor/executor.go ← vthread 创建 + 轮询
-└── tensor/                  ← 已有，不动
+└── tensor/                  ← tensor 文件操作 (print/save/load)
 ```
 
 不做的：
-- `build` / `start` / `stop` / `status` / `clean` / `install` 子命令
 - YAML 配置文件解析
-- JSON 输出格式
+- JSON 输出格式（结构化）
 - 多平台自动检测（先只支持 metal）
 - 守护进程模式
 - 远程 Redis TLS

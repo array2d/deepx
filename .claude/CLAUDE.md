@@ -114,13 +114,22 @@ deepxctl 将生命周期拆分为三个独立命令，**所有组件间通信严
 
 ```bash
 deepxctl boot       # 构建 + 启动 op-metal、heap-metal、VM，写入 PID 文件 /tmp/deepx-boot.json
-deepxctl run a.dx   # 检测 boot 状态 → 加载 dx → 创建 vthread → 等待结果 (可多次执行)
+deepxctl run a.dx   # 检测 boot 状态 → loader 加载 dx → 自动检测 /func/main → 等待结果 (可多次执行)
+                    #   --rm: 执行后自动 FLUSHDB + shutdown (一键清理)
+                    #   --entry <name>: 手动指定入口函数 (即使文件无顶层调用也会执行)
 deepxctl shutdown   # 有序退出: plats → VM → 心跳验证 → 清理
 ```
+
+**dxlang 执行语义 (v2)**：
+- **纯定义文件** (只有 `def` 块，无顶层调用): `deepxctl run` 仅加载函数定义到 `/src/func/*`，不执行任何代码。VM 的 `/func/main` 监视器保持等待。
+- **包含顶层调用的文件** (在 `def { }` 块外部有 `funcName(args) -> outputs`): loader 自动写入 `/func/main`，VM 检测后创建 vthread 并执行。deepxctl 轮询等待结果。
+- **手动指定入口**: `--entry <funcName>` 绕过顶层调用检测，直接写入 `/func/main`。
+- 关键 Redis key: `/func/main` — 入口协议 (`{"entry":"funcName","reads":[...],"writes":[...]}` → VM 认领后改为 `{"vtid":"...","status":"executing"}` → 最终 `{"vtid":"...","status":"done"}`)
 
 **通信规则**：
 - 业务队列: `cmd:op-metal:0`, `cmd:heap-metal:0`, `notify:vm`
 - 系统队列 (`sys:` 前缀): `sys:cmd:op-metal:0`, `sys:cmd:heap-metal:0`, `sys:cmd:vm:0`
+- 入口协议: `/func/main` (loader → VM → deepxctl 三方协作)
 - 心跳上报: `/sys/heartbeat/op-metal:0`, `/sys/heartbeat/heap-metal:0`, `/sys/heartbeat/vm:0`
   - 各组件每 2s 上报 `{"ts":...,"status":"running","pid":...}`
   - 退出时上报 `{"status":"stopped"}` — shutdown 以此验证退出完成

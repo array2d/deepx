@@ -21,7 +21,37 @@ type DxFunc struct {
 	Body      []string // dxlang instruction lines
 }
 
-// LoadDxFile reads a .dx file and returns the parsed function.
+// TopLevelCall represents a function call at the file's outermost scope
+// (outside any def { } block). When present, the loader writes /func/main
+// to trigger VM execution.
+type TopLevelCall struct {
+	FuncName string   // e.g., "add_test"
+	Args     []string // e.g., ["./a", "./b"]
+	Outputs  []string // e.g., ["./c"]
+}
+
+// DxFile represents a fully parsed .dx file with function definitions
+// and optional top-level call expressions.
+type DxFile struct {
+	Funcs         []DxFunc
+	TopLevelCalls []TopLevelCall
+}
+
+// LoadDxFile reads a .dx file and returns the first parsed function.
+// Deprecated: Use ParseDxFile for multi-function files with top-level call support.
+func LoadDxFile(path string) (*DxFunc, error) {
+	df, err := ParseDxFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if len(df.Funcs) == 0 {
+		return nil, fmt.Errorf("%s: no function definitions found", path)
+	}
+	return &df.Funcs[0], nil
+}
+
+// ParseDxFile reads a .dx file and returns all function definitions and
+// any top-level call expressions.
 //
 // File format:
 //
@@ -30,10 +60,13 @@ type DxFunc struct {
 //	    instruction1
 //	    instruction2
 //	}
+//	# more def blocks ...
 //
-// The first non-empty, non-comment line must start with 'def'.
-// Body lines are inside braces '{' ... '}'.
-func LoadDxFile(path string) (*DxFunc, error) {
+//	# optional top-level calls (outside any def { } block):
+//	funcName(arg1, arg2) -> "./output"
+//
+// Top-level calls trigger automatic vthread creation via /func/main.
+func ParseDxFile(path string) (*DxFile, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", path, err)
@@ -53,45 +86,183 @@ func LoadDxFile(path string) (*DxFunc, error) {
 		return nil, err
 	}
 
-	if len(lines) < 2 {
-		return nil, fmt.Errorf("%s: need at least def line + 1 body instruction, got %d lines", path, len(lines))
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("%s: file is empty (no content lines)", path)
 	}
 
-	// Parse def line
-	defLine := lines[0]
-	if !strings.HasPrefix(defLine, "def ") {
-		return nil, fmt.Errorf("%s: first content line must start with 'def', got: %s", path, defLine)
+	df := &DxFile{}
+
+	// ── Pass 1: Parse all def blocks ──
+	i := 0
+	for i < len(lines) {
+		if !strings.HasPrefix(lines[i], "def ") {
+			i++
+			continue
+		}
+
+		defLine := lines[i]
+		name := extractFuncName(defLine)
+		if name == "" {
+			return nil, fmt.Errorf("%s: cannot extract function name from: %s", path, defLine)
+		}
+
+		// Extract body
+		var body []string
+		bodyEnd := len(lines) // default: rest of file
+
+		if strings.HasSuffix(defLine, "{") {
+			// Braced format: find matching '}'
+			for j := i + 1; j < len(lines); j++ {
+				if lines[j] == "}" {
+					bodyEnd = j
+					break
+				}
+				body = append(body, lines[j])
+			}
+			if bodyEnd == len(lines) {
+				return nil, fmt.Errorf("%s: unclosed brace in function %s", path, name)
+			}
+			i = bodyEnd + 1 // skip past '}'
+		} else {
+			// No-brace format: scan until next 'def' or top-level call
+			for j := i + 1; j < len(lines); j++ {
+				if strings.HasPrefix(lines[j], "def ") {
+					bodyEnd = j
+					break
+				}
+				// Stop at top-level call expressions (detected by `->` outside braces)
+				if isTopLevelCall(lines[j]) {
+					bodyEnd = j
+					break
+				}
+				body = append(body, lines[j])
+			}
+			if bodyEnd == len(lines) {
+				// consumed rest of file
+				i = len(lines)
+			} else {
+				i = bodyEnd
+			}
+		}
+
+		if len(body) == 0 {
+			return nil, fmt.Errorf("%s: function %s body is empty", path, name)
+		}
+
+		df.Funcs = append(df.Funcs, DxFunc{
+			Name:      name,
+			Signature: strings.TrimSuffix(defLine, " {"),
+			Body:      body,
+		})
 	}
 
-	name := extractFuncName(defLine)
-	if name == "" {
-		return nil, fmt.Errorf("%s: cannot extract function name from: %s", path, defLine)
+	if len(df.Funcs) == 0 {
+		return nil, fmt.Errorf("%s: no 'def' function definition found", path)
 	}
 
-	// Extract body — inside { } or remaining lines
-	var body []string
-	if strings.HasSuffix(defLine, "{") {
-		// Braced format: body between { and }
-		for i := 1; i < len(lines); i++ {
-			if lines[i] == "}" {
+	// ── Pass 2: Parse top-level calls (lines not consumed by def blocks) ──
+	for _, line := range lines {
+		// Skip lines that are part of def blocks (they start with def or are inside braces)
+		if strings.HasPrefix(line, "def ") || line == "}" {
+			continue
+		}
+		// Check if this line is inside a known function body
+		inBody := false
+		for _, fn := range df.Funcs {
+			for _, bodyLine := range fn.Body {
+				if bodyLine == line {
+					inBody = true
+					break
+				}
+			}
+			if inBody {
 				break
 			}
-			body = append(body, lines[i])
 		}
-	} else {
-		// No-brace format: remaining lines are body
-		body = lines[1:]
+		if inBody {
+			continue
+		}
+
+		// Try to parse as top-level call
+		if tc, ok := parseTopLevelCall(line); ok {
+			df.TopLevelCalls = append(df.TopLevelCalls, tc)
+		}
 	}
 
-	if len(body) == 0 {
-		return nil, fmt.Errorf("%s: function body is empty", path)
+	return df, nil
+}
+
+// parseTopLevelCall attempts to parse a top-level call expression like:
+//
+//	funcName(arg1, arg2) -> "./output"
+//	funcName() -> ("./a", "./b")
+//
+// Returns the parsed call and true if successful.
+func parseTopLevelCall(line string) (TopLevelCall, bool) {
+	// Must contain '->' (call operator)
+	arrowIdx := strings.Index(line, "->")
+	if arrowIdx < 0 {
+		return TopLevelCall{}, false
 	}
 
-	return &DxFunc{
-		Name:      name,
-		Signature: strings.TrimSuffix(defLine, " {"),
-		Body:      body,
-	}, nil
+	left := strings.TrimSpace(line[:arrowIdx])
+	right := strings.TrimSpace(line[arrowIdx+2:])
+
+	// Left side: funcName(args)
+	parenOpen := strings.Index(left, "(")
+	if parenOpen < 0 {
+		return TopLevelCall{}, false
+	}
+	parenClose := strings.LastIndex(left, ")")
+	if parenClose < 0 || parenClose <= parenOpen {
+		return TopLevelCall{}, false
+	}
+
+	funcName := strings.TrimSpace(left[:parenOpen])
+	if funcName == "" {
+		return TopLevelCall{}, false
+	}
+
+	// Parse args
+	argsStr := strings.TrimSpace(left[parenOpen+1 : parenClose])
+	var args []string
+	if argsStr != "" {
+		for _, a := range strings.Split(argsStr, ",") {
+			a = strings.TrimSpace(a)
+			if a != "" {
+				args = append(args, a)
+			}
+		}
+	}
+
+	// Parse outputs (right side)
+	var outputs []string
+	right = strings.Trim(right, "()")
+	if right != "" {
+		for _, o := range strings.Split(right, ",") {
+			o = strings.TrimSpace(o)
+			// Strip quotes if present
+			o = strings.Trim(o, `"`)
+			if o != "" {
+				outputs = append(outputs, o)
+			}
+		}
+	}
+
+	return TopLevelCall{
+		FuncName: funcName,
+		Args:     args,
+		Outputs:  outputs,
+	}, true
+}
+
+// isTopLevelCall checks if a line looks like a function call expression
+// (contains '->' and is not a def line or brace).
+func isTopLevelCall(line string) bool {
+	if strings.HasPrefix(line, "def ") || line == "}" || line == "{" {
+		return false
+	}
+	return strings.Contains(line, "->")
 }
 
 // extractFuncName extracts the function name from a def line like
