@@ -2,7 +2,10 @@ module deepx/executor/vm
 
 go 1.24.4
 
-require github.com/redis/go-redis/v9 v9.19.0
+require (
+	github.com/gorilla/websocket v1.5.3
+	github.com/redis/go-redis/v9 v9.19.0
+)
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

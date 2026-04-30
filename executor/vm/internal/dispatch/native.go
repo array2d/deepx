@@ -149,8 +149,8 @@ func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst
 		if err := writeToTerm(ctx, rdb, vtid, sysKey, baseDir, label, line); err != nil {
 			logx.Debug("[%s] %s write error: %v", vtid, strings.ToUpper(inst.Opcode), err)
 		}
-		// 同时发布到 dashboard websocket 终端
-		publishToTermClients(ctx, rdb, vtid, label, line)
+		// 同时通过 WebSocket 发送到 dashboard 终端
+		sendToTermWS(ctx, rdb, vtid, label, line)
 
 		state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 		return nil
@@ -660,36 +660,6 @@ func writeToTerm(ctx context.Context, rdb *redis.Client, vtid string, sysKey, ba
 	return nil
 }
 
-// publishToTermClients 发现所有注册的 websocket 终端并发布消息。
-// 扫描 /sys/term/*/<stream>，对 type=websocket 的 HASH 执行 PUBLISH。
-func publishToTermClients(ctx context.Context, rdb *redis.Client, vtid, stream, line string) {
-	pattern := "/sys/term/*/" + stream
-	keys, err := rdb.Keys(ctx, pattern).Result()
-	if err != nil {
-		logx.Debug("[%s] KEYS %s failed: %v", vtid, pattern, err)
-		return
-	}
-	for _, key := range keys {
-		keyType, tErr := rdb.Type(ctx, key).Result()
-		if tErr != nil || keyType != "hash" {
-			continue
-		}
-		termType, hErr := rdb.HGet(ctx, key, "type").Result()
-		if hErr != nil || termType != "websocket" {
-			continue
-		}
-		channel, cErr := rdb.HGet(ctx, key, "detail").Result()
-		if cErr != nil || channel == "" {
-			continue
-		}
-		if pErr := rdb.Publish(ctx, channel, line).Err(); pErr != nil {
-			logx.Debug("[%s] PUBLISH %s error: %v", vtid, channel, pErr)
-			continue
-		}
-		logx.Debug("[%s] PUBLISH %s %q -> %s", vtid, stream, line, channel)
-	}
-}
-
 // evalInput 从 stdin reader 读取一行输入。
 // 如果提供了 prompt 参数，会先写入 stdout。
 func evalInput(ctx context.Context, rdb *redis.Client, vtid string, inputs []nativeValue) (nativeValue, error) {
@@ -699,7 +669,7 @@ func evalInput(ctx context.Context, rdb *redis.Client, vtid string, inputs []nat
 		if err := writeToTerm(ctx, rdb, vtid, sysTermDefaultStdout, stdoutWriterBase, "stdout", prompt); err != nil {
 			logx.Debug("[%s] INPUT prompt write error: %v", vtid, err)
 		}
-		publishToTermClients(ctx, rdb, vtid, "stdout", prompt)
+		sendToTermWS(ctx, rdb, vtid, "stdout", prompt)
 	}
 
 	// 获取 stdin reader
