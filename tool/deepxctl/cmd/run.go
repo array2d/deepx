@@ -144,7 +144,7 @@ func run(flags RunFlags) error {
 	defer rdb.Close()
 
 	services := map[string]string{
-		"op-plat":   "/sys/op-plat/exop-metal:0",
+		"op-plat":   "/sys/op-plat/op-metal:0",
 		"heap-plat": "/sys/heap-plat/heap-metal:0",
 		"vm":        "/sys/vm/0",
 	}
@@ -157,9 +157,10 @@ func run(flags RunFlags) error {
 	logx.Debug("all services verified")
 
 	// ── Setup term writers for this run ──
-	// VM's builtin print uses writers registered at /sys/term/default/.
-	// deepxctl registers per-run writers at /sys/term/ctlrun/ so output
-	// is captured to temp files and later piped to deepxctl's stdout/stderr.
+	// VM's builtin print reads /vthread/<vtid>/term to find the terminal
+	// name, then looks up /sys/term/<name>/stdout,stderr,stdin (hash keys).
+	// deepxctl registers writers at /sys/term/deepxctlrun/ and later sets
+	// /vthread/<vtid>/term = "deepxctlrun" when the vtid is assigned.
 	termDir, err := setupTermWriters(rdb)
 	if err != nil {
 		logx.Warn("failed to set up term writers, VM print may go to default", "error", err)
@@ -333,6 +334,8 @@ func pollFuncMain(rdb *goredis.Client, timeout time.Duration) (*funcMainResult, 
 		if entry.Vtid != "" {
 			vtid = entry.Vtid
 			logx.Debug("VM picked up /func/main", "vtid", vtid)
+			// Point this vthread to deepxctl's term writers
+			rdb.Set(ctx, "/vthread/"+vtid+"/term", "deepxctlrun", 0)
 			break
 		}
 
@@ -410,7 +413,7 @@ func autoBoot(redisAddr string) error {
 // ── Term writers (VM builtin print stdout/stderr capture) ──
 
 // setupTermWriters creates temp files for stdout/stderr and registers them
-// as Redis hash keys at /sys/term/ctlrun/. Each key stores fields:
+// as Redis hash keys at /sys/term/deepxctlrun/. Each key stores fields:
 //
 //	type:   "file"
 //	detail: "/path/to/file"
@@ -421,7 +424,7 @@ func autoBoot(redisAddr string) error {
 //
 // Returns the temp directory path for later collection/cleanup.
 func setupTermWriters(rdb *goredis.Client) (string, error) {
-	dir, err := os.MkdirTemp("", "deepx-ctlrun-*")
+	dir, err := os.MkdirTemp("", "deepxctl-run-*")
 	if err != nil {
 		return "", fmt.Errorf("create term dir: %w", err)
 	}
@@ -439,12 +442,12 @@ func setupTermWriters(rdb *goredis.Client) (string, error) {
 		return "", fmt.Errorf("create stderr file: %w", err)
 	}
 
-	// Register writers at /sys/term/ctlrun/ (3 independent hash keys)
+	// Register writers at /sys/term/deepxctlrun/ (3 independent hash keys)
 	ctx := context.Background()
 	pipe := rdb.Pipeline()
-	pipe.HSet(ctx, "/sys/term/ctlrun/stdout", "type", "file", "detail", stdoutPath)
-	pipe.HSet(ctx, "/sys/term/ctlrun/stderr", "type", "file", "detail", stderrPath)
-	pipe.HSet(ctx, "/sys/term/ctlrun/stdin",  "type", "file", "detail", "/dev/null")
+	pipe.HSet(ctx, "/sys/term/deepxctlrun/stdout", "type", "file", "detail", stdoutPath)
+	pipe.HSet(ctx, "/sys/term/deepxctlrun/stderr", "type", "file", "detail", stderrPath)
+	pipe.HSet(ctx, "/sys/term/deepxctlrun/stdin",  "type", "file", "detail", "/dev/null")
 	if _, err := pipe.Exec(ctx); err != nil {
 		os.RemoveAll(dir)
 		return "", fmt.Errorf("register term writers in Redis: %w", err)
@@ -474,9 +477,9 @@ func collectAndCleanTermWriters(rdb *goredis.Client, dir string) {
 
 	// Clean up Redis hash keys
 	rdb.Del(ctx,
-		"/sys/term/ctlrun/stdout",
-		"/sys/term/ctlrun/stderr",
-		"/sys/term/ctlrun/stdin",
+		"/sys/term/deepxctlrun/stdout",
+		"/sys/term/deepxctlrun/stderr",
+		"/sys/term/deepxctlrun/stdin",
 	)
 
 	// Clean up temp directory
