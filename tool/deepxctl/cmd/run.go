@@ -144,7 +144,7 @@ func run(flags RunFlags) error {
 	defer rdb.Close()
 
 	services := map[string]string{
-		"op-plat":   "/sys/op-plat/op-metal:0",
+		"op-plat":   "/sys/op-plat/exop-metal:0",
 		"heap-plat": "/sys/heap-plat/heap-metal:0",
 		"vm":        "/sys/vm/0",
 	}
@@ -215,8 +215,8 @@ func run(flags RunFlags) error {
 		greenCheck()
 		fmt.Printf("  vtid=%s  status=%s  %v\n", result.Vtid, result.Status, result.Duration)
 
-		// 读取 print 输出 (stdout io writer → 文件)
-		stdoutURI, err := rdb.Get(context.Background(), "/vthread/"+result.Vtid+"/stdout").Result()
+		// 读取 print 输出 (stdout io writer → /sys/term/default/stdout)
+		stdoutURI, err := rdb.Get(context.Background(), "/sys/term/default/stdout").Result()
 		if err == nil && stdoutURI != "" {
 			if stdout := readStdoutFile(stdoutURI); stdout != "" {
 				fmt.Print(stdout)

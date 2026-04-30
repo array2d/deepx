@@ -126,7 +126,7 @@ func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst
 		return err
 	}
 
-	// print 输出到 io writer (文件、网络等)，由 /vthread/<vtid>/stdout 指向
+	// print 输出到 io writer (文件、网络等)，由 /sys/term/default/stdout 指向
 	if inst.Opcode == "print" {
 		parts := make([]string, len(inputs))
 		for i, v := range inputs {
@@ -528,53 +528,52 @@ func evalPrint(inputs []nativeValue) (nativeValue, error) {
 
 // ── io writer: print 输出的目标 ──
 
-// stdoutWriterURI is the default io writer URI for print output.
-// Format: file:///tmp/deepx-stdout/<vtid>.log
+// sysTermDefaultStdout 系统级默认 stdout writer 注册 key。
+// 由启动时注册，VM 遇到 print 指令时读取该 key 获取 writer URI。
+// Writer 类型: file://path 等。
+const sysTermDefaultStdout = "/sys/term/default/stdout"
+
+// stdoutWriterBase 默认 stdout writer 文件根目录。
 const stdoutWriterBase = "/tmp/deepx-stdout"
 
-// ensureStdoutWriter 确保 vthread 有一个 stdout io writer。
-// 如果 /vthread/<vtid>/stdout 不存在或类型错误，创建默认文件 writer 并写入 key。
-func ensureStdoutWriter(ctx context.Context, rdb *redis.Client, vtid string) (string, error) {
-	stdoutKey := "/vthread/" + vtid + "/stdout"
-
-	// 检查是否已有 io writer
-	uri, err := rdb.Get(ctx, stdoutKey).Result()
+// getStdoutWriter 获取系统注册的 stdout io writer URI。
+// 如果 /sys/term/default/stdout 未注册，创建默认文件 writer 并注册。
+func getStdoutWriter(ctx context.Context, rdb *redis.Client) (string, error) {
+	uri, err := rdb.Get(ctx, sysTermDefaultStdout).Result()
 	if err == nil && uri != "" {
 		// 验证 URI 格式
 		if strings.HasPrefix(uri, "file://") || strings.HasPrefix(uri, "tcp://") {
 			return uri, nil
 		}
-		// 不是有效的 io writer URI → 删除重建
-		logx.Warn("[%s] invalid stdout writer URI: %s, recreating", vtid, uri)
-		rdb.Del(ctx, stdoutKey)
+		logx.Warn("invalid stdout writer URI at %s: %s, recreating", sysTermDefaultStdout, uri)
+		rdb.Del(ctx, sysTermDefaultStdout)
 	} else if err != nil && err != redis.Nil {
 		// 类型错误 (如 WRONGTYPE) → 删除重建
-		logx.Warn("[%s] stdout key error: %v, recreating", vtid, err)
-		rdb.Del(ctx, stdoutKey)
+		logx.Warn("stdout writer error at %s: %v, recreating", sysTermDefaultStdout, err)
+		rdb.Del(ctx, sysTermDefaultStdout)
 	}
 
-	// 创建默认文件 writer
+	// 创建默认文件 writer (file 类型)
 	os.MkdirAll(stdoutWriterBase, 0755)
-	filePath := stdoutWriterBase + "/" + vtid + ".log"
+	filePath := stdoutWriterBase + "/default.log"
 	uri = "file://" + filePath
 
-	// 截断旧文件 (vtid 可能复用，避免多次运行输出累积)
 	os.WriteFile(filePath, nil, 0644)
 
-	// 写入 Redis 引用 (VM 重启后可根据 key 找到文件)
-	rdb.Set(ctx, stdoutKey, uri, 0)
+	rdb.Set(ctx, sysTermDefaultStdout, uri, 0)
+	logx.Debug("registered default stdout writer: %s", uri)
 
 	return uri, nil
 }
 
-// writeToStdout 将一行输出写入 vthread 的 stdout io writer。
+// writeToStdout 将一行输出写入系统 stdout io writer。
 func writeToStdout(ctx context.Context, rdb *redis.Client, vtid string, line string) error {
-	uri, err := ensureStdoutWriter(ctx, rdb, vtid)
+	uri, err := getStdoutWriter(ctx, rdb)
 	if err != nil {
-		return fmt.Errorf("ensure stdout writer: %w", err)
+		return fmt.Errorf("get stdout writer: %w", err)
 	}
 
-	// 解析 URI，目前仅支持 file://
+	// 解析 URI，目前支持 file://
 	if !strings.HasPrefix(uri, "file://") {
 		return fmt.Errorf("unsupported stdout writer: %s", uri)
 	}
