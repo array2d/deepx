@@ -2,15 +2,35 @@
 
 deepx 事件拦截与自动化。
 
-## 可用钩子
+## 已注册钩子
 
-| 钩子 | 触发事件 | 动作 |
-|------|---------|------|
-| `post-build-exop-metal` | `/build-exop-metal` 完成后 | 验证 default.metallib 存在 + 运行 shm 测试 |
-| `post-build-vm` | `/build-vm` 完成后 | go vet 检查 + 单元测试结果确认 |
+| 钩子 | 类型 | 触发条件 | 动作 |
+|------|------|---------|------|
+| `block-dangerous-git.sh` | `PreToolUse(Bash)` | 任何 Bash 调用包含高风险 git 命令时 | **拦截执行**，返回错误阻止命令运行 |
 
-## 实现方式
+### 拦截的高风险命令
 
-钩子逻辑嵌入在对应命令脚本中（如 `test-exop-metal.sh` 同时做构建+测试）。
+- `git reset --hard`
+- `git push --force` / `git push -f`
+- `git clean -fd` / `git clean -fdx`
+- `git checkout -- .`
+- `git restore .`
+- `rm -rf .git`
 
-如需扩展为独立钩子文件，在此目录下创建 `on-<event>.sh` 并在 settings 中注册。
+拦截规则详见 `.claude/git.md`。
+
+## 添加新钩子
+
+在此目录下创建脚本文件（如 `on-post-build.sh`），然后在 `.claude/settings.local.json` 中注册：
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{"type": "command", "command": "bash .claude/hooks/your-hook.sh"}] }
+    ]
+  }
+}
+```
+
+支持的 hook 事件: `PreToolUse`, `PostToolUse`, `Notification`, `Stop`
