@@ -11,7 +11,6 @@ if(NOT APPLE)
 endif()
 
 include_directories(src)
-include_directories(../old-cppcommon)
 include_directories(../common-metal/include)
 
 # hiredis (Redis C client)

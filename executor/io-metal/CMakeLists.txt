@@ -7,7 +7,6 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
 
 include_directories(src)
-include_directories(../common-metal/include)
 
 # hiredis (Redis C client)
 include_directories(/opt/homebrew/opt/hiredis/include)
@@ -16,12 +15,12 @@ link_directories(/opt/homebrew/opt/hiredis/lib)
 # nlohmann/json (header-only JSON parser)
 include_directories(/opt/homebrew/opt/nlohmann-json/include)
 
-# 依赖 common-metal 公共库 (shm_tensor)
-if(NOT TARGET deepx_common_metal)
-    add_subdirectory(../common-metal common-metal)
+# 依赖 deepx-core（shm_tensor / tensor / dtype）
+if(NOT TARGET deepx_core)
+    add_subdirectory(../deepx-core deepx-core)
 endif()
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE deepx_common_metal hiredis)
+target_link_libraries(${PROJECT_NAME} PRIVATE deepx_core hiredis)

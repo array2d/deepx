@@ -10,7 +10,7 @@
 #include <chrono>
 
 #include "deepx/tensor.hpp"
-#include "../mem/mem.hpp"
+#include "mem/mem.hpp"
 #include "deepx/typespec.hpp"
 
 #include "stdutil/error.hpp"

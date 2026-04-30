@@ -404,16 +404,13 @@ executor/old-cppcommon/README.md    # 添加拆分说明
 - dxlang 源码已删除，仅保留 README.md 说明迁移
 - exop-metal 中对 dxlang 的死引用已清理
 
-**Step 5.2** — 审计 old-cppcommon → deepx-core：✅ 已完成
-- 已删除 5 个核心类型文件（dtype.hpp/shape.hpp/tensor.hpp/tensorbase.hpp/shape.cpp）— 已迁移至 deepx-core
-- dtype.hpp 为空文件，由 `precision.hpp` + `data_category.hpp` + `typespec.hpp` 替代
-- 其他文件 diff 验证：仅 include 路径差异（`"shape.hpp"` → `"deepx/shape.hpp"` 等），内容一致
-- 保留 29 个文件：tensorfunc/(8) + tf/(4) + mem/(1) + client/(5) + shape_helpers/(10) + vector_combination/(2)
-- 所有保留代码的 include 已更新为 deepx-core 规范路径（共 24 处替换）
-- exop-metal 中 8 处 `"tensor.hpp"` 引用更新为 `"deepx/tensor.hpp"`
-- 修复 deepx-core `print.hpp` 的虚假 `"deepx/dtype.hpp"` → `"deepx/precision.hpp"`
-- 修复 exop-metal `dtype_metal.hpp` 的 `"dtype.hpp"` → `"deepx/precision.hpp"`
-- 添加 `old-cppcommon/README.md` 说明迁移状态
+**Step 5.2** — 审计 old-cppcommon → deepx-core：✅ 已完成（三个阶段）
+- 阶段一（核心类型）：删除 5 个文件（dtype.hpp/shape.hpp/tensor.hpp/tensorbase.hpp/shape.cpp）— 已迁移至 deepx-core
+- 阶段二（shape 辅助工具）：迁移 11 个文件（shape_changeshape/matmul/reduce/tensorinit/range/vector_combination）
+- 阶段三（TF 框架 + 算子接口）：迁移 13 个文件（tensorfunc/8 + tf/4 + mem/1）
+- old-cppcommon 整体 `rm -rf` 删除，34 个文件全部迁移完成
+- 所有保留代码的 include 已更新为 deepx-core 规范路径
+- exop-metal CMakeLists.txt 移除 `include_directories(../old-cppcommon)`
 
 **Step 5.3** — 审计 common-metal → deepx-core：✅ 已完成
 - 确认 shm_tensor 和 registry 平台无关代码已全部拆分

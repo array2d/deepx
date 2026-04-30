@@ -27,6 +27,37 @@
 | `deepx/shape.hpp` | Shape 结构体：dtype, shape, strides, size, bytes()；含 YAML 序列化 |
 | `deepx/tensor_base.hpp` | TensorBase：轻量基类，仅持有 Shape |
 | `deepx/tensor.hpp` | Tensor\<T\> 模板：data 指针 + 内存管理函数（RAII） |
+| `deepx/shape_changeshape.hpp` | transpose/concat/broadcast/indexselect/repeat 形状计算 |
+| `deepx/shape_matmul.hpp` | 矩阵乘法形状计算 |
+| `deepx/shape_reduce.hpp` | reduce 归约形状计算 |
+| `deepx/shape_tensorinit.hpp` | 张量初始化形状计算 |
+| `deepx/vector_combination.hpp` | 向量组合工具 |
+
+### tensorfunc — 算子 Dispatch 接口
+
+| 头文件 | 内容 |
+|--------|------|
+| `tensorfunc/authors.hpp` | Author 标签（default_, miaobyte, cblas, cublas） |
+| `tensorfunc/elementwise.hpp` | Dispatcher：add/sub/mul/div/pow/sqrt/log/exp/sin/cos/tan/max/min/equal/less/greater/invert/switch |
+| `tensorfunc/matmul.hpp` | Dispatcher：matmul |
+| `tensorfunc/init.hpp` | Dispatcher：constant/arange/dropout/uniform/normal |
+| `tensorfunc/reduce.hpp` | Dispatcher：reducemax/reducemin/sum/prod |
+| `tensorfunc/changeshape.hpp` | Dispatcher：reshape/transpose/concat/broadcastTo/indexselect/repeat/repeat_interleave |
+| `tensorfunc/io.hpp` | Dispatcher：print |
+| `tensorfunc/tensorlife.hpp` | 张量生命周期管理 |
+
+### tf — TF 框架
+
+| 头文件 | 内容 |
+|--------|------|
+| `tf/tf.hpp` | TF 类（name/tftype/args/returns/metadata）；Param；TFMetadata；OpResp |
+| `tf/tffactory.hpp` | TfFactory → TFFamily → TFAuthor 多层注册与类型匹配调度 |
+
+### mem — 内存管理
+
+| 头文件 | 内容 |
+|--------|------|
+| `mem/mem.hpp` | MemBase：args(map) + tensor 存储(map)；addarg/getarg/addtensor/gettensor |
 
 ### shmem — 共享内存
 
@@ -93,13 +124,13 @@ deepx-core (dtype + tensor + shmem + registry + stdutil)
 
 ## 迁移说明
 
-deepx-core 整合了以下三个原有库的平台无关部分：
+deepx-core 整合了以下三个原有库的平台无关部分（全部迁移完成，旧目录均已清理）：
 
-| 原库 | 迁移内容 | 保留内容 |
-|------|---------|---------|
-| `dxlang/` | dtype (precision/data_category/typespec), stdutil | 目录保留兼容，标记废弃 |
-| `common-metal/` | shm_tensor, registry | Metal device 检测 (metal_device) |
-| `old-cppcommon/` | shape, tensor, tensor_base | 算子接口 (tensorfunc), TF 框架 (tf), 旧通信 (client) |
+| 原库 | 迁移内容 | 状态 |
+|------|---------|------|
+| `dxlang/` | dtype (precision/data_category/typespec), stdutil (7+3) | 源码已删除，仅保留 README |
+| `common-metal/` | shm_tensor, registry | 已删除，仅保留 Metal HAL |
+| `old-cppcommon/` | 全部 29 个文件：核心类型(5) + shape辅助(11) + tensorfunc(8) + tf(4) + mem(1) | 目录已删除（rm -rf） |
 
 ## 设计原则
 
