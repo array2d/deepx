@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#include "deepx/dtype.hpp"
+#include "deepx/precision.hpp"
 #include "deepx/shape.hpp"
 #include "stdutil/vector.hpp"
 namespace stdutil

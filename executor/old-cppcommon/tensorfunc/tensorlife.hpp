@@ -1,7 +1,7 @@
 #ifndef DEEPX_TENSORFUNC_TENSORLIFE_HPP
 #define DEEPX_TENSORFUNC_TENSORLIFE_HPP
 
-#include "../tensor.hpp"
+#include "deepx/tensor.hpp"
 
 namespace deepx::tensorfunc
 {

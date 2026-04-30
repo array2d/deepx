@@ -1,7 +1,7 @@
 #ifndef DEEPX_SHAPE_TENSORINIT_HPP
 #define DEEPX_SHAPE_TENSORINIT_HPP
 
-#include "shape.hpp"
+#include "deepx/shape.hpp"
 
 namespace deepx
 {

@@ -23,7 +23,7 @@
 | 组件 | 一句话职责 |
 |------|-----------|
 | **executor/dxlang** | ⚠️ 代码已迁移至 deepx-core，目录保留兼容（CMake target `deepxcore` 将被 `deepx_core` 替代） |
-| **executor/common-metal** | Metal HAL 库：封装 Metal 设备查询（`metal_device`）。shm_tensor/registry 已迁移至 deepx-core |
+| **executor/common-metal** | Metal HAL 库：仅封装 Metal 设备查询（`metal_device.hpp`/`metal_device.cpp`）。shm_tensor/registry 源码已删除，迁移至 deepx-core |
 
 ### 堆平面 (heap-plat)
 
@@ -38,7 +38,7 @@
 | 组件 | 一句话职责 |
 |------|-----------|
 | **exop-cpu** | 被动消费 `cmd:op-cpu:*`，在 CPU 上以 OpenMP + SIMD 执行张量运算 |
-| **op-metal** | 被动消费 `cmd:op-metal:*`，在 Apple GPU 上执行张量计算，完成后通知 `done:<vtid>` |
+| **exop-metal** | 被动消费 `cmd:exop-metal:*`，在 Apple GPU 上执行张量计算，完成后通知 `done:<vtid>` |
 | **op-cuda** | 被动消费 `cmd:op-cuda:*`，在 NVIDIA GPU 上执行张量计算，完成后通知 `done:<vtid>` |
 
 ### I/O 平面 (io-plat)
@@ -77,7 +77,7 @@
 
 | 组件 | 一句话职责 |
 |------|-----------|
-| **old-cppcommon** | 旧版 C++ Tensor/Shape/TF 框架，核心类型已迁移至 deepx-core，保留算子接口(tensorfunc)和 TF 框架供 exop-cpu 旧架构使用 |
+| **old-cppcommon** | 旧版 C++ 代码，核心类型(Shape/Tensor/TensorBase/dtype)已删除并迁移至 deepx-core，保留算子接口(tensorfunc)、TF 框架(tf)、内存管理(mem)、旧通信(client)和 shape 辅助工具供 exop-metal 使用 |
 | **op-mem-ompsimd** | ⚠️ 已废弃，由 exop-cpu 替代 |
 
 ## C++ 组件依赖关系
@@ -93,7 +93,7 @@
               │            │          │              │
               ▼            ▼          ▼              ▼
         ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
-        │ exop-cpu │ │ op-cuda  │ │ op-metal │ │heap-metal│
+        │ exop-cpu │ │ op-cuda  │ │ exop-metal │ │heap-metal│
         │  (CPU)   │ │ (CUDA)  │ │ (Metal)  │ │ (Metal)  │
         └──────────┘ └──────────┘ └────┬─────┘ └────┬─────┘
                                        │            │
@@ -106,7 +106,7 @@
 
 **依赖说明**:
 - `deepx-core` — 所有 executor 的共同依赖（平台无关）
-- `common-metal` — 仅 op-metal / heap-metal 需要（Apple Metal HAL）
+- `common-metal` — 仅 exop-metal / heap-metal 需要（Apple Metal HAL）
 - `exop-cpu` / `op-cuda` / `heap-cpu` — 仅依赖 deepx-core，无需 Metal
 - `old-cppcommon/tensorfunc` — 算子接口定义（Dispatcher 模式），多后端可复用
 - `old-cppcommon/tf` — TF 框架（仅 exop-cpu 旧架构依赖，逐步淘汰）
@@ -119,7 +119,7 @@
 | `doc/vm/` | VM 设计、调度器 | `README.md` `scheduler.md` |
 | `doc/dxlang/` | dxlang 语言设计（类型系统、控制流、编译器分析） | `README.md` `compiler-analysis-ssa-vs-arrow.md` `control-flow.md` |
 | `doc/heap-plat/` | 堆管理平面 (tensor 生命周期) | `README.md` `heap-metal.md` `heap-cuda.md` `heap-cpu.md` |
-| `doc/op-plat/` | 计算平面 (算子注册、GPU kernel) | `README.md` `op-metal.md` `op-cuda.md` `op-cpu.md` |
+| `doc/op-plat/` | 计算平面 (算子注册、GPU kernel) | `README.md` `exop-metal.md` `op-cuda.md` `op-cpu.md` |
 | `doc/plans/` | 架构演进规划 | `cpp-core-libs-integration.md` |
 
 按任务查阅: 架构→`metaproc/` · dxlang→`dxlang/` · op开发→`op-plat/` · heap开发→`heap-plat/` · VM开发→`vm/` · 核心库→`deepx-core/`
@@ -136,11 +136,11 @@
 
 | 命令 | 说明 |
 |------|------|
-| `make build-all` | 构建全部项目 (VM + deepxctl + dashboard + op-metal + heap-metal + exop-cpu + heap-cpu + io-metal) |
+| `make build-all` | 构建全部项目 (VM + deepxctl + dashboard + exop-metal + heap-metal + exop-cpu + heap-cpu + io-metal) |
 | `make build-vm` | 构建 VM + loader (Go) → `/tmp/deepx-vm/vm` `/tmp/deepx-vm/loader` |
 | `make build-deepxctl` | 构建 deepxctl CLI (Go) → `/tmp/deepx-vm/deepxctl` |
 | `make build-dashboard` | 构建 dashboard (Go+React) → `/tmp/deepx-dashboard/` |
-| `make build-op-metal` | 构建 Metal 计算平面 (C++/Metal cmake) → `/tmp/deepx/op-metal/build/deepx-op-metal` |
+| `make build-exop-metal` | 构建 Metal 计算平面 (C++/Metal cmake) → `/tmp/deepx/exop-metal/build/deepx-exop-metal` |
 | `make build-heap-metal` | 构建 Metal 堆管理平面 (C++ cmake) → `/tmp/deepx/heap-metal/build/deepx-heap-metal` |
 | `make build-exop-cpu` | 构建 CPU 扩展算子平面 (C++ cmake) → `/tmp/deepx/exop-cpu/build/deepx-exop-cpu` |
 | `make build-heap-cpu` | 构建 CPU 堆管理平面 (C++ cmake) → `/tmp/deepx/heap-cpu/build/deepx-heap-cpu` |
@@ -152,7 +152,7 @@
 |------|------|
 | `make test-vm` | 运行 VM 单元测试 |
 | `make test-integration` | 运行 VM 集成测试 (需要 Redis，纯 VM 算子) |
-| `/test-op-metal` | 构建 op-metal 并运行 shm 跨进程测试 (C++ 独立测试) |
+| `/test-exop-metal` | 构建 exop-metal 并运行 shm 跨进程测试 (C++ 独立测试) |
 | `make pipeline` | 完整联调流水线: build → start-services → reset-redis → stop |
 | `make reset-redis` | 重置 Redis 测试环境 (FLUSHDB) |
 
@@ -161,7 +161,7 @@
 deepxctl 将生命周期拆分为三个独立命令，**所有组件间通信严格通过 Redis KV Space**：
 
 ```bash
-deepxctl boot       # 构建 + 启动 op-metal、heap-metal、VM，写入 PID 文件 /tmp/deepx-boot.json
+deepxctl boot       # 构建 + 启动 exop-metal、heap-metal、VM，写入 PID 文件 /tmp/deepx-boot.json
 deepxctl run a.dx   # 检测 boot 状态 → loader 加载 dx → 自动检测 /func/main → 等待结果 (可多次执行)
                     #   --rm: 执行后自动 FLUSHDB + shutdown (一键清理)
                     #   --entry <name>: 手动指定入口函数 (即使文件无顶层调用也会执行)
@@ -175,20 +175,20 @@ deepxctl shutdown   # 有序退出: plats → VM → 心跳验证 → 清理
 - 关键 Redis key: `/func/main` — 入口协议 (`{"entry":"funcName","reads":[...],"writes":[...]}` → VM 认领后改为 `{"vtid":"...","status":"executing"}` → 最终 `{"vtid":"...","status":"done"}`)
 
 **通信规则**：
-- 业务队列: `cmd:op-metal:0`, `cmd:heap-metal:0`, `notify:vm`
-- 系统队列 (`sys:` 前缀): `sys:cmd:op-metal:0`, `sys:cmd:heap-metal:0`, `sys:cmd:vm:0`
+- 业务队列: `cmd:exop-metal:0`, `cmd:heap-metal:0`, `notify:vm`
+- 系统队列 (`sys:` 前缀): `sys:cmd:exop-metal:0`, `sys:cmd:heap-metal:0`, `sys:cmd:vm:0`
 - 入口协议: `/func/main` (loader → VM → deepxctl 三方协作)
-- 心跳上报: `/sys/heartbeat/op-metal:0`, `/sys/heartbeat/heap-metal:0`, `/sys/heartbeat/vm:0`
+- 心跳上报: `/sys/heartbeat/exop-metal:0`, `/sys/heartbeat/heap-metal:0`, `/sys/heartbeat/vm:0`
   - 各组件每 2s 上报 `{"ts":...,"status":"running","pid":...}`
   - 退出时上报 `{"status":"stopped"}` — shutdown 以此验证退出完成
 - **严禁跨组件 OS 信号** — shutdown 通过 Redis `sys:cmd:*` 发送 `{"cmd":"shutdown"}` 触发各组件优雅退出
-- **退出顺序**: plats (op-metal, heap-metal) → VM → 心跳验证 → deepxctl 退出
+- **退出顺序**: plats (exop-metal, heap-metal) → VM → 心跳验证 → deepxctl 退出
 - OS SIGKILL 仅作为 Redis 不可达时 / 超时时的最后兜底
 
 进程管理: `tool/deepxctl/internal/process/manager.go`
 boot/run/shutdown 逻辑: `tool/deepxctl/cmd/{boot,run,shutdown}.go`
 心跳: 各组件 main 文件 (每 2s SET `/sys/heartbeat/*`)
-日志文件: `/tmp/deepx-logs/{op-metal,heap-metal,vm}.log`
+日志文件: `/tmp/deepx-logs/{exop-metal,heap-metal,vm}.log`
 
 ### 加载示例到 KV Space
 
@@ -215,7 +215,7 @@ boot/run/shutdown 逻辑: `tool/deepxctl/cmd/{boot,run,shutdown}.go`
 
 | Agent | 职责 |
 |-------|------|
-| `@dev-op-metal` | Metal GPU kernel 开发指南（新增算子标准流程） |
+| `@dev-exop-metal` | Metal GPU kernel 开发指南（新增算子标准流程） |
 | `@dev-heap-metal` | heap-plat 开发指南（张量生命周期） |
 | `@dev-io-metal` | io-metal I/O 平面开发指南（print/save/load 操作） |
 | `@dev-vm` | VM 核心开发指南（原生算子、CALL 翻译） |

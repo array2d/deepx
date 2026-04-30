@@ -5,7 +5,8 @@
 #include <sstream>
 
 #include "tffactory.hpp"
-#include "../dtype.hpp"
+#include "deepx/precision.hpp"
+#include "deepx/data_category.hpp"
 
 namespace deepx::tf
 {   

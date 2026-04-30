@@ -7,7 +7,7 @@
 #include <memory>
 #include "iostream"
 
-#include "../tensor.hpp"
+#include "deepx/tensor.hpp"
 namespace deepx::mem
 {
     using namespace std;

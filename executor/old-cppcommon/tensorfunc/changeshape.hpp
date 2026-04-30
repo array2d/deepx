@@ -2,7 +2,7 @@
 #define DEEPX_TENSORFUNC_CHANGESHAPE_HPP
 
 #include <vector>
-#include "../tensor.hpp"
+#include "deepx/tensor.hpp"
 #include "stdutil/error.hpp"
 
 namespace deepx::tensorfunc

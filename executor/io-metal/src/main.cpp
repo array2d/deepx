@@ -17,7 +17,7 @@
 #include <hiredis/hiredis.h>
 #include <nlohmann/json.hpp>
 
-#include "deepx/shmem/shm_tensor.h"
+#include "deepx/shm_tensor.h"
 
 using json = nlohmann::json;
 

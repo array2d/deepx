@@ -1,7 +1,7 @@
 #ifndef DEEPX_TENSORFUNC_MATMUL_HPP
 #define DEEPX_TENSORFUNC_MATMUL_HPP
 
-#include "../tensor.hpp"
+#include "deepx/tensor.hpp"
 #include "authors.hpp"
 #include "stdutil/error.hpp"
 namespace deepx::tensorfunc

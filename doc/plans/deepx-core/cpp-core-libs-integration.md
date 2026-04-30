@@ -53,7 +53,7 @@ executor/
 | **定位** | Metal 平台公共基础设施（**但部分内容平台无关**） |
 | **产出** | `libdeepx_core_metal.a` (STATIC) |
 | **外部依赖** | Metal.framework, Foundation.framework (Apple only) |
-| **使用者** | heap-metal, op-metal |
+| **使用者** | heap-metal, exop-metal |
 
 **提供内容：**
 
@@ -74,7 +74,7 @@ executor/
 | **定位** | 旧版张量类型、TF 框架、算子接口定义 |
 | **产出** | 无（非正式库，仅 `include_directories()` 引用） |
 | **外部依赖** | 通过使用者间接依赖 STL |
-| **使用者** | op-metal（`include_directories(../old-cppcommon)`）；exop-cpu 内部有完整副本 |
+| **使用者** | exop-metal（`include_directories(../old-cppcommon)`）；exop-cpu 内部有完整副本 |
 
 **提供内容：**
 
@@ -152,7 +152,7 @@ target_link_libraries(deepx_core_metal PUBLIC ${METAL} ${FOUNDATION})
 新架构（Redis + shm）：
   common-metal → shm_tensor → mmap 直接访问内存
   通信：Redis BLPOP + JSON
-  使用者：op-metal, heap-metal
+  使用者：exop-metal, heap-metal
 ```
 
 两者之间没有桥接层。exop-cpu 如果要参与联合调试，其 main.cpp 必须重写为 Redis+shm 架构。
@@ -230,7 +230,7 @@ executor/
               │            │          │              │
               ▼            ▼          ▼              ▼
         ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
-        │ exop-cpu │ │ op-cuda  │ │ op-metal │ │heap-metal│
+        │ exop-cpu │ │ op-cuda  │ │ exop-metal │ │heap-metal│
         │  (CPU)   │ │ (CUDA)  │ │ (Metal)  │ │ (Metal)  │
         └──────────┘ └──────────┘ └────┬─────┘ └────┬─────┘
                                        │            │
@@ -308,7 +308,7 @@ target_link_libraries(deepx_metal_hal PUBLIC deepx_core ${METAL} ${FOUNDATION})
 
 **Step 1.7** — 更新各 executor 的 CMakeLists.txt：
 - `exop-cpu`: `add_subdirectory(../deepx-core deepx-core)` 替代 `add_subdirectory(../deepxcore deepxcore)`
-- `op-metal`: 同时依赖 `deepx-core` + `deepx_metal_hal`
+- `exop-metal`: 同时依赖 `deepx-core` + `deepx_metal_hal`
 - `heap-metal`: 同时依赖 `deepx-core` + `deepx_metal_hal`
 
 ### Phase 2：统一类型系统（后续）
@@ -321,9 +321,9 @@ target_link_libraries(deepx_metal_hal PUBLIC deepx_core ${METAL} ${FOUNDATION})
 
 exop-cpu 当前的 main.cpp 基于旧架构（UDP + MemBase + TF 框架）。需要新增 Redis+shm 版本：
 
-- 复用 `op-metal/src/client/main.cpp` 的架构（Redis BLPOP、shm、heartbeat、instance registration）
+- 复用 `exop-metal/src/client/main.cpp` 的架构（Redis BLPOP、shm、heartbeat、instance registration）
 - 将 Metal GPU kernel 调用替换为 CPU 实现（elementwise binary/unary/scalar、init、comparison、reduce、changeshape）
-- `PROG_NAME = "op-cpu"`，与 VM 代码中 `[]string{"op-metal", "op-cuda", "op-cpu"}` 对齐
+- `PROG_NAME = "op-cpu"`，与 VM 代码中 `[]string{"exop-metal", "op-cuda", "op-cpu"}` 对齐
 - 支持相同的 opcode 集合
 
 ### Phase 4：heap-cpu 创建（本次需完成）
@@ -360,7 +360,7 @@ executor/heap-cpu/ (整个目录)                                 ← 基于 hea
 executor/common-metal/CMakeLists.txt       # 精简：移除 shm_tensor/registry，依赖 deepx-core
 executor/exop-cpu/CMakeLists.txt           # 依赖 deepx-core 替代 deepxcore
 executor/exop-cpu/src/client/main.cpp      # 新增 Redis+shm 版本
-executor/op-metal/CMakeLists.txt           # 依赖 deepx-core + 精简后的 common-metal
+executor/exop-metal/CMakeLists.txt           # 依赖 deepx-core + 精简后的 common-metal
 executor/heap-metal/CMakeLists.txt         # 依赖 deepx-core + 精简后的 common-metal
 executor/Makefile                          # 添加 build-exop-cpu / build-heap-cpu 目标
 Makefile (根)                              # 添加 build-exop-cpu / build-heap-cpu 目标
@@ -379,7 +379,7 @@ executor/old-cppcommon/README.md    # 添加拆分说明
 | 库 | 当前依赖 | 迁移后依赖 | 影响范围 |
 |----|---------|-----------|----------|
 | exop-cpu | dxlang (`deepxcore`) | deepx-core (`deepx_core`) | include 路径变更，CMake target 名变更 |
-| op-metal | common-metal + old-cppcommon + dxlang | deepx-core + common-metal (HAL only) | CMake 重构 |
+| exop-metal | common-metal + old-cppcommon + dxlang | deepx-core + common-metal (HAL only) | CMake 重构 |
 | heap-metal | common-metal | deepx-core + common-metal (HAL only) | CMake 重构 |
 | op-cuda | (规划中) | deepx-core | 开箱即用 |
 | heap-cpu | (规划中) | deepx-core | 开箱即用 |
@@ -396,7 +396,7 @@ executor/old-cppcommon/README.md    # 添加拆分说明
 | include 路径变更需全局搜索替换 | 中 | 使用 `grep -rn` 全局扫描，批量 `sed` 替换 |
 | TF 框架与新架构不兼容 | 高 | 保留旧 main.cpp 为 `main_legacy.cpp`，新写 Redis+shm 版本 |
 
-### Phase 5：合并完整性审计（待执行）
+### Phase 5：合并完整性审计（✅ 全部完成 2026-04-30）
 
 **Step 5.1** — 审计 dxlang → deepx-core：✅ 已完成
 - 逐文件 diff 验证：所有 dtype + stdutil 文件内容一致
@@ -404,15 +404,25 @@ executor/old-cppcommon/README.md    # 添加拆分说明
 - dxlang 源码已删除，仅保留 README.md 说明迁移
 - exop-metal 中对 dxlang 的死引用已清理
 
-**Step 5.2** — 审计 old-cppcommon → deepx-core：
-- 确认 tensor (shape/tensor/tensor_base) 核心类型已迁移
-- 确认 tensorfunc/tf/client 为有意保留的旧架构代码
-- 明确保留与废弃的边界
+**Step 5.2** — 审计 old-cppcommon → deepx-core：✅ 已完成
+- 已删除 5 个核心类型文件（dtype.hpp/shape.hpp/tensor.hpp/tensorbase.hpp/shape.cpp）— 已迁移至 deepx-core
+- dtype.hpp 为空文件，由 `precision.hpp` + `data_category.hpp` + `typespec.hpp` 替代
+- 其他文件 diff 验证：仅 include 路径差异（`"shape.hpp"` → `"deepx/shape.hpp"` 等），内容一致
+- 保留 29 个文件：tensorfunc/(8) + tf/(4) + mem/(1) + client/(5) + shape_helpers/(10) + vector_combination/(2)
+- 所有保留代码的 include 已更新为 deepx-core 规范路径（共 24 处替换）
+- exop-metal 中 8 处 `"tensor.hpp"` 引用更新为 `"deepx/tensor.hpp"`
+- 修复 deepx-core `print.hpp` 的虚假 `"deepx/dtype.hpp"` → `"deepx/precision.hpp"`
+- 修复 exop-metal `dtype_metal.hpp` 的 `"dtype.hpp"` → `"deepx/precision.hpp"`
+- 添加 `old-cppcommon/README.md` 说明迁移状态
 
-**Step 5.3** — 审计 common-metal → deepx-core：
+**Step 5.3** — 审计 common-metal → deepx-core：✅ 已完成
 - 确认 shm_tensor 和 registry 平台无关代码已全部拆分
-- 确认 common-metal 仅保留 metal_device (Metal HAL)
-- 验证拆分后 common-metal 不再包含平台无关代码
+- 逐文件 diff 验证：shm_tensor.h 完全一致；registry.h 完全一致；shm_tensor.cpp 仅 include 路径差异（旧 `"deepx/shmem/shm_tensor.h"` → 新 `"deepx/shm_tensor.h"`）
+- 删除 common-metal 中已迁移的 3 个文件：registry.h, shmem/shm_tensor.h, shmem/shm_tensor.cpp
+- common-metal 精简后仅保留 2 个源文件：metal_device.hpp + metal_device.cpp
+- CMakeLists.txt 确认仅编译 metal_device.cpp，构建 `deepx_metal_hal`
+- 清理空目录：include/deepx/shmem/, src/shmem/
+- 修复 io-metal 中对旧 `"deepx/shmem/shm_tensor.h"` 路径的引用 → `"deepx/shm_tensor.h"`
 
 ---
 
