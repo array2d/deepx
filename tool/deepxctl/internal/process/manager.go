@@ -14,13 +14,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
+
+	"deepx/tool/deepxctl/internal/logx"
 )
 
 // Proc represents a managed subprocess.
@@ -101,7 +102,7 @@ func (m *Manager) Start(name, binPath string, args ...string) (*Proc, error) {
 		// Write directly to file — no pipes, so survives parent exit.
 		cmd.Stdout = f
 		cmd.Stderr = f
-		log.Printf("[process] %s logging to %s", name, logPath)
+		logx.Debug("process logging to file", "name", name, "path", logPath)
 	} else {
 		// Case 2: in-memory capture via pipes (for run command where parent stays alive).
 		if m.verbose {
@@ -120,7 +121,7 @@ func (m *Manager) Start(name, binPath string, args ...string) (*Proc, error) {
 		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
 
-	log.Printf("[process] %s started pid=%d", name, cmd.Process.Pid)
+	logx.Debug("process started", "name", name, "pid", cmd.Process.Pid)
 
 	// Monitor exit in background
 	go func() {
@@ -157,7 +158,7 @@ func (m *Manager) StopAll(shutdownTimeout time.Duration) {
 		return
 	}
 
-	log.Printf("[process] stopping %d subprocesses...", len(procs))
+	logx.Debug("stopping subprocesses", "count", len(procs))
 
 	// Phase 1: SIGTERM
 	for _, p := range procs {
@@ -173,9 +174,9 @@ func (m *Manager) StopAll(shutdownTimeout time.Duration) {
 		select {
 		case err := <-p.done:
 			if err != nil {
-				log.Printf("[process] %s exited: %v", p.Name, err)
+				logx.Debug("process exited", "name", p.Name, "error", err)
 			} else {
-				log.Printf("[process] %s exited ok", p.Name)
+				logx.Debug("process exited ok", "name", p.Name)
 			}
 		case <-shutdownDeadline:
 			allExited = false
@@ -183,7 +184,7 @@ func (m *Manager) StopAll(shutdownTimeout time.Duration) {
 	}
 
 	if !allExited {
-		log.Printf("[process] timeout, sending SIGKILL...")
+		logx.Debug("shutdown timeout, sending SIGKILL")
 		for _, p := range procs {
 			if p.cmd.Process != nil {
 				p.cmd.Process.Signal(syscall.SIGKILL)
@@ -195,7 +196,7 @@ func (m *Manager) StopAll(shutdownTimeout time.Duration) {
 			select {
 			case err := <-p.done:
 				if err != nil {
-					log.Printf("[process] %s killed: %v", p.Name, err)
+					logx.Debug("process killed", "name", p.Name, "error", err)
 				}
 			default:
 			}
@@ -221,7 +222,7 @@ func (m *Manager) Stdout(name string) string {
 func (m *Manager) Detach() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	log.Printf("[process] detaching %d subprocesses", len(m.procs))
+	logx.Debug("detaching subprocesses", "count", len(m.procs))
 	m.procs = nil
 }
 

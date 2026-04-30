@@ -10,12 +10,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"syscall"
 	"time"
 
 	"deepx/tool/deepxctl/internal/builder"
+	"deepx/tool/deepxctl/internal/logx"
 	"deepx/tool/deepxctl/internal/process"
 	"deepx/tool/deepxctl/internal/redis"
 )
@@ -176,7 +176,7 @@ func boot(flags BootFlags) error {
 	// Detach manager — processes stay running after boot exits.
 	// The PID file is the authoritative record for shutdown.
 	mgr.Detach()
-	log.Printf("[boot] services running, deepxctl boot exiting")
+	logx.Debug("boot complete, services running")
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 
 	"deepx/tool/deepxctl/cmd"
 	"deepx/tool/deepxctl/cmd/tensor"
+	"deepx/tool/deepxctl/internal/logx"
 )
 
 var version = "0.2.0"
@@ -59,7 +60,8 @@ func main() {
 		printUsage()
 
 	default:
-		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", subcmd)
+		logx.Error("unknown command", "cmd", subcmd)
+		fmt.Fprintln(os.Stderr)
 		printUsage()
 		os.Exit(1)
 	}

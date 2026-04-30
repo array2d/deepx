@@ -18,11 +18,11 @@ package executor
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	goredis "github.com/redis/go-redis/v9"
 
+	"deepx/tool/deepxctl/internal/logx"
 	"deepx/tool/deepxctl/internal/redis"
 )
 
@@ -57,7 +57,7 @@ func Run(rdb *goredis.Client, entryFunc string, timeout time.Duration) (*Result,
 		return nil, fmt.Errorf("wake vm: %w", err)
 	}
 
-	log.Printf("[executor] vthread %d started, entry=%s, waiting...", vtid, entryFunc)
+	logx.Debug("vthread started, waiting for completion", "vtid", vtid, "entry", entryFunc)
 
 	// 4. Poll until done/error/timeout
 	deadline := time.Now().Add(timeout)
@@ -100,7 +100,7 @@ func Run(rdb *goredis.Client, entryFunc string, timeout time.Duration) (*Result,
 			time.Sleep(pollInterval)
 
 		default:
-			log.Printf("[executor] unexpected vthread status: %s", status.Status)
+			logx.Debug("unexpected vthread status", "status", status.Status)
 			time.Sleep(pollInterval)
 		}
 	}

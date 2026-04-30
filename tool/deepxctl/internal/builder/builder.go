@@ -13,10 +13,11 @@ package builder
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"deepx/tool/deepxctl/internal/logx"
 )
 
 // Binary paths for metal platform binaries.
@@ -84,10 +85,10 @@ func All(repoRoot string, force bool) error {
 
 	for _, c := range components {
 		if !force && binaryExists(c.bin) {
-			log.Printf("[build] %s binary exists, skipping", c.name)
+			logx.Debug("binary exists, skipping build", "component", c.name)
 			continue
 		}
-		log.Printf("[build] building %s ...", c.name)
+		logx.Debug("building component", "name", c.name)
 		cmd := exec.Command("bash", c.script)
 		cmd.Dir = repoRoot
 		cmd.Stdout = os.Stdout
@@ -98,7 +99,7 @@ func All(repoRoot string, force bool) error {
 		if !binaryExists(c.bin) {
 			return fmt.Errorf("build %s succeeded but binary not found at %s", c.name, c.bin)
 		}
-		log.Printf("[build] %s → %s", c.name, c.bin)
+		logx.Debug("build complete", "name", c.name, "binary", c.bin)
 	}
 
 	// loader is built as part of vm build.sh

@@ -15,13 +15,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"syscall"
 	"time"
 
 	goredis "github.com/redis/go-redis/v9"
 
+	"deepx/tool/deepxctl/internal/logx"
 	"deepx/tool/deepxctl/internal/redis"
 )
 
@@ -219,9 +219,9 @@ func shutdown() error {
 
 	// Remove PID file
 	if err := os.Remove(BootPIDFile); err != nil && !os.IsNotExist(err) {
-		log.Printf("[shutdown] could not remove %s: %v", BootPIDFile, err)
+		logx.Debug("could not remove PID file", "path", BootPIDFile, "error", err)
 	} else {
-		log.Printf("[shutdown] removed %s", BootPIDFile)
+		logx.Debug("PID file removed", "path", BootPIDFile)
 	}
 
 	return nil

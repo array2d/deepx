@@ -18,10 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	goredis "github.com/redis/go-redis/v9"
+
+	"deepx/tool/deepxctl/internal/logx"
 )
 
 // DefaultAddr is the default Redis address for development.
@@ -41,7 +42,7 @@ func Connect(addr string) (*goredis.Client, error) {
 		rdb.Close()
 		return nil, fmt.Errorf("redis PING failed [%s]: %w", addr, err)
 	}
-	log.Printf("[redis] connected to %s", addr)
+	logx.Debug("redis connected", "addr", addr)
 	return rdb, nil
 }
 
@@ -59,7 +60,7 @@ func FlushDB(rdb *goredis.Client) error {
 	if err != nil {
 		return fmt.Errorf("DBSIZE after FLUSHDB failed: %w", err)
 	}
-	log.Printf("[redis] FLUSHDB done, dbsize=%d", size)
+	logx.Debug("FLUSHDB done", "dbsize", size)
 	return nil
 }
 
@@ -80,7 +81,7 @@ func WaitForInstance(rdb *goredis.Client, key string, timeout time.Duration) err
 			continue
 		}
 		if s, ok := m["status"].(string); ok && s == "running" {
-			log.Printf("[redis] %s is running", key)
+			logx.Debug("redis instance running", "key", key)
 			return nil
 		}
 		time.Sleep(200 * time.Millisecond)
@@ -143,7 +144,7 @@ func CreateVThread(rdb *goredis.Client, vtid int64, entryFunc string) error {
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("create vthread %d: %w", vtid, err)
 	}
-	log.Printf("[redis] created vthread %d entry=%s", vtid, entryFunc)
+	logx.Debug("vthread created", "vtid", vtid, "entry", entryFunc)
 	return nil
 }
 
@@ -158,7 +159,7 @@ func WakeVM(rdb *goredis.Client, vtid int64) error {
 	if err := rdb.LPush(ctx, "notify:vm", data).Err(); err != nil {
 		return fmt.Errorf("LPUSH notify:vm: %w", err)
 	}
-	log.Printf("[redis] notified VM: vtid=%d", vtid)
+	logx.Debug("VM notified", "vtid", vtid)
 	return nil
 }
 
