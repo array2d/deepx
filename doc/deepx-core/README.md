@@ -6,7 +6,7 @@
 
 ## 定位
 
-- **面向**: 所有 executor（exop-cpu, op-metal, op-cuda, heap-metal, heap-cpu, io-metal）
+- **面向**: 所有 executor（exop-cpu, exop-metal, op-cuda, heap-metal, heap-cpu, io-metal）
 - **提供**: 统一类型系统、张量数据结构、POSIX 共享内存管理、抽象注册接口
 - **不提供**: 硬件 kernel（Metal/CUDA/CPU SIMD）、调度策略、通信协议
 
@@ -85,7 +85,7 @@
 
 ## 构建
 
-deepx-core 编译为静态库 `libdeepx_core.a`：
+deepx-core 编译为静态库 `libdeepx_core.a`，零外部链接依赖：
 
 ```bash
 cd executor/deepx-core
@@ -96,46 +96,41 @@ cmake --build build -j
 ## 依赖关系
 
 ```
-deepx-core (libdeepx_core.a)
-├── 外部依赖: yaml-cpp (Shape YAML 序列化)
-└── 被依赖:
-    ├── exop-cpu     (CPU 算子引擎)
-    ├── op-metal     (Metal GPU 算子引擎，通过 common-metal HAL)
-    ├── op-cuda      (CUDA 算子引擎，规划中)
+deepx-core (libdeepx_core.a)     ← 平台无关，nlohmann/json header-only
+    │
+    ├── exop-cpu     (CPU 算子引擎，直接依赖)
+    ├── heap-cpu     (CPU 堆管理，直接依赖)
+    ├── exop-metal   (Metal GPU 算子引擎，通过 common-metal HAL)
     ├── heap-metal   (Metal 堆管理，通过 common-metal HAL)
-    ├── heap-cpu     (CPU 堆管理)
-    └── heap-cuda    (CUDA 堆管理，规划中)
+    └── op-cuda      (CUDA 算子引擎，规划中)
 ```
 
 ## 与其他组件的关系
 
 ```
-deepx-core (dtype + tensor + shmem + registry + stdutil)
+deepx-core (dtype + tensor + tensorfunc + tf + mem + shmem + registry + stdutil)
+    │  libdeepx_core.a — 平台无关，仅依赖 nlohmann/json (header-only)
     │
-    ├── common-metal (HAL only): metal_device，额外依赖 Metal.framework
-    │       │
-    │       ├── op-metal
+    ├── common-metal (Metal HAL: metal_device，Apple only, 链接 Metal.framework)
+    │       ├── exop-metal
     │       └── heap-metal
     │
-    ├── exop-cpu (直接依赖，无 HAL 层)
-    ├── heap-cpu (直接依赖，无 HAL 层)
-    └── op-cuda (直接依赖，无 HAL 层，规划中)
+    ├── exop-cpu   (直接依赖，无 HAL 层)
+    └── heap-cpu   (直接依赖，无 HAL 层)
 ```
 
 ## 迁移说明
 
-deepx-core 整合了以下三个原有库的平台无关部分（全部迁移完成，旧目录均已清理）：
+deepx-core 整合了以下原有库的平台无关部分：
 
 | 原库 | 迁移内容 | 状态 |
 |------|---------|------|
-| `dxlang/` | dtype (precision/data_category/typespec), stdutil (7+3) | 源码已删除，仅保留 README |
-| `common-metal/` | shm_tensor, registry | 已删除，仅保留 Metal HAL |
-| `old-cppcommon/` | 全部 29 个文件：核心类型(5) + shape辅助(11) + tensorfunc(8) + tf(4) + mem(1) | 目录已删除（rm -rf） |
+| `dxlang/` | dtype, stdutil | 源码已删除，仅保留 README |
+| `common-metal/` | shm_tensor, registry | 已迁移至 deepx-core；common-metal 保留 metal_device (Metal HAL) |
+| `old-cppcommon/` | 全部：核心类型 + shape辅助 + tensorfunc + tf + mem | 目录已删除 |
 
-## 设计原则
+## 架构铁律
 
-1. **平台无关**: 不依赖任何特定操作系统/硬件 API（POSIX shm 除外，为可选项）
-2. **最小依赖**: 仅依赖 STL + yaml-cpp
-3. **静态链接**: `.a` 静态库，避免运行时库查找问题
-4. **扁平头文件**: 所有公共头文件位于 `include/deepx/` 单层目录，无子目录嵌套
-5. **头文件与实现分离**: `include/` 为公共 API，`src/` 为编译单元
+1. **平台无关**: 零硬件特定依赖（Metal/CUDA/ROCm/OpenMP），仅 STL + header-only JSON
+2. **静态链接**: `add_subdirectory()` 源码注入，编译期适配所有平台
+3. **单层 include**: 所有公共头文件位于 `include/deepx/`、`include/tensorfunc/` 等扁平目录
