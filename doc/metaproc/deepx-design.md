@@ -11,7 +11,7 @@
 |------|------|------|
 | Redis | KV 空间 — 全局状态存储、命名空间、命令队列、锁 | — |
 | pysdk | 算法前端 — 注册源代码到 `/src/func/`，创建 vthread | — |
-| op-plat | 计算 — 被动消费指令，执行 GPU/CPU 张量运算 | op-cuda, op-metal, op-cpu |
+| op-plat | 计算 — 被动消费指令，执行 GPU/CPU 张量运算 | op-cuda, exop-metal, op-cpu |
 | heap-plat | 堆管理 — tensor 对象生命周期：创建/删除/克隆 shm | heap-cuda, heap-metal, heap-cpu |
 | VM | 解释执行 — CALL 翻译、指令路由、状态推进 | — |
 
@@ -34,7 +34,7 @@
 │ 解释 │  │ 执行张量  │  │ 管理tensor│
 │ 调度 │  │ 计算      │  │ 生命周期  │
 │      │  │ op-cuda   │  │ heap-  │
-│      │  │ op-metal  │  │ cuda      │
+│      │  │ exop-metal│  │ cuda      │
 │      │  │ op-cpu    │  │ heap-  │
 │      │  │           │  │ metal     │
 │      │  │           │  │ heap-  │
@@ -82,7 +82,7 @@
 编译层 (/op/<backend>/func/):
   /op/op-cuda/func/<name>          编译后的函数签名
   /op/op-cuda/func/<name>/0        编译后的指令 (可能已融合/拆分)
-  /op/op-metal/func/<name>/0       Metal 编译产物 (可能不同于 CUDA)
+  /op/exop-metal/func/<name>/0       Metal 编译产物 (可能不同于 CUDA)
 
 执行层 (/vthread/):
   /vthread/<vtid>/[0,0]...         VM CALL 时 eager 翻译 (见 §3.2)
@@ -111,7 +111,7 @@
 
 ```
 cmd:op-cuda:<instance>             op-cuda 的命令队列 (如 cmd:op-cuda:0)
-cmd:op-metal:<instance>            op-metal 的命令队列
+cmd:exop-metal:<instance>            exop-metal 的命令队列
 cmd:op-cpu:<instance>              op-cpu 的命令队列
 cmd:heap-cuda:<device>          heap-cuda 的命令队列
 cmd:heap-metal:<device>         heap-metal 的命令队列
@@ -178,10 +178,10 @@ op-plat **程序**的算子能力是静态的，所有**进程实例**共享。
 ```
 /sys/op-plat/cuda:0 → {"program":"op-cuda", "device":"gpu0", "status":"running", "load":0.3}
 /sys/op-plat/cuda:1 → {"program":"op-cuda", "device":"gpu1", "status":"running", "load":0.7}
-/sys/op-plat/metal:0 → {"program":"op-metal", "device":"gpu0", "status":"running", "load":0.1}
+/sys/op-plat/exop-metal:0 → {"program":"deepx-exop-metal-{host}-{pid}", "device":"gpu0", "status":"running", "load":0.1}
 ```
 
-实例命名规则: `<program>:<instance>`，如 `cuda:0`, `cuda:1`, `metal:0`。
+实例命名规则: `<program>:<instance>`，如 `cuda:0`, `cuda:1`, `exop-metal:0`。
 
 **编译器的使用：**
 
@@ -807,11 +807,12 @@ TODO: 各进程的心跳机制和故障检测，待开发时确定。
 executor/
 ├── vm/                    VM 进程 (新增)
 │   └── src/main.mm
-├── op-metal/              op-plat (Metal 实现, 已有)
+├── exop-metal/          op-plat (Metal 实现, 已有)
 ├── op-cuda/               op-plat (CUDA 实现, 待开发)
 ├── heap-metal/         heap-plat (Metal 实现, 已有)
 ├── heap-cuda/          heap-plat (CUDA 实现, 待开发)
-└── common-metal/          共享库 (已有)
+├── deepx-core/         平台无关公共库 (dtype/tensor/shmem/registry/stdutil/tensorfunc/tf/mem)
+└── common-metal/        Metal HAL (metal_device 检测 macOS GPU 支持，供 exop-metal/heap-metal 使用)
 
 front/
 └── py/deepx/              pysdk

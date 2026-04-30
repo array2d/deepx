@@ -110,6 +110,19 @@ opcode(read_p1, read_p2, ...) -> write_p1, write_p2
 {"dtype":"f32","shape":[1024,512],"byte_size":2097152,"device":"gpu0","address":{"type":"shm","shm_name":"/deepx_t_abc123"},"ctime":1714000000,"version":5}
 ```
 
+## executor 目录
+
+| 目录 | 角色 | 产出 |
+|------|------|------|
+| `deepx-core/` | 平台无关公共库：dtype / tensor / shmem / registry / stdutil / tensorfunc / tf / mem | `libdeepx_core.a` |
+| `common-metal/` | **Metal HAL**：检测 macOS GPU 是否支持 Metal（`metal_device`），供 exop-metal / heap-metal 使用 | `libdeepx_metal_hal.a` |
+| `exop-metal/` | Metal GPU 算子引擎（op-plat 实现之一） | `deepx-exop-metal` |
+| `exop-cpu/` | CPU 算子引擎（op-plat 实现之一，无 HAL 依赖） | `deepx-exop-cpu` |
+| `heap-metal/` | Metal GPU 堆管理（heap-plat 实现之一） | `deepx-heap-metal` |
+| `heap-cpu/` | CPU 堆管理（heap-plat 实现之一，无 HAL 依赖） | `deepx-heap-cpu` |
+| `io-metal/` | tensor I/O 平面（print/save/load） | `deepx-io-metal` |
+| `vm/` | VM 解释执行：CALL 翻译、指令路由 | `deepx-vm` |
+
 ## 与 OS 进程对照
 
 | OS 概念 | 元程对应 |
