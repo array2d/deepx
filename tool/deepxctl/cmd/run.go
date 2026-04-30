@@ -156,6 +156,17 @@ func run(flags RunFlags) error {
 	}
 	logx.Debug("all services verified")
 
+	// ── Setup term writers for this run ──
+	// VM's builtin print uses writers registered at /sys/term/default/.
+	// deepxctl registers per-run writers at /sys/term/ctlrun/ so output
+	// is captured to temp files and later piped to deepxctl's stdout/stderr.
+	termDir, err := setupTermWriters(rdb)
+	if err != nil {
+		logx.Warn("failed to set up term writers, VM print may go to default", "error", err)
+	} else {
+		defer collectAndCleanTermWriters(rdb, termDir)
+	}
+
 	// ── [2/3] Load dx ──
 	step(2, 3, "Load dx")
 	dxPath, _ := normalizePath(flags.FilePath)
@@ -214,14 +225,6 @@ func run(flags RunFlags) error {
 	if result.Success {
 		greenCheck()
 		fmt.Printf("  vtid=%s  status=%s  %v\n", result.Vtid, result.Status, result.Duration)
-
-		// 读取 print 输出 (stdout io writer → /sys/term/default/stdout)
-		stdoutURI, err := rdb.Get(context.Background(), "/sys/term/default/stdout").Result()
-		if err == nil && stdoutURI != "" {
-			if stdout := readStdoutFile(stdoutURI); stdout != "" {
-				fmt.Print(stdout)
-			}
-		}
 	} else {
 		errorX("vtid=%s status=%s", result.Vtid, result.Status)
 		if result.ErrCode != "" {
@@ -404,17 +407,83 @@ func autoBoot(redisAddr string) error {
 	})
 }
 
-// readStdoutFile reads print output from an io writer URI.
-// Currently supports file:// URIs pointing to local filesystem.
-func readStdoutFile(uri string) string {
-	if !strings.HasPrefix(uri, "file://") {
-		return ""
-	}
-	filePath := strings.TrimPrefix(uri, "file://")
-	data, err := os.ReadFile(filePath)
+// ── Term writers (VM builtin print stdout/stderr capture) ──
+
+// setupTermWriters creates temp files for stdout/stderr and registers them
+// as Redis hash keys at /sys/term/ctlrun/. Each key stores fields:
+//
+//	type:   "file"
+//	detail: "/path/to/file"
+//
+// The VM's builtin print instruction reads these writers to determine where
+// to write output. After execution, collectAndCleanTermWriters reads the
+// captured content and pipes it to deepxctl's stdout/stderr.
+//
+// Returns the temp directory path for later collection/cleanup.
+func setupTermWriters(rdb *goredis.Client) (string, error) {
+	dir, err := os.MkdirTemp("", "deepx-ctlrun-*")
 	if err != nil {
-		return ""
+		return "", fmt.Errorf("create term dir: %w", err)
 	}
-	return string(data)
+
+	stdoutPath := filepath.Join(dir, "stdout")
+	stderrPath := filepath.Join(dir, "stderr")
+
+	// Create empty output files
+	if err := os.WriteFile(stdoutPath, nil, 0644); err != nil {
+		os.RemoveAll(dir)
+		return "", fmt.Errorf("create stdout file: %w", err)
+	}
+	if err := os.WriteFile(stderrPath, nil, 0644); err != nil {
+		os.RemoveAll(dir)
+		return "", fmt.Errorf("create stderr file: %w", err)
+	}
+
+	// Register writers at /sys/term/ctlrun/ (3 independent hash keys)
+	ctx := context.Background()
+	pipe := rdb.Pipeline()
+	pipe.HSet(ctx, "/sys/term/ctlrun/stdout", "type", "file", "detail", stdoutPath)
+	pipe.HSet(ctx, "/sys/term/ctlrun/stderr", "type", "file", "detail", stderrPath)
+	pipe.HSet(ctx, "/sys/term/ctlrun/stdin",  "type", "file", "detail", "/dev/null")
+	if _, err := pipe.Exec(ctx); err != nil {
+		os.RemoveAll(dir)
+		return "", fmt.Errorf("register term writers in Redis: %w", err)
+	}
+
+	logx.Debug("term writers registered", "dir", dir, "stdout", stdoutPath, "stderr", stderrPath)
+	return dir, nil
+}
+
+// collectAndCleanTermWriters reads captured stdout/stderr from the temp files,
+// pipes them to deepxctl's stdout/stderr, then removes Redis keys and temp files.
+// Intended to be called via defer after setupTermWriters.
+func collectAndCleanTermWriters(rdb *goredis.Client, dir string) {
+	ctx := context.Background()
+
+	// Pipe captured stdout to deepxctl's stdout
+	stdoutPath := filepath.Join(dir, "stdout")
+	if data, err := os.ReadFile(stdoutPath); err == nil && len(data) > 0 {
+		os.Stdout.Write(data)
+	}
+
+	// Pipe captured stderr to deepxctl's stderr
+	stderrPath := filepath.Join(dir, "stderr")
+	if data, err := os.ReadFile(stderrPath); err == nil && len(data) > 0 {
+		os.Stderr.Write(data)
+	}
+
+	// Clean up Redis hash keys
+	rdb.Del(ctx,
+		"/sys/term/ctlrun/stdout",
+		"/sys/term/ctlrun/stderr",
+		"/sys/term/ctlrun/stdin",
+	)
+
+	// Clean up temp directory
+	if err := os.RemoveAll(dir); err != nil {
+		logx.Debug("failed to remove term dir", "dir", dir, "error", err)
+	} else {
+		logx.Debug("term writers cleaned up", "dir", dir)
+	}
 }
 
