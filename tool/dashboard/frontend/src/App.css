@@ -423,6 +423,17 @@ select.input-sm {
   padding: 14px;
 }
 
+/* Terminal */
+.tab-content:has(.xterm) { padding: 0; overflow: hidden; }
+.xterm { padding: 4px; }
+.xterm-viewport::-webkit-scrollbar { width: 6px; }
+.xterm-viewport::-webkit-scrollbar-track { background: var(--bg-secondary); }
+.xterm-viewport::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 3px; }
+
+/* Instance section */
+.comp-section { padding: 4px 0; }
+.comp-section .subtitle { padding: 4px 0 2px; }
+
 /* Output states */
 .output-placeholder {
   display: flex;

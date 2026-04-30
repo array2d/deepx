@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { VThreadInfo, fetchVThreads } from '../api/client';
+import { TerminalPanel } from './Terminal';
 
 interface Props {
   runResult: VThreadInfo | null;
@@ -10,7 +11,7 @@ interface Props {
   isRunning: boolean;
 }
 
-type Tab = 'output' | 'vthreads' | 'history';
+type Tab = 'output' | 'vthreads' | 'history' | 'terminal';
 
 interface HistoryEntry {
   vtid: number;
@@ -85,6 +86,12 @@ export function OutputPanel({
         >
           History
         </button>
+        <button
+          className={`tab ${tab === 'terminal' ? 'active' : ''}`}
+          onClick={() => setTab('terminal')}
+        >
+          Terminal
+        </button>
       </div>
 
       <div className="tab-content">
@@ -97,6 +104,7 @@ export function OutputPanel({
         )}
         {tab === 'vthreads' && <VThreadsTab vthreads={vthreads} />}
         {tab === 'history' && <HistoryTab history={history} />}
+        {tab === 'terminal' && <TerminalPanel active={tab === 'terminal'} />}
       </div>
     </aside>
   );

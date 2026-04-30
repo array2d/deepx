@@ -1,9 +1,10 @@
 const BASE = '';
 
 export interface SystemStatus {
-  op_plat: ComponentInfo | null;
-  heap_plat: ComponentInfo | null;
+  op_plat: ComponentInfo[];
+  heap_plat: ComponentInfo[];
   vm: ComponentInfo | null;
+  term: ComponentInfo | null;
   functions: { count: number; names: string[] };
   vthreads: { total: number; by_status: Record<string, number> };
   op_registry: Record<string, number>;
@@ -11,6 +12,7 @@ export interface SystemStatus {
 }
 
 export interface ComponentInfo {
+  id: string;
   status: string;
   pid: number;
   heartbeat_age_ms: number;
@@ -64,6 +66,18 @@ export async function fetchFunctions(): Promise<{ functions: string[] }> {
   return res.json();
 }
 
+export interface OpList {
+  backend: string;
+  count: number;
+  ops: string[];
+}
+
+export async function fetchOps(backend: string): Promise<OpList> {
+  const res = await fetch(`${BASE}/api/ops/${backend}`);
+  if (!res.ok) throw new Error(`ops ${backend} fetch failed: ${res.status}`);
+  return res.json();
+}
+
 export async function runCode(req: RunRequest): Promise<RunResponse> {
   const res = await fetch(`${BASE}/api/run`, {
     method: 'POST',
@@ -79,4 +93,9 @@ export async function runCode(req: RunRequest): Promise<RunResponse> {
 
 export function sseUrl(): string {
   return '/api/status/stream';
+}
+
+export function termWsUrl(): string {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${proto}//${location.host}/api/terminal`;
 }

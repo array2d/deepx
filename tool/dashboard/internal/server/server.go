@@ -27,6 +27,7 @@ func New(rdb *goredis.Client, loaderBin, redisAddr string) *Server {
 		statusHub: handler.NewStatusHub(rdb),
 	}
 	go s.statusHub.Run()
+	handler.RegisterTerminal(rdb)
 	return s
 }
 
@@ -58,6 +59,14 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/functions", func(w http.ResponseWriter, r *http.Request) {
 		data, err := handler.ListFunctions(s.rdb)
 		writeJSON(w, data, err)
+	})
+
+	mux.HandleFunc("/api/terminal", func(w http.ResponseWriter, r *http.Request) {
+		handler.ServeTerminal(w, r)
+	})
+
+	mux.HandleFunc("/api/ops/", func(w http.ResponseWriter, r *http.Request) {
+		handler.GetOps(s.rdb, w, r)
 	})
 
 	mux.HandleFunc("/api/run", func(w http.ResponseWriter, r *http.Request) {

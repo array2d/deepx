@@ -1,8 +1,4 @@
 // Package redis — READ-ONLY operations.
-//
-// This file contains ONLY read operations (GET, KEYS, DBSIZE).
-// Write operations (INCR, SET, LPUSH) are in write.go and are only used
-// during explicit user-initiated "run" requests.
 package redis
 
 import (
@@ -16,11 +12,6 @@ import (
 )
 
 const DefaultAddr = "127.0.0.1:16379"
-
-// ── Instance keys ──
-//
-// All instance keys are discovered dynamically via Redis KEYS.
-// No hardcoded instance names or IDs.
 
 // ── Connection (read-only by contract) ──
 
@@ -43,6 +34,7 @@ func Connect(addr string) (*goredis.Client, error) {
 // ── System Status (read-only) ──
 
 type ComponentStatus struct {
+	Id             string `json:"id"`
 	Status         string `json:"status"`
 	Pid            int    `json:"pid"`
 	HeartbeatAgeMs int64  `json:"heartbeat_age_ms,omitempty"`
@@ -53,9 +45,10 @@ type ComponentStatus struct {
 }
 
 type SystemStatus struct {
-	OpPlat    *ComponentStatus `json:"op_plat"`
-	HeapPlat  *ComponentStatus `json:"heap_plat"`
-	VM        *ComponentStatus `json:"vm"`
+	OpPlat   []ComponentStatus `json:"op_plat"`
+	HeapPlat []ComponentStatus `json:"heap_plat"`
+	VM       *ComponentStatus  `json:"vm"`
+	Term     *ComponentStatus  `json:"term"`
 	Functions struct {
 		Count int      `json:"count"`
 		Names []string `json:"names"`
@@ -71,34 +64,54 @@ type SystemStatus struct {
 func GetSystemStatus(rdb *goredis.Client) (*SystemStatus, error) {
 	ctx := context.Background()
 	now := time.Now()
-	s := &SystemStatus{}
+	s := &SystemStatus{
+		OpPlat:   []ComponentStatus{},
+		HeapPlat: []ComponentStatus{},
+	}
 
-	// Dynamically discover instance keys — never hardcoded
-	opKey := ScanOpPlatInstance(ctx, rdb)
-	heapKey := ScanHeapPlatInstance(ctx, rdb)
+	for _, key := range ScanOpPlatInstances(ctx, rdb) {
+		cs := readComponent(ctx, rdb, key, now)
+		if cs == nil {
+			continue
+		}
+		cs.Id = instanceId(key)
+		if age := heartbeatAge(ctx, rdb, HeartbeatKeyFromInstance(key), now); age >= 0 {
+			cs.HeartbeatAgeMs = age
+		}
+		s.OpPlat = append(s.OpPlat, *cs)
+	}
+
+	for _, key := range ScanHeapPlatInstances(ctx, rdb) {
+		cs := readComponent(ctx, rdb, key, now)
+		if cs == nil {
+			continue
+		}
+		cs.Id = instanceId(key)
+		if age := heartbeatAge(ctx, rdb, HeartbeatKeyFromInstance(key), now); age >= 0 {
+			cs.HeartbeatAgeMs = age
+		}
+		s.HeapPlat = append(s.HeapPlat, *cs)
+	}
+
 	vmKey := ScanVMInstance(ctx, rdb)
-
-	if opKey != "" {
-		s.OpPlat = readComponent(ctx, rdb, opKey, now)
-		if s.OpPlat != nil {
-			if age := heartbeatAge(ctx, rdb, HeartbeatKeyFromInstance(opKey), now); age >= 0 {
-				s.OpPlat.HeartbeatAgeMs = age
-			}
-		}
-	}
-	if heapKey != "" {
-		s.HeapPlat = readComponent(ctx, rdb, heapKey, now)
-		if s.HeapPlat != nil {
-			if age := heartbeatAge(ctx, rdb, HeartbeatKeyFromInstance(heapKey), now); age >= 0 {
-				s.HeapPlat.HeartbeatAgeMs = age
-			}
-		}
-	}
 	if vmKey != "" {
 		s.VM = readComponent(ctx, rdb, vmKey, now)
 		if s.VM != nil {
+			s.VM.Id = instanceId(vmKey)
 			if age := heartbeatAge(ctx, rdb, HeartbeatKeyFromInstance(vmKey), now); age >= 0 {
 				s.VM.HeartbeatAgeMs = age
+			}
+		}
+	}
+
+	// Terminal: /sys/term/*
+	termKey := ScanTermInstance(ctx, rdb)
+	if termKey != "" {
+		s.Term = readComponent(ctx, rdb, termKey, now)
+		if s.Term != nil {
+			s.Term.Id = instanceId(termKey)
+			if age := heartbeatAge(ctx, rdb, "/sys/heartbeat/term:dashboard", now); age >= 0 {
+				s.Term.HeartbeatAgeMs = age
 			}
 		}
 	}
@@ -106,6 +119,9 @@ func GetSystemStatus(rdb *goredis.Client) (*SystemStatus, error) {
 	names, _ := SrcFuncNames(rdb)
 	s.Functions.Count = len(names)
 	s.Functions.Names = names
+	if s.Functions.Names == nil {
+		s.Functions.Names = []string{}
+	}
 
 	s.VThreads.ByStatus = make(map[string]int)
 	keys, _ := rdb.Keys(ctx, "/vthread/*").Result()
@@ -126,20 +142,29 @@ func GetSystemStatus(rdb *goredis.Client) (*SystemStatus, error) {
 	}
 
 	s.OpRegistry = make(map[string]int)
-	backends := []string{"op-metal", "op-cuda", "op-cpu"}
-	for _, b := range backends {
-		val, err := rdb.Get(ctx, "/op/"+b+"/list").Result()
-		if err != nil {
+	opKeys, _ := rdb.Keys(ctx, "/op/*/list").Result()
+	for _, key := range opKeys {
+		parts := strings.Split(key, "/")
+		if len(parts) < 3 {
 			continue
 		}
-		var list []string
-		if json.Unmarshal([]byte(val), &list) == nil {
-			s.OpRegistry[b] = len(list)
+		backend := parts[2]
+		count := rdb.LLen(ctx, key).Val()
+		if count > 0 || rdb.Exists(ctx, key).Val() > 0 {
+			s.OpRegistry[backend] = int(count)
 		}
 	}
 
 	s.DBSize, _ = rdb.DBSize(ctx).Result()
 	return s, nil
+}
+
+func instanceId(key string) string {
+	parts := strings.Split(key, "/")
+	if len(parts) == 0 {
+		return ""
+	}
+	return parts[len(parts)-1]
 }
 
 func readComponent(ctx context.Context, rdb *goredis.Client, key string, now time.Time) *ComponentStatus {
