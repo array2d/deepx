@@ -1,4 +1,0 @@
-# add_test: basic element-wise addition
-def add_test(A:tensor, B:tensor) -> (C:tensor) {
-    add(A, B) -> "./C"
-}

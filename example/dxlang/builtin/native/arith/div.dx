@@ -1,0 +1,6 @@
+def native_div(A:int, B:int) -> (C:float) {
+    A / B -> "./C"
+}
+
+# Top-level call: native_div(15,2) -> "./out"
+native_div(15,2) -> "./out"

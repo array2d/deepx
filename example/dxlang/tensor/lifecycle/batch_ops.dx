@@ -1,0 +1,33 @@
+# batch_ops: 创建 5 个 tensor，多步 GPU 计算，最后全部清理
+# 联调 VM → heap-plat → op-metal 完整链路
+def batch_ops() -> ("/data/final") {
+    newtensor("f32", "[256]") -> "/data/a"
+    newtensor("f32", "[256]") -> "/data/b"
+    newtensor("f32", "[256]") -> "/data/c"
+    newtensor("f32", "[256]") -> "/data/d"
+    newtensor("f32", "[256]") -> "/data/final"
+    newtensor("f32", "[256]") -> "/data/temp"
+
+    # 初始化输入 tensor
+    zeros() -> "/data/a"
+    zeros() -> "/data/b"
+    zeros() -> "/data/c"
+    zeros() -> "/data/d"
+
+    # Step 1: temp = a + b
+    add("/data/a", "/data/b") -> "/data/temp"
+    # Step 2: final = temp * c  (使用 mul，GPU elementwise)
+    mul("/data/temp", "/data/c") -> "/data/final"
+    # Step 3: final = final + d
+    add("/data/final", "/data/d") -> "/data/final"
+
+    # 清理中间和输入 tensor
+    deltensor("/data/temp")
+    deltensor("/data/a")
+    deltensor("/data/b")
+    deltensor("/data/c")
+    deltensor("/data/d")
+}
+
+# Top-level call: batch_ops() -> "/data/final"
+batch_ops() -> "/data/final"

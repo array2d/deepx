@@ -1,0 +1,7 @@
+# caller: calls callee to add two numbers
+def caller(A:int, B:int) -> (C:int) {
+    callee(A, B) -> "./C"
+}
+
+# Top-level call: caller(2, 3) -> "./out" (calls callee internally)
+caller(2, 3) -> "./out"

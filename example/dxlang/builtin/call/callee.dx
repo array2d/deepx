@@ -1,0 +1,7 @@
+# callee: a simple function called by caller
+def callee(X:int, Y:int) -> (Z:int) {
+    X + Y -> "./Z"
+}
+
+# Top-level call: callee(2, 3) -> "./out"
+callee(2, 3) -> "./out"

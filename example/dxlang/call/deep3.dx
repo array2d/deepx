@@ -1,4 +1,0 @@
-# deep3 calls middle, middle calls leaf — 3 levels deep
-def deep3(X:int) -> (Y:int) {
-    middle(X) -> "./Y"
-}

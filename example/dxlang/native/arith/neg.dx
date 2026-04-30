@@ -1,3 +1,0 @@
-def native_neg(A:int) -> (C:int) {
-    neg(A) -> "./C"
-}

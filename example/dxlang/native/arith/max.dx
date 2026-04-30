@@ -1,3 +1,0 @@
-def native_max(A:int, B:int) -> (C:int) {
-    max(A, B) -> "./C"
-}

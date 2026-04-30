@@ -1,0 +1,6 @@
+def native_bool(A:int) -> (C:bool) {
+    bool(A) -> "./C"
+}
+
+# Top-level call: native_bool(1) -> "./out"
+native_bool(1) -> "./out"

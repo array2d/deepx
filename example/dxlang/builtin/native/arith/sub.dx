@@ -1,0 +1,6 @@
+def native_sub(A:int, B:int) -> (C:int) {
+    A - B -> "./C"
+}
+
+# Top-level call: native_sub(10,3) -> "./out"
+native_sub(10,3) -> "./out"

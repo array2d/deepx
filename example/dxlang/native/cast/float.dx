@@ -1,3 +1,0 @@
-def native_float(A:int) -> (C:float) {
-    float(A) -> "./C"
-}

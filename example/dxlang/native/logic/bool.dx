@@ -1,3 +1,0 @@
-def native_bool(A:int) -> (C:bool) {
-    bool(A) -> "./C"
-}

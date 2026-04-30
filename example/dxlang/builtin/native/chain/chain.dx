@@ -1,0 +1,7 @@
+def native_chain(A:int, B:int, C:int) -> (D:int) {
+    A + B -> "./tmp"
+    "./tmp" * C -> "./D"
+}
+
+# Top-level call: native_chain(2, 3, 4) -> "./out"
+native_chain(2, 3, 4) -> "./out"

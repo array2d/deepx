@@ -1,4 +1,0 @@
-# triple: multiply by 3
-def triple(X:int) -> (Y:int) {
-    X * 3 -> "./Y"
-}

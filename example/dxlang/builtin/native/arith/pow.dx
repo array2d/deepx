@@ -1,0 +1,6 @@
+def native_pow(A:int, B:int) -> (C:float) {
+    pow(A, B) -> "./C"
+}
+
+# Top-level call: native_pow(2,3) -> "./out"
+native_pow(2,3) -> "./out"

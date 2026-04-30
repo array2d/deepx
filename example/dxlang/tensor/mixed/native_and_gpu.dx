@@ -1,0 +1,26 @@
+# native_and_gpu: VM 原生标量计算与 GPU tensor 操作交叉执行
+# 验证 VM native eval → heap-plat → op-metal 混合调度正确性
+def native_and_gpu(N:int) -> ("/data/final") {
+    # Step 1: VM 原生计算确定 tensor 大小
+    N * 4 -> "./size"
+
+    # Step 2: 基于标量结果创建 tensor（此处简化为固定大小）
+    newtensor("f32", "[256]") -> "/data/x"
+    newtensor("f32", "[256]") -> "/data/y"
+    newtensor("f32", "[256]") -> "/data/final"
+
+    zeros() -> "/data/x"
+    zeros() -> "/data/y"
+
+    # Step 3: GPU tensor 计算
+    add("/data/x", "/data/y") -> "/data/final"
+
+    # Step 4: VM 原生比较 (验证标量结果还在)
+    N == N -> "./valid"
+
+    deltensor("/data/x")
+    deltensor("/data/y")
+}
+
+# Top-level call: native_and_gpu(8) -> "/data/final"
+native_and_gpu(8) -> "/data/final"

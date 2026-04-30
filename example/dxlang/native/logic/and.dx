@@ -1,3 +1,0 @@
-def native_and(A:bool, B:bool) -> (C:bool) {
-    A && B -> "./C"
-}

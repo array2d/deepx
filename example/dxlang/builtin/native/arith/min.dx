@@ -1,0 +1,6 @@
+def native_min(A:int, B:int) -> (C:int) {
+    min(A, B) -> "./C"
+}
+
+# Top-level call: native_min(-2,5) -> "./out"
+native_min(-2,5) -> "./out"

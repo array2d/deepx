@@ -1,0 +1,6 @@
+def native_eq(A:int, B:int) -> (C:bool) {
+    A == B -> "./C"
+}
+
+# Top-level call: native_eq(5, 5) -> "./out"
+native_eq(5, 5) -> "./out"

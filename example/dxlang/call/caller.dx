@@ -1,4 +1,0 @@
-# caller: calls callee to add two numbers
-def caller(A:int, B:int) -> (C:int) {
-    callee(A, B) -> "./C"
-}
