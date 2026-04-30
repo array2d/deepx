@@ -7,8 +7,8 @@
 #include "stdutil/vector.hpp"
 #include "stdutil/print.hpp"
 #include "stdutil/fs.hpp"
-#include "deepx/tensorfunc/authors.hpp"
-#include "deepx/tensorfunc/io.hpp"
+#include "tensorfunc/authors.hpp"
+#include "tensorfunc/io.hpp"
 #include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 namespace deepx::tensorfunc
 {

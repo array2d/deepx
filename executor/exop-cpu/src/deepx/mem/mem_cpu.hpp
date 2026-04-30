@@ -7,7 +7,7 @@
 #include <atomic>
 #include <memory>
 #include "deepx/tensor.hpp"
-#include "deepx/mem/mem.hpp"
+#include "mem/mem.hpp"
 namespace deepx::mem
 {
     using namespace std;

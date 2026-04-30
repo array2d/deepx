@@ -6,8 +6,8 @@
 #include <cmath>
 #include <hwy/highway.h>
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/elementwise.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/elementwise.hpp"
+#include "tensorfunc/authors.hpp"
 #include "deepx/thread/parallel.hpp"
 
 namespace deepx::tensorfunc
@@ -103,7 +103,7 @@ namespace deepx::tensorfunc
 
     // todtype
     template <typename T, typename Dtype>
-    static void todtype(const Tensor<T> &A, Tensor<Dtype> &C)
+    void todtype(const Tensor<T> &A, Tensor<Dtype> &C)
     {
         rangeElementwiseParallel(C.shape, [&A, &C](int i, int i_end)
                                          {

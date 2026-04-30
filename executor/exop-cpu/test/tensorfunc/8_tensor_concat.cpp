@@ -11,7 +11,7 @@
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "stdutil/vector.hpp"
-#include "deepx/mem/mem.hpp"
+#include "mem/mem.hpp"
 #include "deepx/mem/mem_cpu.hpp"
 using namespace deepx;
 using namespace deepx::tensorfunc;

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <chrono>
+#include <type_traits>
 
 #include "deepx/tensor.hpp"
 #include "mem/mem.hpp"
@@ -136,10 +137,6 @@ namespace deepx::tf
             {
                 throw std::invalid_argument("Invalid argument index");
             }
-            if (idx < 0 || idx >= vars.size())
-            {
-                throw std::invalid_argument("Invalid argument index");
-            }
 
             vector<T> result;
             string textvalue = vars[idx].textvalue;
@@ -152,7 +149,17 @@ namespace deepx::tf
             std::string item;
             while (std::getline(ss, item, ' '))
             {
-                result.push_back(item);
+                if constexpr (std::is_same_v<T, std::string>)
+                {
+                    result.push_back(item);
+                }
+                else
+                {
+                    T val{};
+                    std::stringstream item_ss(item);
+                    item_ss >> val;
+                    result.push_back(val);
+                }
             }
             return result;
         }

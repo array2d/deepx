@@ -5,7 +5,7 @@
 
 #include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 
 using namespace deepx;

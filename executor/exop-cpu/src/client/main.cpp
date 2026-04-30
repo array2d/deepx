@@ -256,7 +256,20 @@ template <typename T> struct type_tag { using type = T; };
         else if (dtype == "i16" || dtype == "int16")       Fn(type_tag<int16_t>{});  \
         else if (dtype == "i8"  || dtype == "int8")        Fn(type_tag<int8_t>{});   \
         else if (dtype == "bool")                           Fn(type_tag<bool>{});     \
-        else { error = "unsupported dtype: " + dtype; return; }             \
+        else { error = "unsupported dtype: " + dtype; return false; }             \
+    } while(0)
+
+// Variant for void functions — sets error but doesn't return a value
+#define DISPATCH_BY_DTYPE_VOID(dtype, Fn)                                   \
+    do {                                                                     \
+        if (dtype == "f32" || dtype == "float32")          Fn(type_tag<float>{});    \
+        else if (dtype == "f64" || dtype == "float64")    Fn(type_tag<double>{});   \
+        else if (dtype == "i64" || dtype == "int64")       Fn(type_tag<int64_t>{});  \
+        else if (dtype == "i32" || dtype == "int32")       Fn(type_tag<int32_t>{});  \
+        else if (dtype == "i16" || dtype == "int16")       Fn(type_tag<int16_t>{});  \
+        else if (dtype == "i8"  || dtype == "int8")        Fn(type_tag<int8_t>{});   \
+        else if (dtype == "bool")                           Fn(type_tag<bool>{});     \
+        else { error = "unsupported dtype: " + dtype; return; }               \
     } while(0)
 
 // ═══════════════════════════════════════════════════════════
@@ -934,7 +947,7 @@ static void execute_task(redisContext *redis, const json &task) {
             cpu_scalar_op(opcode, static_cast<const T*>(input_ptrs[0]), scalar, static_cast<T*>(out_shm.addr), n);
             ok = true;
         };
-        DISPATCH_BY_DTYPE(dtype, fn);
+        DISPATCH_BY_DTYPE_VOID(dtype, fn);
     }
     // ── comparison (CPU) ──
     else if (input_ptrs.size() == 2 &&
@@ -947,7 +960,7 @@ static void execute_task(redisContext *redis, const json &task) {
                           static_cast<bool*>(out_shm.addr), n);
             ok = true;
         };
-        DISPATCH_BY_DTYPE(dtype, fn);
+        DISPATCH_BY_DTYPE_VOID(dtype, fn);
     }
     // ── scalar comparison (CPU) ──
     else if (input_ptrs.size() == 1 &&
@@ -961,7 +974,7 @@ static void execute_task(redisContext *redis, const json &task) {
                                  scalar, static_cast<bool*>(out_shm.addr), n);
             ok = true;
         };
-        DISPATCH_BY_DTYPE(dtype, fn);
+        DISPATCH_BY_DTYPE_VOID(dtype, fn);
     }
     // ── invert (CPU) ──
     else if (opcode == "invert" && input_ptrs.size() == 1) {

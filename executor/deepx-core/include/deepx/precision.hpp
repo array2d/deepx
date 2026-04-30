@@ -185,5 +185,8 @@ namespace deepx
         return result;
     }
 
+
+// Convenience alias
+inline std::string precision_str(Precision p) { return precision_to_string(p); }
 }
 #endif

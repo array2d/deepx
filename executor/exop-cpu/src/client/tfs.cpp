@@ -8,9 +8,9 @@
 #include "deepx/tf/changeshape.hpp"
 #include "deepx/tf/elementwise.hpp"
 #include "deepx/tf/reduce.hpp"
-#include "deepx/tf/tffactory.hpp"
+#include "tf/tffactory.hpp"
 #include "deepx/tf/matmul.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/authors.hpp"
 namespace deepx::tf
 {
     using namespace std;

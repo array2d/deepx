@@ -8,7 +8,7 @@
 #include "deepx/tensorfunc/highway.hpp"
 #include "deepx/shape_reduce.hpp"
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/reduce.hpp"
+#include "tensorfunc/reduce.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "deepx/thread/parallel.hpp"
 

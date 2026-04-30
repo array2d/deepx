@@ -1,8 +1,8 @@
 #ifndef DEEPX_TF_INIT_HPP
 #define DEEPX_TF_INIT_HPP
 
-#include "deepx/tf/tf.hpp"
-#include "deepx/tensorfunc/init.hpp"
+#include "tf/tf.hpp"
+#include "tensorfunc/init.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
 #include "stdutil/num.hpp"
 namespace deepx::tf

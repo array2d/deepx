@@ -2,7 +2,7 @@
 #define DEEPX_TF_CHANGESHAPE_HPP
 
 #include <vector>
-#include "deepx/tf/tf.hpp"
+#include "tf/tf.hpp"
 #include "deepx/tensorfunc/changeshape_miaobyte.hpp"
 #include "deepx/dtype.hpp"
 

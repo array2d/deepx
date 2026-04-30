@@ -1,11 +1,11 @@
 #ifndef DEEPX_TF_ELEMENTWISE_HPP
 #define DEEPX_TF_ELEMENTWISE_HPP
 
-#include "deepx/tf/tf.hpp"
+#include "tf/tf.hpp"
 #include "deepx/dtype.hpp"
 #include "deepx/dtype_cpu.hpp"
 #include "deepx/mem/mem_cpu.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/elementwise_miaobyte.hpp"
 #include "deepx/tensorfunc/elementwise_cblas.hpp"
 namespace deepx::tf

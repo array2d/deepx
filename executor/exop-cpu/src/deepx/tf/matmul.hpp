@@ -1,10 +1,10 @@
 #ifndef DEEPX_TF_MATMUL_HPP
 #define DEEPX_TF_MATMUL_HPP
 
-#include "deepx/tf/tf.hpp"
+#include "tf/tf.hpp"
 #include "deepx/dtype.hpp"
 #include "deepx/dtype_cpu.hpp"
-#include "deepx/tensorfunc/matmul.hpp"
+#include "tensorfunc/matmul.hpp"
 #include "deepx/tensorfunc/matmul_cblas.hpp"
 #include "deepx/tensorfunc/matmul_miaobyte.hpp"
 namespace deepx::tf

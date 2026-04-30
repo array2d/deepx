@@ -1,7 +1,7 @@
 #ifndef DEEPX_TF_ARG_HPP
 #define DEEPX_TF_ARG_HPP
 
-#include "deepx/tf/tf.hpp"
+#include "tf/tf.hpp"
 #include "deepx/dtype.hpp"
 #include <any>
 #include <sstream>

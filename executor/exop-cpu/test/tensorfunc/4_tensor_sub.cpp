@@ -2,11 +2,11 @@
 #include <cstdint>
 
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/elementwise.hpp"
+#include "tensorfunc/elementwise.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
-#include "deepx/tensorfunc/init.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/init.hpp"
+#include "tensorfunc/authors.hpp"
 #include "deepx/tensorfunc/elementwise_miaobyte.hpp"
 #include "tensorutil.hpp"
 using namespace deepx;

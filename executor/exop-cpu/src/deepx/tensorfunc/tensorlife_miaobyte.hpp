@@ -2,8 +2,8 @@
 #define DEEPX_TENSORFUNC_TENSORLIFE_MIAOBYTE_HPP
 
 #include "stdutil/fs.hpp"
-#include "deepx/tensorfunc/tensorlife.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/tensorlife.hpp"
+#include "tensorfunc/authors.hpp"
 #include "deepx/tensor.hpp"
 #include "deepx/dtype.hpp"
 #include "deepx/dtype_cpu.hpp"

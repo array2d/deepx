@@ -36,8 +36,12 @@ VM_OUT          := /tmp/deepx-vm
 EXOP_METAL_OUT  := /tmp/deepx/exop-metal/build
 HEAP_METAL_OUT  := /tmp/deepx/heap-metal/build
 IO_METAL_OUT    := /tmp/deepx/io-metal/build
-EXOP_CPU_OUT    := /tmp/deepx/exop-cpu/build
-HEAP_CPU_OUT    := /tmp/deepx/heap-cpu/build
+# ── 跨平台: 产物按 OS-ARCH 命名 ──
+CPU_PLAT        := $(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+EXOP_CPU_OUT    := /tmp/deepx/exop-cpu/build/$(CPU_PLAT)
+BIN_EXOP_CPU    := $(EXOP_CPU_OUT)/deepx-exop-cpu-$(CPU_PLAT)
+HEAP_CPU_OUT    := /tmp/deepx/heap-cpu/build/$(CPU_PLAT)
+BIN_HEAP_CPU    := $(HEAP_CPU_OUT)/deepx-heap-cpu-$(CPU_PLAT)
 DASHBOARD_OUT   := /tmp/deepx-dashboard
 
 # ── Redis 配置 (用于联调) ──
@@ -66,6 +70,8 @@ help:
 	@echo "  make build-exop-metal     Build Metal compute plane (C++) → $(EXOP_METAL_OUT)/deepx-exop-metal"
 	@echo "  make build-heap-metal   Build Metal heap plane (C++)    → $(HEAP_METAL_OUT)/deepx-heap-metal"
 	@echo "  make build-io-metal     Build I/O plane (C++)           → $(IO_METAL_OUT)/deepx-io-metal"
+	@echo "  make build-exop-cpu      Build CPU compute plane (C++/Redis)→ $(BIN_EXOP_CPU)"
+	@echo "  make build-heap-cpu      Build CPU heap plane (C++/Redis)  → $(BIN_HEAP_CPU)"
 	@echo ""
 	@echo "TEST:"
 	@echo "  make test-vm            Run VM unit tests"
@@ -157,14 +163,14 @@ build-io-metal:
 	@echo "  → $(IO_METAL_OUT)/deepx-io-metal"
 
 build-exop-cpu:
-	@echo "=== Building exop-cpu ==="
-	bash $(EXOP_CPU_DIR)/build.sh 2>/dev/null || (mkdir -p $(EXOP_CPU_OUT) && cd $(EXOP_CPU_OUT) && cmake ../../exop-cpu && cmake --build . -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4))
-	@echo "  → $(EXOP_CPU_OUT)/deepx-exop-cpu"
+	@echo "=== Building exop-cpu ($(CPU_PLAT)) ==="
+	bash $(EXOP_CPU_DIR)/build.sh
+	@echo "  → $(BIN_EXOP_CPU)         (计算执行器，对接 Redis)"
 
 build-heap-cpu:
-	@echo "=== Building heap-cpu ==="
+	@echo "=== Building heap-cpu ($(CPU_PLAT)) ==="
 	bash $(HEAP_CPU_DIR)/build.sh
-	@echo "  → $(HEAP_CPU_OUT)/deepx-heap-cpu"
+	@echo "  → $(BIN_HEAP_CPU)         (生命周期管理器，对接 Redis)"
 
 # ═══════════════════════════════════════════════════════════════
 # Test

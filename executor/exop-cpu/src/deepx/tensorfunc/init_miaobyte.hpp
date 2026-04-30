@@ -6,8 +6,8 @@
 #include <omp.h>
 
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/authors.hpp"
-#include "deepx/tensorfunc/init.hpp"
+#include "tensorfunc/authors.hpp"
+#include "tensorfunc/init.hpp"
 #include "deepx/thread/parallel.hpp"
 
 namespace deepx::tensorfunc

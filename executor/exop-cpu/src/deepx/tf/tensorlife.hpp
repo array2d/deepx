@@ -1,9 +1,9 @@
 #ifndef DEEPX_TF_TENSORLIFE_HPP
 #define DEEPX_TF_TENSORLIFE_HPP
 
-#include "deepx/tf/tf.hpp"
+#include "tf/tf.hpp"
 #include "deepx/dtype.hpp"
-#include "deepx/mem/mem.hpp"
+#include "mem/mem.hpp"
 #include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 #include "stdutil/num.hpp"
 

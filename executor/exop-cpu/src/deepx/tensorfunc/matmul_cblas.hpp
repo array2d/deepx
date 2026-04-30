@@ -3,8 +3,8 @@
 
 #include <cblas.h> // 如果使用 OpenBLAS
 #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/matmul.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/matmul.hpp"
+#include "tensorfunc/authors.hpp"
 
 namespace deepx::tensorfunc
 {

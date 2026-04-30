@@ -6,8 +6,8 @@
 
 #include "deepx/tensor.hpp"
 #include "deepx/shape_changeshape.hpp"
-#include "deepx/tensorfunc/changeshape.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/changeshape.hpp"
+#include "tensorfunc/authors.hpp"
 #include "deepx/thread/parallel.hpp"
 namespace deepx::tensorfunc
 {

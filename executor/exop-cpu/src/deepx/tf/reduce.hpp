@@ -4,7 +4,7 @@
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/reduce_miaobyte.hpp"
 #include <vector>
-#include "deepx/tf/tf.hpp"
+#include "tf/tf.hpp"
 #include "deepx/dtype.hpp"
 
 namespace deepx::tf

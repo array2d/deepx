@@ -1,7 +1,7 @@
 #ifndef DEEPX_TENSORFUNC_MATMUL_MIAOBYTE_HPP
 #define DEEPX_TENSORFUNC_MATMUL_MIAOBYTE_HPP
 
-#include "deepx/tensorfunc/matmul.hpp"
+#include "tensorfunc/matmul.hpp"
 #include "deepx/thread/parallel.hpp"
 
 namespace deepx::tensorfunc

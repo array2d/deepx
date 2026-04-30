@@ -191,5 +191,10 @@ namespace deepx
         }
     }
 
+    // 返回 dtype 字符串表示（如 "float32", "int64"）
+    inline std::string dtype_str(const TypeSpec &ts) {
+        return precision_str(ts.parts.precision);
+    }
+
 }
 #endif

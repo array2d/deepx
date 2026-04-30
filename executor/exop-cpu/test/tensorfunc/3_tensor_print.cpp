@@ -3,7 +3,7 @@
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/io_miaobyte.hpp"
 #include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/authors.hpp"
 
 using namespace deepx::tensorfunc;
 int main(){

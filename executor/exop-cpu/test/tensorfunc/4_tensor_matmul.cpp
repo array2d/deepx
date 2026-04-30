@@ -7,10 +7,10 @@
 #include "deepx/tensor.hpp"
 #include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
     
-#include "deepx/tensorfunc/matmul.hpp"
+#include "tensorfunc/matmul.hpp"
 #include "deepx/tensorfunc/matmul_miaobyte.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensorfunc/authors.hpp"
 #include "deepx/shape_matmul.hpp"
  
 using namespace deepx;
