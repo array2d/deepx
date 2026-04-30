@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"deepx/executor/vm/internal/ast"
 	"deepx/executor/vm/internal/parser"
 	"deepx/executor/vm/internal/logx"
 	"github.com/redis/go-redis/v9"
@@ -58,7 +59,8 @@ func main() {
 
 	logx.Info("found %d .dx file(s)", len(files))
 	loaded := 0
-	entryCreated := false
+	hasMain := false
+	var allPreamble []string
 	for _, f := range files {
 		df, err := parser.ParseFile(f)
 		if err != nil {
@@ -75,29 +77,45 @@ func main() {
 			}
 			loaded++
 			logx.Info("OK   %-50s → /src/func/%-30s (%d body lines)", f, fn.Name, len(fn.Body))
+			if fn.Name == "main" {
+				hasMain = true
+			}
 		}
 
-		// If file has top-level calls, write /func/main to trigger VM execution
-		if len(df.TopLevelCalls) > 0 {
-			tc := df.TopLevelCalls[0] // first top-level call is the entry point
+		// Collect preamble lines from this file
+		allPreamble = append(allPreamble, df.PreambleLines...)
+	}
+
+	// ── Build pre_main from all preamble lines ──
+	if len(allPreamble) > 0 {
+		body := make([]string, len(allPreamble))
+		copy(body, allPreamble)
+		if hasMain {
+			body = append(body, "main() -> './pre_main_ret'")
+		}
+		preMain := ast.Func{
+			Name:      "pre_main",
+			Signature: "def pre_main() -> ()",
+			Body:      body,
+		}
+		if err := preMain.Register(ctx, rdb); err != nil {
+			logx.Error("FAIL register pre_main: %v", err)
+		} else {
 			entryMap := map[string]interface{}{
-				"entry":  tc.FuncName,
-				"reads":  tc.Args,
-				"writes": tc.Outputs,
+				"entry":  "pre_main",
+				"reads":  []string{},
+				"writes": []string{},
 			}
 			entryData, _ := json.Marshal(entryMap)
 			if err := rdb.Set(ctx, "/func/main", entryData, 0).Err(); err != nil {
-				logx.Error("FAIL %s: write /func/main: %v", f, err)
-				continue
+				logx.Error("FAIL write /func/main: %v", err)
+			} else {
+				logx.Info("PREMAIN %d preamble lines → /src/func/pre_main (hasMain=%v)", len(body), hasMain)
+				logx.Info("ENTRY /func/main → pre_main")
 			}
-			entryCreated = true
-			logx.Info("ENTRY /func/main → %s (reads=%v writes=%v)", tc.FuncName, tc.Args, tc.Outputs)
 		}
 	}
 	logx.Info("loaded %d/%d functions into Redis", loaded, len(files))
-	if entryCreated {
-		logx.Info("ENTRY /func/main set — VM will auto-execute")
-	}
 }
 
 func printUsage() {

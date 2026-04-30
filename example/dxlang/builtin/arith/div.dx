@@ -1,9 +1,9 @@
 def native_div(A:int, B:int) -> (C:float) {
     print(A)
     print(B)
-    "./C" <- A / B
-    print("./C")
+    './C' <- A / B
+    print('./C')
 }
 
-# Top-level call: native_div(15, 2) -> "./out"
-native_div(15, 2) -> "./out"
+# Top-level call: native_div(15, 2) -> './out'
+native_div(15, 2) -> './out'

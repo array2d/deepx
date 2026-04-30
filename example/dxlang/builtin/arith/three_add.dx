@@ -2,12 +2,12 @@
 def three_add(A:int, B:int, C:int) -> (R:int) {
     print(A)
     print(B)
-    A + B -> "./t"
-    print("./t")
+    A + B -> './t'
+    print('./t')
     print(C)
-    "./t" + C -> "./R"
-    print("./R")
+    './t' + C -> './R'
+    print('./R')
 }
 
-# Top-level call: three_add(2, 3, 4) -> "./out"
-three_add(2, 3, 4) -> "./out"
+# Top-level call: three_add(2, 3, 4) -> './out'
+three_add(2, 3, 4) -> './out'

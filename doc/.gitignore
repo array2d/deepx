@@ -2,6 +2,5 @@
 .venv
 _build
 make.bat
-Makefile
 _static
 _templates

@@ -3,37 +3,37 @@
 # 调用链: producer → stage1 → stage2 → consumer
 
 # ── 最内层: 创建 tensor 并做 elementwise 计算 ──
-def producer() -> ("/data/p") {
-    newtensor("f32", "[64]") -> "/data/p"
-    newtensor("f32", "[64]") -> "/data/t"
-    zeros() -> "/data/p"
-    add("/data/p", "/data/p") -> "/data/t"
-    mul("/data/t", "/data/p") -> "/data/p"
-    deltensor("/data/t")
+def producer() -> ('/data/p') {
+    newtensor("f32", "[64]") -> '/data/p'
+    newtensor("f32", "[64]") -> '/data/t'
+    zeros() -> '/data/p'
+    add('/data/p', '/data/p') -> '/data/t'
+    mul('/data/t', '/data/p') -> '/data/p'
+    deltensor('/data/t')
 }
 
 # ── 中间层 1: 调用 producer 并对结果做 relu ──
-def stage1() -> ("/data/s1") {
-    producer() -> "/data/s1"
-    newtensor("f32", "[64]") -> "/data/relu_out"
-    relu("/data/s1") -> "/data/relu_out"
-    deltensor("/data/s1")
+def stage1() -> ('/data/s1') {
+    producer() -> '/data/s1'
+    newtensor("f32", "[64]") -> '/data/relu_out'
+    relu('/data/s1') -> '/data/relu_out'
+    deltensor('/data/s1')
     # 将 relu_out 重命名给调用方 (依赖 return 写入的 key)
 }
 
 # ── 中间层 2: 调用 stage1 并对结果做 exp ──
-def stage2() -> ("/data/s2") {
-    stage1() -> "/data/s2"
-    newtensor("f32", "[64]") -> "/data/exp_out"
-    exp("/data/s2") -> "/data/exp_out"
-    deltensor("/data/s2")
+def stage2() -> ('/data/s2') {
+    stage1() -> '/data/s2'
+    newtensor("f32", "[64]") -> '/data/exp_out'
+    exp('/data/s2') -> '/data/exp_out'
+    deltensor('/data/s2')
 }
 
 # ── 最外层: 调用 stage2 并打印结果，最后清理 ──
 def consumer() -> () {
-    stage2() -> "/data/final"
-    print("/data/final")
-    deltensor("/data/final")
+    stage2() -> '/data/final'
+    print('/data/final')
+    deltensor('/data/final')
 }
 
 # Top-level call: consumer() -> ()  (full pipeline: producer→stage1→stage2→consumer)

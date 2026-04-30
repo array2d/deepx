@@ -1,26 +1,26 @@
 # hadamard3: 三元 Hadamard 积 a * b * c
 # mul 是 binary GPU op，分两步完成
-def hadamard3() -> ("/data/result") {
-    newtensor("f32", "[128]") -> "/data/a"
-    newtensor("f32", "[128]") -> "/data/b"
-    newtensor("f32", "[128]") -> "/data/c"
-    newtensor("f32", "[128]") -> "/data/temp"
-    newtensor("f32", "[128]") -> "/data/result"
+def hadamard3() -> ('/data/result') {
+    newtensor("f32", "[128]") -> '/data/a'
+    newtensor("f32", "[128]") -> '/data/b'
+    newtensor("f32", "[128]") -> '/data/c'
+    newtensor("f32", "[128]") -> '/data/temp'
+    newtensor("f32", "[128]") -> '/data/result'
 
-    zeros() -> "/data/a"
-    zeros() -> "/data/b"
-    zeros() -> "/data/c"
+    zeros() -> '/data/a'
+    zeros() -> '/data/b'
+    zeros() -> '/data/c'
 
     # temp = a * b
-    mul("/data/a", "/data/b") -> "/data/temp"
+    mul('/data/a', '/data/b') -> '/data/temp'
     # result = temp * c
-    mul("/data/temp", "/data/c") -> "/data/result"
+    mul('/data/temp', '/data/c') -> '/data/result'
 
-    deltensor("/data/a")
-    deltensor("/data/b")
-    deltensor("/data/c")
-    deltensor("/data/temp")
+    deltensor('/data/a')
+    deltensor('/data/b')
+    deltensor('/data/c')
+    deltensor('/data/temp')
 }
 
-# Top-level call: hadamard3() -> "/data/result"
-hadamard3() -> "/data/result"
+# Top-level call: hadamard3() -> '/data/result'
+hadamard3() -> '/data/result'

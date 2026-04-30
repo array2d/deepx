@@ -16,7 +16,7 @@ import (
 func main() {
 	addr := flag.String("addr", ":8080", "HTTP listen address")
 	redisAddr := flag.String("redis", redis.DefaultAddr, "Redis address")
-	loaderBin := flag.String("loader", "/tmp/deepx-vm/loader", "Path to loader binary")
+	loaderBin := flag.String("loader", "/tmp/deepx/vm/loader", "Path to loader binary")
 	flag.Parse()
 
 	rdb, err := redis.Connect(*redisAddr)

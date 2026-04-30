@@ -1,6 +1,6 @@
 def native_max(A:int, B:int) -> (C:int) {
-    max(A, B) -> "./C"
+    max(A, B) -> './C'
 }
 
-# Top-level call: native_max(7,3) -> "./out"
-native_max(7,3) -> "./out"
+# Top-level call: native_max(7,3) -> './out'
+native_max(7,3) -> './out'

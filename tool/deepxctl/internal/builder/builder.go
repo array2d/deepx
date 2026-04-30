@@ -22,10 +22,10 @@ import (
 
 // Binary paths for metal platform binaries.
 var (
-	OpMetal   = "/tmp/deepx/op-metal/build/deepx-op-metal"
-	HeapMetal = "/tmp/deepx/heap-metal/build/deepx-heap-metal"
-	VM        = "/tmp/deepx-vm/vm"
-	Loader    = "/tmp/deepx-vm/loader"
+	OpMetal   = "/tmp/deepx/exop-metal/deepx-exop-metal"
+	HeapMetal = "/tmp/deepx/heap-metal/deepx-heap-metal"
+	VM        = "/tmp/deepx/vm/vm"
+	Loader    = "/tmp/deepx/vm/loader"
 )
 
 // Script paths relative to repo root.
@@ -38,7 +38,7 @@ type Scripts struct {
 // DefaultScripts returns the standard build script locations.
 func DefaultScripts(repoRoot string) Scripts {
 	return Scripts{
-		OpMetal:   filepath.Join(repoRoot, "executor/op-metal/build.sh"),
+		OpMetal:   filepath.Join(repoRoot, "executor/exop-metal/build.sh"),
 		HeapMetal: filepath.Join(repoRoot, "executor/heap-metal/build.sh"),
 		VM:        filepath.Join(repoRoot, "executor/vm/build.sh"),
 	}
@@ -54,7 +54,7 @@ func binaryExists(path string) bool {
 func Missing() []string {
 	var missing []string
 	if !binaryExists(OpMetal) {
-		missing = append(missing, "op-metal")
+		missing = append(missing, "exop-metal")
 	}
 	if !binaryExists(HeapMetal) {
 		missing = append(missing, "heap-metal")
@@ -78,7 +78,7 @@ func All(repoRoot string, force bool) error {
 		script string
 		bin    string
 	}{
-		{"op-metal", scripts.OpMetal, OpMetal},
+		{"exop-metal", scripts.OpMetal, OpMetal},
 		{"heap-metal", scripts.HeapMetal, HeapMetal},
 		{"vm (+loader)", scripts.VM, VM},
 	}

@@ -1,8 +1,8 @@
 def native_not(A:bool) -> (C:bool) {
     print(A)
-    "./C" <- !A
-    print("./C")
+    './C' <- !A
+    print('./C')
 }
 
-# Top-level call: native_not(true) -> "./out"
-native_not(true) -> "./out"
+# Top-level call: native_not(true) -> './out'
+native_not(true) -> './out'

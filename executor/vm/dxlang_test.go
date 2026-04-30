@@ -11,24 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"deepx/executor/vm/internal/ast"
 	"deepx/executor/vm/internal/parser"
 	"deepx/executor/vm/internal/state"
 	"deepx/executor/vm/internal/vm"
 )
 
-
-// loadFirstFunc parses a .dx file and returns its first function.
-func loadFirstFunc(path string) (*ast.Func, error) {
-	df, err := parser.ParseFile(path)
-	if err != nil {
-		return nil, err
-	}
-	if len(df.Funcs) == 0 {
-		return nil, fmt.Errorf("no functions in %s", path)
-	}
-	return &df.Funcs[0], nil
-}
 
 // ═══════════════════════════════════════════════════════════════
 // Phase 1: 所有 .dx 文件语法解析正确性 (零 Redis)

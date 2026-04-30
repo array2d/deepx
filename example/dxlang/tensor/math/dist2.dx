@@ -1,23 +1,23 @@
 # dist2: 逐元素平方差 (a - b)^2，用于距离计算的元素部分
 # 全程 GPU tensor: sub → mul
-def dist2() -> ("/data/dist2") {
-    newtensor("f32", "[256]") -> "/data/a"
-    newtensor("f32", "[256]") -> "/data/b"
-    newtensor("f32", "[256]") -> "/data/diff"
-    newtensor("f32", "[256]") -> "/data/dist2"
+def dist2() -> ('/data/dist2') {
+    newtensor("f32", "[256]") -> '/data/a'
+    newtensor("f32", "[256]") -> '/data/b'
+    newtensor("f32", "[256]") -> '/data/diff'
+    newtensor("f32", "[256]") -> '/data/dist2'
 
-    zeros() -> "/data/a"
-    zeros() -> "/data/b"
+    zeros() -> '/data/a'
+    zeros() -> '/data/b'
 
     # diff = a - b
-    "./diff" <- sub("/data/a", "/data/b")
+    './diff' <- sub('/data/a', '/data/b')
     # dist2 = diff * diff
-    "./dist2" <- mul("/data/diff", "/data/diff")
+    './dist2' <- mul('/data/diff', '/data/diff')
 
-    deltensor("/data/a")
-    deltensor("/data/b")
-    deltensor("/data/diff")
+    deltensor('/data/a')
+    deltensor('/data/b')
+    deltensor('/data/diff')
 }
 
-# Top-level call: dist2() -> "/data/dist2"
-dist2() -> "/data/dist2"
+# Top-level call: dist2() -> '/data/dist2'
+dist2() -> '/data/dist2'

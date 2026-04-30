@@ -17,8 +17,8 @@ redis-cli -p 16379 FLUSHDB
 ./executor/vm/build.sh
 /tmp/deepx/exop-metal/build/deepx-exop-metal 127.0.0.1 16379 &
 /tmp/deepx/heap-metal/build/deepx-heap-metal 127.0.0.1 16379 &
-VM_ID=0 /tmp/deepx-vm/vm 127.0.0.1:16379 &
-/tmp/deepx-vm/loader example/dxlang/tensor/lifecycle/compute.dx 127.0.0.1:16379
+VM_ID=0 /tmp/deepx/vm/vm 127.0.0.1:16379 &
+/tmp/deepx/vm/loader example/dxlang/tensor/lifecycle/compute.dx 127.0.0.1:16379
 # 还需要手动创建 vthread...
 ```
 
@@ -43,8 +43,8 @@ deepxctl run full.dx
 │         检测二进制是否存在:
 │           /tmp/deepx/exop-metal/build/deepx-exop-metal
 │           /tmp/deepx/heap-metal/build/deepx-heap-metal
-│           /tmp/deepx-vm/vm
-│           /tmp/deepx-vm/loader
+│           /tmp/deepx/vm/vm
+│           /tmp/deepx/vm/loader
 │         缺失 → exec build.sh 构建
 │
 ├─ [3/6] 启动子进程（按依赖顺序）

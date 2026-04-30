@@ -1,8 +1,8 @@
 def native_float(A:int) -> (C:float) {
     print(A)
-    float(A) -> "./C"
-    print("./C")
+    float(A) -> './C'
+    print('./C')
 }
 
-# Top-level call: native_float(42) -> "./out"
-native_float(42) -> "./out"
+# Top-level call: native_float(42) -> './out'
+native_float(42) -> './out'

@@ -1,11 +1,11 @@
 # poly3: evaluate ax² + bx + c — multi-read (4 inputs → 1 output) chain compute
 def poly3(A:int, X:int, B:int, C:int) -> (Y:int) {
-    A * X -> "./t1"
-    "./t1" * X -> "./t2"
-    B * X -> "./t3"
-    "./t2" + "./t3" -> "./t4"
-    "./t4" + C -> "./Y"
+    A * X -> './t1'
+    './t1' * X -> './t2'
+    B * X -> './t3'
+    './t2' + './t3' -> './t4'
+    './t4' + C -> './Y'
 }
 
 # Top-level call: poly3(2, 3, 4, 5) → 2*9 + 4*3 + 5 = 35
-poly3(2, 3, 4, 5) -> "./out"
+poly3(2, 3, 4, 5) -> './out'

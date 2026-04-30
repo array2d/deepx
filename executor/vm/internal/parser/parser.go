@@ -116,6 +116,7 @@ func ParseFile(path string) (*ast.File, error) {
 		}
 		if tc, ok := parseTopLevelCall(line); ok {
 			df.TopLevelCalls = append(df.TopLevelCalls, tc)
+			df.PreambleLines = append(df.PreambleLines, line)
 		}
 	}
 	return df, nil
@@ -309,7 +310,7 @@ func parseTopLevelCall(line string) (ast.TopLevelCall, bool) {
 	if right != "" {
 		for _, o := range strings.Split(right, ",") {
 			o = strings.TrimSpace(o)
-			o = strings.Trim(o, `"`)
+			o = strings.Trim(o, `"'`)
 			if o != "" {
 				outputs = append(outputs, o)
 			}
@@ -368,14 +369,18 @@ func parseParamList(s string) []string {
 	}
 	var params []string
 	depth := 0
-	inQuote := false
+	inQuote := byte(0)
 	start := 0
 	for i := 0; i < len(s); i++ {
-		if s[i] == '"' {
-			inQuote = !inQuote
+		if s[i] == '"' || s[i] == '\'' {
+			if inQuote == 0 {
+				inQuote = s[i]
+			} else if inQuote == s[i] {
+				inQuote = 0
+			}
 			continue
 		}
-		if inQuote {
+		if inQuote != 0 {
 			continue
 		}
 		switch s[i] {
@@ -411,14 +416,18 @@ func parseParamListRaw(s string) []string {
 	}
 	var params []string
 	depth := 0
-	inQuote := false
+	inQuote := byte(0)
 	start := 0
 	for i := 0; i < len(s); i++ {
-		if s[i] == '"' {
-			inQuote = !inQuote
+		if s[i] == '"' || s[i] == '\'' {
+			if inQuote == 0 {
+				inQuote = s[i]
+			} else if inQuote == s[i] {
+				inQuote = 0
+			}
 			continue
 		}
-		if inQuote {
+		if inQuote != 0 {
 			continue
 		}
 		switch s[i] {
@@ -448,27 +457,42 @@ func parseParamListRaw(s string) []string {
 }
 
 func stripQuotes(s string) string {
-	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
-		return s[1 : len(s)-1]
+	if len(s) >= 2 {
+		if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {
+			return s[1 : len(s)-1]
+		}
 	}
 	return s
 }
 
+func isKeyRef(s string) bool {
+	return strings.HasPrefix(s, "/") || strings.HasPrefix(s, "./")
+}
+
+// isString 判断参数是否为双引号字符串字面量 (e.g. "f32", "[128]")。
+func isString(s string) bool {
+	return len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"'
+}
+
 func validateRef(raw string, line string) error {
+	if isString(raw) || (len(raw) >= 2 && raw[0] == '\'' && raw[len(raw)-1] == '\'') {
+		return nil // 已加引号, 合法
+	}
 	unquoted := stripQuotes(raw)
-	if (strings.HasPrefix(unquoted, "/") || strings.HasPrefix(unquoted, "./")) &&
-		!(len(raw) >= 2 && raw[0] == '"' && raw[len(raw)-1] == '"') {
-		return fmt.Errorf("path %q must be quoted (e.g. %q) in: %s", unquoted, `"`+unquoted+`"`, line)
+	if isKeyRef(unquoted) {
+		return fmt.Errorf("path %q must be single-quoted (e.g. %q) in: %s", unquoted, "'"+unquoted+"'", line)
 	}
 	return nil
 }
 
 func validateKeyRefs(rawExpr string, role string, line string) error {
 	for _, raw := range parseParamListRaw(rawExpr) {
+		if isString(raw) || (len(raw) >= 2 && raw[0] == '\'' && raw[len(raw)-1] == '\'') {
+			continue // 已加引号, 合法
+		}
 		unquoted := stripQuotes(raw)
-		if (strings.HasPrefix(unquoted, "/") || strings.HasPrefix(unquoted, "./")) &&
-			!(len(raw) >= 2 && raw[0] == '"' && raw[len(raw)-1] == '"') {
-			return fmt.Errorf("%s %q must be quoted (e.g. %s) in: %s", role, unquoted, `"`+unquoted+`"`, line)
+		if isKeyRef(unquoted) {
+			return fmt.Errorf("%s %q must be single-quoted (e.g. %s) in: %s", role, unquoted, "'"+unquoted+"'", line)
 		}
 	}
 	return nil

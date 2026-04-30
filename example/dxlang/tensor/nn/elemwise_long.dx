@@ -1,32 +1,32 @@
 # elemwise_long: 长链 GPU elementwise 操作 pipeline
 # 验证 op-metal 连续多步 kernel dispatch 的稳定性
 # 流程: relu → exp → log → abs → neg → sqrt
-def elemwise_long() -> ("/data/out") {
-    newtensor("f32", "[512]") -> "/data/in"
-    newtensor("f32", "[512]") -> "/data/s1"
-    newtensor("f32", "[512]") -> "/data/s2"
-    newtensor("f32", "[512]") -> "/data/s3"
-    newtensor("f32", "[512]") -> "/data/s4"
-    newtensor("f32", "[512]") -> "/data/s5"
-    newtensor("f32", "[512]") -> "/data/out"
+def elemwise_long() -> ('/data/out') {
+    newtensor("f32", "[512]") -> '/data/in'
+    newtensor("f32", "[512]") -> '/data/s1'
+    newtensor("f32", "[512]") -> '/data/s2'
+    newtensor("f32", "[512]") -> '/data/s3'
+    newtensor("f32", "[512]") -> '/data/s4'
+    newtensor("f32", "[512]") -> '/data/s5'
+    newtensor("f32", "[512]") -> '/data/out'
 
-    zeros() -> "/data/in"
+    zeros() -> '/data/in'
 
     # Pipeline: in → s1 → s2 → s3 → s4 → s5 → out
-    relu("/data/in") -> "/data/s1"
-    exp("/data/s1") -> "/data/s2"
-    log("/data/s2") -> "/data/s3"
-    abs("/data/s3") -> "/data/s4"
-    neg("/data/s4") -> "/data/s5"
-    sqrt("/data/s5") -> "/data/out"
+    relu('/data/in') -> '/data/s1'
+    exp('/data/s1') -> '/data/s2'
+    log('/data/s2') -> '/data/s3'
+    abs('/data/s3') -> '/data/s4'
+    neg('/data/s4') -> '/data/s5'
+    sqrt('/data/s5') -> '/data/out'
 
-    deltensor("/data/in")
-    deltensor("/data/s1")
-    deltensor("/data/s2")
-    deltensor("/data/s3")
-    deltensor("/data/s4")
-    deltensor("/data/s5")
+    deltensor('/data/in')
+    deltensor('/data/s1')
+    deltensor('/data/s2')
+    deltensor('/data/s3')
+    deltensor('/data/s4')
+    deltensor('/data/s5')
 }
 
-# Top-level call: elemwise_long() -> "/data/out"
-elemwise_long() -> "/data/out"
+# Top-level call: elemwise_long() -> '/data/out'
+elemwise_long() -> '/data/out'

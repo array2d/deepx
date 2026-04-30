@@ -148,13 +148,14 @@ func extractAddr0(coord string) int {
 //
 // 支持三种赋值风格:
 //
-//	前缀 (命名函数):  add(A, B) -> ./C
-//	中缀 (符号算子):  A + B -> ./C
-//	                  !A -> ./C
-//	C风格 (左箭头):   ./C <- A + B
-//	                  ./C <- add(A, B)
+//	前缀 (命名函数):  add(A, B) -> './C'
+//	中缀 (符号算子):  A + B -> './C'
+//	                  !A -> './C'
+//	C风格 (左箭头):   './C' <- A + B
+//	                  './C' <- add(A, B)
 //
-// 严格要求: 所有 key 引用 (以 / 或 ./ 开头的路径) 必须用双引号包裹。
+// 严格要求: 所有 key 引用 (以 / 或 ./ 开头的路径) 必须用单引号包裹。
+// 字符串字面量 (如类型名、维度、提示文本) 用双引号包裹。
 func ParseDxlang(line string) (*Instruction, error) {
 	line = strings.TrimSpace(line)
 	if line == "" {
@@ -198,16 +199,16 @@ func ParseDxlang(line string) (*Instruction, error) {
 			// 剥离引号后再验证 key 引用
 			rawLeft := left
 			left = stripQuotes(left)
-			if isKeyRef(left) && !isQuoted(rawLeft) {
-				return nil, fmt.Errorf("read %q must be quoted (e.g. %q) in: %s", left, "\""+left+"\"", line)
+			if isKeyRef(left) && !(len(rawLeft) >= 2 && rawLeft[0] == '\'' && rawLeft[len(rawLeft)-1] == '\'') {
+				return nil, fmt.Errorf("read %q must be single-quoted (e.g. %q) in: %s", left, "'"+left+"'", line)
 			}
 			inst.Reads = append(inst.Reads, left)
 		}
 		if right != "" {
 			rawRight := right
 			right = stripQuotes(right)
-			if isKeyRef(right) && !isQuoted(rawRight) {
-				return nil, fmt.Errorf("read %q must be quoted (e.g. %q) in: %s", right, "\""+right+"\"", line)
+			if isKeyRef(right) && !(len(rawRight) >= 2 && rawRight[0] == '\'' && rawRight[len(rawRight)-1] == '\'') {
+				return nil, fmt.Errorf("read %q must be single-quoted (e.g. %q) in: %s", right, "'"+right+"'", line)
 			}
 			inst.Reads = append(inst.Reads, right)
 		}
@@ -315,14 +316,18 @@ func parseParamList(s string) []string {
 	// Bracket-aware & quote-aware split: respect nested [], (), {} and "..." strings
 	var params []string
 	depth := 0
-	inQuote := false
+	inQuote := byte(0)
 	start := 0
 	for i := 0; i < len(s); i++ {
-		if s[i] == '"' {
-			inQuote = !inQuote
+		if s[i] == '"' || s[i] == '\'' {
+			if inQuote == 0 {
+				inQuote = s[i]
+			} else if inQuote == s[i] {
+				inQuote = 0
+			}
 			continue
 		}
-		if inQuote {
+		if inQuote != 0 {
 			continue
 		}
 		switch s[i] {
@@ -360,14 +365,18 @@ func parseParamListRaw(s string) []string {
 	}
 	var params []string
 	depth := 0
-	inQuote := false
+	inQuote := byte(0)
 	start := 0
 	for i := 0; i < len(s); i++ {
-		if s[i] == '"' {
-			inQuote = !inQuote
+		if s[i] == '"' || s[i] == '\'' {
+			if inQuote == 0 {
+				inQuote = s[i]
+			} else if inQuote == s[i] {
+				inQuote = 0
+			}
 			continue
 		}
-		if inQuote {
+		if inQuote != 0 {
 			continue
 		}
 		switch s[i] {
@@ -396,24 +405,29 @@ func parseParamListRaw(s string) []string {
 	return params
 }
 
-// stripQuotes removes surrounding double quotes.
+// stripQuotes removes surrounding quotes (double or single).
 func stripQuotes(s string) string {
-	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
-		return s[1 : len(s)-1]
+	if len(s) >= 2 {
+		if s[0] == '"' && s[len(s)-1] == '"' {
+			return s[1 : len(s)-1]
+		}
+		if s[0] == '\'' && s[len(s)-1] == '\'' {
+			return s[1 : len(s)-1]
+		}
 	}
 	return s
 }
 
-// validateKeys 验证所有 key (以 / 或 ./ 开头的参数) 必须用双引号包裹。
+// validateKeys 验证 key 引用（以 / 或 ./ 开头）必须用单引号包裹，字符串用双引号。
 // rawParams 是 parseParamListRaw 返回的未剥离引号的参数。
 func validateKeys(rawParams []string, rawExpr string, role string) error {
 	for _, raw := range rawParams {
-		if isQuoted(raw) {
+		if isString(raw) || (len(raw) >= 2 && raw[0] == '\'' && raw[len(raw)-1] == '\'') {
 			continue // 已加引号, 合法
 		}
 		if isKeyRef(raw) {
-			quoted := `"` + raw + `"`
-			return fmt.Errorf("%s %q must be quoted (e.g. %s) in: %s", role, raw, quoted, rawExpr)
+			quoted := "'" + raw + "'"
+			return fmt.Errorf("%s %q must be single-quoted (e.g. %s) in: %s", role, raw, quoted, rawExpr)
 		}
 	}
 	return nil
@@ -424,7 +438,7 @@ func isKeyRef(s string) bool {
 	return strings.HasPrefix(s, "/") || strings.HasPrefix(s, "./")
 }
 
-// isQuoted 判断参数是否被双引号包裹。
-func isQuoted(s string) bool {
+// isString 判断参数是否为双引号字符串字面量 (e.g. "f32", "[128]")。
+func isString(s string) bool {
 	return len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"'
 }

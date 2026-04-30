@@ -12,6 +12,7 @@ import (
 type File struct {
 	Funcs         []Func
 	TopLevelCalls []TopLevelCall
+	PreambleLines []string // def 块外部的原始 dxlang 指令行（含引号），用于合成 pre_main
 }
 
 // Func 表示一个函数定义。

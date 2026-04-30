@@ -1,8 +1,8 @@
 # add_test: basic element-wise addition
 def add_test(A:tensor, B:tensor) -> (C:tensor) {
-    add(A, B) -> "./C"
+    add(A, B) -> './C'
 }
 
 # This top-level call requires booted services (heap-plat + op-metal)
 # with tensors at /data/a and /data/b already created.
-# add_test(/data/a, /data/b) -> "/data/c"
+# add_test(/data/a, /data/b) -> '/data/c'

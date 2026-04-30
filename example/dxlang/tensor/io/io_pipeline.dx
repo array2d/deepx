@@ -1,25 +1,25 @@
 # io_pipeline: 完整的 IO 流水线 — 创建→计算→保存→加载→打印→清理
 # 验证 VM ↔ heap-plat ↔ op-metal 三方联调
-def io_pipeline() -> ("/data/final") {
-    newtensor("f32", "[64]") -> "/data/x"
-    newtensor("f32", "[64]") -> "/data/y"
-    newtensor("f32", "[64]") -> "/data/z"
-    newtensor("f32", "[64]") -> "/data/temp"
-    zeros() -> "/data/x"
-    zeros() -> "/data/y"
-    zeros() -> "/data/z"
-    add("/data/x", "/data/y") -> "/data/temp"
-    mul("/data/temp", "/data/z") -> "/data/z"
-    print("/data/z")
-    save("/data/z", "/tmp/io_pipeline_z")
-    newtensor("f32", "[64]") -> "/data/final"
-    load("/tmp/io_pipeline_z") -> "/data/final"
-    print("/data/final")
-    deltensor("/data/x")
-    deltensor("/data/y")
-    deltensor("/data/z")
-    deltensor("/data/temp")
+def io_pipeline() -> ('/data/final') {
+    newtensor("f32", "[64]") -> '/data/x'
+    newtensor("f32", "[64]") -> '/data/y'
+    newtensor("f32", "[64]") -> '/data/z'
+    newtensor("f32", "[64]") -> '/data/temp'
+    zeros() -> '/data/x'
+    zeros() -> '/data/y'
+    zeros() -> '/data/z'
+    add('/data/x', '/data/y') -> '/data/temp'
+    mul('/data/temp', '/data/z') -> '/data/z'
+    print('/data/z')
+    save('/data/z', '/tmp/io_pipeline_z')
+    newtensor("f32", "[64]") -> '/data/final'
+    load('/tmp/io_pipeline_z') -> '/data/final'
+    print('/data/final')
+    deltensor('/data/x')
+    deltensor('/data/y')
+    deltensor('/data/z')
+    deltensor('/data/temp')
 }
 
-# Top-level call: io_pipeline() -> "/data/final"
-io_pipeline() -> "/data/final"
+# Top-level call: io_pipeline() -> '/data/final'
+io_pipeline() -> '/data/final'

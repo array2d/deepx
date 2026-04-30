@@ -1,8 +1,8 @@
 def native_log(A:int) -> (C:float) {
     print(A)
-    log(A) -> "./C"
-    print("./C")
+    log(A) -> './C'
+    print('./C')
 }
 
-# Top-level call: native_log(10) -> "./out"
-native_log(10) -> "./out"
+# Top-level call: native_log(10) -> './out'
+native_log(10) -> './out'

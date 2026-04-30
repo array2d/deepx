@@ -70,12 +70,12 @@ func shutdown() error {
 		return nil
 	}
 
-	fmt.Printf("Ordered shutdown via Redis sys commands (redis: %s)\n", state.RedisAddr)
+	logx.Debug("ordered shutdown via Redis sys commands", "redis", state.RedisAddr)
 
 	// Connect to Redis
 	rdb, err := redis.Connect(state.RedisAddr)
 	if err != nil {
-		fmt.Printf("  Redis not reachable (%v), falling back to OS signals...\n", err)
+		logx.Warn("Redis not reachable, falling back to OS signals", "error", err)
 		return forceKill(state)
 	}
 	defer rdb.Close()
@@ -86,7 +86,7 @@ func shutdown() error {
 	// ═══════════════════════════════════════════════════════════════
 	// Phase 1: Shutdown plats (op-metal → heap-metal)
 	// ═══════════════════════════════════════════════════════════════
-	fmt.Println("\n── Phase 1: Stopping plats (op-metal, heap-metal) ──")
+	logx.Debug("shutdown phase 1: stopping plats")
 
 	plats := []platInfo{
 		{"op-metal", "sys:cmd:op-metal:0", "/sys/heartbeat/op-metal:0", state.OpMetal},
@@ -95,56 +95,56 @@ func shutdown() error {
 
 	for _, p := range plats {
 		if !pidAlive(p.pid) {
-			fmt.Printf("  %-15s pid=%-6d already stopped\n", p.name, p.pid)
+			logx.Debug("plat already stopped", "name", p.name, "pid", p.pid)
 			continue
 		}
-		fmt.Printf("  %-15s pid=%-6d sending sys:shutdown → %s...", p.name, p.pid, p.sysQueue)
+		logx.Debug("sending sys:shutdown", "name", p.name, "pid", p.pid, "queue", p.sysQueue)
 		if err := rdb.LPush(ctx, p.sysQueue, shutdownCmd).Err(); err != nil {
-			fmt.Printf(" LPUSH failed: %v\n", err)
+			logx.Warn("LPUSH failed", "error", err)
 		} else {
-			fmt.Println(" sent")
+			logx.Debug("shutdown command sent")
 		}
 	}
 
 	// Wait for plats heartbeats to show "stopped"
-	fmt.Print("  waiting for plats to stop...")
+	logx.Debug("waiting for plats heartbeat stopped")
 	if !waitHeartbeats(rdb, plats, 10*time.Second) {
-		fmt.Println(" timeout")
+		logx.Warn("plats heartbeat wait timeout")
 	} else {
-		fmt.Println(" done")
+		logx.Debug("plats heartbeat stopped confirmed")
 	}
 
 	// ═══════════════════════════════════════════════════════════════
 	// Phase 2: Shutdown VM
 	// ═══════════════════════════════════════════════════════════════
-	fmt.Println("\n── Phase 2: Stopping VM ──")
+	logx.Debug("shutdown phase 2: stopping VM")
 
 	vmPlats := []platInfo{
 		{"vm", "sys:cmd:vm:0", "/sys/heartbeat/vm:0", state.VM},
 	}
 
 	if !pidAlive(state.VM) {
-		fmt.Printf("  VM              pid=%-6d already stopped\n", state.VM)
+		logx.Debug("VM already stopped", "pid", state.VM)
 	} else {
-		fmt.Printf("  VM              pid=%-6d sending sys:shutdown → sys:cmd:vm:0...", state.VM)
+		logx.Debug("sending sys:shutdown to VM", "pid", state.VM)
 		if err := rdb.LPush(ctx, "sys:cmd:vm:0", shutdownCmd).Err(); err != nil {
-			fmt.Printf(" LPUSH failed: %v\n", err)
+			logx.Warn("LPUSH failed", "error", err)
 		} else {
-			fmt.Println(" sent")
+			logx.Debug("shutdown command sent")
 		}
 
-		fmt.Print("  waiting for VM to stop...")
+		logx.Debug("waiting for VM heartbeat stopped")
 		if !waitHeartbeats(rdb, vmPlats, 10*time.Second) {
-			fmt.Println(" timeout")
+			logx.Warn("plats heartbeat wait timeout")
 		} else {
-			fmt.Println(" done")
+			logx.Debug("plats heartbeat stopped confirmed")
 		}
 	}
 
 	// ═══════════════════════════════════════════════════════════════
 	// Phase 3: Verify all final heartbeats
 	// ═══════════════════════════════════════════════════════════════
-	fmt.Println("\n── Phase 3: Final heartbeat verification ──")
+	logx.Debug("shutdown phase 3: heartbeat verification")
 
 	allHbKeys := []string{
 		"/sys/heartbeat/op-metal:0",
@@ -155,20 +155,16 @@ func shutdown() error {
 	for _, key := range allHbKeys {
 		val, err := rdb.Get(ctx, key).Result()
 		if err != nil {
-			fmt.Printf("  %-40s ── (cleaned)\n", key)
+			logx.Debug("heartbeat key cleaned", "key", key)
 			continue
 		}
 		var hb heartbeatVal
 		if err := json.Unmarshal([]byte(val), &hb); err != nil {
-			fmt.Printf("  %-40s parse error: %v\n", key, err)
+			logx.Warn("heartbeat parse error", "key", key, "error", err)
 			continue
 		}
 		ts := time.Unix(hb.Ts, 0).Format("15:04:05")
-		icon := "✓"
-		if hb.Status != "stopped" {
-			icon = "✗"
-		}
-		fmt.Printf("  %s %-40s status=%-8s pid=%-6d ts=%s\n", icon, key, hb.Status, hb.Pid, ts)
+		logx.Debug("heartbeat verified", "key", key, "status", hb.Status, "pid", hb.Pid, "ts", ts)
 	}
 
 	// ═══════════════════════════════════════════════════════════════
@@ -195,7 +191,7 @@ func shutdown() error {
 	}
 
 	if needForce {
-		fmt.Println("\n── Force killing remaining processes (fallback) ──")
+		logx.Debug("shutdown phase 4: force kill fallback")
 		for _, r := range []struct {
 			name string
 			pid  int
@@ -205,13 +201,13 @@ func shutdown() error {
 			{"vm", state.VM},
 		} {
 			if pidAlive(r.pid) {
-				fmt.Printf("  %-15s pid=%-6d SIGKILL...", r.name, r.pid)
+				logx.Debug("force SIGKILL", "name", r.name, "pid", r.pid)
 				syscall.Kill(r.pid, syscall.SIGKILL)
 				time.Sleep(100 * time.Millisecond)
 				if pidAlive(r.pid) {
-					fmt.Println(" still alive!")
+					logx.Warn("process still alive after SIGKILL")
 				} else {
-					fmt.Println(" killed")
+					logx.Debug("process killed by SIGKILL")
 				}
 			}
 		}
@@ -280,22 +276,22 @@ func forceKill(state *BootState) error {
 
 	for name, pid := range pids {
 		if !pidAlive(pid) {
-			fmt.Printf("  %-15s pid=%-6d already stopped\n", name, pid)
+			logx.Debug("process already stopped", "name", name, "pid", pid)
 			continue
 		}
-		fmt.Printf("  %-15s pid=%-6d SIGTERM...", name, pid)
+		logx.Debug("sending SIGTERM", "name", name, "pid", pid)
 		syscall.Kill(pid, syscall.SIGTERM)
 		if waitPID(pid, 5*time.Second) {
-			fmt.Println(" stopped")
+			logx.Debug("process stopped via SIGTERM")
 			continue
 		}
-		fmt.Print(" SIGKILL...")
+		logx.Debug("sending SIGKILL fallback")
 		syscall.Kill(pid, syscall.SIGKILL)
 		time.Sleep(200 * time.Millisecond)
 		if pidAlive(pid) {
-			fmt.Println(" still alive!")
+			logx.Warn("process still alive after SIGKILL")
 		} else {
-			fmt.Println(" killed")
+			logx.Debug("process killed by SIGKILL")
 		}
 	}
 

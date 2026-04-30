@@ -1,14 +1,14 @@
 # compute: create 2 tensors, init with zeros, compute sum into a 3rd, cleanup
-def compute() -> ("/data/c") {
-    newtensor("f32", "[8]") -> "/data/a"
-    newtensor("f32", "[8]") -> "/data/b"
-    newtensor("f32", "[8]") -> "/data/c"
-    zeros() -> "/data/a"
-    zeros() -> "/data/b"
-    add("/data/a", "/data/b") -> "/data/c"
-    deltensor("/data/a")
-    deltensor("/data/b")
+def compute() -> ('/data/c') {
+    newtensor("f32", "[8]") -> '/data/a'
+    newtensor("f32", "[8]") -> '/data/b'
+    newtensor("f32", "[8]") -> '/data/c'
+    zeros() -> '/data/a'
+    zeros() -> '/data/b'
+    add('/data/a', '/data/b') -> '/data/c'
+    deltensor('/data/a')
+    deltensor('/data/b')
 }
 
-# Top-level call: compute() -> "/data/c"
-compute() -> "/data/c"
+# Top-level call: compute() -> '/data/c'
+compute() -> '/data/c'

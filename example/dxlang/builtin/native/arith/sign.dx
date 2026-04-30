@@ -1,6 +1,6 @@
 def native_sign(A:int) -> (C:int) {
-    sign(A) -> "./C"
+    sign(A) -> './C'
 }
 
-# Top-level call: native_sign(-8) -> "./out"
-native_sign(-8) -> "./out"
+# Top-level call: native_sign(-8) -> './out'
+native_sign(-8) -> './out'

@@ -7,7 +7,7 @@ OS=$(uname -s | tr '[:upper:]' '[:lower:]')           # darwin / linux
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')  # arm64 / amd64
 PLAT="${OS}-${ARCH}"
 
-BUILD_DIR="/tmp/deepx/exop-cpu/build/${PLAT}"
+BUILD_DIR="/tmp/deepx/exop-cpu/${PLAT}"
 BIN_NAME="deepx-exop-cpu-${PLAT}"
 
 mkdir -p "$BUILD_DIR"

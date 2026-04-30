@@ -1,10 +1,10 @@
 # multi_ret: function with C-style body that computes 3 results from 2 inputs
 def analyze(A:int, B:int) -> (S:int, D:int, P:int) {
-    "./S" <- A + B
-    "./D" <- A - B
-    "./P" <- A * B
+    './S' <- A + B
+    './D' <- A - B
+    './P' <- A * B
 }
 
-# Top-level call: analyze(7, 3) -> ("./sum", "./diff", "./prod")
-analyze(7, 3) -> ("./sum", "./diff", "./prod")
+# Top-level call: analyze(7, 3) -> ('./sum', './diff', './prod')
+analyze(7, 3) -> ('./sum', './diff', './prod')
 # Expected: sum=10, diff=4, prod=21

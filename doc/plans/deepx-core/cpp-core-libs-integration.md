@@ -362,7 +362,6 @@ executor/exop-cpu/CMakeLists.txt           # 依赖 deepx-core 替代 deepxcore
 executor/exop-cpu/src/client/main.cpp      # 新增 Redis+shm 版本
 executor/exop-metal/CMakeLists.txt           # 依赖 deepx-core + 精简后的 common-metal
 executor/heap-metal/CMakeLists.txt         # 依赖 deepx-core + 精简后的 common-metal
-executor/Makefile                          # 添加 build-exop-cpu / build-heap-cpu 目标
 Makefile (根)                              # 添加 build-exop-cpu / build-heap-cpu 目标
 ```
 

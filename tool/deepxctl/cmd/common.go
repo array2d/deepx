@@ -5,36 +5,27 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"deepx/tool/deepxctl/internal/logx"
 )
 
 // ── Output helpers ──
 
 func printHeader(redisAddr string) {
-	fmt.Println()
-	fmt.Printf(" deepxctl  |  redis: %s\n", redisAddr)
-	printSeparator()
-	fmt.Println()
+	logx.Debug("deepxctl run", "redis", redisAddr)
 }
 
-func printSeparator() {
-	fmt.Println("─────────────────────────────────────────")
-}
+func printSeparator() {}
 
 func step(n, total int, label string) {
-	fmt.Printf("[%d/%d] %-28s", n, total, label)
+	logx.Debug("step", "n", n, "total", total, "label", label)
 }
 
-func ok() {
-	fmt.Println("✓")
-}
+func ok() {}
 
-func okInline() {
-	fmt.Println("✓")
-}
+func okInline() {}
 
-func greenCheck() {
-	fmt.Print("  ✓  ")
-}
+func greenCheck() {}
 
 func errorX(format string, args ...interface{}) {
 	fmt.Println("✗")

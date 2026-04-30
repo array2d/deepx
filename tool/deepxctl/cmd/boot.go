@@ -111,7 +111,7 @@ func boot(flags BootFlags) error {
 
 	mgr := process.NewManager(flags.Verbose)
 	mgr.SetWorkDir(repoRoot)
-	mgr.SetLogDir("/tmp/deepx-logs")
+	mgr.SetLogDir("/tmp/deepx/logs")
 
 	redisHost, redisPort := splitRedisAddr(flags.RedisAddr)
 

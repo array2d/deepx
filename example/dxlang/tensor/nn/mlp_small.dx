@@ -1,46 +1,46 @@
 # mlp_small: 模拟单隐藏层 MLP forward pass（无控制流，逐 op 展开）
 # 联调 VM + heap-plat (newtensor/deltensor) + op-metal (add/mul/relu)
 # 数学: hidden = relu(X * W + B), output = hidden * W2 + B2
-def mlp_small() -> ("/data/output") {
+def mlp_small() -> ('/data/output') {
     # ── 分配所有权重/偏置/中间结果 ──
-    newtensor("f32", "[64]") -> "/data/X"
-    newtensor("f32", "[64]") -> "/data/W"
-    newtensor("f32", "[64]") -> "/data/B"
-    newtensor("f32", "[64]") -> "/data/W2"
-    newtensor("f32", "[64]") -> "/data/B2"
-    newtensor("f32", "[64]") -> "/data/t1"
-    newtensor("f32", "[64]") -> "/data/t2"
-    newtensor("f32", "[64]") -> "/data/hidden"
-    newtensor("f32", "[64]") -> "/data/t3"
-    newtensor("f32", "[64]") -> "/data/output"
+    newtensor("f32", "[64]") -> '/data/X'
+    newtensor("f32", "[64]") -> '/data/W'
+    newtensor("f32", "[64]") -> '/data/B'
+    newtensor("f32", "[64]") -> '/data/W2'
+    newtensor("f32", "[64]") -> '/data/B2'
+    newtensor("f32", "[64]") -> '/data/t1'
+    newtensor("f32", "[64]") -> '/data/t2'
+    newtensor("f32", "[64]") -> '/data/hidden'
+    newtensor("f32", "[64]") -> '/data/t3'
+    newtensor("f32", "[64]") -> '/data/output'
 
     # 初始化权重和输入
-    zeros() -> "/data/X"
-    zeros() -> "/data/W"
-    zeros() -> "/data/B"
-    zeros() -> "/data/W2"
-    zeros() -> "/data/B2"
+    zeros() -> '/data/X'
+    zeros() -> '/data/W'
+    zeros() -> '/data/B'
+    zeros() -> '/data/W2'
+    zeros() -> '/data/B2'
 
     # ── Layer 1: hidden = relu(X * W + B) ──
-    mul("/data/X", "/data/W") -> "/data/t1"
-    add("/data/t1", "/data/B") -> "/data/t2"
-    relu("/data/t2") -> "/data/hidden"
+    mul('/data/X', '/data/W') -> '/data/t1'
+    add('/data/t1', '/data/B') -> '/data/t2'
+    relu('/data/t2') -> '/data/hidden'
 
     # ── Layer 2: output = hidden * W2 + B2 ──
-    mul("/data/hidden", "/data/W2") -> "/data/t3"
-    add("/data/t3", "/data/B2") -> "/data/output"
+    mul('/data/hidden', '/data/W2') -> '/data/t3'
+    add('/data/t3', '/data/B2') -> '/data/output'
 
     # ── 清理中间结果，保留 output ──
-    deltensor("/data/t1")
-    deltensor("/data/t2")
-    deltensor("/data/t3")
-    deltensor("/data/hidden")
-    deltensor("/data/X")
-    deltensor("/data/W")
-    deltensor("/data/B")
-    deltensor("/data/W2")
-    deltensor("/data/B2")
+    deltensor('/data/t1')
+    deltensor('/data/t2')
+    deltensor('/data/t3')
+    deltensor('/data/hidden')
+    deltensor('/data/X')
+    deltensor('/data/W')
+    deltensor('/data/B')
+    deltensor('/data/W2')
+    deltensor('/data/B2')
 }
 
-# Top-level call: mlp_small() -> "/data/output"
-mlp_small() -> "/data/output"
+# Top-level call: mlp_small() -> '/data/output'
+mlp_small() -> '/data/output'

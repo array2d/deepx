@@ -1,23 +1,23 @@
 # normalize: 简单 "归一化" — center 后取绝对值
 # sub 和 abs 都是 op-metal GPU kernel
-def normalize() -> ("/data/norm") {
-    newtensor("f32", "[256]") -> "/data/raw"
-    newtensor("f32", "[256]") -> "/data/center"
-    newtensor("f32", "[256]") -> "/data/centered"
-    newtensor("f32", "[256]") -> "/data/norm"
+def normalize() -> ('/data/norm') {
+    newtensor("f32", "[256]") -> '/data/raw'
+    newtensor("f32", "[256]") -> '/data/center'
+    newtensor("f32", "[256]") -> '/data/centered'
+    newtensor("f32", "[256]") -> '/data/norm'
 
-    zeros() -> "/data/raw"
-    zeros() -> "/data/center"
+    zeros() -> '/data/raw'
+    zeros() -> '/data/center'
 
     # centered = raw - center
-    sub("/data/raw", "/data/center") -> "/data/centered"
+    sub('/data/raw', '/data/center') -> '/data/centered'
     # norm = abs(centered)
-    abs("/data/centered") -> "/data/norm"
+    abs('/data/centered') -> '/data/norm'
 
-    deltensor("/data/raw")
-    deltensor("/data/center")
-    deltensor("/data/centered")
+    deltensor('/data/raw')
+    deltensor('/data/center')
+    deltensor('/data/centered')
 }
 
-# Top-level call: normalize() -> "/data/norm"
-normalize() -> "/data/norm"
+# Top-level call: normalize() -> '/data/norm'
+normalize() -> '/data/norm'

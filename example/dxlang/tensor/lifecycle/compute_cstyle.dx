@@ -1,17 +1,17 @@
 # compute_cstyle: create, init, compute, cleanup — using <- assignment
-def compute_cstyle() -> ("/data/c") {
-    newtensor("f32", "[8]") -> "/data/a"
-    newtensor("f32", "[8]") -> "/data/b"
-    newtensor("f32", "[8]") -> "/data/c"
+def compute_cstyle() -> ('/data/c') {
+    newtensor("f32", "[8]") -> '/data/a'
+    newtensor("f32", "[8]") -> '/data/b'
+    newtensor("f32", "[8]") -> '/data/c'
 
-    zeros() -> "/data/a"
-    zeros() -> "/data/b"
+    zeros() -> '/data/a'
+    zeros() -> '/data/b'
 
-    "./c" <- add("/data/a", "/data/b")
+    './c' <- add('/data/a', '/data/b')
 
-    deltensor("/data/a")
-    deltensor("/data/b")
+    deltensor('/data/a')
+    deltensor('/data/b')
 }
 
-# Top-level call: compute_cstyle() -> "./out"
-compute_cstyle() -> "./out"
+# Top-level call: compute_cstyle() -> './out'
+compute_cstyle() -> './out'

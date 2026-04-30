@@ -1,9 +1,9 @@
 def native_mul(A:int, B:int) -> (C:int) {
     print(A)
     print(B)
-    "./C" <- A * B
-    print("./C")
+    './C' <- A * B
+    print('./C')
 }
 
-# Top-level call: native_mul(6, 7) -> "./out"
-native_mul(6, 7) -> "./out"
+# Top-level call: native_mul(6, 7) -> './out'
+native_mul(6, 7) -> './out'

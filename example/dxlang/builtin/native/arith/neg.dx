@@ -1,6 +1,6 @@
 def native_neg(A:int) -> (C:int) {
-    neg(A) -> "./C"
+    neg(A) -> './C'
 }
 
-# Top-level call: native_neg(5) -> "./out"
-native_neg(5) -> "./out"
+# Top-level call: native_neg(5) -> './out'
+native_neg(5) -> './out'

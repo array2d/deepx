@@ -91,19 +91,19 @@ make status REDIS_ADDR=127.0.0.1:16379
 make reset-redis REDIS_ADDR=127.0.0.1:16379
 
 # 加载 & 执行 (tensor 示例，需 VM + heap-plat + op-plat)
-./tmp/deepx-vm/loader load example/dxlang/tensor/lifecycle/compute.dx
+./tmp/deepx/vm/loader load example/dxlang/tensor/lifecycle/compute.dx
 # 或 builtin 示例 (仅需 VM)
-./tmp/deepx-vm/loader load example/dxlang/builtin/native/arith/add.dx
-./tmp/deepx-vm/vm 127.0.0.1:16379  # 手动启动 VM
+./tmp/deepx/vm/loader load example/dxlang/builtin/native/arith/add.dx
+./tmp/deepx/vm/vm 127.0.0.1:16379  # 手动启动 VM
 
 # 停止服务
 make stop-services
 
 # 查看日志
-tail -f /tmp/deepx-logs/exop-metal.log
-tail -f /tmp/deepx-logs/heap-metal.log
-tail -f /tmp/deepx-logs/io-metal.log
-tail -f /tmp/deepx-logs/vm.log
+tail -f /tmp/deepx/logs/exop-metal.log
+tail -f /tmp/deepx/logs/heap-metal.log
+tail -f /tmp/deepx/logs/io-metal.log
+tail -f /tmp/deepx/logs/vm.log
 ```
 
 ### plats 管理

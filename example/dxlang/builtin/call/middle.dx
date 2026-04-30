@@ -1,8 +1,8 @@
 # middle: calls leaf then adds 1
 def middle(X:int) -> (Y:int) {
-    leaf(X) -> "./tmp"
-    "./tmp" + 1 -> "./Y"
+    leaf(X) -> './tmp'
+    './tmp' + 1 -> './Y'
 }
 
-# Top-level call: middle(5) -> "./out" (calls leaf→double internally)
-middle(5) -> "./out"
+# Top-level call: middle(5) -> './out' (calls leaf→double internally)
+middle(5) -> './out'

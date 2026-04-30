@@ -1,9 +1,9 @@
 def native_eq(A:int, B:int) -> (C:bool) {
     print(A)
     print(B)
-    "./C" <- A == B
-    print("./C")
+    './C' <- A == B
+    print('./C')
 }
 
-# Top-level call: native_eq(5, 5) -> "./out"
-native_eq(5, 5) -> "./out"
+# Top-level call: native_eq(5, 5) -> './out'
+native_eq(5, 5) -> './out'

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
-BUILD_DIR="/tmp/deepx/heap-metal/build"
+BUILD_DIR="/tmp/deepx/heap-metal"
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 cmake "$DIR"

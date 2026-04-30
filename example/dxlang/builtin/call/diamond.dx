@@ -1,9 +1,9 @@
 # diamond: splits into double+triple, then sums results
 def diamond(A:int) -> (R:int) {
-    double(A) -> "./d"
-    triple(A) -> "./t"
-    "./d" + "./t" -> "./R"
+    double(A) -> './d'
+    triple(A) -> './t'
+    './d' + './t' -> './R'
 }
 
-# Top-level call: diamond(5) -> "./out" (double+triple→sum)
-diamond(5) -> "./out"
+# Top-level call: diamond(5) -> './out' (double+triple→sum)
+diamond(5) -> './out'

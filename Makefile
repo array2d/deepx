@@ -32,17 +32,19 @@ export GOPROXY   ?= https://goproxy.cn,direct
 export PATH      := $(GOROOT)/bin:$(GOPATH)/bin:$(PATH)
 
 # ── 输出目录 ──
-VM_OUT          := /tmp/deepx-vm
-EXOP_METAL_OUT  := /tmp/deepx/exop-metal/build
-HEAP_METAL_OUT  := /tmp/deepx/heap-metal/build
-IO_METAL_OUT    := /tmp/deepx/io-metal/build
+DEEPX_OUT       := /tmp/deepx
+VM_OUT          := $(DEEPX_OUT)/vm
+DEEPXCTL_OUT    := $(DEEPX_OUT)/deepxctl
+EXOP_METAL_OUT  := $(DEEPX_OUT)/exop-metal
+HEAP_METAL_OUT  := $(DEEPX_OUT)/heap-metal
+IO_METAL_OUT    := $(DEEPX_OUT)/io-metal
 # ── 跨平台: 产物按 OS-ARCH 命名 ──
 CPU_PLAT        := $(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-EXOP_CPU_OUT    := /tmp/deepx/exop-cpu/build/$(CPU_PLAT)
+EXOP_CPU_OUT    := $(DEEPX_OUT)/exop-cpu
 BIN_EXOP_CPU    := $(EXOP_CPU_OUT)/deepx-exop-cpu-$(CPU_PLAT)
-HEAP_CPU_OUT    := /tmp/deepx/heap-cpu/build/$(CPU_PLAT)
+HEAP_CPU_OUT    := $(DEEPX_OUT)/heap-cpu
 BIN_HEAP_CPU    := $(HEAP_CPU_OUT)/deepx-heap-cpu-$(CPU_PLAT)
-DASHBOARD_OUT   := /tmp/deepx-dashboard
+DASHBOARD_OUT   := $(DEEPX_OUT)/dashboard
 
 # ── Redis 配置 (用于联调) ──
 REDIS_ADDR      ?= 127.0.0.1:16379
@@ -66,7 +68,7 @@ help:
 	@echo "BUILD:"
 	@echo "  make build-all          Build all projects"
 	@echo "  make build-vm           Build VM + loader (Go)          → $(VM_OUT)/vm, $(VM_OUT)/loader"
-	@echo "  make build-deepxctl     Build deepxctl (Go)             → $(DEEPXCTL_DIR)/deepxctl"
+	@echo "  make build-deepxctl     Build deepxctl (Go)             → $(DEEPXCTL_OUT)/deepxctl"
 	@echo "  make build-exop-metal     Build Metal compute plane (C++) → $(EXOP_METAL_OUT)/deepx-exop-metal"
 	@echo "  make build-heap-metal   Build Metal heap plane (C++)    → $(HEAP_METAL_OUT)/deepx-heap-metal"
 	@echo "  make build-io-metal     Build I/O plane (C++)           → $(IO_METAL_OUT)/deepx-io-metal"
@@ -96,7 +98,6 @@ help:
 # ═══════════════════════════════════════════════════════════════
 # Build — All
 # ═══════════════════════════════════════════════════════════════
-
 build-all:
 	@echo "=== build-all ==="
 	@pass=0; fail=0; \
@@ -132,16 +133,18 @@ build-deepxctl:
 	@command -v go >/dev/null 2>&1 || (echo "ERROR: go not found in PATH (GOROOT=$(GOROOT))" && exit 1)
 	@echo "Go version: $$(go version)"
 	cd $(DEEPXCTL_DIR) && go mod tidy
-	cd $(DEEPXCTL_DIR) && go build -ldflags="-s -w" -o deepxctl .
-	@echo "  → $(DEEPXCTL_DIR)/deepxctl"
+	mkdir -p $(DEEPXCTL_OUT)
+	cd $(DEEPXCTL_DIR) && go build -ldflags="-s -w" -o $(DEEPXCTL_OUT)/deepxctl .
+	@echo "  → $(DEEPXCTL_OUT)/deepxctl"
 
 build-dashboard:
 	@echo "=== Building dashboard ==="
 	@command -v go >/dev/null 2>&1 || (echo "ERROR: go not found in PATH (GOROOT=$(GOROOT))" && exit 1)
 	@echo "Go version: $$(go version)"
 	cd $(DASHBOARD_DIR) && go mod tidy
-	cd $(DASHBOARD_DIR) && go build -ldflags="-s -w" -o dashboard .
-	@echo "  → $(DASHBOARD_DIR)/dashboard"
+	mkdir -p $(DASHBOARD_OUT)
+	cd $(DASHBOARD_DIR) && go build -ldflags="-s -w" -o $(DASHBOARD_OUT)/dashboard .
+	@echo "  → $(DASHBOARD_OUT)/dashboard"
 
 # ═══════════════════════════════════════════════════════════════
 # Build — C++ Projects
@@ -213,7 +216,7 @@ pipeline: build-all start-services reset-redis stop-services
 
 clean:
 	rm -rf $(EXOP_METAL_OUT) $(HEAP_METAL_OUT) $(IO_METAL_OUT) $(EXOP_CPU_OUT) $(HEAP_CPU_OUT)
-	cd $(DEEPXCTL_DIR) && rm -f deepxctl
+	rm -f $(DEEPXCTL_OUT)/deepxctl
 	cd $(VM_DIR) && go clean -testcache
 
 clean-all: clean

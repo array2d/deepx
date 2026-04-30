@@ -1,8 +1,8 @@
 # three_add: add three numbers — demonstrates multi-read (3 inputs → 1 output)
 def three_add(A:int, B:int, C:int) -> (R:int) {
-    A + B -> "./t"
-    "./t" + C -> "./R"
+    A + B -> './t'
+    './t' + C -> './R'
 }
 
-# Top-level call: three_add(2, 3, 4) -> "./out"
-three_add(2, 3, 4) -> "./out"
+# Top-level call: three_add(2, 3, 4) -> './out'
+three_add(2, 3, 4) -> './out'

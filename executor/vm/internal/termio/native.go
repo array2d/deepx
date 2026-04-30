@@ -157,6 +157,25 @@ func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst
 		return err
 	}
 
+	// str.set → 将字符串值写入相对路径 key
+	if inst.Opcode == "str.set" {
+		val := ""
+		if len(inputs) > 0 {
+			val = inputs[0].String()
+		}
+		if len(inst.Writes) > 0 {
+			wKey := resolveWriteKey(vtid, inst.Writes[0])
+			if err := rdb.Set(ctx, wKey, val, 0).Err(); err != nil {
+				msg := fmt.Sprintf("str.set %s: %v", wKey, err)
+				state.SetError(ctx, rdb, vtid, pc, msg)
+				return fmt.Errorf("%s", msg)
+			}
+		}
+		logx.Debug("[%s] str.set %q -> %s", vtid, val, inst.Writes)
+		state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
+		return nil
+	}
+
 	// print → stdout, cerr → stderr
 	if inst.Opcode == "print" || inst.Opcode == "cerr" {
 		stream := "stdout"
@@ -305,6 +324,11 @@ func evalNative(op string, inputs []nativeValue) (nativeValue, error) {
 		return evalPrint(inputs)
 	case "input":
 		return nativeValue{kind: "string", raw: ""}, nil // input reads from stdin in Native()
+	case "str.set":
+		if len(inputs) > 0 {
+			return inputs[0], nil
+		}
+		return nativeValue{kind: "string", raw: ""}, nil
 
 	default:
 		return nativeValue{}, fmt.Errorf("unknown native op: %s", op)

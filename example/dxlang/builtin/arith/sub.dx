@@ -1,9 +1,9 @@
 def native_sub(A:int, B:int) -> (C:int) {
     print(A)
     print(B)
-    "./C" <- A - B
-    print("./C")
+    './C' <- A - B
+    print('./C')
 }
 
-# Top-level call: native_sub(10, 3) -> "./out"
-native_sub(10, 3) -> "./out"
+# Top-level call: native_sub(10, 3) -> './out'
+native_sub(10, 3) -> './out'

@@ -1,6 +1,6 @@
 def native_int(A:float) -> (C:int) {
-    int(A) -> "./C"
+    int(A) -> './C'
 }
 
-# Top-level call: native_int(3.7) -> "./out"
-native_int(3.7) -> "./out"
+# Top-level call: native_int(3.7) -> './out'
+native_int(3.7) -> './out'

@@ -1,9 +1,9 @@
 def native_min(A:int, B:int) -> (C:int) {
     print(A)
     print(B)
-    min(A, B) -> "./C"
-    print("./C")
+    min(A, B) -> './C'
+    print('./C')
 }
 
-# Top-level call: native_min(-2, 5) -> "./out"
-native_min(-2, 5) -> "./out"
+# Top-level call: native_min(-2, 5) -> './out'
+native_min(-2, 5) -> './out'

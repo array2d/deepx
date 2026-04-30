@@ -1,8 +1,8 @@
 # double_op: compute both sum and diff — demonstrates multi-output pattern (2 reads → 2 writes)
 def double_op(A:int, B:int) -> (S:int, D:int) {
-    A + B -> "./S"
-    A - B -> "./D"
+    A + B -> './S'
+    A - B -> './D'
 }
 
-# Top-level call: double_op(10, 3) -> ("./out_s", "./out_d")
-double_op(10, 3) -> ("./out_s", "./out_d")
+# Top-level call: double_op(10, 3) -> ('./out_s', './out_d')
+double_op(10, 3) -> ('./out_s', './out_d')

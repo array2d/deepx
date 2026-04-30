@@ -1,25 +1,25 @@
 # clone_and_use: 创建 tensor → clone → 分别计算 → 合并结果 → 清理
 # 验证 heap-plat clonetensor + op-metal compute 协同
-def clone_and_use() -> ("/data/merged") {
-    newtensor("f32", "[128]") -> "/data/original"
-    zeros() -> "/data/original"
-    clonetensor("/data/original", "/data/copy")
+def clone_and_use() -> ('/data/merged') {
+    newtensor("f32", "[128]") -> '/data/original'
+    zeros() -> '/data/original'
+    clonetensor('/data/original', '/data/copy')
 
-    newtensor("f32", "[128]") -> "/data/doubled"
-    newtensor("f32", "[128]") -> "/data/merged"
+    newtensor("f32", "[128]") -> '/data/doubled'
+    newtensor("f32", "[128]") -> '/data/merged'
 
     # 对 original 做 add，对 copy 做 mul
-    add("/data/original", "/data/original") -> "/data/doubled"
-    mul("/data/copy", "/data/copy") -> "/data/copy"
+    add('/data/original', '/data/original') -> '/data/doubled'
+    mul('/data/copy', '/data/copy') -> '/data/copy'
 
     # 合并两个分支结果
-    add("/data/doubled", "/data/copy") -> "/data/merged"
+    add('/data/doubled', '/data/copy') -> '/data/merged'
 
     # 只保留 merged，其他全部清理
-    deltensor("/data/original")
-    deltensor("/data/copy")
-    deltensor("/data/doubled")
+    deltensor('/data/original')
+    deltensor('/data/copy')
+    deltensor('/data/doubled')
 }
 
-# Top-level call: clone_and_use() -> "/data/merged"
-clone_and_use() -> "/data/merged"
+# Top-level call: clone_and_use() -> '/data/merged'
+clone_and_use() -> '/data/merged'

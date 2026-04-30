@@ -90,30 +90,26 @@ func parseRunFlags(args []string) RunFlags {
 func run(flags RunFlags) error {
 	printHeader(flags.RedisAddr)
 
-	// rdb is declared here so the --rm defer can access it for FLUSHDB
-	var rdb *goredis.Client
-
 	// --rm: guaranteed cleanup on exit (success, error, or early return)
 	if flags.Rm {
 		defer func() {
-			fmt.Println()
-			printSeparator()
-			fmt.Println("── Cleanup (--rm) ──")
-			// ① Shutdown services first (ExecShutdown uses its own Redis connection
-			//    and relies on intact heartbeat/command keys, so shutdown before FLUSHDB)
+			// Route shutdown output to devnull; only log errors
+			realStdout := os.Stdout
+			os.Stdout, _ = os.OpenFile(os.DevNull, os.O_WRONLY, 0)
 			if err := ExecShutdown(); err != nil {
-				fmt.Fprintf(os.Stderr, "  shutdown: %v\n", err)
+				logx.Warn("shutdown failed", "error", err)
 			}
-			// ② Flush remaining Redis state (only if we have a connection)
-			if rdb != nil {
-				if err := redis.FlushDB(rdb); err != nil {
-					fmt.Fprintf(os.Stderr, "  FLUSHDB: %v\n", err)
-				} else {
-					fmt.Println("  Redis FLUSHDB ✓")
+			os.Stdout = realStdout
+
+			// FLUSHDB with fresh connection (main rdb already closed by defer)
+			freshRdb, err := redis.Connect(flags.RedisAddr)
+			if err == nil {
+				if err := redis.FlushDB(freshRdb); err != nil {
+					logx.Warn("FLUSHDB failed", "error", err)
 				}
+				freshRdb.Close()
 			}
-			fmt.Println("── All components stopped ──")
-			printSeparator()
+			logx.Debug("--rm cleanup done", "redis", flags.RedisAddr)
 		}()
 	}
 
@@ -126,7 +122,7 @@ func run(flags RunFlags) error {
 			fmt.Fprintf(os.Stderr, "  If you believe services are running, check with 'make status'.\n")
 			return fmt.Errorf("services not booted")
 		}
-		fmt.Println("(auto-booting services with --boot) ...")
+		logx.Debug("auto-booting services with --boot")
 		if err := autoBoot(flags.RedisAddr); err != nil {
 			errorX("auto-boot: %v", err)
 			return fmt.Errorf("auto-boot failed: %w", err)
@@ -134,9 +130,7 @@ func run(flags RunFlags) error {
 	}
 	ok()
 
-	// Verify each service is registered in Redis
-	var err error
-	rdb, err = redis.Connect(flags.RedisAddr)
+	rdb, err := redis.Connect(flags.RedisAddr)
 	if err != nil {
 		errorX("Redis connection failed: %v", err)
 		return err
@@ -159,8 +153,9 @@ func run(flags RunFlags) error {
 	// ── Setup term writers for this run ──
 	// VM's builtin print reads /vthread/<vtid>/term to find the terminal
 	// name, then looks up /sys/term/<name>/stdout,stderr,stdin (hash keys).
-	// deepxctl registers writers at /sys/term/deepxctlrun/ and later sets
-	// /vthread/<vtid>/term = "deepxctlrun" when the vtid is assigned.
+	// deepxctl registers writers at /sys/term/deepxctlrun/. The vthread's
+	// first instruction str.set("deepxctlrun") -> './term' (injected by VM
+	// during vthread creation from /func/main) sets the term atomically.
 	termDir, err := setupTermWriters(rdb)
 	if err != nil {
 		logx.Warn("failed to set up term writers, VM print may go to default", "error", err)
@@ -182,14 +177,6 @@ func run(flags RunFlags) error {
 	}
 	ok()
 
-
-		// Inject term config into /func/main so VM sets /vthread/<vtid>/term
-		// during vthread creation (avoids race condition with print/cerr).
-		if entryCreated {
-			injectTermIntoFuncMain(rdb)
-		}
-
-	// ── Manual entry override ──
 	// If --entry is specified, write /func/main directly
 	if flags.Entry != "" {
 		logx.Debug("manual entry override, writing /func/main", "entry", flags.Entry)
@@ -197,14 +184,13 @@ func run(flags RunFlags) error {
 			"entry":  flags.Entry,
 			"reads":  []string{},
 			"writes": []string{},
-				"term":   "deepxctlrun",
 		})
 		if err := rdb.Set(context.Background(), "/func/main", entryData, 0).Err(); err != nil {
 			errorX("write /func/main: %v", err)
 			return err
 		}
 		entryCreated = true
-		fmt.Printf("  entry: %s (manual override)\n", flags.Entry)
+		logx.Debug("manual entry override", "entry", flags.Entry)
 	}
 
 	// ── [3/3] Execute (only if /func/main was created) ──
@@ -212,9 +198,9 @@ func run(flags RunFlags) error {
 		// No entry point — just loaded definitions
 		fmt.Println()
 		printSeparator()
-		fmt.Printf("Loaded %d function(s) into KV Space.\n", len(funcs))
-		fmt.Println("(no top-level call found — VM is waiting for /func/main)")
-		fmt.Println("Use --entry <funcName> to execute a loaded function.")
+		logx.Debug("functions loaded into KV space", "count", len(funcs))
+		logx.Debug("no top-level call found, VM waiting for /func/main")
+		logx.Debug("use --entry <funcName> to execute")
 		printSeparator()
 		return nil
 	}
@@ -233,7 +219,7 @@ func run(flags RunFlags) error {
 
 	if result.Success {
 		greenCheck()
-		fmt.Printf("  vtid=%s  status=%s  %v\n", result.Vtid, result.Status, result.Duration)
+		logx.Debug("execution result", "vtid", result.Vtid, "status", result.Status, "duration", result.Duration)
 	} else {
 		errorX("vtid=%s status=%s", result.Vtid, result.Status)
 		if result.ErrCode != "" {
@@ -244,11 +230,11 @@ func run(flags RunFlags) error {
 	}
 
 	// ── Final summary ──
-	fmt.Println()
+	logx.Debug("execution complete")
 	printSeparator()
-	fmt.Printf("SUCCESS  vtid=%s  status=%s  %v\n", result.Vtid, result.Status, result.Duration)
+	logx.Debug("SUCCESS", "vtid", result.Vtid, "status", result.Status, "duration", result.Duration)
 	if !flags.Rm {
-		fmt.Println("(services left running — use 'deepxctl shutdown' to stop)")
+		logx.Debug("services left running")
 	}
 	printSeparator()
 
@@ -271,7 +257,6 @@ func loadDx(loaderBin, path, redisAddr string) (funcs []string, entryCreated boo
 	logx.Debug("loading dx file", "path", path)
 
 	cmd := exec.Command(loaderBin, path, redisAddr)
-	cmd.Env = append(os.Environ(), "DEEPX_TERM=deepxctlrun")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -343,8 +328,6 @@ func pollFuncMain(rdb *goredis.Client, timeout time.Duration) (*funcMainResult, 
 		if entry.Vtid != "" {
 			vtid = entry.Vtid
 			logx.Debug("VM picked up /func/main", "vtid", vtid)
-			// Point this vthread to deepxctl's term writers
-			rdb.Set(ctx, "/vthread/"+vtid+"/term", "deepxctlrun", 0)
 			break
 		}
 
@@ -469,24 +452,6 @@ func setupTermWriters(rdb *goredis.Client) (string, error) {
 // collectAndCleanTermWriters reads captured stdout/stderr from the temp files,
 // pipes them to deepxctl's stdout/stderr, then removes Redis keys and temp files.
 // Intended to be called via defer after setupTermWriters.
-// injectTermIntoFuncMain adds the "term" field to /func/main so the VM
-// can set /vthread/<vtid>/term during vthread creation (atomic with
-// the vthread pipeline, avoiding the race condition with print/cerr).
-func injectTermIntoFuncMain(rdb *goredis.Client) {
-	ctx := context.Background()
-	val, err := rdb.Get(ctx, "/func/main").Result()
-	if err != nil {
-		return
-	}
-	var entry map[string]interface{}
-	if err := json.Unmarshal([]byte(val), &entry); err != nil {
-		return
-	}
-	entry["term"] = "deepxctlrun"
-	data, _ := json.Marshal(entry)
-	rdb.Set(ctx, "/func/main", data, 0)
-}
-
 
 func collectAndCleanTermWriters(rdb *goredis.Client, dir string) {
 	ctx := context.Background()
@@ -517,4 +482,3 @@ func collectAndCleanTermWriters(rdb *goredis.Client, dir string) {
 		logx.Debug("term writers cleaned up", "dir", dir)
 	}
 }
-

@@ -1,9 +1,9 @@
 def native_and(A:bool, B:bool) -> (C:bool) {
     print(A)
     print(B)
-    "./C" <- A && B
-    print("./C")
+    './C' <- A && B
+    print('./C')
 }
 
-# Top-level call: native_and(true, false) -> "./out"
-native_and(true, false) -> "./out"
+# Top-level call: native_and(true, false) -> './out'
+native_and(true, false) -> './out'

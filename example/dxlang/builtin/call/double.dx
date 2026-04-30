@@ -1,7 +1,7 @@
 # double: multiply by 2
 def double(X:int) -> (Y:int) {
-    X * 2 -> "./Y"
+    X * 2 -> './Y'
 }
 
-# Top-level call: double(5) -> "./out"
-double(5) -> "./out"
+# Top-level call: double(5) -> './out'
+double(5) -> './out'

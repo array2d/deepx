@@ -1,6 +1,6 @@
 def native_lt(A:int, B:int) -> (C:bool) {
-    A < B -> "./C"
+    A < B -> './C'
 }
 
-# Top-level call: native_lt(3, 7) -> "./out"
-native_lt(3, 7) -> "./out"
+# Top-level call: native_lt(3, 7) -> './out'
+native_lt(3, 7) -> './out'

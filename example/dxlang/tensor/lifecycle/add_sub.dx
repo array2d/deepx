@@ -1,19 +1,19 @@
 # add_sub: compute elementwise sum and diff — multi-output tensor with <- style
-def add_sub() -> ("/data/sum", "/data/diff") {
-    newtensor("f32", "[64]") -> "/data/a"
-    newtensor("f32", "[64]") -> "/data/b"
-    newtensor("f32", "[64]") -> "/data/sum"
-    newtensor("f32", "[64]") -> "/data/diff"
+def add_sub() -> ('/data/sum', '/data/diff') {
+    newtensor("f32", "[64]") -> '/data/a'
+    newtensor("f32", "[64]") -> '/data/b'
+    newtensor("f32", "[64]") -> '/data/sum'
+    newtensor("f32", "[64]") -> '/data/diff'
 
-    zeros() -> "/data/a"
-    zeros() -> "/data/b"
+    zeros() -> '/data/a'
+    zeros() -> '/data/b'
 
-    "./sum" <- add("/data/a", "/data/b")
-    "./diff" <- sub("/data/a", "/data/b")
+    './sum' <- add('/data/a', '/data/b')
+    './diff' <- sub('/data/a', '/data/b')
 
-    deltensor("/data/a")
-    deltensor("/data/b")
+    deltensor('/data/a')
+    deltensor('/data/b')
 }
 
-# Top-level call: add_sub() -> ("./out_sum", "./out_diff")
-add_sub() -> ("./out_sum", "./out_diff")
+# Top-level call: add_sub() -> ('./out_sum', './out_diff')
+add_sub() -> ('./out_sum', './out_diff')

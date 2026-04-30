@@ -33,6 +33,9 @@ var nativeOps = map[string]bool{
 	"print": true, // print(x, ...) → stdout
 	"cerr":  true, // cerr(x, ...)  → stderr
 	"input": true, // input([prompt]) → stdin
+
+	// 字符串赋值 (built-in 命名)
+	"str.set": true, // str.set("value") -> "./key"
 }
 
 // IsNativeOp 判断是否为 VM 原生求值的符号算子。
@@ -100,6 +103,9 @@ var nativeSigs = map[string]string{
 	"print": "def print(A:any, ...) -> ()",
 	"cerr":  "def cerr(A:any, ...) -> ()",
 	"input": "def input(prompt:string?) -> (C:string)",
+
+	// 字符串赋值 (built-in)
+	"str.set": "def str.set(A:any) -> (...)",
 }
 
 // OpDefs 返回格式化后的算子定义文本列表 (按 opcode 排序)。

@@ -1,24 +1,24 @@
 # max_abs: 对两个 tensor 逐元素取 max(|a|, |b|)
 # 流程: abs(a) → abs(b) → max(abs_a, abs_b)
-def max_abs() -> ("/data/result") {
-    newtensor("f32", "[128]") -> "/data/a"
-    newtensor("f32", "[128]") -> "/data/b"
-    newtensor("f32", "[128]") -> "/data/abs_a"
-    newtensor("f32", "[128]") -> "/data/abs_b"
-    newtensor("f32", "[128]") -> "/data/result"
+def max_abs() -> ('/data/result') {
+    newtensor("f32", "[128]") -> '/data/a'
+    newtensor("f32", "[128]") -> '/data/b'
+    newtensor("f32", "[128]") -> '/data/abs_a'
+    newtensor("f32", "[128]") -> '/data/abs_b'
+    newtensor("f32", "[128]") -> '/data/result'
 
-    zeros() -> "/data/a"
-    zeros() -> "/data/b"
+    zeros() -> '/data/a'
+    zeros() -> '/data/b'
 
-    abs("/data/a") -> "/data/abs_a"
-    abs("/data/b") -> "/data/abs_b"
-    max("/data/abs_a", "/data/abs_b") -> "/data/result"
+    abs('/data/a') -> '/data/abs_a'
+    abs('/data/b') -> '/data/abs_b'
+    max('/data/abs_a', '/data/abs_b') -> '/data/result'
 
-    deltensor("/data/a")
-    deltensor("/data/b")
-    deltensor("/data/abs_a")
-    deltensor("/data/abs_b")
+    deltensor('/data/a')
+    deltensor('/data/b')
+    deltensor('/data/abs_a')
+    deltensor('/data/abs_b')
 }
 
-# Top-level call: max_abs() -> "/data/result"
-max_abs() -> "/data/result"
+# Top-level call: max_abs() -> '/data/result'
+max_abs() -> '/data/result'

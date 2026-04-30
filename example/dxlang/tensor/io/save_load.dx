@@ -1,14 +1,14 @@
 # save_load: 验证 save 和 load 算子完整流程
 # 1. 创建 tensor  →  2. save 到磁盘 → 3. 创建新 tensor → 4. load 回内存
-def save_load() -> ("/data/loaded") {
-    newtensor("f32", "[10]") -> "/data/src"
-    zeros() -> "/data/src"
-    save("/data/src", "/tmp/test_save_load")
-    newtensor("f32", "[10]") -> "/data/loaded"
-    load("/tmp/test_save_load") -> "/data/loaded"
-    print("/data/loaded")
-    deltensor("/data/src")
+def save_load() -> ('/data/loaded') {
+    newtensor("f32", "[10]") -> '/data/src'
+    zeros() -> '/data/src'
+    save('/data/src', '/tmp/test_save_load')
+    newtensor("f32", "[10]") -> '/data/loaded'
+    load('/tmp/test_save_load') -> '/data/loaded'
+    print('/data/loaded')
+    deltensor('/data/src')
 }
 
-# Top-level call: save_load() -> "/data/loaded"
-save_load() -> "/data/loaded"
+# Top-level call: save_load() -> '/data/loaded'
+save_load() -> '/data/loaded'

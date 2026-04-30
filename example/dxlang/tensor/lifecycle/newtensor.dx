@@ -1,7 +1,7 @@
 # lifecycle_newtensor: create a heap tensor and store its reference
-def lifecycle_newtensor() -> ("/data/x") {
-    newtensor("f32", "[16]") -> "/data/x"
+def lifecycle_newtensor() -> ('/data/x') {
+    newtensor("f32", "[16]") -> '/data/x'
 }
 
-# Top-level call: lifecycle_newtensor() -> "/data/x"
-lifecycle_newtensor() -> "/data/x"
+# Top-level call: lifecycle_newtensor() -> '/data/x'
+lifecycle_newtensor() -> '/data/x'

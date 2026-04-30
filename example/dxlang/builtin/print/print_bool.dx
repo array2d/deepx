@@ -1,7 +1,7 @@
 def print_bool(A:int) -> (C:bool) {
-    bool(A) -> "./C"
-    print("./C")
+    bool(A) -> './C'
+    print('./C')
 }
 
-# Top-level call: print_bool(1) -> "./out"
-print_bool(1) -> "./out"
+# Top-level call: print_bool(1) -> './out'
+print_bool(1) -> './out'

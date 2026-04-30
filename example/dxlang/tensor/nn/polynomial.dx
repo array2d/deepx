@@ -1,39 +1,39 @@
 # polynomial: 计算多项式 f(x) = a*x^2 + b*x + c  全在 GPU tensor 上
 # 使用 mul + add 组合，无 pow/sqrt 等 params 依赖的算子
-def polynomial() -> ("/data/result") {
-    newtensor("f32", "[128]") -> "/data/x"
-    newtensor("f32", "[128]") -> "/data/a"
-    newtensor("f32", "[128]") -> "/data/b"
-    newtensor("f32", "[128]") -> "/data/c"
-    newtensor("f32", "[128]") -> "/data/squared"
-    newtensor("f32", "[128]") -> "/data/term1"
-    newtensor("f32", "[128]") -> "/data/term2"
-    newtensor("f32", "[128]") -> "/data/result"
+def polynomial() -> ('/data/result') {
+    newtensor("f32", "[128]") -> '/data/x'
+    newtensor("f32", "[128]") -> '/data/a'
+    newtensor("f32", "[128]") -> '/data/b'
+    newtensor("f32", "[128]") -> '/data/c'
+    newtensor("f32", "[128]") -> '/data/squared'
+    newtensor("f32", "[128]") -> '/data/term1'
+    newtensor("f32", "[128]") -> '/data/term2'
+    newtensor("f32", "[128]") -> '/data/result'
 
-    zeros() -> "/data/x"
-    zeros() -> "/data/a"
-    zeros() -> "/data/b"
-    zeros() -> "/data/c"
+    zeros() -> '/data/x'
+    zeros() -> '/data/a'
+    zeros() -> '/data/b'
+    zeros() -> '/data/c'
 
     # x^2
-    mul("/data/x", "/data/x") -> "/data/squared"
+    mul('/data/x', '/data/x') -> '/data/squared'
     # a * x^2
-    mul("/data/a", "/data/squared") -> "/data/term1"
+    mul('/data/a', '/data/squared') -> '/data/term1'
     # b * x
-    mul("/data/b", "/data/x") -> "/data/term2"
+    mul('/data/b', '/data/x') -> '/data/term2'
     # term1 + term2
-    add("/data/term1", "/data/term2") -> "/data/result"
+    add('/data/term1', '/data/term2') -> '/data/result'
     # + c
-    add("/data/result", "/data/c") -> "/data/result"
+    add('/data/result', '/data/c') -> '/data/result'
 
-    deltensor("/data/squared")
-    deltensor("/data/term1")
-    deltensor("/data/term2")
-    deltensor("/data/x")
-    deltensor("/data/a")
-    deltensor("/data/b")
-    deltensor("/data/c")
+    deltensor('/data/squared')
+    deltensor('/data/term1')
+    deltensor('/data/term2')
+    deltensor('/data/x')
+    deltensor('/data/a')
+    deltensor('/data/b')
+    deltensor('/data/c')
 }
 
-# Top-level call: polynomial() -> "/data/result"
-polynomial() -> "/data/result"
+# Top-level call: polynomial() -> '/data/result'
+polynomial() -> '/data/result'

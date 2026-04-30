@@ -1,6 +1,6 @@
 def native_arith(A:int, B:int) -> (C:int) {
-    "./C" <- A + B
+    './C' <- A + B
 }
 
-# Top-level call: native_arith(2,3) -> "./out"
-native_arith(2,3) -> "./out"
+# Top-level call: native_arith(2,3) -> './out'
+native_arith(2,3) -> './out'

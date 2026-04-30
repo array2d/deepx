@@ -1,6 +1,6 @@
 def native_sqrt(A:int) -> (C:float) {
-    sqrt(A) -> "./C"
+    sqrt(A) -> './C'
 }
 
-# Top-level call: native_sqrt(16) -> "./out"
-native_sqrt(16) -> "./out"
+# Top-level call: native_sqrt(16) -> './out'
+native_sqrt(16) -> './out'
