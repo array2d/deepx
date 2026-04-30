@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/array2d/deepx/front/go/deepx"
+	"deepx/front/go/deepx"
 )
 
 func main() {

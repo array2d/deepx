@@ -23,7 +23,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"git.array2d.com/ai/deepx/tool/deepxctl/internal/redis"
+	"deepx/tool/deepxctl/internal/redis"
 )
 
 // Result holds the execution result.

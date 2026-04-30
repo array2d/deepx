@@ -6,17 +6,20 @@
 package cmd
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
-	"git.array2d.com/ai/deepx/tool/deepxctl/internal/build"
-	"git.array2d.com/ai/deepx/tool/deepxctl/internal/executor"
-	"git.array2d.com/ai/deepx/tool/deepxctl/internal/loader"
-	"git.array2d.com/ai/deepx/tool/deepxctl/internal/process"
-	"git.array2d.com/ai/deepx/tool/deepxctl/internal/redis"
+	"deepx/tool/deepxctl/internal/build"
+	"deepx/tool/deepxctl/internal/executor"
+	"deepx/tool/deepxctl/internal/process"
+	"deepx/tool/deepxctl/internal/redis"
 )
 
 // RunFlags holds the parsed flags for the run command.
@@ -118,6 +121,7 @@ func run(flags RunFlags) error {
 	step(3, 6, "Start plats + VM")
 
 	mgr := process.NewManager(flags.Verbose)
+	mgr.SetWorkDir(repoRoot)
 
 	// Split redis addr for components that take host+port separately
 	redisHost := "127.0.0.1"
@@ -174,8 +178,8 @@ func run(flags RunFlags) error {
 
 	// ── [4/6] Load dx ──
 	step(4, 6, "Load dx")
-	dxPath, _ := loader.NormalizePath(repoRoot, flags.FilePath)
-	funcs, err := loader.Load(build.Loader, dxPath, flags.RedisAddr)
+	dxPath, _ := normalizePath(flags.FilePath)
+	funcs, err := loadDx(build.Loader, dxPath, flags.RedisAddr)
 	if err != nil {
 		errorX("Load: %v", err)
 		mgr.StopAll(5 * time.Second)
@@ -192,7 +196,7 @@ func run(flags RunFlags) error {
 	step(5, 6, "Execute")
 
 	// Find entry function
-	entryFunc, err := loader.FindEntryFunc(funcs, flags.Entry)
+	entryFunc, err := findEntryFunc(funcs, flags.Entry)
 	if err != nil {
 		errorX("%v", err)
 		mgr.StopAll(5 * time.Second)
@@ -225,6 +229,15 @@ func run(flags RunFlags) error {
 			fmt.Fprintf(os.Stderr, "  code:    %s\n", result.ErrCode)
 			fmt.Fprintf(os.Stderr, "  message: %s\n", result.ErrMsg)
 		}
+
+		// Print captured stderr from subprocesses for diagnostics
+		if opStderr := mgr.Stderr("op-metal"); opStderr != "" {
+			fmt.Fprintf(os.Stderr, "  [op-metal stderr]:\n%s\n", opStderr)
+		}
+		if vmStderr := mgr.Stderr("vm"); vmStderr != "" {
+			fmt.Fprintf(os.Stderr, "  [vm stderr]:\n%s\n", vmStderr)
+		}
+
 		mgr.StopAll(5 * time.Second)
 		return fmt.Errorf("execution failed")
 	}
@@ -290,4 +303,78 @@ func lastIndexByte(s string, c byte) int {
 		}
 	}
 	return -1
+}
+
+// ── Loader helpers ──
+
+// normalizePath resolves the .dx file path. Relative paths are resolved against CWD.
+func normalizePath(path string) (string, error) {
+	if filepath.IsAbs(path) {
+		return path, nil
+	}
+	return filepath.Abs(path)
+}
+
+// loadDx exec's the loader binary (vm/cmd/loader) to load .dx files into /src/func/.
+// Returns the set of function names loaded, parsed from loader output.
+func loadDx(loaderBin, path, redisAddr string) ([]string, error) {
+	log.Printf("[loader] loading %s ...", path)
+
+	cmd := exec.Command(loaderBin, path, redisAddr)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("loader failed: %w\noutput: %s", err, stderr.String())
+	}
+
+	// Parse function names from loader lines like:
+	//   "2026/04/30 11:27:24 OK   /path/file.dx → /src/func/compute"
+	output := stdout.String() + stderr.String()
+	var funcs []string
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		idx := strings.Index(line, "/src/func/")
+		if idx < 0 {
+			continue
+		}
+		if !strings.Contains(line, "OK") {
+			continue
+		}
+		namePart := line[idx+len("/src/func/"):]
+		name := strings.SplitN(namePart, " ", 2)[0]
+		funcs = append(funcs, name)
+	}
+
+	log.Printf("[loader] loaded %d functions: %v", len(funcs), funcs)
+	return funcs, nil
+}
+
+// findEntryFunc determines the entry function from loaded functions.
+// Rules: 1) --entry specified → use that; 2) "main" exists → use "main";
+// 3) single function → use that; 4) multiple, no main → error.
+func findEntryFunc(funcs []string, userEntry string) (string, error) {
+	if userEntry != "" {
+		return userEntry, nil
+	}
+
+	if len(funcs) == 0 {
+		return "", fmt.Errorf("no functions loaded")
+	}
+
+	for _, f := range funcs {
+		if f == "main" {
+			return "main", nil
+		}
+	}
+
+	if len(funcs) == 1 {
+		return funcs[0], nil
+	}
+
+	return "", fmt.Errorf(
+		"multiple functions found (%s) but no 'main'.\nUse --entry to specify which one to run",
+		strings.Join(funcs, ", "),
+	)
 }

@@ -1,4 +1,4 @@
-module git.array2d.com/ai/deepx/executor/vm
+module deepx/executor/vm
 
 go 1.24.4
 

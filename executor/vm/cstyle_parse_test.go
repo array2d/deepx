@@ -3,7 +3,7 @@ package vm_test
 import (
 	"testing"
 
-	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/internal/ir"
 )
 
 func TestParseDxlang_CstyleArrow(t *testing.T) {

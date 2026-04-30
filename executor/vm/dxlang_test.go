@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"git.array2d.com/ai/deepx/executor/vm/internal/engine"
-	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
-	"git.array2d.com/ai/deepx/executor/vm/testutil"
+	"deepx/executor/vm/internal/engine"
+	"deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/testutil"
 )
 
 // ═══════════════════════════════════════════════════════════════

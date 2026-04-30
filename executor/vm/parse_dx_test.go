@@ -3,8 +3,8 @@ package vm_test
 import (
 	"testing"
 
-	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
-	"git.array2d.com/ai/deepx/executor/vm/testutil"
+	"deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/testutil"
 )
 
 // wantInst 定义期望的指令结构

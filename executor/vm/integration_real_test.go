@@ -35,8 +35,8 @@ import (
 	"testing"
 	"time"
 
-	"git.array2d.com/ai/deepx/executor/vm/internal/engine"
-	"git.array2d.com/ai/deepx/executor/vm/testutil"
+	"deepx/executor/vm/internal/engine"
+	"deepx/executor/vm/testutil"
 	"github.com/redis/go-redis/v9"
 )
 

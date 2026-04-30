@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"log"
 
-	"git.array2d.com/ai/deepx/executor/vm/internal/dispatch"
-	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
-	"git.array2d.com/ai/deepx/executor/vm/internal/picker"
-	"git.array2d.com/ai/deepx/executor/vm/internal/state"
-	"git.array2d.com/ai/deepx/executor/vm/internal/translate"
+	"deepx/executor/vm/internal/dispatch"
+	"deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/internal/picker"
+	"deepx/executor/vm/internal/state"
+	"deepx/executor/vm/internal/translate"
 	"github.com/redis/go-redis/v9"
 )
 

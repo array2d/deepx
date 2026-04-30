@@ -1,5 +1,3 @@
-github.com/array2d/deepx/tool/deepxctl v0.0.0-20260130092918-6bdfc47f565d h1:KFn8b9drdXY12/KTR5u1ql5Bd1hxfB0RsZ4yUqMRBOE=
-github.com/array2d/deepx/tool/deepxctl v0.0.0-20260130092918-6bdfc47f565d/go.mod h1:dmWXytNy0zuzQHQpGZ+v55BUhYqXx6E6DuO2RYl2FK0=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/ginkgo/v2 v2.12.0/go.mod h1:SwYbGRRDovPVboqFv0tPTcG1sN61LM1Z4ARdbAV9g4c=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=

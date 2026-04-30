@@ -1,3 +1,3 @@
-module github.com/array2d/deepx/front/go
+module deepx/front/go
 
 go 1.23.2

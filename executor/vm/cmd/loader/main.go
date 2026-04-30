@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"git.array2d.com/ai/deepx/executor/vm/testutil"
+	"deepx/executor/vm/testutil"
 	"github.com/redis/go-redis/v9"
 )
 

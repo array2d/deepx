@@ -15,8 +15,8 @@ import (
 	"syscall"
 	"time"
 
-	"git.array2d.com/ai/deepx/executor/vm/internal/engine"
-	"git.array2d.com/ai/deepx/executor/vm/internal/state"
+	"deepx/executor/vm/internal/engine"
+	"deepx/executor/vm/internal/state"
 	"github.com/redis/go-redis/v9"
 )
 

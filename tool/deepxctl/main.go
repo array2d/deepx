@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"git.array2d.com/ai/deepx/tool/deepxctl/cmd"
-	"git.array2d.com/ai/deepx/tool/deepxctl/cmd/tensor"
+	"deepx/tool/deepxctl/cmd"
+	"deepx/tool/deepxctl/cmd/tensor"
 )
 
 var version = "0.2.0"

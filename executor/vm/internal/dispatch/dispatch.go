@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
-	"git.array2d.com/ai/deepx/executor/vm/internal/route"
-	"git.array2d.com/ai/deepx/executor/vm/internal/state"
+	"deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/internal/route"
+	"deepx/executor/vm/internal/state"
 	"github.com/redis/go-redis/v9"
 )
 

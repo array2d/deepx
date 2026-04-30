@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"git.array2d.com/ai/deepx/executor/vm/internal/ir"
-	"git.array2d.com/ai/deepx/executor/vm/internal/route"
+	"deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/internal/route"
 	"github.com/redis/go-redis/v9"
 )
 
