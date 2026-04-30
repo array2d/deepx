@@ -28,15 +28,6 @@
 ## 构建 / 测试
 
 > **强制规则: 所有构建必须通过根目录 `make` 命令执行，禁止直接使用 `go build`、`cmake`、`./build.sh` 等裸命令。**
->
-> 根目录 `Makefile` 是所有构建操作的唯一入口:
-> ```bash
-> make build-vm          # 构建 VM + loader (Go) → /tmp/deepx-vm/
-> make build-deepxctl    # 构建 deepxctl CLI (Go)  → tool/deepxctl/deepxctl
-> make build-op-metal    # 构建 Metal 计算平面 (C++/Metal)
-> make build-heap-metal  # 构建 Metal 堆管理平面 (C++/ObjC++)
-> make build-all         # 构建全部项目
-> ```
 
 ### 构建
 
