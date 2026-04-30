@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <limits>
 
-#include "shape_reduce.hpp"
+#include "deepx/shape_reduce.hpp"
 #include "deepx/tensor.hpp"
 #include "tensorfunc/reduce.hpp"
 #include "deepx/tensorfunc/init_miaobyte.hpp"

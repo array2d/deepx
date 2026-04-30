@@ -15,12 +15,13 @@ link_directories(/opt/homebrew/opt/hiredis/lib)
 # nlohmann/json (header-only JSON parser)
 include_directories(/opt/homebrew/opt/nlohmann-json/include)
 
-# 依赖 deepx-core（通过 common-metal 的 HAL 间接依赖）
+# 依赖 deepx-core + common-metal HAL
+if(NOT TARGET deepx_core)
+    add_subdirectory(../deepx-core deepx-core)
+endif()
 if(NOT TARGET deepx_metal_hal)
     add_subdirectory(../common-metal common-metal)
 endif()
-# deepx-core 头文件路径（shm_tensor / registry）
-include_directories(../deepx-core/include)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 

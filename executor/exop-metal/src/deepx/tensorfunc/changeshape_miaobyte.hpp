@@ -6,7 +6,7 @@
 #include <cstring>
 
 #include "deepx/tensor.hpp"
-#include "shape_changeshape.hpp"
+#include "deepx/shape_changeshape.hpp"
 #include "tensorfunc/changeshape.hpp"
 #include "tensorfunc/authors.hpp"
 
