@@ -383,3 +383,15 @@ func parseVtid(s string) int64 {
 	n, _ := strconv.ParseInt(s, 10, 64)
 	return n
 }
+
+// autoBoot bootstraps the deepx runtime (services + Redis) inline.
+// It reuses the boot logic from boot.go, skipping rebuilds when binaries already exist.
+func autoBoot(redisAddr string) error {
+	log.Printf("[run] auto-booting services (redis=%s)", redisAddr)
+	return boot(BootFlags{
+		RedisAddr:  redisAddr,
+		ForceBuild: false,
+		NoReset:    false,
+		Verbose:    false,
+	})
+}
