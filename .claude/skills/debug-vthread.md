@@ -98,3 +98,8 @@ redis-cli GET "/sys/op-plat/exop-metal:0"
 /reset-redis
 ```
 清空所有 vthread / src / op / sys / done / cmd key 后重新测试。
+
+## 参考
+
+- dxlang 引号约定: `doc/dxlang/README.md` — 字符串 `"..."` / Key `'...'` / 变量 无引号
+- Redis key 规范: `doc/metaproc/redis-keys.md`

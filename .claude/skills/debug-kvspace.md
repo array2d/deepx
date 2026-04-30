@@ -170,3 +170,4 @@ make reset-redis
 - Redis key 完整规范: `doc/metaproc/redis-keys.md`
 - vthread 调试工作流: `.claude/skills/debug-vthread.md`
 - heap-plat 开发: `doc/heap-plat/`
+- dxlang 引号约定: `doc/dxlang/README.md` — 字符串 `"..."` / Key `'...'` / 变量 无引号
