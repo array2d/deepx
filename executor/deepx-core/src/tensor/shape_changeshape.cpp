@@ -1,7 +1,7 @@
 #include <vector>
 #include <stdexcept>
 
-#include "shape_changeshape.hpp"
+#include "deepx/shape_changeshape.hpp"
 
 namespace deepx
 {

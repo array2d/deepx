@@ -1,0 +1,7 @@
+def test_input() -> (R:string) {
+    print("What is your name?")
+    input("> ") -> "./name"
+    print("./name")
+}
+
+test_input() -> "./out"

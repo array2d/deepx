@@ -1,0 +1,8 @@
+def test_cerr(A:int, B:int) -> (R:int) {
+    print(A)
+    cerr("ERROR: value is", A)
+    A + B -> "./R"
+    print("./R")
+}
+
+test_cerr(1, 2) -> "./out"

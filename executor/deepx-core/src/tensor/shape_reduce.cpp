@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 #include "stdutil/error.hpp"
-#include "shape_reduce.hpp"
+#include "deepx/shape_reduce.hpp"
 
 namespace deepx
 {

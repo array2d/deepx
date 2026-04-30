@@ -1,4 +1,4 @@
-#include "shape_tensorinit.hpp"
+#include "deepx/shape_tensorinit.hpp"
 
 namespace deepx
 {

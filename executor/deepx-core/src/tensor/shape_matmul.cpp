@@ -1,6 +1,6 @@
 #include <stdexcept>
 
-#include "shape_matmul.hpp"
+#include "deepx/shape_matmul.hpp"
 
 namespace deepx
 {

@@ -29,8 +29,10 @@ var nativeOps = map[string]bool{
 	"float": true, // float(x)  转浮点
 	"bool":  true, // bool(x) 转布尔
 
-	// 输出 (built-in 命名)
-	"print": true, // print(x, ...) 打印 native 值到 stdout
+	// IO (built-in 命名)
+	"print": true, // print(x, ...) → stdout
+	"cerr":  true, // cerr(x, ...)  → stderr
+	"input": true, // input([prompt]) → stdin
 }
 
 // IsNativeOp 判断是否为 VM 原生求值的符号算子。
@@ -94,8 +96,10 @@ var nativeSigs = map[string]string{
 	"float": "def float(A:any) -> (C:float)",
 	"bool":  "def bool(A:any) -> (C:bool)",
 
-	// 输出 (built-in) — 可变参数, 无返回值
+	// IO (built-in) — 可变参数输出 / 单参数输入
 	"print": "def print(A:any, ...) -> ()",
+	"cerr":  "def cerr(A:any, ...) -> ()",
+	"input": "def input(prompt:string?) -> (C:string)",
 }
 
 // OpDefs 返回格式化后的算子定义文本列表 (按 opcode 排序)。
