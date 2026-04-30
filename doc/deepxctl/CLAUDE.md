@@ -189,13 +189,23 @@ deepxctl 只是**旁观**：轮询 `/vthread/<vtid>` 的 status 字段，直到 
 
 ### `--rm` 一键清理
 
-`deepxctl run a.dx --rm` 在 dx 代码执行成功后自动：
-1. **FLUSHDB** — 重置 Redis KV 空间
-2. **shutdown** — 复用 `deepxctl shutdown` 的完整退出逻辑（Redis sys:shutdown 命令 → 心跳验证 → 清理 PID 文件 → OS 信号兜底）
+`deepxctl run --rm a.dx` 在 dx 代码执行后（无论成功/失败）**保证**：
+1. **shutdown** — 复用 `deepxctl shutdown` 的完整退出逻辑（Redis sys:shutdown 命令 → 心跳验证 → 清理 PID 文件 → OS 信号兜底）
+2. **FLUSHDB** — 重置 Redis KV 空间（在 shutdown 之后执行，确保关闭流程可正常使用 Redis）
+
+> **注意**：`--rm` 是标准的 Go flag，**必须放在 .dx 文件路径之前**：
+> ```bash
+> # ✅ 正确
+> deepxctl run --rm example/foo.dx
+> 
+> # ❌ 错误（--rm 被忽略）
+> deepxctl run example/foo.dx --rm
+> ```
+> 类比 `python -O script.py`，Python 也要求 flag 在脚本路径之前。
 
 等价于手动执行：
 ```bash
-deepxctl run a.dx && make reset-redis && deepxctl shutdown
+deepxctl run a.dx && deepxctl shutdown && make reset-redis
 ```
 
 ---

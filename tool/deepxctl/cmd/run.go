@@ -1,8 +1,14 @@
 // Package cmd implements the "run" subcommand for deepxctl.
 //
-//	deepxctl run <file.dx> [flags]
+//	deepxctl run [flags] <file.dx>
 //
-// Requires a prior "deepxctl boot". Run loads .dx source via the loader binary.
+// Flags (standard Go convention: must appear before the file path):
+//
+//	--rm        After execution, shutdown all services and flush Redis (guaranteed cleanup)
+//	--entry     Manual entry function (overrides top-level call detection)
+//	--timeout   Execution timeout in seconds (0 = no limit, default 60)
+//	--boot      Auto-boot if not already booted (default true)
+//	-r, --redis Redis address (default 127.0.0.1:16379)
 //
 // Execution semantics:
 //   - If the .dx file has top-level call expressions (outside any def block),
@@ -82,6 +88,33 @@ func parseRunFlags(args []string) RunFlags {
 func run(flags RunFlags) error {
 	printHeader(flags.RedisAddr)
 
+	// rdb is declared here so the --rm defer can access it for FLUSHDB
+	var rdb *goredis.Client
+
+	// --rm: guaranteed cleanup on exit (success, error, or early return)
+	if flags.Rm {
+		defer func() {
+			fmt.Println()
+			printSeparator()
+			fmt.Println("── Cleanup (--rm) ──")
+			// ① Shutdown services first (ExecShutdown uses its own Redis connection
+			//    and relies on intact heartbeat/command keys, so shutdown before FLUSHDB)
+			if err := ExecShutdown(); err != nil {
+				fmt.Fprintf(os.Stderr, "  shutdown: %v\n", err)
+			}
+			// ② Flush remaining Redis state (only if we have a connection)
+			if rdb != nil {
+				if err := redis.FlushDB(rdb); err != nil {
+					fmt.Fprintf(os.Stderr, "  FLUSHDB: %v\n", err)
+				} else {
+					fmt.Println("  Redis FLUSHDB ✓")
+				}
+			}
+			fmt.Println("── All components stopped ──")
+			printSeparator()
+		}()
+	}
+
 	// ── [1/3] Verify boot ──
 	step(1, 3, "Check services")
 	if !IsBooted() {
@@ -93,7 +126,8 @@ func run(flags RunFlags) error {
 	ok()
 
 	// Verify each service is registered in Redis
-	rdb, err := redis.Connect(flags.RedisAddr)
+	var err error
+	rdb, err = redis.Connect(flags.RedisAddr)
 	if err != nil {
 		errorX("Redis connection failed: %v", err)
 		return err
@@ -188,21 +222,6 @@ func run(flags RunFlags) error {
 		fmt.Println("(services left running — use 'deepxctl shutdown' to stop)")
 	}
 	printSeparator()
-
-	// ── [--rm] Cleanup ──
-	if flags.Rm {
-		fmt.Println()
-		fmt.Println("── Cleanup (--rm): flushing Redis, shutting down services ──")
-		if err := redis.FlushDB(rdb); err != nil {
-			errorX("FLUSHDB: %v", err)
-			return err
-		}
-		fmt.Println("  Redis FLUSHDB ✓")
-		if err := ExecShutdown(); err != nil {
-			errorX("Shutdown: %v", err)
-			return err
-		}
-	}
 
 	return nil
 }

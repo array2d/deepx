@@ -96,21 +96,21 @@ VM 拾取后自动识别 `<entry_func>` 非内置关键字 → 查找 `/src/func
 ## 4. CLI 用法
 
 ```
-deepxctl run <file.dx> [flags]
+deepxctl run [flags] <file.dx>
 
-flags:
+flags (必须放在 .dx 文件路径之前):
   -r, --redis string    Redis 地址 (默认: 127.0.0.1:16379)
-  -b, --build           强制重新构建
-      --no-reset        跳过 Redis FLUSHDB
-      --keep-alive      执行后保持进程运行 (调试)
-  -v, --verbose         输出子进程 stdout/stderr
+      --rm              执行后自动 shutdown + FLUSHDB，保证所有组件关闭
       --entry string    指定入口函数名 (多 def 且无 main 时必须)
       --timeout int     执行超时秒数 (默认: 60, 0=无限制)
+      --boot            未 boot 时自动 boot (默认: true)
+      --boot=false      不自动 boot，未 boot 则报错
 
 示例:
   deepxctl run example/dxlang/tensor/lifecycle/compute.dx
   deepxctl run -v example/dxlang/tensor/call/tensor_pipeline.dx
   deepxctl run --entry stage1 --timeout 30 example/dxlang/tensor/call/tensor_pipeline.dx
+  deepxctl run --rm example/dxlang/tensor/lifecycle/compute.dx   # 一键执行+清理
 ```
 
 ---
