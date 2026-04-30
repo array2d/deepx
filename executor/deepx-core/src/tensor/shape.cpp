@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-#include <yaml-cpp/yaml.h>
+#include <nlohmann/json.hpp>
 
 #include "deepx/shape.hpp"
 namespace deepx
@@ -90,22 +90,21 @@ namespace deepx
     }
 
     std::string Shape::toYaml() const{
-        YAML::Node node;
-        node["dtype"] = precision_to_string(dtype);
-        node["dim"] = dim();
-        node["shape"] = shape;
-        node["stride"] = strides;
-        node["size"] = size;
-        return YAML::Dump(node);
+        nlohmann::json j;
+        j["dtype"] = precision_to_string(dtype);
+        j["dim"] = dim();
+        j["shape"] = shape;
+        j["stride"] = strides;
+        j["size"] = size;
+        return j.dump();
     }
-    void Shape::fromYaml(const std::string &yaml){
-        YAML::Node node = YAML::Load(yaml);
-        dtype = precision_from_string(node["dtype"].as<std::string>());
-        shape = node["shape"].as<std::vector<int>>();
-        strides=node["stride"].as<std::vector<int>>();
-        size=node["size"].as<int>();
-        
-        //check
+    void Shape::fromYaml(const std::string &json){
+        auto j = nlohmann::json::parse(json);
+        dtype = precision_from_string(j["dtype"].get<std::string>());
+        shape = j["shape"].get<std::vector<int>>();
+        strides = j["stride"].get<std::vector<int>>();
+        size = j["size"].get<int>();
+
         Shape checkedshape(shape);
         if(checkedshape.shape!=shape){
             throw std::runtime_error("Shape::fromYaml: shape mismatch");
@@ -125,7 +124,7 @@ namespace deepx
             shape_fs.close();
         }
 
-    pair<std::string,Shape> Shape::loadShape(const std::string &path)   
+    std::pair<std::string,Shape> Shape::loadShape(const std::string &path)   
     {
         std::string shapepath = path + ".shape";
         std::ifstream shape_fs(shapepath, std::ios::binary);

@@ -158,7 +158,7 @@ namespace deepx
         }
     }
 
-    void Shape::rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
+    void Shape::rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices, ThreadLocalVectors &tlv)> func,const std::vector<int> tlv_sizes) const
     {
         dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);
@@ -181,7 +181,7 @@ namespace deepx
             }
         }
     }
-    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
+    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, ThreadLocalVectors &tlv)> func,const std::vector<int> tlv_sizes) const
     {
         dimCount = checkdim(dimCount, dim());
         int stride = checkStride(dimCount, shape);
@@ -200,7 +200,7 @@ namespace deepx
         }
     }
 
-    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)> func,const vector<int> tlv_sizes) const
+    void Shape::rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)> func,const std::vector<int> tlv_sizes) const
     {
         dimCount = checkdim(dimCount, dim());
         int totalSize = checkTotalSize(dimCount, shape);

@@ -71,9 +71,9 @@ namespace deepx
         void rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices)> func) const;
 
         // 支持omp,但omp内需要线程local变量
-        void rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices, ThreadLocalVectors &tlv)> func, const vector<int> tlv_sizes) const;
-        void rangeParallel(int dimCount, std::function<void(const int idx_linear, ThreadLocalVectors &tlv)> func, const vector<int> tlv_sizes) const;
-        void rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)> func, const vector<int> tlv_sizes) const;
+        void rangeParallel(int dimCount, std::function<void(const std::vector<int> &indices, ThreadLocalVectors &tlv)> func, const std::vector<int> tlv_sizes) const;
+        void rangeParallel(int dimCount, std::function<void(const int idx_linear, ThreadLocalVectors &tlv)> func, const std::vector<int> tlv_sizes) const;
+        void rangeParallel(int dimCount, std::function<void(const int idx_linear, const std::vector<int> &indices, ThreadLocalVectors &tlv)> func, const std::vector<int> tlv_sizes) const;
         int linearat(const std::vector<int> &indices) const;
         std::vector<int> linearto(int idx_linear) const;
 
@@ -82,7 +82,7 @@ namespace deepx
 
         void saveShape(const std::string &tensorPath) const;
 
-        static pair<std::string, Shape> loadShape(const std::string &path);
+        static std::pair<std::string, Shape> loadShape(const std::string &path);
     };
 }
 

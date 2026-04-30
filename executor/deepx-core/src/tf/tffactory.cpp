@@ -4,7 +4,7 @@
 #include <string>
 #include <sstream>
 
-#include "tffactory.hpp"
+#include "tf/tffactory.hpp"
 #include "deepx/precision.hpp"
 #include "deepx/data_category.hpp"
 
