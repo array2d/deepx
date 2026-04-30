@@ -1,25 +1,77 @@
 # deepx
 
-基于元程 (Metaproc) 的分布式深度学习运行时。以 Redis KV 空间为全局状态存储，5 核协作：
+> **deepx = Redis KV 空间 + 5 核协作（pysdk 写源码、heap-plat 管堆、op-plat 管算、VM 管执行、deepxctl 管编排），由 dxlang 类型系统统一契约。**
 
-| 核心 | 角色 | 目录 |
-|------|------|------|
-| Redis | KV 空间 | — |
-| pysdk | 算法前端，注册源码到 `/src/func/` | `front/py/` |
-| op-plat | 被动消费指令，执行 GPU/CPU 张量计算 | `executor/op-cuda/` `executor/op-metal/` |
-| heap-plat | 管理 tensor 生命周期 (shm 分配/释放) | `executor/heap-metal/` |
-| VM | CALL 翻译、指令路由、状态推进、原生算子求值 | `executor/vm/` (Go) |
+## 组件职责
+
+### 语言层
+
+> **dxlang** 是 deepx 元程级的编程语言——定义统一的类型系统与可序列化协议，是前端/编译器/调度器/执行器之间的契约。
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **executor/dxlang** | dxlang 语言的当前 C++ 参考实现（类型系统/协议对象），后续会重构或替换 |
+| **common-metal** | Metal 平台公共库：封装 POSIX shm 张量操作与 Metal 设备查询能力 |
+
+### 堆平面 (heap-plat)
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **heap-metal** | 进程维持 deepx 元程的堆在 Metal 设备平台的高可用——管理 tensor 的 shm 创建/引用/删除 |
+| **heap-cuda** | （待开发）进程维持 deepx 元程的堆在 CUDA 设备平台的高可用 |
+
+### 算子平面 (op-plat)
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **op-metal** | 被动消费 `cmd:op-metal:*`，在 Apple GPU 上执行张量计算，完成后通知 `done:<vtid>` |
+| **op-cuda** | 被动消费 `cmd:op-cuda:*`，在 NVIDIA GPU 上执行张量计算，完成后通知 `done:<vtid>` |
+| **op-ompsimd** | 被动消费计算指令，在 CPU 上以 OpenMP SIMD 执行张量运算 |
+| **op-mem-ompsimd** | CPU 内存绑定场景的 SIMD 张量算子（如大矩阵运算的 cache 优化路径） |
+
+### 虚拟机
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **vm** | 元程虚拟机：CALL 时 eager 翻译源码→执行层坐标、路由指令到 op-plat/heap-plat、推进 vthread 状态、本地求值原生算子 |
+
+### 编排器
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **deepxctl** | deepx 命令行编排器：构建→启动平台进程→加载 dx 源码→创建 vthread→等待结果→清理，一键运行 .dx 文件 |
+
+### 前端
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **front/go** | Go 语言深度学习模块库，提供 tensor 运算、神经网络层、transformer 等 API |
+| **front/py** | Python 算法前端，提供 tensor 运算、神经网络模块、优化器 API，并将 dxlang 源码注册到 KV 空间 |
+
+### 模型工具
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **model/h5_deepx** | HDF5 格式深度学习模型的加载、转换与导出工具 |
+| **model/onnx_deepx** | ONNX 格式深度学习模型的加载、转换与导出工具 |
+
+### 遗留
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **old-cppcommon** | 旧版 C++ Tensor/Shape 基础库，正被 dxlang + common-metal 逐步替代 |
 
 ## 文档
 
 | 目录 | 用途 | 文件 |
 |------|------|------|
 | `doc/metaproc/` | 整体架构、Redis key、开发指南 | `spec-v1.md` `deepx-design.md` `redis-keys.md` `dev-heap-plat.md` `dev-op-plat.md` `dev-pysdk.md` `dev-vm.md` |
-| `doc/vm/` | VM 设计、dxlang 语法、调度器 | `README.md` `scheduler.md` `dxlang/README.md` |
+| `doc/vm/` | VM 设计、调度器 | `README.md` `scheduler.md` |
+| `doc/dxlang/` | dxlang 语言设计（类型系统、控制流、编译器分析） | `README.md` `compiler-analysis-ssa-vs-arrow.md` `control-flow.md` |
 | `doc/heap-plat/` | 堆管理平面 (tensor 生命周期) | `README.md` `heap-metal.md` `heap-cuda.md` `heap-cpu.md` |
 | `doc/op-plat/` | 计算平面 (算子注册、GPU kernel) | `README.md` `op-metal.md` `op-cuda.md` `op-cpu.md` |
 
-按任务查阅: 架构→`metaproc/spec-v1.md` · op开发→`op-plat/` · heap开发→`heap-plat/` · VM开发→`vm/` · pysdk→`metaproc/dev-pysdk.md` · heap-plat开发→`metaproc/dev-heap-plat.md` · op-plat开发→`metaproc/dev-op-plat.md` · VM开发→`metaproc/dev-vm.md`
+按任务查阅: 架构→`metaproc/` · dxlang→`dxlang/` · op开发→`op-plat/` · heap开发→`heap-plat/` · VM开发→`vm/`
 
 ## 术语
 

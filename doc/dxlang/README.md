@@ -1,5 +1,66 @@
 # dxlang
 
+> dxlang 是 deepx 元程级的编程语言。**deepxir 即 dxlang 的指令设计部分**——两者不是两层，而是同一语言的不同视角。
+
+## 0. 统一语法哲学
+
+LLVM 将表示划分为多层：高级语言 → 中层 IR → 低级机器码，各层语法互不相通，编译器在其中逐层翻译。
+
+dxlang 不这样做。**dxlang 以同一种语法，同时承担四种职能**：
+
+| 职能 | 说明 |
+|------|------|
+| **VM 指令执行** | `add(A, B) -> C` 即 VM 可逐条解码执行的操作码 |
+| **高级语言定义** | `def gemm(...) -> (...) { ... }` 即程序员编写的函数 |
+| **编译器分析** | `->`/`<-` 数据流箭头天然可做 use-def 链分析，无需构造 SSA |
+| **人类可阅读** | 纯文本、无编号寄存器、无 phi 节点，源码即 IR |
+
+**与 LLVM 的本质区别**：
+
+```
+LLVM:  C++/Rust  →  LLVM IR  →  Machine Code
+       三层语法，逐层翻译，互不兼容
+
+dxlang:  def  →  op(A,B)->C  →  /vthread/[i,j]
+        同一语法，同一表示，视角不同而已
+```
+
+**deepxir** 即这条指令 `op(A, B) -> C` 的设计——它不是独立的一层，它就是 dxlang 本身，是 dxlang 在"指令"视角下的名字。
+
+### 执行模型定位
+
+**底座是分布式的，语言是单线程的。**
+
+deepx 的底层是一个分布式系统：Redis KV 空间、heap-plat 跨进程管理 shm、op-plat 常驻消费计算指令、VM 多 worker 并行调度 vthread——但 dxlang **使用起来就像 SQL 一样**，程序员看到的是极其简单的单线程顺序逻辑：
+
+```dxlang
+# 程序员视角：就几条顺序语句，像写 SQL 一样简单
+def hadamard3() -> ("/data/result") {
+    newtensor("f32", "[128]") -> "/data/a"
+    newtensor("f32", "[128]") -> "/data/b"
+    mul("/data/a", "/data/b") -> "/data/temp"    # GPU 执行，程序员无感
+    deltensor("/data/a")
+}
+```
+
+| 底座（分布式） | 语言（单线程） |
+|----------------|----------------|
+| Redis KV 空间跨进程共享 | 程序员只写 `A + B -> C` |
+| heap-plat 管理 shm 生命周期 | `newtensor` / `deltensor` 就像 `malloc` / `free` |
+| op-plat 被动消费 GPU 指令 | `mul` / `add` 不感知 Metal / CUDA |
+| VM 多 worker 并行调度 | `def` 函数定义，调用即 `CALL` 翻译 |
+
+这就是 dxlang 的核心设计意图：**为 AI 任务服务的声明式语言**——数据流用箭头 (`->`) 表达，计算交给平台代理，使用者只需关心"什么算子、什么数据、什么顺序"，无需关心 GPU 型号、内存布局、进程间通信。
+
+与 C/CUDA 的本质差异：
+
+```
+C/CUDA:  程序员管理一切 ── 内存分配、设备选择、数据传输、kernel launch
+dxlang:  程序员只写数据流 ── 底座自动调度、分配、执行、回收
+```
+
+dxlang 不接触物理地址，不管理内存分配，不感知设备拓扑——这些全部由 heap-plat 和 op-plat 的常驻进程代理。
+
 ## 1. 类型系统
 
 ### 基础数据类型

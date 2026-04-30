@@ -1,6 +1,8 @@
 # heap-cpu
 
 > 纯 CPU 内存的 heap-plat 实现。待开发。
+>
+> **heap-cpu 的进程维持着 deepx 元程的堆在 CPU 设备平台的高可用。**
 
 ## 1. 平台特性
 

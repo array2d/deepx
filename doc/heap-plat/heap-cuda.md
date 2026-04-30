@@ -1,6 +1,8 @@
 # heap-cuda
 
 > Linux CUDA GPU 显存的 heap-plat 实现。待开发。
+>
+> **heap-cuda 的进程维持着 deepx 元程的堆在 CUDA 设备平台的高可用。**
 
 ## 1. 平台特性
 

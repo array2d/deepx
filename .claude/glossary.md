@@ -11,6 +11,7 @@
 | 元线程 | Vthread | 元程内的执行流。私有调用栈，共享堆数据。类比 OS 线程。 |
 | KV 空间 | KV Space | Redis 实现的全局 key-value 存储。元程的运行载体。 |
 | 路径空间 | Path Space | KV 空间的 key 命名规范。`/src/func/`、`/vthread/` 等。 |
+| dxlang | DX Language | deepx 元程级编程语言（概念）；`executor/dxlang/` 是其当前 C++ 参考实现（代码）。 |
 
 ## 5 个核心 (Five Cores)
 

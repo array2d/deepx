@@ -855,9 +855,15 @@ int main(int argc, char **argv) {
     }
     std::cout << "[op-metal] device: " << deviceInfo.name << "\n";
 
-    // 连接 Redis
-    redisContext *redis = connect_redis(redis_addr, redis_port);
-    if (!redis) return 1;
+    // 连接 Redis（无限重试，不自退——op-plat 由元程控制退出）
+    redisContext *redis = nullptr;
+    while (!redis) {
+        redis = connect_redis(redis_addr, redis_port);
+        if (!redis) {
+            std::cerr << "[op-metal] Redis not available, retrying in 1s...\n";
+            sleep(1);
+        }
+    }
     std::cout << "[op-metal] connected to Redis " << redis_addr << ":" << redis_port << "\n";
 
     // 注册实例和算子
@@ -869,11 +875,17 @@ int main(int argc, char **argv) {
     while (true) {
         redisReply *r = redis_cmd(redis, "BLPOP %s %d", OP_QUEUE, BLOCK_TIMEOUT_SEC);
         if (!r) {
+            // Redis 断连 → 无限重连（不自退，op-plat 由元程控制退出）
             std::cerr << "[op-metal] Redis disconnected, reconnecting...\n";
             redisFree(redis);
-            sleep(1);
-            redis = connect_redis(redis_addr, redis_port);
-            if (!redis) break;
+            redis = nullptr;
+            while (!redis) {
+                sleep(1);
+                redis = connect_redis(redis_addr, redis_port);
+                if (!redis) {
+                    std::cerr << "[op-metal] Redis still not available, retrying...\n";
+                }
+            }
             register_instance(redis);
             continue;
         }

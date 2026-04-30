@@ -226,12 +226,19 @@ int main(int argc, char **argv) {
     if (argc > 1) redis_addr = argv[1];
     if (argc > 2) redis_port = atoi(argv[2]);
 
+    // 清理上一轮进程残留的过期 registry（堆的生死 = 进程的生死）
     const char *registry_path = "/tmp/deepx_heap_registry.txt";
+    unlink(registry_path);
 
-    // 连接 Redis
-    redisContext *redis = connect_redis(redis_addr, redis_port);
-    if (!redis) return 1;
-
+    // 连接 Redis（无限重试，不自退——heap-plat 由元程控制退出）
+    redisContext *redis = nullptr;
+    while (!redis) {
+        redis = connect_redis(redis_addr, redis_port);
+        if (!redis) {
+            std::cerr << "[heap] Redis not available, retrying in 1s...\n";
+            sleep(1);
+        }
+    }
     std::cout << "[heap] connected to Redis " << redis_addr << ":" << redis_port << "\n";
 
     // 注册实例
@@ -247,12 +254,17 @@ int main(int argc, char **argv) {
     while (true) {
         redisReply *r = redis_cmd(redis, "BLPOP %s %d", HEAP_QUEUE, BLOCK_TIMEOUT_SEC);
         if (!r) {
-            // Redis 断连 → 重连
+            // Redis 断连 → 无限重连（不自退，heap-plat 由元程控制退出）
             std::cerr << "[heap] Redis disconnected, reconnecting...\n";
             redisFree(redis);
-            sleep(1);
-            redis = connect_redis(redis_addr, redis_port);
-            if (!redis) break;
+            redis = nullptr;
+            while (!redis) {
+                sleep(1);
+                redis = connect_redis(redis_addr, redis_port);
+                if (!redis) {
+                    std::cerr << "[heap] Redis still not available, retrying...\n";
+                }
+            }
             register_instance(redis);
             continue;
         }

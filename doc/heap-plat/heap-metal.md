@@ -3,6 +3,8 @@
 > macOS Metal 统一内存的 heap-plat 实现。
 > Apple Silicon 上 CPU/GPU 共享物理内存，shm_open + mmap 的指针
 > 可直接通过 newBufferWithBytesNoCopy 被 GPU 访问。
+>
+> **heap-metal 的进程维持着 deepx 元程的堆在 Metal 设备平台的高可用。**
 
 ## 1. 平台特性
 
