@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+		"deepx/executor/vm/internal/logx"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -27,7 +27,7 @@ func Get(ctx context.Context, rdb *redis.Client, vtid string) VThreadState {
 	}
 	var s VThreadState
 	if err := json.Unmarshal([]byte(val), &s); err != nil {
-		log.Printf("state.Get: unmarshal vthread %s: %v", vtid, err)
+		logx.Warn("state.Get: unmarshal vthread %s: %v", vtid, err)
 		return VThreadState{Status: "error"}
 	}
 	return s
@@ -38,7 +38,7 @@ func Set(ctx context.Context, rdb *redis.Client, vtid string, pc, status string)
 	s := VThreadState{PC: pc, Status: status}
 	data, err := json.Marshal(s)
 	if err != nil {
-		log.Printf("state.Set: marshal vthread %s: %v", vtid, err)
+		logx.Warn("state.Set: marshal vthread %s: %v", vtid, err)
 		return
 	}
 	rdb.Set(ctx, "/vthread/"+vtid, data, 0)
@@ -53,7 +53,7 @@ func SetError(ctx context.Context, rdb *redis.Client, vtid string, pc string, er
 	}
 	data, err := json.Marshal(s)
 	if err != nil {
-		log.Printf("state.SetError: marshal vthread %s: %v", vtid, err)
+		logx.Warn("state.SetError: marshal vthread %s: %v", vtid, err)
 		return
 	}
 	rdb.Set(ctx, "/vthread/"+vtid, data, 0)
@@ -69,7 +69,7 @@ func WaitDone(ctx context.Context, rdb *redis.Client, vtid string, timeout time.
 	var done map[string]interface{}
 	if len(result) > 1 {
 		if err := json.Unmarshal([]byte(result[1]), &done); err != nil {
-			log.Printf("state.WaitDone: unmarshal done result for %s: %v", vtid, err)
+			logx.Warn("state.WaitDone: unmarshal done result for %s: %v", vtid, err)
 			return nil, fmt.Errorf("unmarshal done result: %w", err)
 		}
 	}

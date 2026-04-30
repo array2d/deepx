@@ -1,0 +1,11 @@
+def double_op(A:int, B:int) -> (S:int, D:int) {
+    print(A)
+    print(B)
+    "./S" <- A + B
+    print("./S")
+    "./D" <- A - B
+    print("./D")
+}
+
+# Top-level call: double_op(10, 3) -> ("./sum", "./diff")
+double_op(10, 3) -> ("./sum", "./diff")

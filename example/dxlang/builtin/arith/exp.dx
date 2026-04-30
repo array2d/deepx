@@ -1,0 +1,8 @@
+def native_exp(A:int) -> (C:float) {
+    print(A)
+    exp(A) -> "./C"
+    print("./C")
+}
+
+# Top-level call: native_exp(2) -> "./out"
+native_exp(2) -> "./out"

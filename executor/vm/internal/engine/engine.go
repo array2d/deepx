@@ -6,9 +6,9 @@ package engine
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"deepx/executor/vm/internal/dispatch"
+	"deepx/executor/vm/internal/logx"
 	"deepx/executor/vm/internal/ir"
 	"deepx/executor/vm/internal/picker"
 	"deepx/executor/vm/internal/state"
@@ -18,11 +18,11 @@ import (
 
 // RunWorker 单个 worker 的主循环。
 func RunWorker(ctx context.Context, rdb *redis.Client, id int) {
-	log.Printf("worker-%d started", id)
+	logx.Debug("worker-%d started", id)
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("worker-%d stopped", id)
+			logx.Debug("worker-%d stopped", id)
 			return
 		default:
 		}
@@ -33,7 +33,7 @@ func RunWorker(ctx context.Context, rdb *redis.Client, id int) {
 			continue
 		}
 
-		log.Printf("worker-%d picked vthread %s", id, vtid)
+		logx.Debug("worker-%d picked vthread %s", id, vtid)
 		Execute(ctx, rdb, vtid)
 		// 注意: VM 不负责清理 vthread key，由调用方在读取结果后自行清理
 	}
@@ -50,18 +50,18 @@ func Execute(ctx context.Context, rdb *redis.Client, vtid string) {
 		pc := s.PC
 		inst, err := ir.Decode(ctx, rdb, vtid, pc)
 		if err != nil {
-			log.Printf("[%s] decode error at %s: %v", vtid, pc, err)
+			logx.Debug("[%s] decode error at %s: %v", vtid, pc, err)
 			state.SetError(ctx, rdb, vtid, pc, fmt.Sprintf("decode: %v", err))
 			return
 		}
 
 		if inst.Opcode == "" {
-			log.Printf("[%s] done (no more instructions at %s)", vtid, pc)
+			logx.Debug("[%s] done (no more instructions at %s)", vtid, pc)
 			state.Set(ctx, rdb, vtid, pc, "done")
 			return
 		}
 
-		log.Printf("[%s] PC=%s OP=%s READS=%v WRITES=%v", vtid, pc, inst.Opcode, inst.Reads, inst.Writes)
+		logx.Debug("[%s] PC=%s OP=%s READS=%v WRITES=%v", vtid, pc, inst.Opcode, inst.Reads, inst.Writes)
 
 		var execErr error
 
@@ -90,7 +90,7 @@ func Execute(ctx context.Context, rdb *redis.Client, vtid string) {
 		}
 
 		if execErr != nil {
-			log.Printf("[%s] error: %v", vtid, execErr)
+			logx.Debug("[%s] error: %v", vtid, execErr)
 			return
 		}
 	}
@@ -102,12 +102,12 @@ func dispatchControl(ctx context.Context, rdb *redis.Client, vtid string, pc str
 	case "call":
 		substackPC := translate.HandleCall(ctx, rdb, vtid, pc, inst)
 		state.Set(ctx, rdb, vtid, substackPC, "running")
-		log.Printf("[%s] CALL → substack %s", vtid, substackPC)
+		logx.Debug("[%s] CALL → substack %s", vtid, substackPC)
 		return nil
 
 	case "return":
 		parentPC := translate.HandleReturn(ctx, rdb, vtid, pc)
-		log.Printf("[%s] RETURN → parent %s", vtid, parentPC)
+		logx.Debug("[%s] RETURN → parent %s", vtid, parentPC)
 
 		if parentPC == pc {
 			state.Set(ctx, rdb, vtid, pc, "done")

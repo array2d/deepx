@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+		"deepx/executor/vm/internal/logx"
 	"math"
 	"strings"
 
@@ -71,7 +71,7 @@ func Select(ctx context.Context, rdb *redis.Client, opcode string) (string, erro
 		}
 		var info instInfo
 		if err := json.Unmarshal([]byte(val), &info); err != nil {
-			log.Printf("route.Select: unmarshal instance info %s: %v", instKey, err)
+			logx.Debug("route.Select: unmarshal instance info %s: %v", instKey, err)
 			continue
 		}
 
@@ -99,7 +99,7 @@ func DetermineBackend(ctx context.Context, rdb *redis.Client, funcName string) s
 	for _, b := range []string{"op-metal", "op-cuda", "op-cpu"} {
 		exists, err := rdb.Exists(ctx, fmt.Sprintf("/op/%s/func/%s", b, funcName)).Result()
 		if err != nil {
-			log.Printf("route.DetermineBackend: EXISTS error for %s: %v", b, err)
+			logx.Debug("route.DetermineBackend: EXISTS error for %s: %v", b, err)
 			continue
 		}
 		if exists > 0 {

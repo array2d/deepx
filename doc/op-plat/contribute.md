@@ -31,7 +31,7 @@ Matmul会选择选择一个默认的实现
 git clone https://github.com/deepx-org/deepx.git
 
 #### 1.cpu执行器
-cd deepx/executor/op-mem-ompsimd
+cd deepx/executor/exop-cpu
 
 需要提前安装好依赖
 + highway需要源码安装
@@ -60,7 +60,7 @@ todo
 
 #### 4.front对接测试
 
-1.先启动executor可执行文件， 位于executor/op-mem-{cuda/ompsimd}/build，可执行文件名同executor名
+1.先启动executor可执行文件， 位于executor/exop-cpu/build 或 executor/op-{metal/cuda}/build，可执行文件名同executor名
 2.然后测试front中py的对应算子脚本（front/py/examples 目录）
 
 可以按照顺序，以此测试

@@ -2,6 +2,10 @@
 
 > **deepx = Redis KV 空间 + 7 核协作（pysdk 写源码、heap-plat 管堆、op-plat 管算、io-plat 管 I/O、VM 管执行、deepxctl 管编排、deepx-core 统一类型契约），由 deepx-core 类型系统统一契约。**
 
+## 架构铁律
+
+> **拒绝包庇垃圾架构。为了架构的简洁、优美和唯一性，可以耗费无限的时间和精力来修改一切。**
+
 ## 组件职责
 
 ### 公共核心库 (deepx-core)

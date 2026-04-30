@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+		"deepx/executor/vm/internal/logx"
 	"strings"
 	"time"
 
@@ -237,7 +237,7 @@ func Compute(ctx context.Context, rdb *redis.Client, vtid string, pc string, ins
 		return fmt.Errorf("push task: %w", err)
 	}
 
-	log.Printf("[%s] PUSH %s → %s", vtid, inst.Opcode, cmdQueue)
+	logx.Debug("[%s] PUSH %s → %s", vtid, inst.Opcode, cmdQueue)
 
 	state.Set(ctx, rdb, vtid, pc, "wait")
 	done, err := state.WaitDone(ctx, rdb, vtid, 30*time.Second)
@@ -252,7 +252,7 @@ func Compute(ctx context.Context, rdb *redis.Client, vtid string, pc string, ins
 		return fmt.Errorf("op error: %s", errInfo)
 	}
 
-	log.Printf("[%s] DONE %s", vtid, inst.Opcode)
+	logx.Debug("[%s] DONE %s", vtid, inst.Opcode)
 	state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 	return nil
 }
@@ -269,7 +269,7 @@ func Lifecycle(ctx context.Context, rdb *redis.Client, vtid string, pc string, i
 		return fmt.Errorf("push heap task: %w", err)
 	}
 
-	log.Printf("[%s] PUSH %s → cmd:heap-metal:0", vtid, inst.Opcode)
+	logx.Debug("[%s] PUSH %s → cmd:heap-metal:0", vtid, inst.Opcode)
 
 	done, err := state.WaitDone(ctx, rdb, vtid, 5*time.Second)
 	if err != nil {
@@ -310,7 +310,7 @@ func If(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir
 		branchPC = pc + "/false/0"
 	}
 
-	log.Printf("[%s] IF %v → %s", vtid, cond, branchPC)
+	logx.Debug("[%s] IF %v → %s", vtid, cond, branchPC)
 	state.Set(ctx, rdb, vtid, branchPC, "running")
 	return nil
 }

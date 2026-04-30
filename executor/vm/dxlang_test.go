@@ -157,43 +157,43 @@ func TestIntegration_NativeScalar(t *testing.T) {
 	root := filepath.Join("..", "..", "example", "dxlang")
 	cases := []testCase{
 		// 算术
-		{name: "add", dxFile: "native/arith/add.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "add", dxFile: "builtin/arith/add.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "2", "b": "3"}, wantKey: "c", wantVal: "5"},
-		{name: "mul", dxFile: "native/arith/mul.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "mul", dxFile: "builtin/arith/mul.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "6", "b": "7"}, wantKey: "c", wantVal: "42"},
-		{name: "div", dxFile: "native/arith/div.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "div", dxFile: "builtin/arith/div.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "15", "b": "2"}, wantKey: "c", wantVal: "7.5"},
-		{name: "sub", dxFile: "native/arith/sub.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "sub", dxFile: "builtin/arith/sub.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "10", "b": "3"}, wantKey: "c", wantVal: "7"},
 		// 比较
-		{name: "eq_true", dxFile: "native/compare/eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "eq_true", dxFile: "builtin/compare/eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "5", "b": "5"}, wantKey: "c", wantVal: "true"},
-		{name: "eq_false", dxFile: "native/compare/eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "eq_false", dxFile: "builtin/compare/eq.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "2", "b": "9"}, wantKey: "c", wantVal: "false"},
 		// 链式
-		{name: "chain", dxFile: "native/chain/chain.dx", reads: []string{"./a", "./b", "./c"}, writes: []string{"./d"},
+		{name: "chain", dxFile: "builtin/chain/chain.dx", reads: []string{"./a", "./b", "./c"}, writes: []string{"./d"},
 			inputs: map[string]string{"a": "2", "b": "3", "c": "4"}, wantKey: "d", wantVal: "20"},
 		// built-in
-		{name: "abs", dxFile: "native/arith/abs.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{name: "abs", dxFile: "builtin/arith/abs.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-5"}, wantKey: "c", wantVal: "5"},
-		{name: "pow", dxFile: "native/arith/pow.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "pow", dxFile: "builtin/arith/pow.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "2", "b": "3"}, wantKey: "c", wantVal: "8.0"},
-		{name: "max", dxFile: "native/arith/max.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "max", dxFile: "builtin/arith/max.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "7", "b": "3"}, wantKey: "c", wantVal: "7"},
-		{name: "min", dxFile: "native/arith/min.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
+		{name: "min", dxFile: "builtin/arith/min.dx", reads: []string{"./a", "./b"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-2", "b": "5"}, wantKey: "c", wantVal: "-2"},
-		{name: "sqrt", dxFile: "native/arith/sqrt.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{name: "sqrt", dxFile: "builtin/arith/sqrt.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "16"}, wantKey: "c", wantVal: "4.0"},
-		{name: "neg", dxFile: "native/arith/neg.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{name: "neg", dxFile: "builtin/arith/neg.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "5"}, wantKey: "c", wantVal: "-5"},
-		{name: "sign_pos", dxFile: "native/arith/sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{name: "sign_pos", dxFile: "builtin/arith/sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "5"}, wantKey: "c", wantVal: "1"},
-		{name: "sign_neg", dxFile: "native/arith/sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{name: "sign_neg", dxFile: "builtin/arith/sign.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "-8"}, wantKey: "c", wantVal: "-1"},
 		// cast
-		{name: "int", dxFile: "native/cast/int.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{name: "int", dxFile: "builtin/cast/int.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "3.7"}, wantKey: "c", wantVal: "3"},
-		{name: "float", dxFile: "native/cast/float.dx", reads: []string{"./a"}, writes: []string{"./c"},
+		{name: "float", dxFile: "builtin/cast/float.dx", reads: []string{"./a"}, writes: []string{"./c"},
 			inputs: map[string]string{"a": "42"}, wantKey: "c", wantVal: "42.0"},
 	}
 
@@ -279,3 +279,101 @@ func TestIntegration_CrossCall(t *testing.T) {
 	}
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Integration: Native Print (VM only, no plats needed)
+// ═══════════════════════════════════════════════════════════════
+
+func TestIntegration_NativePrint(t *testing.T) {
+	rdb, ctx := connectRedisIntegration(t)
+	defer rdb.Close()
+
+	vmCtx, vmCancel := context.WithCancel(ctx)
+	defer vmCancel()
+	go engine.RunWorker(vmCtx, rdb, 0)
+	time.Sleep(150 * time.Millisecond)
+
+	root := filepath.Join("..", "..", "example", "dxlang")
+
+	type testCase struct {
+		name    string
+		dxFile  string
+		reads   []string
+		writes  []string
+		inputs  map[string]string
+		wantKey string
+		wantVal string
+	}
+
+	cases := []testCase{
+		{name: "print_int", dxFile: "builtin/print/print_int.dx",
+			reads: []string{"./x"}, writes: []string{"./r"},
+			inputs: map[string]string{"x": "42"}, wantKey: "r", wantVal: "42"},
+		{name: "print_multi", dxFile: "builtin/print/print_multi.dx",
+			reads: []string{"./a", "./b", "./c"}, writes: []string{"./r"},
+			inputs: map[string]string{"a": "1", "b": "2", "c": "3"}, wantKey: "r", wantVal: "6"},
+		{name: "print_bool", dxFile: "builtin/print/print_bool.dx",
+			reads: []string{"./a"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "1"}, wantKey: "c", wantVal: "true"},
+		{name: "print_chain", dxFile: "builtin/print/print_chain.dx",
+			reads: []string{"./a", "./b", "./c"}, writes: []string{"./d"},
+			inputs: map[string]string{"a": "2", "b": "3", "c": "4"}, wantKey: "d", wantVal: "20"},
+		// 带 print 的算术示例
+		{name: "add_with_print", dxFile: "builtin/arith/add.dx",
+			reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "2", "b": "3"}, wantKey: "c", wantVal: "5"},
+		{name: "mul_with_print", dxFile: "builtin/arith/mul.dx",
+			reads: []string{"./a", "./b"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "6", "b": "7"}, wantKey: "c", wantVal: "42"},
+		{name: "three_add_with_print", dxFile: "builtin/arith/three_add.dx",
+			reads: []string{"./a", "./b", "./c"}, writes: []string{"./r"},
+			inputs: map[string]string{"a": "2", "b": "3", "c": "4"}, wantKey: "r", wantVal: "9"},
+		{name: "chain_with_print", dxFile: "builtin/chain/chain.dx",
+			reads: []string{"./a", "./b", "./c"}, writes: []string{"./d"},
+			inputs: map[string]string{"a": "2", "b": "3", "c": "4"}, wantKey: "d", wantVal: "20"},
+		{name: "abs_with_print", dxFile: "builtin/arith/abs.dx",
+			reads: []string{"./a"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "-5"}, wantKey: "c", wantVal: "5"},
+		{name: "not_with_print", dxFile: "builtin/logic/not.dx",
+			reads: []string{"./a"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "true"}, wantKey: "c", wantVal: "false"},
+		{name: "float_with_print", dxFile: "builtin/cast/float.dx",
+			reads: []string{"./a"}, writes: []string{"./c"},
+			inputs: map[string]string{"a": "42"}, wantKey: "c", wantVal: "42.0"},
+	}
+
+	for i, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			funcName := fmt.Sprintf("print_%s_%d", tc.name, i)
+			fp := filepath.Join(root, tc.dxFile)
+
+			fn, err := testutil.LoadDxFile(fp)
+			if err != nil {
+				t.Fatalf("LoadDxFile: %v", err)
+			}
+			fn.Name = funcName
+			if err := fn.RegisterFunc(ctx, rdb); err != nil {
+				t.Fatalf("RegisterFunc: %v", err)
+			}
+
+			vtid, err := testutil.CreateVThread(ctx, rdb, funcName, tc.reads, tc.writes)
+			if err != nil {
+				t.Fatalf("CreateVThread: %v", err)
+			}
+			for slot, val := range tc.inputs {
+				rdb.Set(ctx, "/vthread/"+vtid+"/"+slot, val, 0)
+			}
+			rdb.RPush(ctx, "notify:vm", `{"event":"new_vthread","vtid":"`+vtid+`"}`)
+
+			outputs, done := waitVthreadDone(t, rdb, vtid, 10*time.Second)
+			if !done {
+				t.Fatal("vthread did not complete")
+			}
+			got := outputs[tc.wantKey]
+			if got != tc.wantVal {
+				t.Errorf("%s: got %q, want %q", tc.wantKey, got, tc.wantVal)
+			} else {
+				t.Logf("  %s = %s ✓", tc.wantKey, got)
+			}
+		})
+	}
+}

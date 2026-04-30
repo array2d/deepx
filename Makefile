@@ -91,8 +91,20 @@ help:
 # Build — All
 # ═══════════════════════════════════════════════════════════════
 
-build-all: build-vm build-deepxctl build-dashboard build-op-metal build-heap-metal build-io-metal build-exop-cpu build-heap-cpu
-	@echo "=== build-all complete ==="
+build-all:
+	@echo "=== build-all ==="
+	@pass=0; fail=0; \
+	targets="build-vm build-deepxctl build-dashboard build-op-metal build-heap-metal build-io-metal build-exop-cpu build-heap-cpu"; \
+	for t in $$targets; do \
+		if $(MAKE) --no-print-directory $$t; then \
+			pass=$$((pass+1)); \
+		else \
+			fail=$$((fail+1)); \
+			echo "  [FAIL] $$t (continuing)"; \
+		fi; \
+	done; \
+	echo "=== build-all done: $$pass passed, $$fail failed ==="; \
+	[ $$fail -eq 0 ]
 
 # ═══════════════════════════════════════════════════════════════
 # Build — Go Projects
@@ -116,6 +128,14 @@ build-deepxctl:
 	cd $(DEEPXCTL_DIR) && go mod tidy
 	cd $(DEEPXCTL_DIR) && go build -ldflags="-s -w" -o deepxctl .
 	@echo "  → $(DEEPXCTL_DIR)/deepxctl"
+
+build-dashboard:
+	@echo "=== Building dashboard ==="
+	@command -v go >/dev/null 2>&1 || (echo "ERROR: go not found in PATH (GOROOT=$(GOROOT))" && exit 1)
+	@echo "Go version: $$(go version)"
+	cd $(DASHBOARD_DIR) && go mod tidy
+	cd $(DASHBOARD_DIR) && go build -ldflags="-s -w" -o dashboard .
+	@echo "  → $(DASHBOARD_DIR)/dashboard"
 
 # ═══════════════════════════════════════════════════════════════
 # Build — C++ Projects (delegate to executor/Makefile)

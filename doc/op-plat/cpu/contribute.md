@@ -1,8 +1,8 @@
 ## executor
 
-### op-mem-ompsimd
+### exop-cpu
 
-ompsimd是DeepX框架的cpu执行器进程
+exop-cpu是DeepX框架的CPU执行器进程（原 op-mem-ompsimd）
 
 + 采用OMP+SIMD加速tensor计算
 + double和float采用openblas加速

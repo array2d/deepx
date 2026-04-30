@@ -3,12 +3,13 @@ package dispatch
 import (
 	"context"
 	"fmt"
-	"log"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 
 	"deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/internal/logx"
 	"deepx/executor/vm/internal/state"
 	"github.com/redis/go-redis/v9"
 )
@@ -125,6 +126,24 @@ func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst
 		return err
 	}
 
+	// print 输出到 io writer (文件、网络等)，由 /vthread/<vtid>/stdout 指向
+	if inst.Opcode == "print" {
+		parts := make([]string, len(inputs))
+		for i, v := range inputs {
+			parts[i] = v.String()
+		}
+		line := strings.Join(parts, " ")
+		logx.Debug("[%s] PRINT %s", vtid, line)
+
+		// 解析 io writer 并写入
+		if err := writeToStdout(ctx, rdb, vtid, line); err != nil {
+			logx.Debug("[%s] PRINT write error: %v", vtid, err)
+		}
+
+		state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
+		return nil
+	}
+
 	if len(inst.Writes) > 0 {
 		outKey := ResolveWriteKey(vtid, inst.Writes[0])
 		if err := rdb.Set(ctx, outKey, result.String(), 0).Err(); err != nil {
@@ -134,7 +153,7 @@ func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst
 		}
 	}
 
-	log.Printf("[%s] NATIVE %s %v = %s", vtid, inst.Opcode, inputs, result.String())
+	logx.Debug("[%s] NATIVE %s %v = %s", vtid, inst.Opcode, inputs, result.String())
 	state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 	return nil
 }
@@ -212,6 +231,10 @@ func evalNative(op string, inputs []nativeValue) (nativeValue, error) {
 		return evalToFloat(inputs)
 	case "bool":
 		return evalToBool(inputs)
+
+	// ── 输出 built-in ──
+	case "print":
+		return evalPrint(inputs)
 
 	default:
 		return nativeValue{}, fmt.Errorf("unknown native op: %s", op)
@@ -485,4 +508,86 @@ func evalToBool(inputs []nativeValue) (nativeValue, error) {
 		return nativeValue{}, err
 	}
 	return nativeValue{kind: "bool", b: inputs[0].asBool()}, nil
+}
+
+// ── 输出 built-in evaluators ──
+
+// evalPrint 打印所有输入的原生值到日志，返回空字符串。
+// print 可以接受任意数量参数（0~N），无返回值。
+func evalPrint(inputs []nativeValue) (nativeValue, error) {
+	if len(inputs) == 0 {
+		return nativeValue{kind: "string", raw: ""}, nil
+	}
+	parts := make([]string, len(inputs))
+	for i, v := range inputs {
+		parts[i] = v.String()
+	}
+	logx.Debug("PRINT %s", strings.Join(parts, " "))
+	return nativeValue{kind: "string", raw: strings.Join(parts, " ")}, nil
+}
+
+// ── io writer: print 输出的目标 ──
+
+// stdoutWriterURI is the default io writer URI for print output.
+// Format: file:///tmp/deepx-stdout/<vtid>.log
+const stdoutWriterBase = "/tmp/deepx-stdout"
+
+// ensureStdoutWriter 确保 vthread 有一个 stdout io writer。
+// 如果 /vthread/<vtid>/stdout 不存在或类型错误，创建默认文件 writer 并写入 key。
+func ensureStdoutWriter(ctx context.Context, rdb *redis.Client, vtid string) (string, error) {
+	stdoutKey := "/vthread/" + vtid + "/stdout"
+
+	// 检查是否已有 io writer
+	uri, err := rdb.Get(ctx, stdoutKey).Result()
+	if err == nil && uri != "" {
+		// 验证 URI 格式
+		if strings.HasPrefix(uri, "file://") || strings.HasPrefix(uri, "tcp://") {
+			return uri, nil
+		}
+		// 不是有效的 io writer URI → 删除重建
+		logx.Warn("[%s] invalid stdout writer URI: %s, recreating", vtid, uri)
+		rdb.Del(ctx, stdoutKey)
+	} else if err != nil && err != redis.Nil {
+		// 类型错误 (如 WRONGTYPE) → 删除重建
+		logx.Warn("[%s] stdout key error: %v, recreating", vtid, err)
+		rdb.Del(ctx, stdoutKey)
+	}
+
+	// 创建默认文件 writer
+	os.MkdirAll(stdoutWriterBase, 0755)
+	filePath := stdoutWriterBase + "/" + vtid + ".log"
+	uri = "file://" + filePath
+
+	// 截断旧文件 (vtid 可能复用，避免多次运行输出累积)
+	os.WriteFile(filePath, nil, 0644)
+
+	// 写入 Redis 引用 (VM 重启后可根据 key 找到文件)
+	rdb.Set(ctx, stdoutKey, uri, 0)
+
+	return uri, nil
+}
+
+// writeToStdout 将一行输出写入 vthread 的 stdout io writer。
+func writeToStdout(ctx context.Context, rdb *redis.Client, vtid string, line string) error {
+	uri, err := ensureStdoutWriter(ctx, rdb, vtid)
+	if err != nil {
+		return fmt.Errorf("ensure stdout writer: %w", err)
+	}
+
+	// 解析 URI，目前仅支持 file://
+	if !strings.HasPrefix(uri, "file://") {
+		return fmt.Errorf("unsupported stdout writer: %s", uri)
+	}
+	filePath := strings.TrimPrefix(uri, "file://")
+
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("open stdout file %s: %w", filePath, err)
+	}
+	defer f.Close()
+
+	if _, err := fmt.Fprintln(f, line); err != nil {
+		return fmt.Errorf("write stdout file %s: %w", filePath, err)
+	}
+	return nil
 }

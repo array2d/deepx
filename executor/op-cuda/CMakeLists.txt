@@ -26,7 +26,7 @@ include_directories(src)
 # include_directories(${cutlass_SOURCE_DIR}/tools/util/include)
 
 
-add_subdirectory(../deepxcore deepxcore)  # 包含公共模块
+add_subdirectory(../deepx-core deepx-core)  # 包含公共模块
 
 # 源文件
 file(GLOB_RECURSE DEEPX_SOURCES "src/deepx/*.cpp" "src/deepx/*.cu" "src/deepx/*.cuh")
@@ -52,8 +52,8 @@ add_library(deepx SHARED
 )
 
 target_link_libraries( deepx
-    PUBLIC 
-    deepxcore
+    PUBLIC
+    deepx_core
     yaml-cpp
     CUDA::cublas
 )

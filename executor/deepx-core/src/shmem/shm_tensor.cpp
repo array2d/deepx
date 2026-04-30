@@ -1,4 +1,4 @@
-#include "deepx/shmem/shm_tensor.h"
+#include "deepx/shm_tensor.h"
 
 #include <sys/mman.h>
 #include <sys/stat.h>

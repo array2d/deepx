@@ -1,6 +1,6 @@
-## op-mem-ompsimd 支持算子列表 
+## exop-cpu 支持算子列表 (原 op-mem-ompsimd)
 
-本页面由 `executor/op-mem-ompsimd 生成，请勿手动修改 
+本页面由 `executor/exop-cpu` 生成，请勿手动修改 
 
 ### matmul
 

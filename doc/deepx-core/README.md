@@ -16,23 +16,23 @@
 
 | 头文件 | 内容 |
 |--------|------|
-| `deepx/dtype/precision.hpp` | Precision 位图枚举：Float64~Float4E2M1, Int64~Int4, Bool, String；precision_bits / from_string / to_string |
-| `deepx/dtype/data_category.hpp` | DataCategory 位图枚举：Var, Vector, Tensor, ListTensor |
-| `deepx/dtype/typespec.hpp` | TypeSpec 联合体：DataCategory + Precision 组合，含 match / autodtype |
+| `deepx/precision.hpp` | Precision 位图枚举：Float64~Float4E2M1, Int64~Int4, Bool, String；precision_bits / from_string / to_string |
+| `deepx/data_category.hpp` | DataCategory 位图枚举：Var, Vector, Tensor, ListTensor |
+| `deepx/typespec.hpp` | TypeSpec 联合体：DataCategory + Precision 组合，含 match / autodtype |
 
 ### tensor — 张量类型
 
 | 头文件 | 内容 |
 |--------|------|
-| `deepx/tensor/shape.hpp` | Shape 结构体：dtype, shape, strides, size, bytes()；含 YAML 序列化 |
-| `deepx/tensor/tensor_base.hpp` | TensorBase：轻量基类，仅持有 Shape |
-| `deepx/tensor/tensor.hpp` | Tensor\<T\> 模板：data 指针 + 内存管理函数（RAII） |
+| `deepx/shape.hpp` | Shape 结构体：dtype, shape, strides, size, bytes()；含 YAML 序列化 |
+| `deepx/tensor_base.hpp` | TensorBase：轻量基类，仅持有 Shape |
+| `deepx/tensor.hpp` | Tensor\<T\> 模板：data 指针 + 内存管理函数（RAII） |
 
 ### shmem — 共享内存
 
 | 头文件 | 内容 |
 |--------|------|
-| `deepx/shmem/shm_tensor.h` | POSIX shm 张量：shm_tensor_create / open / close / unlink |
+| `deepx/shm_tensor.h` | POSIX shm 张量：shm_tensor_create / open / close / unlink |
 
 ### registry — 注册接口
 
@@ -98,12 +98,13 @@ deepx-core 整合了以下三个原有库的平台无关部分：
 | 原库 | 迁移内容 | 保留内容 |
 |------|---------|---------|
 | `dxlang/` | dtype (precision/data_category/typespec), stdutil | 目录保留兼容，标记废弃 |
-| `common-metal/` | shmem (shm_tensor), registry | Metal device 检测 (metal_device) |
-| `old-cppcommon/` | tensor (shape/tensor/tensor_base) | 算子接口 (tensorfunc), TF 框架 (tf), 旧通信 (client) |
+| `common-metal/` | shm_tensor, registry | Metal device 检测 (metal_device) |
+| `old-cppcommon/` | shape, tensor, tensor_base | 算子接口 (tensorfunc), TF 框架 (tf), 旧通信 (client) |
 
 ## 设计原则
 
 1. **平台无关**: 不依赖任何特定操作系统/硬件 API（POSIX shm 除外，为可选项）
 2. **最小依赖**: 仅依赖 STL + yaml-cpp
 3. **静态链接**: `.a` 静态库，避免运行时库查找问题
-4. **头文件与实现分离**: `include/` 为公共 API，`src/` 为编译单元
+4. **扁平头文件**: 所有公共头文件位于 `include/deepx/` 单层目录，无子目录嵌套
+5. **头文件与实现分离**: `include/` 为公共 API，`src/` 为编译单元

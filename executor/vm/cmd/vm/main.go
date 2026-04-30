@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"runtime"
@@ -16,6 +15,8 @@ import (
 	"time"
 
 	"deepx/executor/vm/internal/engine"
+	"deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/internal/logx"
 	"deepx/executor/vm/internal/state"
 	"github.com/redis/go-redis/v9"
 )
@@ -34,7 +35,7 @@ func main() {
 		rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
 		defer rdb.Close()
 		if err := rdb.Ping(ctx).Err(); err != nil {
-			log.Printf("redis connect failed: %v", err)
+			logx.Error("redis connect failed: %v", err)
 			os.Exit(1)
 		}
 		singleRun(ctx, rdb, vtid)
@@ -52,7 +53,7 @@ func main() {
 	}
 
 	workers := runtime.GOMAXPROCS(0)
-	log.Printf("VM-%s starting with %d workers, redis=%s", vmID, workers, redisAddr)
+	logx.Info("VM-%s starting with %d workers, redis=%s", vmID, workers, redisAddr)
 
 	// 连接 Redis (生产级连接池)
 	rdb := redis.NewClient(&redis.Options{
@@ -66,7 +67,7 @@ func main() {
 	defer rdb.Close()
 
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		log.Printf("VM-%s redis connect failed: %v", vmID, err)
+		logx.Error("VM-%s redis connect failed: %v", vmID, err)
 		os.Exit(1)
 	}
 
@@ -78,20 +79,23 @@ func main() {
 	}
 	data, err := json.Marshal(reg)
 	if err != nil {
-		log.Printf("VM-%s register marshal failed: %v", vmID, err)
+		logx.Error("VM-%s register marshal failed: %v", vmID, err)
 		os.Exit(1)
 	}
 	if err := rdb.Set(ctx, "/sys/vm/"+vmID, data, 0).Err(); err != nil {
-		log.Printf("VM-%s register SET failed: %v", vmID, err)
+		logx.Error("VM-%s register SET failed: %v", vmID, err)
 		os.Exit(1)
 	}
-	log.Printf("VM-%s registered at /sys/vm/%s", vmID, vmID)
+	logx.Info("VM-%s registered at /sys/vm/%s", vmID, vmID)
+
+	// 注册 VM 内置算子到 /op/buildin/list
+	registerBuildinOps(ctx, rdb, vmID)
 
 	// 启动 worker pool
 	for i := 0; i < workers; i++ {
 		go engine.RunWorker(ctx, rdb, i)
 	}
-	log.Printf("VM-%s %d workers started", vmID, workers)
+	logx.Info("VM-%s %d workers started", vmID, workers)
 
 	// ── 心跳上报 ──
 	heartbeatKey := fmt.Sprintf("/sys/heartbeat/vm:%s", vmID)
@@ -103,14 +107,14 @@ func main() {
 			select {
 			case <-ctx.Done():
 				updateVMHeartbeat(context.Background(), rdb, heartbeatKey, "stopped")
-				log.Printf("VM-%s final heartbeat: stopped", vmID)
+				logx.Info("VM-%s final heartbeat: stopped", vmID)
 				return
 			case <-ticker.C:
 				updateVMHeartbeat(ctx, rdb, heartbeatKey, "running")
 			}
 		}
 	}()
-	log.Printf("VM-%s heartbeat → %s (every 2s)", vmID, heartbeatKey)
+	logx.Debug("VM-%s heartbeat → %s (every 2s)", vmID, heartbeatKey)
 
 	// ── /func/main 监听 ──
 	// 自动检测 loader 写入的入口点，创建 vthread 并执行。
@@ -127,7 +131,7 @@ func main() {
 			}
 		}
 	}()
-	log.Printf("VM-%s /func/main watcher started (every 1s)", vmID)
+	logx.Debug("VM-%s /func/main watcher started (every 1s)", vmID)
 
 	// ── 系统命令监听 (Redis) ──
 	// VM 同时监听 OS 信号和 Redis 系统命令队列，二者任一触发即优雅退出。
@@ -147,15 +151,15 @@ func main() {
 				Cmd string `json:"cmd"`
 			}
 			if err := json.Unmarshal([]byte(result[1]), &sysCmd); err != nil {
-				log.Printf("VM-%s sys cmd parse error: %v", vmID, err)
+				logx.Warn("VM-%s sys cmd parse error: %v", vmID, err)
 				continue
 			}
 			if sysCmd.Cmd == "shutdown" {
-				log.Printf("VM-%s received sys shutdown via Redis, shutting down...", vmID)
+				logx.Info("VM-%s received sys shutdown via Redis, shutting down...", vmID)
 				cancel()
 				return
 			}
-			log.Printf("VM-%s unknown sys cmd: %s", vmID, sysCmd.Cmd)
+			logx.Warn("VM-%s unknown sys cmd: %s", vmID, sysCmd.Cmd)
 		}
 	}()
 
@@ -165,9 +169,9 @@ func main() {
 
 	select {
 	case sigName := <-sig:
-		log.Printf("VM-%s received %s, shutting down...", vmID, sigName)
+		logx.Info("VM-%s received %s, shutting down...", vmID, sigName)
 	case <-ctx.Done():
-		log.Printf("VM-%s context cancelled, shutting down...", vmID)
+		logx.Info("VM-%s context cancelled, shutting down...", vmID)
 	}
 
 	// 取消 context → 所有 worker 退出
@@ -177,9 +181,9 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer shutdownCancel()
 	if err := rdb.Del(shutdownCtx, "/sys/vm/"+vmID).Err(); err != nil {
-		log.Printf("VM-%s deregister failed: %v", vmID, err)
+		logx.Warn("VM-%s deregister failed: %v", vmID, err)
 	}
-	log.Printf("VM-%s shutdown complete", vmID)
+	logx.Info("VM-%s shutdown complete", vmID)
 }
 
 // updateVMHeartbeat writes a heartbeat to Redis.
@@ -193,15 +197,35 @@ func updateVMHeartbeat(ctx context.Context, rdb *redis.Client, key, status strin
 	rdb.Set(ctx, key, data, 0)
 }
 
+// registerBuildinOps registers all VM built-in operators at /op/buildin/list in Redis.
+// RPUSH's full def signatures (same list format as op-metal) so the dashboard
+// can uniformly LRANGE-read and display all operator backends.
+func registerBuildinOps(ctx context.Context, rdb *redis.Client, vmID string) {
+	const key = "/op/buildin/list"
+	defs := ir.OpDefs()
+
+	// Clear previous registration
+	rdb.Del(ctx, key)
+
+	// RPUSH full def signatures
+	for _, def := range defs {
+		if err := rdb.RPush(ctx, key, def).Err(); err != nil {
+			logx.Error("VM-%s register buildin op failed: %v", vmID, err)
+			return
+		}
+	}
+	logx.Info("VM-%s registered %d built-in ops at %s", vmID, len(defs), key)
+}
+
 // singleRun 执行单个 vthread 后退出 (调试/单步执行用)。
 func singleRun(ctx context.Context, rdb *redis.Client, vtid string) {
 	vs := state.Get(ctx, rdb, vtid)
 	if vs.Status != "init" {
-		log.Printf("vthread %s status=%s (expect init)", vtid, vs.Status)
+		logx.Warn("vthread %s status=%s (expect init)", vtid, vs.Status)
 		os.Exit(1)
 	}
 
-	log.Printf("[single] executing vthread %s", vtid)
+	logx.Info("[single] executing vthread %s", vtid)
 	engine.Execute(ctx, rdb, vtid)
 
 	// 等待异步任务完成
@@ -243,25 +267,25 @@ func watchFuncMain(ctx context.Context, rdb *redis.Client, vmID string) {
 		Status string   `json:"status"`
 	}
 	if err := json.Unmarshal([]byte(val), &entry); err != nil {
-		log.Printf("VM-%s /func/main parse error: %v", vmID, err)
+		logx.Warn("VM-%s /func/main parse error: %v", vmID, err)
 		return
 	}
 
 	switch {
 	case entry.Entry != "":
 		// Phase 1: Loader wrote an entry point → claim and create vthread
-		log.Printf("VM-%s /func/main detected entry=%s (reads=%v writes=%v)", vmID, entry.Entry, entry.Reads, entry.Writes)
+		logx.Info("VM-%s /func/main detected entry=%s (reads=%v writes=%v)", vmID, entry.Entry, entry.Reads, entry.Writes)
 
 		// Claim ownership (atomic DEL)
 		if err := rdb.Del(ctx, key).Err(); err != nil {
-			log.Printf("VM-%s failed to claim /func/main: %v", vmID, err)
+			logx.Error("VM-%s failed to claim /func/main: %v", vmID, err)
 			return
 		}
 
 		// Allocate vtid
 		vtid, err := rdb.Incr(ctx, "/sys/vtid_counter").Result()
 		if err != nil {
-			log.Printf("VM-%s INCR vtid_counter failed: %v", vmID, err)
+			logx.Error("VM-%s INCR vtid_counter failed: %v", vmID, err)
 			return
 		}
 		vtidStr := fmt.Sprintf("%d", vtid)
@@ -279,7 +303,7 @@ func watchFuncMain(ctx context.Context, rdb *redis.Client, vmID string) {
 		// Write return slot (positive index)
 		pipe.Set(ctx, base+"/[0,1]", "./ret", 0)
 		if _, err := pipe.Exec(ctx); err != nil {
-			log.Printf("VM-%s create vthread %d failed: %v", vmID, vtid, err)
+			logx.Error("VM-%s create vthread %d failed: %v", vmID, vtid, err)
 			return
 		}
 
@@ -296,7 +320,7 @@ func watchFuncMain(ctx context.Context, rdb *redis.Client, vmID string) {
 			"vtid":  vtidStr,
 		})
 		rdb.LPush(ctx, "notify:vm", notify)
-		log.Printf("VM-%s /func/main → vthread %d created, workers notified", vmID, vtid)
+		logx.Info("VM-%s /func/main → vthread %d created, workers notified", vmID, vtid)
 
 	case entry.Vtid != "" && entry.Status == "executing":
 		// Phase 2: VThread is executing — check if it completed
@@ -319,7 +343,7 @@ func watchFuncMain(ctx context.Context, rdb *redis.Client, vmID string) {
 				"status": vs.Status,
 			})
 			rdb.Set(ctx, key, statusData, 0)
-			log.Printf("VM-%s /func/main vtid=%s → status=%s", vmID, vtidStr, vs.Status)
+			logx.Debug("VM-%s /func/main vtid=%s → status=%s", vmID, vtidStr, vs.Status)
 		}
 	}
 }

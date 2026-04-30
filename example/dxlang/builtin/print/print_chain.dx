@@ -1,0 +1,11 @@
+def print_chain(A:int, B:int, C:int) -> (D:int) {
+    print(A)
+    A + B -> "./tmp"
+    print("./tmp")
+    print(C)
+    "./tmp" * C -> "./D"
+    print("./D")
+}
+
+# Top-level call: print_chain(2, 3, 4) -> "./out"
+print_chain(2, 3, 4) -> "./out"

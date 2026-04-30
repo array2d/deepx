@@ -27,7 +27,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -38,6 +37,7 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 
 	"deepx/tool/deepxctl/internal/builder"
+	"deepx/tool/deepxctl/internal/logx"
 	"deepx/tool/deepxctl/internal/redis"
 )
 
@@ -62,7 +62,7 @@ func Run(args []string) {
 	}
 
 	if err := run(flags); err != nil {
-		fmt.Fprintf(os.Stderr, "\nERROR: %v\n", err)
+		logx.Error("run failed", "error", err)
 		os.Exit(1)
 	}
 }
@@ -154,7 +154,7 @@ func run(flags RunFlags) error {
 			return fmt.Errorf("service %s not ready — re-run 'deepxctl boot'", name)
 		}
 	}
-	log.Printf("[run] all services verified")
+	logx.Debug("all services verified")
 
 	// ── [2/3] Load dx ──
 	step(2, 3, "Load dx")
@@ -173,7 +173,7 @@ func run(flags RunFlags) error {
 	// ── Manual entry override ──
 	// If --entry is specified, write /func/main directly
 	if flags.Entry != "" {
-		log.Printf("[run] --entry=%s → writing /func/main", flags.Entry)
+		logx.Debug("manual entry override, writing /func/main", "entry", flags.Entry)
 		entryData, _ := json.Marshal(map[string]interface{}{
 			"entry":  flags.Entry,
 			"reads":  []string{},
@@ -214,6 +214,14 @@ func run(flags RunFlags) error {
 	if result.Success {
 		greenCheck()
 		fmt.Printf("  vtid=%s  status=%s  %v\n", result.Vtid, result.Status, result.Duration)
+
+		// 读取 print 输出 (stdout io writer → 文件)
+		stdoutURI, err := rdb.Get(context.Background(), "/vthread/"+result.Vtid+"/stdout").Result()
+		if err == nil && stdoutURI != "" {
+			if stdout := readStdoutFile(stdoutURI); stdout != "" {
+				fmt.Print(stdout)
+			}
+		}
 	} else {
 		errorX("vtid=%s status=%s", result.Vtid, result.Status)
 		if result.ErrCode != "" {
@@ -248,7 +256,7 @@ func normalizePath(path string) (string, error) {
 // loadDx exec's the loader binary to load .dx files into /src/func/.
 // Returns the set of function names loaded, and whether an entry point (/func/main) was created.
 func loadDx(loaderBin, path, redisAddr string) (funcs []string, entryCreated bool, err error) {
-	log.Printf("[loader] loading %s ...", path)
+	logx.Debug("loading dx file", "path", path)
 
 	cmd := exec.Command(loaderBin, path, redisAddr)
 	var stdout, stderr bytes.Buffer
@@ -277,7 +285,7 @@ func loadDx(loaderBin, path, redisAddr string) (funcs []string, entryCreated boo
 		}
 	}
 
-	log.Printf("[loader] loaded %d functions: %v, entryCreated=%v", len(funcs), funcs, entryCreated)
+	logx.Debug("dx file loaded", "funcCount", len(funcs), "funcs", funcs, "entryCreated", entryCreated)
 	return funcs, entryCreated, nil
 }
 
@@ -321,7 +329,7 @@ func pollFuncMain(rdb *goredis.Client, timeout time.Duration) (*funcMainResult, 
 
 		if entry.Vtid != "" {
 			vtid = entry.Vtid
-			log.Printf("[run] VM picked up /func/main, vtid=%s", vtid)
+			logx.Debug("VM picked up /func/main", "vtid", vtid)
 			break
 		}
 
@@ -387,7 +395,7 @@ func parseVtid(s string) int64 {
 // autoBoot bootstraps the deepx runtime (services + Redis) inline.
 // It reuses the boot logic from boot.go, skipping rebuilds when binaries already exist.
 func autoBoot(redisAddr string) error {
-	log.Printf("[run] auto-booting services (redis=%s)", redisAddr)
+	logx.Debug("auto-booting services", "redis", redisAddr)
 	return boot(BootFlags{
 		RedisAddr:  redisAddr,
 		ForceBuild: false,
@@ -395,3 +403,18 @@ func autoBoot(redisAddr string) error {
 		Verbose:    false,
 	})
 }
+
+// readStdoutFile reads print output from an io writer URI.
+// Currently supports file:// URIs pointing to local filesystem.
+func readStdoutFile(uri string) string {
+	if !strings.HasPrefix(uri, "file://") {
+		return ""
+	}
+	filePath := strings.TrimPrefix(uri, "file://")
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+

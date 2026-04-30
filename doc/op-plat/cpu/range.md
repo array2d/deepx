@@ -1,6 +1,6 @@
 ## executor
 
-### op-mem-ompsimd
+### exop-cpu (原 op-mem-ompsimd)
 
 #### cpu的range算子辅助函数
 

@@ -11,7 +11,14 @@ set(CMAKE_BUILD_TYPE Debug)
  
 # 包含头文件目录
 include_directories(src)
- 
+
+# hiredis (Redis C client)
+include_directories(/opt/homebrew/opt/hiredis/include)
+link_directories(/opt/homebrew/opt/hiredis/lib)
+
+# nlohmann/json (header-only JSON parser)
+include_directories(/opt/homebrew/opt/nlohmann-json/include)
+
 add_subdirectory(../deepx-core deepx-core)
 
 # 源文件
@@ -64,6 +71,7 @@ add_executable(${PROJECT_NAME} ${CLIENT_SOURCES})
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     deepx_cpu
+    hiredis
 )
 # 测试
 add_subdirectory(test/tensorfunc)

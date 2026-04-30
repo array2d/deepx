@@ -7,7 +7,7 @@ package translate
 import (
 	"context"
 	"fmt"
-	"log"
+		"deepx/executor/vm/internal/logx"
 	"sort"
 	"strconv"
 	"strings"
@@ -32,7 +32,7 @@ func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 		sig, err = rdb.Get(ctx, "/src/func/"+funcName).Result()
 		if err != nil {
 			msg := fmt.Sprintf("func %s not found in /op/%s/func/ or /src/func/", funcName, backend)
-			log.Printf("[%s] CALL error: %s", vtid, msg)
+			logx.Warn("[%s] CALL error: %s", vtid, msg)
 			state.SetError(ctx, rdb, vtid, pc, msg)
 			return pc
 		}
@@ -69,7 +69,7 @@ func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 		parsed, err := ir.ParseDxlang(dxlangLine)
 		if err != nil {
 			msg := fmt.Sprintf("parse error at body[%d]: %v", i, err)
-			log.Printf("[%s] CALL translate error: %s", vtid, msg)
+			logx.Warn("[%s] CALL translate error: %s", vtid, msg)
 			state.SetError(ctx, rdb, vtid, pc, msg)
 			return pc
 		}
@@ -86,9 +86,9 @@ func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 		}
 	}
 
-	// 7. 追加隐式 return 指令 (将最后一个输出形参的值回传父栈)
+	// 7. 追加隐式 return 指令 (确保子栈正常退出并回传父栈)
+	retIdx := bodyCount
 	if len(formalParams.Writes) > 0 {
-		retIdx := bodyCount
 		retSlot := formalParams.Writes[0] // e.g., "C"
 		retRef := retSlot
 		// 绝对路径直接使用, 形参名称加 ./前缀 (相对 vthread 空间)
@@ -97,12 +97,15 @@ func HandleCall(ctx context.Context, rdb *redis.Client, vtid string, pc string, 
 		}
 		pipe.Set(ctx, fmt.Sprintf("%s[%d,0]", substackRoot, retIdx), "return", 0)
 		pipe.Set(ctx, fmt.Sprintf("%s[%d,-1]", substackRoot, retIdx), retRef, 0)
+	} else {
+		// 无输出形参 (void 函数): 仅 emit return 无 reads, 保证子栈正常退出
+		pipe.Set(ctx, fmt.Sprintf("%s[%d,0]", substackRoot, retIdx), "return", 0)
 	}
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {
 		msg := fmt.Sprintf("CALL translate pipeline failed: %v", err)
-		log.Printf("[%s] CALL error: %s", vtid, msg)
+		logx.Warn("[%s] CALL error: %s", vtid, msg)
 		state.SetError(ctx, rdb, vtid, pc, msg)
 		return pc
 	}
@@ -146,10 +149,10 @@ func HandleReturn(ctx context.Context, rdb *redis.Client, vtid string, pc string
 	// 2. 删除当前子栈
 	keys, err := rdb.Keys(ctx, "/vthread/"+vtid+"/"+parentPC+"/*").Result()
 	if err != nil {
-		log.Printf("[%s] RETURN KEYS error: %v", vtid, err)
+		logx.Warn("[%s] RETURN KEYS error: %v", vtid, err)
 	} else if len(keys) > 0 {
 		if err := rdb.Del(ctx, keys...).Err(); err != nil {
-			log.Printf("[%s] RETURN DEL error: %v", vtid, err)
+			logx.Warn("[%s] RETURN DEL error: %v", vtid, err)
 		}
 	}
 
@@ -231,7 +234,7 @@ func extractParamNames(s string) []string {
 func mgetAll(ctx context.Context, rdb *redis.Client, base string) []string {
 	keys, err := rdb.Keys(ctx, base+"/*").Result()
 	if err != nil {
-		log.Printf("mgetAll KEYS error for %s: %v", base, err)
+		logx.Warn("mgetAll KEYS error for %s: %v", base, err)
 		return nil
 	}
 	if len(keys) == 0 {
@@ -251,7 +254,7 @@ func mgetAll(ctx context.Context, rdb *redis.Client, base string) []string {
 		suffix := k[len(basePrefix):]
 		n, err := strconv.Atoi(suffix)
 		if err != nil {
-			log.Printf("mgetAll skip non-numeric key: %s", k)
+			logx.Warn("mgetAll skip non-numeric key: %s", k)
 			continue
 		}
 		sorted = append(sorted, indexedKey{key: k, index: n})
@@ -269,7 +272,7 @@ func mgetAll(ctx context.Context, rdb *redis.Client, base string) []string {
 
 	vals, err := rdb.MGet(ctx, orderedKeys...).Result()
 	if err != nil {
-		log.Printf("mgetAll MGET error for %s: %v", base, err)
+		logx.Warn("mgetAll MGET error for %s: %v", base, err)
 		return nil
 	}
 

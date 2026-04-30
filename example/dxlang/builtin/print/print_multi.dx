@@ -1,0 +1,12 @@
+def print_multi(A:int, B:int, C:int) -> (R:int) {
+    print(A)
+    print(B)
+    print(C)
+    A + B -> "./t"
+    print("./t")
+    "./t" + C -> "./R"
+    print("./R")
+}
+
+# Top-level call: print_multi(1, 2, 3) -> "./out"
+print_multi(1, 2, 3) -> "./out"

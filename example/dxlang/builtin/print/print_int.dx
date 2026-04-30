@@ -1,0 +1,8 @@
+def print_int(X:int) -> (R:int) {
+    print(X)
+    X + 0 -> "./R"
+    print("./R")
+}
+
+# Top-level call: print_int(42) -> "./out"
+print_int(42) -> "./out"

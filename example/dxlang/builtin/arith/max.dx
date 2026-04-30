@@ -1,0 +1,9 @@
+def native_max(A:int, B:int) -> (C:int) {
+    print(A)
+    print(B)
+    max(A, B) -> "./C"
+    print("./C")
+}
+
+# Top-level call: native_max(7, 3) -> "./out"
+native_max(7, 3) -> "./out"

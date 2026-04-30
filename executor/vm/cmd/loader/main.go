@@ -20,11 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"deepx/executor/vm/internal/logx"
 	"deepx/executor/vm/testutil"
 	"github.com/redis/go-redis/v9"
 )
@@ -50,19 +50,19 @@ func main() {
 
 	files, err := collectDxFiles(path)
 	if err != nil {
-		log.Fatalf("collect .dx files: %v", err)
+		logx.Fatal("collect .dx files: %v", err)
 	}
 	if len(files) == 0 {
-		log.Fatalf("no .dx files found in: %s", path)
+		logx.Fatal("no .dx files found in: %s", path)
 	}
 
-	log.Printf("found %d .dx file(s)", len(files))
+	logx.Info("found %d .dx file(s)", len(files))
 	loaded := 0
 	entryCreated := false
 	for _, f := range files {
 		df, err := testutil.ParseDxFile(f)
 		if err != nil {
-			log.Printf("SKIP %s: %v", f, err)
+			logx.Warn("SKIP %s: %v", f, err)
 			continue
 		}
 
@@ -70,11 +70,11 @@ func main() {
 		for i := range df.Funcs {
 			fn := &df.Funcs[i]
 			if err := fn.RegisterFunc(ctx, rdb); err != nil {
-				log.Printf("FAIL %s: %v", f, err)
+				logx.Error("FAIL %s: %v", f, err)
 				continue
 			}
 			loaded++
-			log.Printf("OK   %-50s → /src/func/%-30s (%d body lines)", f, fn.Name, len(fn.Body))
+			logx.Info("OK   %-50s → /src/func/%-30s (%d body lines)", f, fn.Name, len(fn.Body))
 		}
 
 		// If file has top-level calls, write /func/main to trigger VM execution
@@ -86,16 +86,16 @@ func main() {
 				"writes":  tc.Outputs,
 			})
 			if err := rdb.Set(ctx, "/func/main", entryData, 0).Err(); err != nil {
-				log.Printf("FAIL %s: write /func/main: %v", f, err)
+				logx.Error("FAIL %s: write /func/main: %v", f, err)
 				continue
 			}
 			entryCreated = true
-			log.Printf("ENTRY /func/main → %s (reads=%v writes=%v)", tc.FuncName, tc.Args, tc.Outputs)
+			logx.Info("ENTRY /func/main → %s (reads=%v writes=%v)", tc.FuncName, tc.Args, tc.Outputs)
 		}
 	}
-	log.Printf("loaded %d/%d functions into Redis", loaded, len(files))
+	logx.Info("loaded %d/%d functions into Redis", loaded, len(files))
 	if entryCreated {
-		log.Printf("ENTRY /func/main set — VM will auto-execute")
+		logx.Info("ENTRY /func/main set — VM will auto-execute")
 	}
 }
 
@@ -118,9 +118,9 @@ func connectRedis(addr string) (*redis.Client, context.Context) {
 	ctx := context.Background()
 	rdb := redis.NewClient(&redis.Options{Addr: addr, PoolSize: 4, MinIdleConns: 1})
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		log.Fatalf("Redis connect failed [%s]: %v", addr, err)
+		logx.Fatal("Redis connect failed [%s]: %v", addr, err)
 	}
-	log.Printf("connected to Redis %s", addr)
+	logx.Info("connected to Redis %s", addr)
 	return rdb, ctx
 }
 

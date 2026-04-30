@@ -4,7 +4,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "deepx/tensor/shape.hpp"
+#include "deepx/shape.hpp"
 namespace deepx
 {
     Shape::Shape(const int *shape, int dim)

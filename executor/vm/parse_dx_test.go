@@ -145,19 +145,19 @@ func TestParse_NativeArith(t *testing.T) {
 		file string
 		op   string
 	}{
-		{"add", "../../example/dxlang/builtin/native/arith/add.dx", "+"},
-		{"sub", "../../example/dxlang/builtin/native/arith/sub.dx", "-"},
-		{"mul", "../../example/dxlang/builtin/native/arith/mul.dx", "*"},
-		{"div", "../../example/dxlang/builtin/native/arith/div.dx", "/"},
-		{"neg", "../../example/dxlang/builtin/native/arith/neg.dx", "neg"},
-		{"abs", "../../example/dxlang/builtin/native/arith/abs.dx", "abs"},
-		{"sign", "../../example/dxlang/builtin/native/arith/sign.dx", "sign"},
-		{"pow", "../../example/dxlang/builtin/native/arith/pow.dx", "pow"},
-		{"exp", "../../example/dxlang/builtin/native/arith/exp.dx", "exp"},
-		{"log", "../../example/dxlang/builtin/native/arith/log.dx", "log"},
-		{"sqrt", "../../example/dxlang/builtin/native/arith/sqrt.dx", "sqrt"},
-		{"max", "../../example/dxlang/builtin/native/arith/max.dx", "max"},
-		{"min", "../../example/dxlang/builtin/native/arith/min.dx", "min"},
+		{"add", "../../example/dxlang/builtin/arith/add.dx", "+"},
+		{"sub", "../../example/dxlang/builtin/arith/sub.dx", "-"},
+		{"mul", "../../example/dxlang/builtin/arith/mul.dx", "*"},
+		{"div", "../../example/dxlang/builtin/arith/div.dx", "/"},
+		{"neg", "../../example/dxlang/builtin/arith/neg.dx", "neg"},
+		{"abs", "../../example/dxlang/builtin/arith/abs.dx", "abs"},
+		{"sign", "../../example/dxlang/builtin/arith/sign.dx", "sign"},
+		{"pow", "../../example/dxlang/builtin/arith/pow.dx", "pow"},
+		{"exp", "../../example/dxlang/builtin/arith/exp.dx", "exp"},
+		{"log", "../../example/dxlang/builtin/arith/log.dx", "log"},
+		{"sqrt", "../../example/dxlang/builtin/arith/sqrt.dx", "sqrt"},
+		{"max", "../../example/dxlang/builtin/arith/max.dx", "max"},
+		{"min", "../../example/dxlang/builtin/arith/min.dx", "min"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -168,12 +168,23 @@ func TestParse_NativeArith(t *testing.T) {
 			if len(fn.Body) == 0 {
 				t.Fatal("empty body")
 			}
-			inst, err := ir.ParseDxlang(fn.Body[0])
+			// 每个 buildin 示例现在都以 print 语句开头和结尾
+			// 首行应为 print (输入打印)
+			firstInst, err := ir.ParseDxlang(fn.Body[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+			if firstInst.Opcode != "print" {
+				t.Errorf("[%s] first opcode=%s, want print", tt.name, firstInst.Opcode)
+			}
+			// 核心计算在倒数第二行 (最后一行是 print("./C"))
+			computeLine := fn.Body[len(fn.Body)-2]
+			inst, err := ir.ParseDxlang(computeLine)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if inst.Opcode != tt.op {
-				t.Errorf("opcode=%s, want %s", inst.Opcode, tt.op)
+				t.Errorf("[%s] opcode=%s, want %s", tt.name, inst.Opcode, tt.op)
 			}
 		})
 	}
@@ -184,49 +195,71 @@ func TestParse_NativeArith(t *testing.T) {
 func TestParse_NativeOther(t *testing.T) {
 	t.Run("compare", func(t *testing.T) {
 		t.Run("eq", func(t *testing.T) {
-			checkDx(t, "../../example/dxlang/builtin/native/compare/eq.dx", []wantInst{
+			checkDx(t, "../../example/dxlang/builtin/compare/eq.dx", []wantInst{
+				{op: "print", reads: []string{"A"}, writes: nil},
+				{op: "print", reads: []string{"B"}, writes: nil},
 				{op: "==", reads: []string{"A", "B"}, writes: []string{"./C"}},
+				{op: "print", reads: []string{"./C"}, writes: nil},
 			})
 		})
 		t.Run("lt", func(t *testing.T) {
-			checkDx(t, "../../example/dxlang/builtin/native/compare/lt.dx", []wantInst{
+			checkDx(t, "../../example/dxlang/builtin/compare/lt.dx", []wantInst{
+				{op: "print", reads: []string{"A"}, writes: nil},
+				{op: "print", reads: []string{"B"}, writes: nil},
 				{op: "<", reads: []string{"A", "B"}, writes: []string{"./C"}},
+				{op: "print", reads: []string{"./C"}, writes: nil},
 			})
 		})
 	})
 	t.Run("logic", func(t *testing.T) {
 		t.Run("and", func(t *testing.T) {
-			checkDx(t, "../../example/dxlang/builtin/native/logic/and.dx", []wantInst{
+			checkDx(t, "../../example/dxlang/builtin/logic/and.dx", []wantInst{
+				{op: "print", reads: []string{"A"}, writes: nil},
+				{op: "print", reads: []string{"B"}, writes: nil},
 				{op: "&&", reads: []string{"A", "B"}, writes: []string{"./C"}},
+				{op: "print", reads: []string{"./C"}, writes: nil},
 			})
 		})
 		t.Run("not", func(t *testing.T) {
-			checkDx(t, "../../example/dxlang/builtin/native/logic/not.dx", []wantInst{
+			checkDx(t, "../../example/dxlang/builtin/logic/not.dx", []wantInst{
+				{op: "print", reads: []string{"A"}, writes: nil},
 				{op: "!", reads: []string{"A"}, writes: []string{"./C"}},
+				{op: "print", reads: []string{"./C"}, writes: nil},
 			})
 		})
 		t.Run("bool", func(t *testing.T) {
-			checkDx(t, "../../example/dxlang/builtin/native/logic/bool.dx", []wantInst{
+			checkDx(t, "../../example/dxlang/builtin/logic/bool.dx", []wantInst{
+				{op: "print", reads: []string{"A"}, writes: nil},
 				{op: "bool", reads: []string{"A"}, writes: []string{"./C"}},
+				{op: "print", reads: []string{"./C"}, writes: nil},
 			})
 		})
 	})
 	t.Run("cast", func(t *testing.T) {
 		t.Run("int", func(t *testing.T) {
-			checkDx(t, "../../example/dxlang/builtin/native/cast/int.dx", []wantInst{
+			checkDx(t, "../../example/dxlang/builtin/cast/int.dx", []wantInst{
+				{op: "print", reads: []string{"A"}, writes: nil},
 				{op: "int", reads: []string{"A"}, writes: []string{"./C"}},
+				{op: "print", reads: []string{"./C"}, writes: nil},
 			})
 		})
 		t.Run("float", func(t *testing.T) {
-			checkDx(t, "../../example/dxlang/builtin/native/cast/float.dx", []wantInst{
+			checkDx(t, "../../example/dxlang/builtin/cast/float.dx", []wantInst{
+				{op: "print", reads: []string{"A"}, writes: nil},
 				{op: "float", reads: []string{"A"}, writes: []string{"./C"}},
+				{op: "print", reads: []string{"./C"}, writes: nil},
 			})
 		})
 	})
 	t.Run("chain", func(t *testing.T) {
-		checkDx(t, "../../example/dxlang/builtin/native/chain/chain.dx", []wantInst{
+		checkDx(t, "../../example/dxlang/builtin/chain/chain.dx", []wantInst{
+			{op: "print", reads: []string{"A"}, writes: nil},
+			{op: "print", reads: []string{"B"}, writes: nil},
+			{op: "print", reads: []string{"C"}, writes: nil},
 			{op: "+", reads: []string{"A", "B"}, writes: []string{"./tmp"}},
+			{op: "print", reads: []string{"./tmp"}, writes: nil},
 			{op: "*", reads: []string{"./tmp", "C"}, writes: []string{"./D"}},
+			{op: "print", reads: []string{"./D"}, writes: nil},
 		})
 	})
 }
@@ -235,30 +268,48 @@ func TestParse_NativeOther(t *testing.T) {
 
 func TestParse_NewExamples(t *testing.T) {
 	t.Run("double_op", func(t *testing.T) {
-		checkDx(t, "../../example/dxlang/builtin/native/arith/double_op.dx", []wantInst{
+		checkDx(t, "../../example/dxlang/builtin/arith/double_op.dx", []wantInst{
+			{op: "print", reads: []string{"A"}, writes: nil},
+			{op: "print", reads: []string{"B"}, writes: nil},
 			{op: "+", reads: []string{"A", "B"}, writes: []string{"./S"}},
+			{op: "print", reads: []string{"./S"}, writes: nil},
 			{op: "-", reads: []string{"A", "B"}, writes: []string{"./D"}},
+			{op: "print", reads: []string{"./D"}, writes: nil},
 		})
 	})
 	t.Run("double_op_cstyle", func(t *testing.T) {
-		checkDx(t, "../../example/dxlang/builtin/native/arith/double_op_cstyle.dx", []wantInst{
+		checkDx(t, "../../example/dxlang/builtin/arith/double_op_cstyle.dx", []wantInst{
+			{op: "print", reads: []string{"A"}, writes: nil},
+			{op: "print", reads: []string{"B"}, writes: nil},
 			{op: "+", reads: []string{"A", "B"}, writes: []string{"./S"}},
+			{op: "print", reads: []string{"./S"}, writes: nil},
 			{op: "-", reads: []string{"A", "B"}, writes: []string{"./D"}},
+			{op: "print", reads: []string{"./D"}, writes: nil},
 		})
 	})
 	t.Run("three_add", func(t *testing.T) {
-		checkDx(t, "../../example/dxlang/builtin/native/arith/three_add.dx", []wantInst{
+		checkDx(t, "../../example/dxlang/builtin/arith/three_add.dx", []wantInst{
+			{op: "print", reads: []string{"A"}, writes: nil},
+			{op: "print", reads: []string{"B"}, writes: nil},
 			{op: "+", reads: []string{"A", "B"}, writes: []string{"./t"}},
+			{op: "print", reads: []string{"./t"}, writes: nil},
+			{op: "print", reads: []string{"C"}, writes: nil},
 			{op: "+", reads: []string{"./t", "C"}, writes: []string{"./R"}},
+			{op: "print", reads: []string{"./R"}, writes: nil},
 		})
 	})
 	t.Run("poly3", func(t *testing.T) {
-		checkDx(t, "../../example/dxlang/builtin/native/arith/poly3.dx", []wantInst{
+		checkDx(t, "../../example/dxlang/builtin/arith/poly3.dx", []wantInst{
 			{op: "*", reads: []string{"A", "X"}, writes: []string{"./t1"}},
+			{op: "print", reads: []string{"./t1"}, writes: nil},
 			{op: "*", reads: []string{"./t1", "X"}, writes: []string{"./t2"}},
+			{op: "print", reads: []string{"./t2"}, writes: nil},
 			{op: "*", reads: []string{"B", "X"}, writes: []string{"./t3"}},
+			{op: "print", reads: []string{"./t3"}, writes: nil},
 			{op: "+", reads: []string{"./t2", "./t3"}, writes: []string{"./t4"}},
+			{op: "print", reads: []string{"./t4"}, writes: nil},
 			{op: "+", reads: []string{"./t4", "C"}, writes: []string{"./Y"}},
+			{op: "print", reads: []string{"./Y"}, writes: nil},
 		})
 	})
 	t.Run("multi_io", func(t *testing.T) {
@@ -298,6 +349,45 @@ func TestParse_NewExamples(t *testing.T) {
 			{op: "add", reads: []string{"/data/a", "/data/b"}, writes: []string{"./c"}},
 			{op: "deltensor", reads: []string{"/data/a"}, writes: nil},
 			{op: "deltensor", reads: []string{"/data/b"}, writes: nil},
+		})
+	})
+}
+
+// ── Native: Print ────────────────────────────────────────────
+
+func TestParse_Print(t *testing.T) {
+	t.Run("print_int", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/print/print_int.dx", []wantInst{
+			{op: "print", reads: []string{"X"}, writes: nil},
+			{op: "+", reads: []string{"X", "0"}, writes: []string{"./R"}},
+			{op: "print", reads: []string{"./R"}, writes: nil},
+		})
+	})
+	t.Run("print_multi", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/print/print_multi.dx", []wantInst{
+			{op: "print", reads: []string{"A"}, writes: nil},
+			{op: "print", reads: []string{"B"}, writes: nil},
+			{op: "print", reads: []string{"C"}, writes: nil},
+			{op: "+", reads: []string{"A", "B"}, writes: []string{"./t"}},
+			{op: "print", reads: []string{"./t"}, writes: nil},
+			{op: "+", reads: []string{"./t", "C"}, writes: []string{"./R"}},
+			{op: "print", reads: []string{"./R"}, writes: nil},
+		})
+	})
+	t.Run("print_bool", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/print/print_bool.dx", []wantInst{
+			{op: "bool", reads: []string{"A"}, writes: []string{"./C"}},
+			{op: "print", reads: []string{"./C"}, writes: nil},
+		})
+	})
+	t.Run("print_chain", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/print/print_chain.dx", []wantInst{
+			{op: "print", reads: []string{"A"}, writes: nil},
+			{op: "+", reads: []string{"A", "B"}, writes: []string{"./tmp"}},
+			{op: "print", reads: []string{"./tmp"}, writes: nil},
+			{op: "print", reads: []string{"C"}, writes: nil},
+			{op: "*", reads: []string{"./tmp", "C"}, writes: []string{"./D"}},
+			{op: "print", reads: []string{"./D"}, writes: nil},
 		})
 	})
 }
