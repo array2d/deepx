@@ -263,6 +263,7 @@ func watchFuncMain(ctx context.Context, rdb *redis.Client, vmID string) {
 		Entry  string   `json:"entry"`
 		Reads  []string `json:"reads"`
 		Writes []string `json:"writes"`
+		Term   string   `json:"term,omitempty"`
 		Vtid   string   `json:"vtid"`
 		Status string   `json:"status"`
 	}
@@ -302,6 +303,10 @@ func watchFuncMain(ctx context.Context, rdb *redis.Client, vmID string) {
 		}
 		// Write return slot (positive index)
 		pipe.Set(ctx, base+"/[0,1]", "./ret", 0)
+		// Set term key if provided (deepxctl/dashboard)
+		if entry.Term != "" {
+			pipe.Set(ctx, base+"/term", entry.Term, 0)
+		}
 		if _, err := pipe.Exec(ctx); err != nil {
 			logx.Error("VM-%s create vthread %d failed: %v", vmID, vtid, err)
 			return
