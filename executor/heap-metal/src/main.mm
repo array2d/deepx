@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 #include <string>
 #include <sstream>
 #include <thread>
@@ -51,8 +52,16 @@ static bool redis_set(redisContext *c, const std::string &key, const std::string
 }
 
 static void register_instance(redisContext *c) {
+    // 构造 instance name: heap-metal-{hostname}-{pid}
+    char hostname[256] = {0};
+    if (gethostname(hostname, sizeof(hostname)) != 0) {
+        snprintf(hostname, sizeof(hostname), "unknown");
+    }
+    char *dot = strchr(hostname, '.');
+    if (dot) *dot = '\0';
+
     json reg;
-    reg["program"] = "heap-metal";
+    reg["program"] = std::string("heap-metal-") + hostname + "-" + std::to_string(getpid());
     reg["device"] = "gpu0";
     reg["status"] = "running";
     reg["pid"] = getpid();

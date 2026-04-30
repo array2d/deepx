@@ -12,8 +12,6 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <libgen.h>
-
 #include <hiredis/hiredis.h>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -31,19 +29,10 @@ static const char *OP_LIST_KEY    = "/op/exop-metal/list";
 static const int   BLOCK_TIMEOUT_SEC = 5;
 static const int   HEARTBEAT_INTERVAL_SEC = 2;
 
-// 动态 instance name: 可执行文件名-{hostname}-{pid}
+// 动态 instance name: exop-metal-{hostname}-{pid}
 static std::string g_instance_name;
 
-static void build_instance_name(const char *argv0) {
-    // 提取可执行文件名
-    std::string exe_name;
-    if (argv0 && argv0[0]) {
-        char *tmp = strdup(argv0);
-        exe_name = basename(tmp);
-        free(tmp);
-    }
-    if (exe_name.empty()) exe_name = "deepx-exop-metal";
-
+static void build_instance_name() {
     // 获取 hostname
     char hostname[256] = {0};
     if (gethostname(hostname, sizeof(hostname)) != 0) {
@@ -53,8 +42,8 @@ static void build_instance_name(const char *argv0) {
     char *dot = strchr(hostname, '.');
     if (dot) *dot = '\0';
 
-    // 构造 instance name: 可执行文件名-{hostname}-{pid}
-    g_instance_name = exe_name + "-" + hostname + "-" + std::to_string(getpid());
+    // 构造 instance name: exop-metal-{hostname}-{pid}
+    g_instance_name = "exop-metal-" + std::string(hostname) + "-" + std::to_string(getpid());
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -736,8 +725,8 @@ int main(int argc, char **argv) {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
-    // 构造动态 instance name: 可执行文件名-{hostname}-{pid}
-    build_instance_name(argv[0]);
+    // 构造动态 instance name: exop-metal-{hostname}-{pid}
+    build_instance_name();
 
     // 验证 Metal 可用 (使用 C++ wrapper)
     {
