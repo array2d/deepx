@@ -6,7 +6,7 @@
 #   make build-all       构建全部项目
 #   make build-vm        构建 VM + loader (Go)
 #   make build-deepxctl  构建 deepxctl CLI (Go)
-#   make build-op-metal  构建 Metal 计算平面 (C++/Metal)
+#   make build-exop-metal  构建 Metal 计算平面 (C++/Metal)
 #   make build-heap-metal 构建 Metal 堆管理平面 (C++/ObjC++)
 #   make build-io-metal   构建 I/O 平面 (C++)
 #   make test-vm         运行 VM 单元测试
@@ -18,7 +18,7 @@
 VM_DIR          := executor/vm
 DEEPXCTL_DIR    := tool/deepxctl
 DASHBOARD_DIR   := tool/dashboard
-OP_METAL_DIR    := executor/op-metal
+EXOP_METAL_DIR  := executor/exop-metal
 HEAP_METAL_DIR  := executor/heap-metal
 IO_METAL_DIR    := executor/io-metal
 EXOP_CPU_DIR    := executor/exop-cpu
@@ -33,7 +33,7 @@ export PATH      := $(GOROOT)/bin:$(GOPATH)/bin:$(PATH)
 
 # ── 输出目录 ──
 VM_OUT          := /tmp/deepx-vm
-OP_METAL_OUT    := /tmp/deepx/op-metal/build
+EXOP_METAL_OUT  := /tmp/deepx/exop-metal/build
 HEAP_METAL_OUT  := /tmp/deepx/heap-metal/build
 IO_METAL_OUT    := /tmp/deepx/io-metal/build
 EXOP_CPU_OUT    := /tmp/deepx/exop-cpu/build
@@ -45,7 +45,7 @@ REDIS_ADDR      ?= 127.0.0.1:16379
 
 .PHONY: help \
         build-all build-vm build-deepxctl build-dashboard \
-        build-op-metal build-heap-metal build-io-metal \
+        build-exop-metal build-heap-metal build-io-metal \
         build-exop-cpu build-heap-cpu \
         test-vm test-integration \
         start-services stop-services status \
@@ -63,7 +63,7 @@ help:
 	@echo "  make build-all          Build all projects"
 	@echo "  make build-vm           Build VM + loader (Go)          → $(VM_OUT)/vm, $(VM_OUT)/loader"
 	@echo "  make build-deepxctl     Build deepxctl (Go)             → $(DEEPXCTL_DIR)/deepxctl"
-	@echo "  make build-op-metal     Build Metal compute plane (C++) → $(OP_METAL_OUT)/deepx-op-metal"
+	@echo "  make build-exop-metal     Build Metal compute plane (C++) → $(EXOP_METAL_OUT)/deepx-exop-metal"
 	@echo "  make build-heap-metal   Build Metal heap plane (C++)    → $(HEAP_METAL_OUT)/deepx-heap-metal"
 	@echo "  make build-io-metal     Build I/O plane (C++)           → $(IO_METAL_OUT)/deepx-io-metal"
 	@echo ""
@@ -94,7 +94,7 @@ help:
 build-all:
 	@echo "=== build-all ==="
 	@pass=0; fail=0; \
-	targets="build-vm build-deepxctl build-dashboard build-op-metal build-heap-metal build-io-metal build-exop-cpu build-heap-cpu"; \
+	targets="build-vm build-deepxctl build-dashboard build-exop-metal build-heap-metal build-io-metal build-exop-cpu build-heap-cpu"; \
 	for t in $$targets; do \
 		if $(MAKE) --no-print-directory $$t; then \
 			pass=$$((pass+1)); \
@@ -138,28 +138,33 @@ build-dashboard:
 	@echo "  → $(DASHBOARD_DIR)/dashboard"
 
 # ═══════════════════════════════════════════════════════════════
-# Build — C++ Projects (delegate to executor/Makefile)
+# Build — C++ Projects
 # ═══════════════════════════════════════════════════════════════
 
-build-op-metal:
-	@echo "=== Building op-metal ==="
-	cd executor && $(MAKE) build-op
+build-exop-metal:
+	@echo "=== Building exop-metal ==="
+	bash $(EXOP_METAL_DIR)/build.sh
+	@echo "  → $(EXOP_METAL_OUT)/deepx-exop-metal"
 
 build-heap-metal:
 	@echo "=== Building heap-metal ==="
-	cd executor && $(MAKE) build-heap
+	bash $(HEAP_METAL_DIR)/build.sh
+	@echo "  → $(HEAP_METAL_OUT)/deepx-heap-metal"
 
 build-io-metal:
 	@echo "=== Building io-metal ==="
-	cd executor && $(MAKE) build-io
+	bash $(IO_METAL_DIR)/build.sh
+	@echo "  → $(IO_METAL_OUT)/deepx-io-metal"
 
 build-exop-cpu:
 	@echo "=== Building exop-cpu ==="
-	cd executor && $(MAKE) build-exop-cpu
+	bash $(EXOP_CPU_DIR)/build.sh 2>/dev/null || (mkdir -p $(EXOP_CPU_OUT) && cd $(EXOP_CPU_OUT) && cmake ../../exop-cpu && cmake --build . -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4))
+	@echo "  → $(EXOP_CPU_OUT)/deepx-exop-cpu"
 
 build-heap-cpu:
 	@echo "=== Building heap-cpu ==="
-	cd executor && $(MAKE) build-heap-cpu
+	bash $(HEAP_CPU_DIR)/build.sh
+	@echo "  → $(HEAP_CPU_OUT)/deepx-heap-cpu"
 
 # ═══════════════════════════════════════════════════════════════
 # Test
@@ -169,39 +174,45 @@ test-vm:
 	cd $(VM_DIR) && go test ./... -count=1 -run "^Test[^I]" -v
 
 test-integration:
-	cd executor && $(MAKE) test-integration REDIS_ADDR=$(REDIS_ADDR)
+	cd $(VM_DIR) && REDIS_ADDR=$(REDIS_ADDR) go test -tags=integration -count=1 -v -run 'TestIntegration' ./...
 
 # ═══════════════════════════════════════════════════════════════
-# Services & Pipeline (delegate to executor/Makefile)
+# Services (daemon)
 # ═══════════════════════════════════════════════════════════════
 
 start-services:
-	cd executor && $(MAKE) start-services REDIS_ADDR=$(REDIS_ADDR)
+	@echo "Starting services with deepxctl boot..."
+	cd $(DEEPXCTL_DIR) && go run . boot -r $(REDIS_ADDR)
 
 stop-services:
-	cd executor && $(MAKE) stop-services
+	@echo "Stopping services with deepxctl shutdown..."
+	cd $(DEEPXCTL_DIR) && go run . shutdown
 
 status:
-	cd executor && $(MAKE) status REDIS_ADDR=$(REDIS_ADDR)
+	@echo "=== deepx Status ==="
+	@echo "Redis: $(REDIS_ADDR)"
+	@redis-cli -h $(word 1,$(subst :, ,$(REDIS_ADDR))) -p $(word 2,$(subst :, ,$(REDIS_ADDR))) PING 2>/dev/null || echo "  → NOT REACHABLE"
+	@cat /tmp/deepx-boot.json 2>/dev/null || echo "  No boot state file"
 
 reset-redis:
-	cd executor && $(MAKE) reset-redis REDIS_ADDR=$(REDIS_ADDR)
+	@echo "Resetting Redis at $(REDIS_ADDR)..."
+	redis-cli -h $(word 1,$(subst :, ,$(REDIS_ADDR))) -p $(word 2,$(subst :, ,$(REDIS_ADDR))) FLUSHDB
 
-pipeline:
-	cd executor && $(MAKE) pipeline REDIS_ADDR=$(REDIS_ADDR)
+pipeline: build-all start-services reset-redis stop-services
+	@echo "=== Pipeline complete ==="
 
 # ═══════════════════════════════════════════════════════════════
 # Clean
 # ═══════════════════════════════════════════════════════════════
 
 clean:
-	cd executor && $(MAKE) clean
+	rm -rf $(EXOP_METAL_OUT) $(HEAP_METAL_OUT) $(IO_METAL_OUT) $(EXOP_CPU_OUT) $(HEAP_CPU_OUT)
 	cd $(DEEPXCTL_DIR) && rm -f deepxctl
 	cd $(VM_DIR) && go clean -testcache
 
 clean-all: clean
 	rm -rf $(VM_OUT)
-	rm -rf $(OP_METAL_OUT)
+	rm -rf $(EXOP_METAL_OUT)
 	rm -rf $(HEAP_METAL_OUT)
 	rm -rf $(IO_METAL_OUT)
 	rm -rf $(EXOP_CPU_OUT)
