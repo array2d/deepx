@@ -120,6 +120,18 @@ op的计算时长/通信时长之比 需要大于10
 网络通信注册记录了节点之间的网络连接信息，包括带宽、延迟等。调度器可以根据网络通信注册信息，选择最优的网络路径进行数据传输，提高数据传输效率。
 
 
+## 快速测试 dxlang
+
+`deepxctl run --rm` 执行完自动 shutdown + FLUSHDB，每次跑完环境归零，适合批量测试：
+
+```bash
+# 批量跑 builtin 算子
+for f in example/dxlang/builtin/native/arith/*.dx; do
+    echo "=== $f ==="
+    deepxctl run --rm "$f"
+done
+```
+
 ## 贡献指南
 
 欢迎提交Issue和Pull Request。在提交PR之前，请确保：
