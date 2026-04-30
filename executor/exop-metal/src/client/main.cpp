@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <libgen.h>
 
 #include <hiredis/hiredis.h>
 #include <fstream>
@@ -22,12 +23,39 @@
 
 using json = nlohmann::json;
 
-static const char *OP_QUEUE       = "cmd:op-metal:0";
-static const char *SYS_QUEUE      = "sys:cmd:op-metal:0";
-static const char *INSTANCE_KEY   = "/sys/op-plat/op-metal:0";
-static const char *HEARTBEAT_KEY  = "/sys/heartbeat/op-metal:0";
+static const char *OP_QUEUE       = "cmd:exop-metal:0";
+static const char *SYS_QUEUE      = "sys:cmd:exop-metal:0";
+static const char *INSTANCE_KEY   = "/sys/op-plat/exop-metal:0";
+static const char *HEARTBEAT_KEY  = "/sys/heartbeat/exop-metal:0";
+static const char *OP_LIST_KEY    = "/op/exop-metal/list";
 static const int   BLOCK_TIMEOUT_SEC = 5;
 static const int   HEARTBEAT_INTERVAL_SEC = 2;
+
+// 动态 instance name: 可执行文件名-{hostname}-{pid}
+static std::string g_instance_name;
+
+static void build_instance_name(const char *argv0) {
+    // 提取可执行文件名
+    std::string exe_name;
+    if (argv0 && argv0[0]) {
+        char *tmp = strdup(argv0);
+        exe_name = basename(tmp);
+        free(tmp);
+    }
+    if (exe_name.empty()) exe_name = "deepx-exop-metal";
+
+    // 获取 hostname
+    char hostname[256] = {0};
+    if (gethostname(hostname, sizeof(hostname)) != 0) {
+        snprintf(hostname, sizeof(hostname), "unknown");
+    }
+    // 截断 hostname 第一个 '.' 之后的部分
+    char *dot = strchr(hostname, '.');
+    if (dot) *dot = '\0';
+
+    // 构造 instance name: 可执行文件名-{hostname}-{pid}
+    g_instance_name = exe_name + "-" + hostname + "-" + std::to_string(getpid());
+}
 
 // ═══════════════════════════════════════════════════════════
 // Redis helpers
@@ -37,7 +65,7 @@ static redisContext* connect_redis(const char *addr, int port) {
     struct timeval tv = {2, 0};
     redisContext *c = redisConnectWithTimeout(addr, port, tv);
     if (!c || c->err) {
-        std::cerr << "[op-metal] Redis connect failed: " << (c ? c->errstr : "null") << "\n";
+        std::cerr << "[exop-metal] Redis connect failed: " << (c ? c->errstr : "null") << "\n";
         if (c) redisFree(c);
         return nullptr;
     }
@@ -72,56 +100,56 @@ static void update_heartbeat(redisContext *c, const std::string &status) {
 
 static void register_instance(redisContext *c) {
     json reg;
-    reg["program"]    = "op-metal";
+    reg["program"]    = g_instance_name;
     reg["device"]     = "gpu0";
     reg["status"]     = "running";
     reg["load"]       = 0.0;
     reg["pid"]        = getpid();
     reg["started_at"] = std::chrono::system_clock::now().time_since_epoch().count();
     redis_set(c, INSTANCE_KEY, reg.dump());
-    std::cout << "[op-metal] registered at " << INSTANCE_KEY << "\n";
+    std::cout << "[exop-metal] registered at " << INSTANCE_KEY << "\n";
 
     // ── 注册支持的算子列表 ──
-    redisReply *r = redis_cmd(c, "DEL %s", "/op/op-metal/list");
+    redisReply *r = redis_cmd(c, "DEL %s", OP_LIST_KEY);
     REDIS_FREE(r);
 
     // elementwise binary (Metal GPU)
     redis_cmd(c, "RPUSH %s %s %s %s %s %s %s",
-              "/op/op-metal/list",
+              OP_LIST_KEY,
               "add", "sub", "mul", "div", "max", "min");
     // elementwise unary (Metal GPU)
     redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s %s %s",
-              "/op/op-metal/list",
+              OP_LIST_KEY,
               "relu", "neg", "abs", "sqrt", "exp", "log", "sin", "cos", "tan");
     // elementwise scalar
     redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s %s",
-              "/op/op-metal/list",
+              OP_LIST_KEY,
               "addscalar", "subscalar", "mulscalar", "divscalar",
               "maxscalar", "minscalar", "pow", "powscalar");
     // comparison
     redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s %s",
-              "/op/op-metal/list",
+              OP_LIST_KEY,
               "equal", "notequal", "less", "greater",
               "equalscalar", "notequalscalar", "lessscalar", "greaterscalar");
     // changeshape
     redis_cmd(c, "RPUSH %s %s %s %s %s %s %s",
-              "/op/op-metal/list",
+              OP_LIST_KEY,
               "reshape", "transpose", "concat", "broadcastTo", "indexselect", "repeat");
     // reduce
     redis_cmd(c, "RPUSH %s %s %s %s %s",
-              "/op/op-metal/list",
+              OP_LIST_KEY,
               "sum", "prod", "reducemax", "reducemin");
     // io — migrated to io-metal (separate I/O plane)
     // init
     redis_cmd(c, "RPUSH %s %s %s",
-              "/op/op-metal/list",
+              OP_LIST_KEY,
               "constant", "arange");
     // misc
     redis_cmd(c, "RPUSH %s %s %s",
-              "/op/op-metal/list",
+              OP_LIST_KEY,
               "invert", "todtype");
 
-    std::cout << "[op-metal] registered all ops\n";
+    std::cout << "[exop-metal] registered all ops\n";
 }
 
 static void notify_done(redisContext *c, const std::string &vtid,
@@ -136,10 +164,10 @@ static void notify_done(redisContext *c, const std::string &vtid,
     std::string key = "done:" + vtid;
     redisReply *r = redis_cmd(c, "LPUSH %s %s", key.c_str(), done.dump().c_str());
     if (!r || r->type == REDIS_REPLY_ERROR) {
-        std::cerr << "[op-metal] notify_done LPUSH failed for " << vtid << ": " << (r ? r->str : "NULL") << "\n";
+        std::cerr << "[exop-metal] notify_done LPUSH failed for " << vtid << ": " << (r ? r->str : "NULL") << "\n";
     }
     REDIS_FREE(r);
-    std::cout << "[op-metal] done " << vtid << " pc=" << pc << " status=" << status << "\n";
+    std::cout << "[exop-metal] done " << vtid << " pc=" << pc << " status=" << status << "\n";
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -168,7 +196,7 @@ static bool shm_open_readwrite(const std::string &name, size_t byte_size, ShmMap
 
     int fd = shm_open(name.c_str(), O_RDWR, 0600);
     if (fd < 0) {
-        std::cerr << "[op-metal] shm_open failed: " << name << " (" << strerror(errno) << ")\n";
+        std::cerr << "[exop-metal] shm_open failed: " << name << " (" << strerror(errno) << ")\n";
         return false;
     }
 
@@ -176,7 +204,7 @@ static bool shm_open_readwrite(const std::string &name, size_t byte_size, ShmMap
     void *addr = mmap(nullptr, aligned, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     close(fd);
     if (addr == MAP_FAILED) {
-        std::cerr << "[op-metal] mmap failed: " << name << " (" << strerror(errno) << ")\n";
+        std::cerr << "[exop-metal] mmap failed: " << name << " (" << strerror(errno) << ")\n";
         return false;
     }
 
@@ -231,7 +259,7 @@ static TensorMeta fetch_tensor_meta(redisContext *c, const std::string &key) {
         m.valid = true;
     } catch (const std::exception &e) {
         REDIS_FREE(r);
-        std::cerr << "[op-metal] JSON parse error for tensor " << key << ": " << e.what() << "\n";
+        std::cerr << "[exop-metal] JSON parse error for tensor " << key << ": " << e.what() << "\n";
     }
 
     return m;
@@ -657,7 +685,7 @@ static void execute_task(redisContext *redis, const json &task) {
     }
     // ── io ops (print/save/load) — routed to io-metal plane ──
     else if (opcode == "print" || opcode == "save" || opcode == "load") {
-        error = "io op routed to io-metal plane (cmd:io-metal:0) — not handled by op-metal";
+        error = "io op routed to io-metal plane (cmd:io-metal:0) — not handled by exop-metal";
     }
     // ── pow (CPU, binary) ──
     else if (opcode == "pow" && input_ptrs.size() == 2) {
@@ -708,36 +736,39 @@ int main(int argc, char **argv) {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
+    // 构造动态 instance name: 可执行文件名-{hostname}-{pid}
+    build_instance_name(argv[0]);
+
     // 验证 Metal 可用 (使用 C++ wrapper)
     {
         char cwd[4096];
         if (getcwd(cwd, sizeof(cwd))) {
-            std::cout << "[op-metal] CWD: " << cwd << "\n";
+            std::cout << "[exop-metal] CWD: " << cwd << "\n";
         }
     }
     auto deviceInfo = deepx::metal::get_default_device_info();
     if (!deviceInfo.supports_metal) {
-        std::cerr << "[op-metal] FATAL: no Metal device\n";
+        std::cerr << "[exop-metal] FATAL: no Metal device\n";
         return 1;
     }
-    std::cout << "[op-metal] device: " << deviceInfo.name << "\n";
+    std::cout << "[exop-metal] device: " << deviceInfo.name << "\n";
 
     // 连接 Redis（无限重试，不自退——op-plat 由元程控制退出）
     redisContext *redis = nullptr;
     while (!redis) {
         redis = connect_redis(redis_addr, redis_port);
         if (!redis) {
-            std::cerr << "[op-metal] Redis not available, retrying in 1s...\n";
+            std::cerr << "[exop-metal] Redis not available, retrying in 1s...\n";
             sleep(1);
         }
     }
-    std::cout << "[op-metal] connected to Redis " << redis_addr << ":" << redis_port << "\n";
+    std::cout << "[exop-metal] connected to Redis " << redis_addr << ":" << redis_port << "\n";
 
     // 注册实例和算子
     register_instance(redis);
 
-    std::cout << "[op-metal] listening on " << OP_QUEUE << " + " << SYS_QUEUE << "\n";
-    std::cout << "[op-metal] heartbeat → " << HEARTBEAT_KEY << " (every " << HEARTBEAT_INTERVAL_SEC << "s)\n";
+    std::cout << "[exop-metal] listening on " << OP_QUEUE << " + " << SYS_QUEUE << "\n";
+    std::cout << "[exop-metal] heartbeat → " << HEARTBEAT_KEY << " (every " << HEARTBEAT_INTERVAL_SEC << "s)\n";
 
     // 初始心跳
     update_heartbeat(redis, "running");
@@ -749,14 +780,14 @@ int main(int argc, char **argv) {
         redisReply *r = redis_cmd(redis, "BLPOP %s %s %d", OP_QUEUE, SYS_QUEUE, BLOCK_TIMEOUT_SEC);
         if (!r) {
             // Redis 断连 → 无限重连（不自退，op-plat 由元程控制退出）
-            std::cerr << "[op-metal] Redis disconnected, reconnecting...\n";
+            std::cerr << "[exop-metal] Redis disconnected, reconnecting...\n";
             redisFree(redis);
             redis = nullptr;
             while (!redis) {
                 sleep(1);
                 redis = connect_redis(redis_addr, redis_port);
                 if (!redis) {
-                    std::cerr << "[op-metal] Redis still not available, retrying...\n";
+                    std::cerr << "[exop-metal] Redis still not available, retrying...\n";
                 }
             }
             register_instance(redis);
@@ -792,13 +823,13 @@ int main(int argc, char **argv) {
                 json sys_cmd = json::parse(payload);
                 std::string cmd = sys_cmd.value("cmd", "");
                 if (cmd == "shutdown") {
-                    std::cout << "[op-metal] received sys shutdown command, exiting...\n";
+                    std::cout << "[exop-metal] received sys shutdown command, exiting...\n";
                     running = false;
                 } else {
-                    std::cerr << "[op-metal] unknown sys command: " << cmd << "\n";
+                    std::cerr << "[exop-metal] unknown sys command: " << cmd << "\n";
                 }
             } catch (const std::exception &e) {
-                std::cerr << "[op-metal] sys cmd JSON parse error: " << e.what() << "\n";
+                std::cerr << "[exop-metal] sys cmd JSON parse error: " << e.what() << "\n";
             }
             continue;
         }
@@ -809,7 +840,7 @@ int main(int argc, char **argv) {
         try {
             task = json::parse(payload);
         } catch (const std::exception &e) {
-            std::cerr << "[op-metal] JSON parse error: " << e.what() << "\n";
+            std::cerr << "[exop-metal] JSON parse error: " << e.what() << "\n";
             continue;
         }
 
@@ -818,7 +849,7 @@ int main(int argc, char **argv) {
         } catch (const std::exception &e) {
             std::string vtid = task.value("vtid", "");
             std::string pc   = task.value("pc", "");
-            std::cerr << "[op-metal] task exception: " << e.what() << "\n";
+            std::cerr << "[exop-metal] task exception: " << e.what() << "\n";
             if (!vtid.empty()) {
                 notify_done(redis, vtid, pc, "error", e.what());
             }
@@ -828,10 +859,10 @@ int main(int argc, char **argv) {
     // 上报 stopped 心跳，然后注销
     if (redis) {
         update_heartbeat(redis, "stopped");
-        std::cout << "[op-metal] final heartbeat: stopped\n";
+        std::cout << "[exop-metal] final heartbeat: stopped\n";
         redis_cmd(redis, "DEL %s", INSTANCE_KEY);
         redisFree(redis);
     }
-    std::cout << "[op-metal] shutdown complete.\n";
+    std::cout << "[exop-metal] shutdown complete.\n";
     return 0;
 }

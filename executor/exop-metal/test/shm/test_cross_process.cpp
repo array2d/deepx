@@ -70,11 +70,11 @@ static int compute_tensor(const char *shm_name, int count) {
         size_t total   = off_c + page_align(single);
 
         int fd = shm_open(shm_name, O_RDWR, 0600);
-        if (fd < 0) { perror("op-metal shm_open"); return 1; }
+        if (fd < 0) { perror("exop-metal shm_open"); return 1; }
 
         uint8_t *base = (uint8_t *)mmap(NULL, total, PROT_READ | PROT_WRITE,
                                          MAP_SHARED, fd, 0);
-        if (base == MAP_FAILED) { perror("op-metal mmap"); return 1; }
+        if (base == MAP_FAILED) { perror("exop-metal mmap"); return 1; }
         close(fd);
 
         float *A = (float *)(base + off_a);
@@ -83,8 +83,8 @@ static int compute_tensor(const char *shm_name, int count) {
 
         // Metal device
         id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-        if (!device) { printf("[op-metal] FAIL: no Metal device\n"); return 1; }
-        printf("[op-metal] device: %s\n", [[device name] UTF8String]);
+        if (!device) { printf("[exexop-metal] FAIL: no Metal device\n"); return 1; }
+        printf("[exexop-metal] device: %s\n", [[device name] UTF8String]);
 
         // Compile kernel
         NSString *src = @""
@@ -102,7 +102,7 @@ static int compute_tensor(const char *shm_name, int count) {
                                                   options:[MTLCompileOptions new]
                                                     error:&err];
         if (!lib) {
-            printf("[op-metal] FAIL: compile: %s\n", [[err localizedDescription] UTF8String]);
+            printf("[exexop-metal] FAIL: compile: %s\n", [[err localizedDescription] UTF8String]);
             return 1;
         }
         id<MTLFunction> fn = [lib newFunctionWithName:@"add_f32"];
@@ -124,10 +124,10 @@ static int compute_tensor(const char *shm_name, int count) {
                                                 options:MTLResourceStorageModeShared];
 
         if (!bufA || !bufB || !bufC) {
-            printf("[op-metal] FAIL: newBufferWithBytesNoCopy returned nil\n");
+            printf("[exexop-metal] FAIL: newBufferWithBytesNoCopy returned nil\n");
             return 1;
         }
-        printf("[op-metal] MTLBuffers from shm OK\n");
+        printf("[exexop-metal] MTLBuffers from shm OK\n");
 
         // Dispatch
         id<MTLCommandBuffer> cmd = [queue commandBuffer];
@@ -145,11 +145,11 @@ static int compute_tensor(const char *shm_name, int count) {
         [cmd waitUntilCompleted];
 
         if (cmd.error) {
-            printf("[op-metal] FAIL: GPU error: %s\n",
+            printf("[exexop-metal] FAIL: GPU error: %s\n",
                    [[cmd.error localizedDescription] UTF8String]);
             return 1;
         }
-        printf("[op-metal] GPU kernel done.\n");
+        printf("[exexop-metal] GPU kernel done.\n");
 
         // Verify
         int errors = 0;
@@ -165,10 +165,10 @@ static int compute_tensor(const char *shm_name, int count) {
         munmap(base, total);
 
         if (errors == 0) {
-            printf("[op-metal] PASS: all %d elements correct.\n", count);
+            printf("[exexop-metal] PASS: all %d elements correct.\n", count);
             return 0;
         } else {
-            printf("[op-metal] FAIL: %d / %d mismatches.\n", errors, count);
+            printf("[exexop-metal] FAIL: %d / %d mismatches.\n", errors, count);
             return 1;
         }
     }
