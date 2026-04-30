@@ -147,17 +147,20 @@ boot/run/shutdown 逻辑: `tool/deepxctl/cmd/{boot,run,shutdown}.go`
 ```bash
 # 构建后 loader 位于 /tmp/deepx-vm/loader
 
-# 加载单个文件
-./tmp/deepx-vm/loader load example/dxlang/lifecycle/full.dx
+# 加载单个 tensor 文件
+./tmp/deepx-vm/loader load example/dxlang/tensor/lifecycle/compute.dx
 
-# 加载整个目录
-./tmp/deepx-vm/loader load example/dxlang/nn/
+# 加载整个 tensor 目录
+./tmp/deepx-vm/loader load example/dxlang/tensor/nn/
+
+# 加载 builtin 目录 (VM 标量运算，无需 GPU 后端)
+./tmp/deepx-vm/loader load example/dxlang/builtin/
 
 # 列出已注册函数
 ./tmp/deepx-vm/loader ls
 
-# 加载并执行 (需要 VM + heap-plat + op-plat 在运行)
-./tmp/deepx-vm/loader run example/dxlang/native/arith/add.dx native_arith "./a:2" "./b:3" -- "./c"
+# 加载并执行 builtin 函数 (仅需 VM，无需 heap-plat/op-plat)
+./tmp/deepx-vm/loader run example/dxlang/builtin/native/arith/add.dx native_arith "./a:2" "./b:3" -- "./c"
 ```
 
 ## 开发 Agents

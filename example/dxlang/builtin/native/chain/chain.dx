@@ -1,5 +1,5 @@
 def native_chain(A:int, B:int, C:int) -> (D:int) {
-    A + B -> "./tmp"
+    "./tmp" <- A + B
     "./tmp" * C -> "./D"
 }
 

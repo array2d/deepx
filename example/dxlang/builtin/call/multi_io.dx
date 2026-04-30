@@ -1,0 +1,16 @@
+# multi_io: demonstrates multi-read (3 inputs) + both -> and <- styles in calls
+# Inner function: triple_add
+def triple_add(X:int, Y:int, Z:int) -> (R:int) {
+    X + Y -> "./t"
+    "./t" + Z -> "./R"
+}
+
+# Outer function: calls triple_add, then doubles result using <-
+def compute(A:int, B:int, C:int) -> (D:int) {
+    triple_add(A, B, C) -> "./sum"
+    "./D" <- "./sum" * 2
+}
+
+# Top-level call: compute(2, 3, 4) -> "./out"
+compute(2, 3, 4) -> "./out"
+# Expected: (2+3+4) * 2 = 18

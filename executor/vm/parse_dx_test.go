@@ -230,3 +230,74 @@ func TestParse_NativeOther(t *testing.T) {
 		})
 	})
 }
+
+// ── New Examples: Multi-read/write, C-style (<-) ──────────
+
+func TestParse_NewExamples(t *testing.T) {
+	t.Run("double_op", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/native/arith/double_op.dx", []wantInst{
+			{op: "+", reads: []string{"A", "B"}, writes: []string{"./S"}},
+			{op: "-", reads: []string{"A", "B"}, writes: []string{"./D"}},
+		})
+	})
+	t.Run("double_op_cstyle", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/native/arith/double_op_cstyle.dx", []wantInst{
+			{op: "+", reads: []string{"A", "B"}, writes: []string{"./S"}},
+			{op: "-", reads: []string{"A", "B"}, writes: []string{"./D"}},
+		})
+	})
+	t.Run("three_add", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/native/arith/three_add.dx", []wantInst{
+			{op: "+", reads: []string{"A", "B"}, writes: []string{"./t"}},
+			{op: "+", reads: []string{"./t", "C"}, writes: []string{"./R"}},
+		})
+	})
+	t.Run("poly3", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/native/arith/poly3.dx", []wantInst{
+			{op: "*", reads: []string{"A", "X"}, writes: []string{"./t1"}},
+			{op: "*", reads: []string{"./t1", "X"}, writes: []string{"./t2"}},
+			{op: "*", reads: []string{"B", "X"}, writes: []string{"./t3"}},
+			{op: "+", reads: []string{"./t2", "./t3"}, writes: []string{"./t4"}},
+			{op: "+", reads: []string{"./t4", "C"}, writes: []string{"./Y"}},
+		})
+	})
+	t.Run("multi_io", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/call/multi_io.dx", []wantInst{
+			{op: "+", reads: []string{"X", "Y"}, writes: []string{"./t"}},
+			{op: "+", reads: []string{"./t", "Z"}, writes: []string{"./R"}},
+		})
+	})
+	t.Run("multi_ret", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/builtin/call/multi_ret.dx", []wantInst{
+			{op: "+", reads: []string{"A", "B"}, writes: []string{"./S"}},
+			{op: "-", reads: []string{"A", "B"}, writes: []string{"./D"}},
+			{op: "*", reads: []string{"A", "B"}, writes: []string{"./P"}},
+		})
+	})
+	t.Run("add_sub", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/tensor/lifecycle/add_sub.dx", []wantInst{
+			{op: "newtensor", reads: []string{"f32", "[64]"}, writes: []string{"/data/a"}},
+			{op: "newtensor", reads: []string{"f32", "[64]"}, writes: []string{"/data/b"}},
+			{op: "newtensor", reads: []string{"f32", "[64]"}, writes: []string{"/data/sum"}},
+			{op: "newtensor", reads: []string{"f32", "[64]"}, writes: []string{"/data/diff"}},
+			{op: "zeros", reads: nil, writes: []string{"/data/a"}},
+			{op: "zeros", reads: nil, writes: []string{"/data/b"}},
+			{op: "add", reads: []string{"/data/a", "/data/b"}, writes: []string{"./sum"}},
+			{op: "sub", reads: []string{"/data/a", "/data/b"}, writes: []string{"./diff"}},
+			{op: "deltensor", reads: []string{"/data/a"}, writes: nil},
+			{op: "deltensor", reads: []string{"/data/b"}, writes: nil},
+		})
+	})
+	t.Run("compute_cstyle", func(t *testing.T) {
+		checkDx(t, "../../example/dxlang/tensor/lifecycle/compute_cstyle.dx", []wantInst{
+			{op: "newtensor", reads: []string{"f32", "[8]"}, writes: []string{"/data/a"}},
+			{op: "newtensor", reads: []string{"f32", "[8]"}, writes: []string{"/data/b"}},
+			{op: "newtensor", reads: []string{"f32", "[8]"}, writes: []string{"/data/c"}},
+			{op: "zeros", reads: nil, writes: []string{"/data/a"}},
+			{op: "zeros", reads: nil, writes: []string{"/data/b"}},
+			{op: "add", reads: []string{"/data/a", "/data/b"}, writes: []string{"./c"}},
+			{op: "deltensor", reads: []string{"/data/a"}, writes: nil},
+			{op: "deltensor", reads: []string{"/data/b"}, writes: nil},
+		})
+	})
+}

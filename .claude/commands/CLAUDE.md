@@ -48,7 +48,7 @@
 deepxctl boot
 
 # 2a. 加载纯定义文件 (只定义函数，不执行)
-deepxctl run example/dxlang/call/add_test.dx
+deepxctl run example/dxlang/builtin/call/add_test.dx
 #  → "Loaded 1 function(s) into KV Space."
 #  → 没有顶层调用，VM 的 /func/main 监视器保持等待
 
@@ -56,8 +56,8 @@ deepxctl run example/dxlang/call/add_test.dx
 deepxctl run my_file_with_call.dx
 #  → loader 检测到顶层调用 → 写入 /func/main → VM 自动创建 vthread → 执行
 
-# 2c. 手动指定入口函数
-deepxctl run --entry native_arith example/dxlang/native/arith/add.dx
+# 2c. 手动指定入口函数 (builtin 标量运算，仅需 VM)
+deepxctl run --entry native_arith example/dxlang/builtin/native/arith/add.dx
 #  → 绕过顶层调用检测，直接以 native_arith 为入口执行
 
 # 3. 停止所有服务
@@ -77,8 +77,10 @@ make status REDIS_ADDR=127.0.0.1:16379
 # 重置 Redis
 make reset-redis REDIS_ADDR=127.0.0.1:16379
 
-# 加载 & 执行
-./tmp/deepx-vm/loader load example/dxlang/lifecycle/full.dx
+# 加载 & 执行 (tensor 示例，需 VM + heap-plat + op-plat)
+./tmp/deepx-vm/loader load example/dxlang/tensor/lifecycle/compute.dx
+# 或 builtin 示例 (仅需 VM)
+./tmp/deepx-vm/loader load example/dxlang/builtin/native/arith/add.dx
 ./tmp/deepx-vm/vm 127.0.0.1:16379  # 手动启动 VM
 
 # 停止服务

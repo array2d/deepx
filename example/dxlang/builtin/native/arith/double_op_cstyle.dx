@@ -1,0 +1,8 @@
+# double_op_cstyle: compute sum and diff using C-style (<-) assignment
+def double_op_cstyle(A:int, B:int) -> (S:int, D:int) {
+    "./S" <- A + B
+    "./D" <- A - B
+}
+
+# Top-level call
+double_op_cstyle(10, 3) -> ("./out_s", "./out_d")

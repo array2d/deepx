@@ -272,6 +272,11 @@ func watchFuncMain(ctx context.Context, rdb *redis.Client, vmID string) {
 		pipe := rdb.Pipeline()
 		pipe.Set(ctx, base, initState, 0)
 		pipe.Set(ctx, base+"/[0,0]", entry.Entry, 0)
+		// Write call arguments as reads (negative indices)
+		for i, arg := range entry.Reads {
+			pipe.Set(ctx, fmt.Sprintf("%s/[0,-%d]", base, i+1), arg, 0)
+		}
+		// Write return slot (positive index)
 		pipe.Set(ctx, base+"/[0,1]", "./ret", 0)
 		if _, err := pipe.Exec(ctx); err != nil {
 			log.Printf("VM-%s create vthread %d failed: %v", vmID, vtid, err)

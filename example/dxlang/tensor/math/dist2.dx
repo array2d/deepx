@@ -10,9 +10,9 @@ def dist2() -> ("/data/dist2") {
     zeros() -> "/data/b"
 
     # diff = a - b
-    sub("/data/a", "/data/b") -> "/data/diff"
+    "./diff" <- sub("/data/a", "/data/b")
     # dist2 = diff * diff
-    mul("/data/diff", "/data/diff") -> "/data/dist2"
+    "./dist2" <- mul("/data/diff", "/data/diff")
 
     deltensor("/data/a")
     deltensor("/data/b")

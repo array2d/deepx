@@ -7,7 +7,7 @@ import (
 )
 
 func TestLoadDxFile(t *testing.T) {
-	dxPath := filepath.Join("..", "..", "..", "example", "dxlang", "call", "add_test.dx")
+	dxPath := filepath.Join("..", "..", "..", "example", "dxlang", "builtin", "call", "add_test.dx")
 
 	fn, err := LoadDxFile(dxPath)
 	if err != nil {

@@ -1,6 +1,0 @@
-# print_tensor: 验证 print 算子功能
-# 创建 tensor 后打印其内容
-def print_tensor() -> ("/data/x") {
-    newtensor("f32", "[10]") -> "/data/x"
-    print("/data/x")
-}

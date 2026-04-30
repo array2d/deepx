@@ -18,14 +18,14 @@ redis-cli -p 16379 FLUSHDB
 /tmp/deepx/op-metal/build/deepx-op-metal 127.0.0.1 16379 &
 /tmp/deepx/heap-metal/build/deepx-heap-metal 127.0.0.1 16379 &
 VM_ID=0 /tmp/deepx-vm/vm 127.0.0.1:16379 &
-/tmp/deepx-vm/loader example/dxlang/lifecycle/full.dx 127.0.0.1:16379
+/tmp/deepx-vm/loader example/dxlang/tensor/lifecycle/compute.dx 127.0.0.1:16379
 # 还需要手动创建 vthread...
 ```
 
 deepxctl 的目标：
 
 ```
-deepxctl run example/dxlang/lifecycle/full.dx
+deepxctl run example/dxlang/tensor/lifecycle/compute.dx
 ```
 
 ---
@@ -108,9 +108,9 @@ flags:
       --timeout int     执行超时秒数 (默认: 60, 0=无限制)
 
 示例:
-  deepxctl run example/dxlang/lifecycle/full.dx
-  deepxctl run -v example/dxlang/call/tensor_pipeline.dx
-  deepxctl run --entry stage1 --timeout 30 example/dxlang/call/tensor_pipeline.dx
+  deepxctl run example/dxlang/tensor/lifecycle/compute.dx
+  deepxctl run -v example/dxlang/tensor/call/tensor_pipeline.dx
+  deepxctl run --entry stage1 --timeout 30 example/dxlang/tensor/call/tensor_pipeline.dx
 ```
 
 ---
@@ -118,7 +118,7 @@ flags:
 ## 5. 输出格式
 
 ```
-$ deepxctl run example/dxlang/lifecycle/full.dx
+$ deepxctl run example/dxlang/tensor/lifecycle/compute.dx
 
  deepxctl  |  redis: 127.0.0.1:16379
 ─────────────────────────────────────────
