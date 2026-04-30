@@ -10,7 +10,6 @@
 #include <cstring>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #if defined(__APPLE__) && TARGET_OS_OSX
   #if defined(__OBJC__)
@@ -25,8 +24,7 @@ namespace deepx::metal::common
     class MetalKernelRuntime final
     {
     public:
-        MetalKernelRuntime(const char *metal_source_basename)
-            : metal_source_basename_(metal_source_basename ? metal_source_basename : "")
+        MetalKernelRuntime()
         {
             device_ = MTLCreateSystemDefaultDevice();
             queue_ = device_ ? [device_ newCommandQueue] : nil;
@@ -41,29 +39,20 @@ namespace deepx::metal::common
                                 uint32_t n,
                                 size_t elem_bytes)
         {
-            if (!valid() || !kernel_fn)
-            {
-                return false;
-            }
+            if (!valid() || !kernel_fn) return false;
 
             @autoreleasepool
             {
                 NSError *error = nil;
                 id<MTLComputePipelineState> pso = pipeline(kernel_fn, &error);
-                if (!pso)
-                {
-                    return false;
-                }
+                if (!pso) return false;
 
                 const size_t bytes = static_cast<size_t>(n) * elem_bytes;
                 id<MTLBuffer> bufA = [device_ newBufferWithBytes:a length:bytes options:MTLResourceStorageModeShared];
                 id<MTLBuffer> bufB = [device_ newBufferWithBytes:b length:bytes options:MTLResourceStorageModeShared];
                 id<MTLBuffer> bufC = [device_ newBufferWithLength:bytes options:MTLResourceStorageModeShared];
                 id<MTLBuffer> bufN = [device_ newBufferWithBytes:&n length:sizeof(n) options:MTLResourceStorageModeShared];
-                if (!bufA || !bufB || !bufC || !bufN)
-                {
-                    return false;
-                }
+                if (!bufA || !bufB || !bufC || !bufN) return false;
 
                 id<MTLCommandBuffer> cmd = [queue_ commandBuffer];
                 id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
@@ -86,35 +75,25 @@ namespace deepx::metal::common
             }
         }
 
-        // dispatch_unary_1d: single input → output (e.g. relu, neg)
         bool dispatch_unary_1d(const char *kernel_fn,
                                const void *x,
                                void *y,
                                uint32_t n,
                                size_t elem_bytes)
         {
-            if (!valid() || !kernel_fn)
-            {
-                return false;
-            }
+            if (!valid() || !kernel_fn) return false;
 
             @autoreleasepool
             {
                 NSError *error = nil;
                 id<MTLComputePipelineState> pso = pipeline(kernel_fn, &error);
-                if (!pso)
-                {
-                    return false;
-                }
+                if (!pso) return false;
 
                 const size_t bytes = static_cast<size_t>(n) * elem_bytes;
                 id<MTLBuffer> bufX = [device_ newBufferWithBytes:x length:bytes options:MTLResourceStorageModeShared];
                 id<MTLBuffer> bufY = [device_ newBufferWithLength:bytes options:MTLResourceStorageModeShared];
                 id<MTLBuffer> bufN = [device_ newBufferWithBytes:&n length:sizeof(n) options:MTLResourceStorageModeShared];
-                if (!bufX || !bufY || !bufN)
-                {
-                    return false;
-                }
+                if (!bufX || !bufY || !bufN) return false;
 
                 id<MTLCommandBuffer> cmd = [queue_ commandBuffer];
                 id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
@@ -137,100 +116,36 @@ namespace deepx::metal::common
         }
 
     private:
+        // 加载预编译的 default.metallib（CMake 编译 .metal → .metallib，放在可执行文件同目录）
         id<MTLLibrary> library(NSError **error)
         {
-            if (library_)
-            {
-                return library_;
-            }
+            if (library_) return library_;
 
-            NSFileManager *fm = [NSFileManager defaultManager];
-
-            // Offline metallib (built into build dir as default.metallib)
-            NSArray<NSString *> *libCandidates = @[
-                @"default.metallib",
-                @"build/default.metallib",
-                @"executor/op-metal/build/default.metallib",
-            ];
-
-            for (NSString *rel in libCandidates)
-            {
-                NSString *path = [[fm currentDirectoryPath] stringByAppendingPathComponent:rel];
-                if (![fm fileExistsAtPath:path])
-                {
-                    continue;
-                }
-                NSURL *url = [NSURL fileURLWithPath:path];
-                library_ = [device_ newLibraryWithURL:url error:error];
-                if (library_)
-                {
-                    return library_;
-                }
-            }
-
-            // Fallback: compile from .metal source at runtime.
-            // We try both the basename and the common repo-relative paths.
-            const std::string src = metal_source_basename_.empty() ? std::string("elementwise_miaobyte.metal") : metal_source_basename_;
-            NSArray<NSString *> *srcCandidates = @[
-                [NSString stringWithUTF8String:src.c_str()],
-                [@"src/deepx/tensorfunc" stringByAppendingPathComponent:[NSString stringWithUTF8String:src.c_str()]],
-                [@"executor/op-metal/src/deepx/tensorfunc" stringByAppendingPathComponent:[NSString stringWithUTF8String:src.c_str()]],
-            ];
-
-            for (NSString *rel in srcCandidates)
-            {
-                NSString *path = [[fm currentDirectoryPath] stringByAppendingPathComponent:rel];
-                if (![fm fileExistsAtPath:path])
-                {
-                    continue;
-                }
-                NSError *readErr = nil;
-                NSString *metalSource = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&readErr];
-                if (!metalSource)
-                {
-                    continue;
-                }
-                MTLCompileOptions *opts = [MTLCompileOptions new];
-                library_ = [device_ newLibraryWithSource:metalSource options:opts error:error];
-                if (library_)
-                {
-                    return library_;
-                }
-            }
-
-            return nil;
+            NSString *exePath = [[NSProcessInfo processInfo] arguments][0];
+            NSString *exeDir  = [exePath stringByDeletingLastPathComponent];
+            NSString *path    = [exeDir stringByAppendingPathComponent:@"default.metallib"];
+            NSURL    *url     = [NSURL fileURLWithPath:path];
+            library_ = [device_ newLibraryWithURL:url error:error];
+            return library_;
         }
 
         id<MTLComputePipelineState> pipeline(const char *kernel_fn, NSError **error)
         {
             NSString *fnName = [NSString stringWithUTF8String:kernel_fn];
             auto it = pipeline_cache_.find(fnName);
-            if (it != pipeline_cache_.end())
-            {
-                return it->second;
-            }
+            if (it != pipeline_cache_.end()) return it->second;
 
             id<MTLLibrary> lib = library(error);
-            if (!lib)
-            {
-                return nil;
-            }
+            if (!lib) return nil;
 
             id<MTLFunction> fn = [lib newFunctionWithName:fnName];
-            if (!fn)
-            {
-                return nil;
-            }
+            if (!fn) return nil;
 
             id<MTLComputePipelineState> pso = [device_ newComputePipelineStateWithFunction:fn error:error];
-            if (pso)
-            {
-                pipeline_cache_.emplace(fnName, pso);
-            }
+            if (pso) pipeline_cache_.emplace(fnName, pso);
             return pso;
         }
 
-        std::string metal_source_basename_;
         id<MTLDevice> device_ = nil;
         id<MTLCommandQueue> queue_ = nil;
         id<MTLLibrary> library_ = nil;

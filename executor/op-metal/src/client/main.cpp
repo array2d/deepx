@@ -426,8 +426,6 @@ static void execute_task(redisContext *redis, const json &task) {
     std::string opcode = task.value("opcode", "");
     json params        = task.value("params", json::object());
 
-    std::cout << "[op-metal] executing " << opcode << " vtid=" << vtid << " pc=" << pc << "\n";
-
     if (!task.contains("inputs") || !task.contains("outputs")) {
         notify_done(redis, vtid, pc, "error", "missing inputs/outputs");
         return;
@@ -839,7 +837,17 @@ int main(int argc, char **argv) {
     if (argc > 1) redis_addr = argv[1];
     if (argc > 2) redis_port = atoi(argv[2]);
 
+    // Force unbuffered output for diagnostics (subprocess stdout is fully buffered)
+    std::cout << std::unitbuf;
+    std::cerr << std::unitbuf;
+
     // 验证 Metal 可用 (使用 C++ wrapper)
+    {
+        char cwd[4096];
+        if (getcwd(cwd, sizeof(cwd))) {
+            std::cout << "[op-metal] CWD: " << cwd << "\n";
+        }
+    }
     auto deviceInfo = deepx::metal::get_default_device_info();
     if (!deviceInfo.supports_metal) {
         std::cerr << "[op-metal] FATAL: no Metal device\n";

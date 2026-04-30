@@ -4,6 +4,7 @@ project(deepx-op-metal LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
 
 if(NOT APPLE)
     message(FATAL_ERROR "op-metal only supports macOS")
@@ -49,7 +50,27 @@ set_source_files_properties(src/deepx/metal_context.cpp PROPERTIES COMPILE_FLAGS
 # main.cpp 通过 elementwise_common.hpp 间接使用 Metal GPU kernel (__OBJC__ guard)
 set_source_files_properties(src/client/main.cpp PROPERTIES COMPILE_FLAGS "-x objective-c++")
 
+# ── 编译期 .metal → .metallib（使用 Metal Framework API，无需 xcrun/Xcode）──
+set(METAL_SOURCE   "${CMAKE_CURRENT_SOURCE_DIR}/src/deepx/tensorfunc/elementwise_miaobyte.metal")
+set(METALLIB_OUTPUT "${CMAKE_BINARY_DIR}/default.metallib")
+
+add_executable(compile_metal_lib src/build/compile_metal_lib.mm)
+set_source_files_properties(src/build/compile_metal_lib.mm PROPERTIES COMPILE_FLAGS "-x objective-c++")
+set_target_properties(compile_metal_lib PROPERTIES
+    XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+)
+target_link_libraries(compile_metal_lib ${METAL} ${FOUNDATION})
+
+add_custom_command(
+    OUTPUT ${METALLIB_OUTPUT}
+    COMMAND compile_metal_lib ${METAL_SOURCE} ${METALLIB_OUTPUT}
+    DEPENDS compile_metal_lib ${METAL_SOURCE}
+    COMMENT "[metal] build-time compiling ${METAL_SOURCE} → default.metallib"
+)
+add_custom_target(metal_shaders DEPENDS ${METALLIB_OUTPUT})
+
 add_executable(${PROJECT_NAME} ${CLIENT_SOURCES})
+add_dependencies(${PROJECT_NAME} metal_shaders)
 target_link_libraries(${PROJECT_NAME} PRIVATE deepx_metal hiredis)
 
 # 集成测试

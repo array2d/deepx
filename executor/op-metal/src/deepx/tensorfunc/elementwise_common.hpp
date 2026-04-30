@@ -240,7 +240,7 @@ namespace deepx::metal::kernels
 #if defined(__APPLE__) && TARGET_OS_OSX && defined(__OBJC__)
     inline deepx::metal::common::MetalKernelRuntime &elementwise_runtime()
     {
-        static deepx::metal::common::MetalKernelRuntime rt("elementwise_miaobyte.metal");
+        static deepx::metal::common::MetalKernelRuntime rt;
         return rt;
     }
 

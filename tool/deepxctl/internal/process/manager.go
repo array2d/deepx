@@ -36,12 +36,20 @@ type Manager struct {
 	mu       sync.Mutex
 	procs    []*Proc
 	verbose  bool
+	workDir  string // if set, all subprocesses run with this CWD
 }
 
 // NewManager creates a process manager.
 // If verbose is true, subprocess stdout/stderr are also streamed to os.Stdout/os.Stderr.
 func NewManager(verbose bool) *Manager {
 	return &Manager{verbose: verbose}
+}
+
+// SetWorkDir sets the working directory for all subprocesses started by this manager.
+func (m *Manager) SetWorkDir(dir string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.workDir = dir
 }
 
 // Start launches a subprocess.
@@ -53,6 +61,9 @@ func (m *Manager) Start(name, binPath string, args ...string) (*Proc, error) {
 	defer m.mu.Unlock()
 
 	cmd := exec.Command(binPath, args...)
+	if m.workDir != "" {
+		cmd.Dir = m.workDir
+	}
 
 	p := &Proc{
 		Name: name,

@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"deepx/tool/deepxctl/internal/build"
+	"deepx/tool/deepxctl/internal/builder"
 	"deepx/tool/deepxctl/internal/executor"
 	"deepx/tool/deepxctl/internal/process"
 	"deepx/tool/deepxctl/internal/redis"
@@ -78,7 +78,7 @@ func parseFlags(args []string) RunFlags {
 func run(flags RunFlags) error {
 	printHeader(flags)
 
-	repoRoot, err := build.RepoRoot()
+	repoRoot, err := builder.RepoRoot()
 	if err != nil {
 		return fmt.Errorf("find repo root: %w", err)
 	}
@@ -106,12 +106,12 @@ func run(flags RunFlags) error {
 	if flags.ForceBuild {
 		log.Printf("[run] force rebuild requested")
 	}
-	missing := build.Missing()
+	missing := builder.Missing()
 	if len(missing) > 0 && !flags.ForceBuild {
 		log.Printf("[run] missing binaries: %v", missing)
 	}
 
-	if err := build.All(repoRoot, flags.ForceBuild); err != nil {
+	if err := builder.All(repoRoot, flags.ForceBuild); err != nil {
 		errorX("Build failed: %v", err)
 		return err
 	}
@@ -134,7 +134,7 @@ func run(flags RunFlags) error {
 	}
 
 	// ① op-plat
-	if _, err := mgr.Start("op-metal", build.OpMetal, redisHost, redisPort); err != nil {
+	if _, err := mgr.Start("op-metal", builder.OpMetal, redisHost, redisPort); err != nil {
 		errorX("op-plat: %v", err)
 		mgr.StopAll(5 * time.Second)
 		return err
@@ -148,7 +148,7 @@ func run(flags RunFlags) error {
 	okInline()
 
 	// ② heap-plat
-	if _, err := mgr.Start("heap-metal", build.HeapMetal, redisHost, redisPort); err != nil {
+	if _, err := mgr.Start("heap-metal", builder.HeapMetal, redisHost, redisPort); err != nil {
 		errorX("heap-plat: %v", err)
 		mgr.StopAll(5 * time.Second)
 		return err
@@ -163,7 +163,7 @@ func run(flags RunFlags) error {
 
 	// ③ VM
 	vmArgs := []string{flags.RedisAddr}
-	if _, err := mgr.Start("vm", build.VM, vmArgs...); err != nil {
+	if _, err := mgr.Start("vm", builder.VM, vmArgs...); err != nil {
 		errorX("VM: %v", err)
 		mgr.StopAll(5 * time.Second)
 		return err
@@ -179,7 +179,7 @@ func run(flags RunFlags) error {
 	// ── [4/6] Load dx ──
 	step(4, 6, "Load dx")
 	dxPath, _ := normalizePath(flags.FilePath)
-	funcs, err := loadDx(build.Loader, dxPath, flags.RedisAddr)
+	funcs, err := loadDx(builder.Loader, dxPath, flags.RedisAddr)
 	if err != nil {
 		errorX("Load: %v", err)
 		mgr.StopAll(5 * time.Second)

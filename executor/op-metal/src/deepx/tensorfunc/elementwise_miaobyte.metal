@@ -454,7 +454,7 @@ kernel void abs_i64(device const long* X [[buffer(0)]],
                     constant uint&     n [[buffer(2)]],
                     uint gid [[thread_position_in_grid]])
 {
-    if (gid < n) { Y[gid] = llabs(X[gid]); }
+    if (gid < n) { Y[gid] = abs(X[gid]); }
 }
 
 // ── SQRT (浮点 only) ──

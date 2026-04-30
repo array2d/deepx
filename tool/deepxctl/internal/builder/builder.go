@@ -1,4 +1,4 @@
-// Package build handles building deepx components by exec'ing existing build.sh scripts.
+// Package builder handles building deepx components by exec'ing existing build.sh scripts.
 //
 // Allowed operations (per doc/deepxctl/CLAUDE.md):
 //
@@ -9,7 +9,7 @@
 //
 //	modifying build scripts
 //	modifying CMakeLists.txt
-package build
+package builder
 
 import (
 	"fmt"
