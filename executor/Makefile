@@ -10,9 +10,13 @@ REDIS_PORT      := $(word 2,$(subst :, ,$(REDIS_ADDR)))
 BUILD_DIR       := /tmp/deepx/op-metal/build
 HEAP_BUILD_DIR  := /tmp/deepx/heap-metal/build
 IO_BUILD_DIR    := /tmp/deepx/io-metal/build
+EXOP_CPU_BUILD_DIR := /tmp/deepx/exop-cpu/build
+HEAP_CPU_BUILD_DIR := /tmp/deepx/heap-cpu/build
 OP_BIN          := $(BUILD_DIR)/deepx-op-metal
 HEAP_BIN        := $(HEAP_BUILD_DIR)/deepx-heap-metal
 IO_BIN          := $(IO_BUILD_DIR)/deepx-io-metal
+EXOP_CPU_BIN    := $(EXOP_CPU_BUILD_DIR)/deepx-exop-cpu
+HEAP_CPU_BIN    := $(HEAP_CPU_BUILD_DIR)/deepx-heap-cpu
 
 LOG_DIR         := /tmp/deepx-logs
 OP_LOG          := $(LOG_DIR)/op-metal.log
@@ -35,7 +39,7 @@ IO_PID_FILE     := $(LOG_DIR)/io-metal.pid
 
 all: build
 
-build: build-op build-heap build-io
+build: build-op build-heap build-io build-exop-cpu build-heap-cpu
 
 build-op:
 	@echo "=== Building op-metal ==="
@@ -51,6 +55,16 @@ build-io:
 	@echo "=== Building io-metal ==="
 	bash io-metal/build.sh
 	@echo "  → $(IO_BIN)"
+
+build-exop-cpu:
+	@echo "=== Building exop-cpu ==="
+	bash exop-cpu/build.sh 2>/dev/null || (mkdir -p $(EXOP_CPU_BUILD_DIR) && cd $(EXOP_CPU_BUILD_DIR) && cmake ../../exop-cpu && cmake --build . -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4))
+	@echo "  → $(EXOP_CPU_BIN)"
+
+build-heap-cpu:
+	@echo "=== Building heap-cpu ==="
+	bash heap-cpu/build.sh
+	@echo "  → $(HEAP_CPU_BIN)"
 
 # ═══════════════════════════════════════════════════════════════
 # Service Lifecycle (daemon mode)
@@ -199,7 +213,7 @@ reset-redis:
 	redis-cli -h $(REDIS_HOST) -p $(REDIS_PORT) FLUSHDB
 
 clean:
-	rm -rf $(BUILD_DIR) $(HEAP_BUILD_DIR) $(IO_BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(HEAP_BUILD_DIR) $(IO_BUILD_DIR) $(EXOP_CPU_BUILD_DIR) $(HEAP_CPU_BUILD_DIR)
 	cd vm && go clean -testcache
 
 clean-logs:
@@ -219,10 +233,12 @@ help:
 	@echo "deepx Executor Makefile"
 	@echo ""
 	@echo "BUILD:"
-	@echo "  make build            Build op-metal + heap-metal + io-metal"
+	@echo "  make build            Build all executors"
 	@echo "  make build-op         Build op-metal only"
 	@echo "  make build-heap       Build heap-metal only"
 	@echo "  make build-io         Build io-metal only"
+	@echo "  make build-exop-cpu   Build exop-cpu (CPU extended ops)"
+	@echo "  make build-heap-cpu   Build heap-cpu (CPU heap manager)"
 	@echo ""
 	@echo "SERVICES (daemon):"
 	@echo "  make start-services   Start op-metal + heap-metal + io-metal in background"

@@ -48,6 +48,7 @@ type RunFlags struct {
 	Timeout   int
 	FilePath  string
 	Rm        bool
+	Boot      bool
 }
 
 // Run is the entry point for the "run" subcommand.
@@ -75,6 +76,7 @@ func parseRunFlags(args []string) RunFlags {
 	fs.StringVar(&flags.Entry, "entry", "", "Manual entry function (overrides top-level call detection)")
 	fs.IntVar(&flags.Timeout, "timeout", 60, "Execution timeout in seconds (0=no limit)")
 	fs.BoolVar(&flags.Rm, "rm", false, "After execution, flush Redis and shutdown all services")
+	fs.BoolVar(&flags.Boot, "boot", true, "Auto-boot services if not already booted")
 
 	fs.Parse(args)
 
@@ -115,13 +117,20 @@ func run(flags RunFlags) error {
 		}()
 	}
 
-	// ── [1/3] Verify boot ──
+	// ── [1/3] Verify / auto-boot services ──
 	step(1, 3, "Check services")
 	if !IsBooted() {
-		errorX("Services not booted. Run 'deepxctl boot' first.")
-		fmt.Fprintf(os.Stderr, "\n  Expected boot state at: %s\n", BootPIDFile)
-		fmt.Fprintf(os.Stderr, "  If you believe services are running, check with 'make status'.\n")
-		return fmt.Errorf("services not booted")
+		if !flags.Boot {
+			errorX("Services not booted. Run 'deepxctl boot' first or use --boot.")
+			fmt.Fprintf(os.Stderr, "\n  Expected boot state at: %s\n", BootPIDFile)
+			fmt.Fprintf(os.Stderr, "  If you believe services are running, check with 'make status'.\n")
+			return fmt.Errorf("services not booted")
+		}
+		fmt.Println("(auto-booting services with --boot) ...")
+		if err := autoBoot(flags.RedisAddr); err != nil {
+			errorX("auto-boot: %v", err)
+			return fmt.Errorf("auto-boot failed: %w", err)
+		}
 	}
 	ok()
 

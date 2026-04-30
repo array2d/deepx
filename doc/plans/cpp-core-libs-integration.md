@@ -7,7 +7,7 @@
 ```
 executor/
 ├── dxlang/           # CMake project: deepxcore → libdeepxcore.so
-├── common-metal/     # CMake project: deepx_common_metal → libdeepx_common_metal.a
+├── common-metal/     # CMake project: deepx_core_metal → libdeepx_core_metal.a
 └── old-cppcommon/    # 非正式库，仅原始头文件/源文件集合
 ```
 
@@ -46,12 +46,12 @@ executor/
 
 ---
 
-### 1.2 common-metal (`deepx_common_metal`)
+### 1.2 common-metal (`deepx_core_metal`)
 
 | 维度 | 详情 |
 |------|------|
 | **定位** | Metal 平台公共基础设施（**但部分内容平台无关**） |
-| **产出** | `libdeepx_common_metal.a` (STATIC) |
+| **产出** | `libdeepx_core_metal.a` (STATIC) |
 | **外部依赖** | Metal.framework, Foundation.framework (Apple only) |
 | **使用者** | heap-metal, op-metal |
 
@@ -113,7 +113,7 @@ executor/
 ```cmake
 find_library(METAL Metal)
 find_library(FOUNDATION Foundation)
-target_link_libraries(deepx_common_metal PUBLIC ${METAL} ${FOUNDATION})
+target_link_libraries(deepx_core_metal PUBLIC ${METAL} ${FOUNDATION})
 ```
 
 **影响**：任何非 Apple 平台（Linux/Windows）无法使用 `shm_tensor` 和 `Registry`。exop-cpu（CPU 后端）和 op-cuda（CUDA 后端）无法复用这些已经写好的基础设施。
@@ -165,8 +165,8 @@ target_link_libraries(deepx_common_metal PUBLIC ${METAL} ${FOUNDATION})
 
 ```
 executor/
-├── deepx-common/                 # 【新建】统一的平台无关公共库
-│   ├── CMakeLists.txt            # → libdeepx_common.a (STATIC)
+├── deepx-core/                 # 【新建】统一的平台无关公共库
+│   ├── CMakeLists.txt            # → libdeepx_core.a (STATIC)
 │   ├── include/deepx/
 │   │   ├── dtype/                # ← 从 dxlang 迁移
 │   │   │   ├── precision.hpp
@@ -201,7 +201,7 @@ executor/
 │       └── metal_device.cpp
 │
 ├── dxlang/                       # ⚠️ 代码已迁移，目录保留兼容
-│   └── README.md                 # 说明迁移到 deepx-common
+│   └── README.md                 # 说明迁移到 deepx-core
 │
 ├── old-cppcommon/                # ⚠️ 逐步拆分
 │   ├── tensorfunc/               # 保留算子接口（多后端共享）
@@ -221,7 +221,7 @@ executor/
 
 ```
                     ┌─────────────────────────────┐
-                    │     deepx-common (STATIC)    │
+                    │     deepx-core (STATIC)    │
                     │  dtype / tensor / shmem /    │
                     │  registry / stdutil          │
                     └──────┬──────────┬───────────┘
@@ -245,71 +245,71 @@ executor/
 
 ## 4. 分步执行计划
 
-### Phase 1：创建 deepx-common（本次执行）
+### Phase 1：创建 deepx-core（本次执行）
 
 **Step 1.1** — 创建目录结构：
 ```bash
-mkdir -p executor/deepx-common/{include/deepx/{dtype,tensor,shmem},src/{stdutil,shmem,tensor}}
+mkdir -p executor/deepx-core/{include/deepx/{dtype,tensor,shmem},src/{stdutil,shmem,tensor}}
 ```
 
 **Step 1.2** — 从 dxlang 迁移类型系统（直接复制，无需修改）：
 ```
-dxlang/src/deepx/dtype/precision.hpp      → deepx-common/include/deepx/dtype/precision.hpp
-dxlang/src/deepx/dtype/data_category.hpp  → deepx-common/include/deepx/dtype/data_category.hpp
-dxlang/src/deepx/dtype/typespec.hpp       → deepx-common/include/deepx/dtype/typespec.hpp
-dxlang/src/stdutil/*                      → deepx-common/src/stdutil/*
+dxlang/src/deepx/dtype/precision.hpp      → deepx-core/include/deepx/dtype/precision.hpp
+dxlang/src/deepx/dtype/data_category.hpp  → deepx-core/include/deepx/dtype/data_category.hpp
+dxlang/src/deepx/dtype/typespec.hpp       → deepx-core/include/deepx/dtype/typespec.hpp
+dxlang/src/stdutil/*                      → deepx-core/src/stdutil/*
 ```
 
 **Step 1.3** — 从 common-metal 拆分平台无关部分：
 ```
-common-metal/include/deepx/shmem/shm_tensor.h  → deepx-common/include/deepx/shmem/shm_tensor.h
-common-metal/src/shmem/shm_tensor.cpp          → deepx-common/src/shmem/shm_tensor.cpp
-common-metal/include/deepx/registry.h          → deepx-common/include/deepx/registry.h
+common-metal/include/deepx/shmem/shm_tensor.h  → deepx-core/include/deepx/shmem/shm_tensor.h
+common-metal/src/shmem/shm_tensor.cpp          → deepx-core/src/shmem/shm_tensor.cpp
+common-metal/include/deepx/registry.h          → deepx-core/include/deepx/registry.h
 ```
 
 **Step 1.4** — 从 old-cppcommon 提炼核心张量类型（需适配）：
-- `shape.hpp` → `deepx-common/include/deepx/tensor/shape.hpp`
+- `shape.hpp` → `deepx-core/include/deepx/tensor/shape.hpp`
   - 保留 Shape 结构体核心方法
   - 将 OpenMP 相关方法（rangeParallel 系列）标记为可选/条件编译
-- `tensor.hpp` → `deepx-common/include/deepx/tensor/tensor.hpp`
+- `tensor.hpp` → `deepx-core/include/deepx/tensor/tensor.hpp`
   - 保留 Tensor\<T\> 模板
-- `tensorbase.hpp` → `deepx-common/include/deepx/tensor/tensor_base.hpp`
+- `tensorbase.hpp` → `deepx-core/include/deepx/tensor/tensor_base.hpp`
 - ⚠️ `dtype.hpp` → **删除**，所有引用改为 `deepx/dtype/precision.hpp`
 
-**Step 1.5** — 编写 `deepx-common/CMakeLists.txt`：
+**Step 1.5** — 编写 `deepx-core/CMakeLists.txt`：
 ```cmake
 cmake_minimum_required(VERSION 3.15)
-project(deepx-common LANGUAGES CXX)
+project(deepx-core LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include_directories(include)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-add_library(deepx_common STATIC ${SOURCES})
-target_include_directories(deepx_common PUBLIC
+add_library(deepx_core STATIC ${SOURCES})
+target_include_directories(deepx_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 find_package(yaml-cpp REQUIRED)
-target_link_libraries(deepx_common PUBLIC yaml-cpp)
+target_link_libraries(deepx_core PUBLIC yaml-cpp)
 ```
 
 **Step 1.6** — 更新 common-metal/CMakeLists.txt：
 ```cmake
-# 依赖 deepx-common（不再内置 shm_tensor/registry）
-if(NOT TARGET deepx_common)
-    add_subdirectory(../deepx-common deepx-common)
+# 依赖 deepx-core（不再内置 shm_tensor/registry）
+if(NOT TARGET deepx_core)
+    add_subdirectory(../deepx-core deepx-core)
 endif()
 # 输出精简为 Metal HAL
 add_library(deepx_metal_hal STATIC src/metal/metal_device.cpp)
-target_link_libraries(deepx_metal_hal PUBLIC deepx_common ${METAL} ${FOUNDATION})
+target_link_libraries(deepx_metal_hal PUBLIC deepx_core ${METAL} ${FOUNDATION})
 ```
 
 **Step 1.7** — 更新各 executor 的 CMakeLists.txt：
-- `exop-cpu`: `add_subdirectory(../deepx-common deepx-common)` 替代 `add_subdirectory(../deepxcore deepxcore)`
-- `op-metal`: 同时依赖 `deepx-common` + `deepx_metal_hal`
-- `heap-metal`: 同时依赖 `deepx-common` + `deepx_metal_hal`
+- `exop-cpu`: `add_subdirectory(../deepx-core deepx-core)` 替代 `add_subdirectory(../deepxcore deepxcore)`
+- `op-metal`: 同时依赖 `deepx-core` + `deepx_metal_hal`
+- `heap-metal`: 同时依赖 `deepx-core` + `deepx_metal_hal`
 
 ### Phase 2：统一类型系统（后续）
 
@@ -340,35 +340,35 @@ exop-cpu 当前的 main.cpp 基于旧架构（UDP + MemBase + TF 框架）。需
 
 ### 新建
 ```
-executor/deepx-common/CMakeLists.txt
-executor/deepx-common/include/deepx/dtype/precision.hpp       ← dxlang
-executor/deepx-common/include/deepx/dtype/data_category.hpp   ← dxlang
-executor/deepx-common/include/deepx/dtype/typespec.hpp        ← dxlang
-executor/deepx-common/include/deepx/shmem/shm_tensor.h        ← common-metal
-executor/deepx-common/include/deepx/registry.h                ← common-metal
-executor/deepx-common/include/deepx/tensor/shape.hpp          ← old-cppcommon (提炼)
-executor/deepx-common/include/deepx/tensor/tensor.hpp         ← old-cppcommon (提炼)
-executor/deepx-common/include/deepx/tensor/tensor_base.hpp    ← old-cppcommon (提炼)
-executor/deepx-common/src/stdutil/*                           ← dxlang (全部)
-executor/deepx-common/src/shmem/shm_tensor.cpp                ← common-metal
-executor/deepx-common/src/tensor/shape.cpp                    ← old-cppcommon
+executor/deepx-core/CMakeLists.txt
+executor/deepx-core/include/deepx/dtype/precision.hpp       ← dxlang
+executor/deepx-core/include/deepx/dtype/data_category.hpp   ← dxlang
+executor/deepx-core/include/deepx/dtype/typespec.hpp        ← dxlang
+executor/deepx-core/include/deepx/shmem/shm_tensor.h        ← common-metal
+executor/deepx-core/include/deepx/registry.h                ← common-metal
+executor/deepx-core/include/deepx/tensor/shape.hpp          ← old-cppcommon (提炼)
+executor/deepx-core/include/deepx/tensor/tensor.hpp         ← old-cppcommon (提炼)
+executor/deepx-core/include/deepx/tensor/tensor_base.hpp    ← old-cppcommon (提炼)
+executor/deepx-core/src/stdutil/*                           ← dxlang (全部)
+executor/deepx-core/src/shmem/shm_tensor.cpp                ← common-metal
+executor/deepx-core/src/tensor/shape.cpp                    ← old-cppcommon
 executor/heap-cpu/ (整个目录)                                 ← 基于 heap-metal 新建
 ```
 
 ### 修改
 ```
-executor/common-metal/CMakeLists.txt       # 精简：移除 shm_tensor/registry，依赖 deepx-common
-executor/exop-cpu/CMakeLists.txt           # 依赖 deepx-common 替代 deepxcore
+executor/common-metal/CMakeLists.txt       # 精简：移除 shm_tensor/registry，依赖 deepx-core
+executor/exop-cpu/CMakeLists.txt           # 依赖 deepx-core 替代 deepxcore
 executor/exop-cpu/src/client/main.cpp      # 新增 Redis+shm 版本
-executor/op-metal/CMakeLists.txt           # 依赖 deepx-common + 精简后的 common-metal
-executor/heap-metal/CMakeLists.txt         # 依赖 deepx-common + 精简后的 common-metal
+executor/op-metal/CMakeLists.txt           # 依赖 deepx-core + 精简后的 common-metal
+executor/heap-metal/CMakeLists.txt         # 依赖 deepx-core + 精简后的 common-metal
 executor/Makefile                          # 添加 build-exop-cpu / build-heap-cpu 目标
 Makefile (根)                              # 添加 build-exop-cpu / build-heap-cpu 目标
 ```
 
 ### 废弃/标记
 ```
-executor/dxlang/README.md           # 添加"已迁移至 deepx-common"说明
+executor/dxlang/README.md           # 添加"已迁移至 deepx-core"说明
 executor/old-cppcommon/README.md    # 添加拆分说明
 ```
 
@@ -378,11 +378,11 @@ executor/old-cppcommon/README.md    # 添加拆分说明
 
 | 库 | 当前依赖 | 迁移后依赖 | 影响范围 |
 |----|---------|-----------|----------|
-| exop-cpu | dxlang (`deepxcore`) | deepx-common (`deepx_common`) | include 路径变更，CMake target 名变更 |
-| op-metal | common-metal + old-cppcommon + dxlang | deepx-common + common-metal (HAL only) | CMake 重构 |
-| heap-metal | common-metal | deepx-common + common-metal (HAL only) | CMake 重构 |
-| op-cuda | (规划中) | deepx-common | 开箱即用 |
-| heap-cpu | (规划中) | deepx-common | 开箱即用 |
+| exop-cpu | dxlang (`deepxcore`) | deepx-core (`deepx_core`) | include 路径变更，CMake target 名变更 |
+| op-metal | common-metal + old-cppcommon + dxlang | deepx-core + common-metal (HAL only) | CMake 重构 |
+| heap-metal | common-metal | deepx-core + common-metal (HAL only) | CMake 重构 |
+| op-cuda | (规划中) | deepx-core | 开箱即用 |
+| heap-cpu | (规划中) | deepx-core | 开箱即用 |
 
 ---
 
@@ -390,8 +390,8 @@ executor/old-cppcommon/README.md    # 添加拆分说明
 
 | 风险 | 等级 | 缓解措施 |
 |------|------|----------|
-| dxlang 当前编译为 `.so`，deepx-common 建议 `.a` | 低 | exop-cpu 使用 `add_subdirectory` 直接编译，无 ABI 问题 |
-| Shape 类依赖 OpenMP（`rangeParallel` 等方法） | 中 | 提炼时使用条件编译 `#ifdef _OPENMP`，或在 deepx-common 中仅保留串行方法 |
+| dxlang 当前编译为 `.so`，deepx-core 建议 `.a` | 低 | exop-cpu 使用 `add_subdirectory` 直接编译，无 ABI 问题 |
+| Shape 类依赖 OpenMP（`rangeParallel` 等方法） | 中 | 提炼时使用条件编译 `#ifdef _OPENMP`，或在 deepx-core 中仅保留串行方法 |
 | old-cppcommon 与 exop-cpu/src/deepx 有大量重复代码 | 中 | Phase 1 暂不处理，记录为后续去重任务 |
 | include 路径变更需全局搜索替换 | 中 | 使用 `grep -rn` 全局扫描，批量 `sed` 替换 |
 | TF 框架与新架构不兼容 | 高 | 保留旧 main.cpp 为 `main_legacy.cpp`，新写 Redis+shm 版本 |

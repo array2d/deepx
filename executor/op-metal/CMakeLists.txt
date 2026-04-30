@@ -24,10 +24,12 @@ include_directories(/opt/homebrew/opt/nlohmann-json/include)
 # dxlang (for deepx/dtype/precision.hpp etc.)
 include_directories(../dxlang/src)
 
-# 依赖 common-metal 公共库
-if(NOT TARGET deepx_common_metal)
+# 依赖 deepx-core + common-metal HAL
+if(NOT TARGET deepx_metal_hal)
     add_subdirectory(../common-metal common-metal)
 endif()
+# deepx-core 头文件路径（shm_tensor / registry / dtype）
+include_directories(../deepx-core/include)
 
 # 源文件
 file(GLOB_RECURSE DEEPX_SOURCES "src/deepx/*.cpp" "src/deepx/*.hpp" "src/deepx/*.h")
@@ -38,7 +40,7 @@ find_library(FOUNDATION Foundation REQUIRED)
 
 add_library(deepx_metal SHARED ${DEEPX_SOURCES})
 target_link_libraries(deepx_metal
-    PUBLIC deepx_common_metal ${METAL} ${FOUNDATION}
+    PUBLIC deepx_metal_hal deepx_core ${METAL} ${FOUNDATION}
 )
 set_target_properties(deepx_metal PROPERTIES
     XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES

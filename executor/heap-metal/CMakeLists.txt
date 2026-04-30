@@ -15,12 +15,14 @@ link_directories(/opt/homebrew/opt/hiredis/lib)
 # nlohmann/json (header-only JSON parser)
 include_directories(/opt/homebrew/opt/nlohmann-json/include)
 
-# 依赖 common-metal 公共库
-if(NOT TARGET deepx_common_metal)
+# 依赖 deepx-core（通过 common-metal 的 HAL 间接依赖）
+if(NOT TARGET deepx_metal_hal)
     add_subdirectory(../common-metal common-metal)
 endif()
+# deepx-core 头文件路径（shm_tensor / registry）
+include_directories(../deepx-core/include)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE deepx_common_metal hiredis)
+target_link_libraries(${PROJECT_NAME} PRIVATE deepx_metal_hal deepx_core hiredis)

@@ -1,8 +1,16 @@
 # deepx
 
-> **deepx = Redis KV 空间 + 6 核协作（pysdk 写源码、heap-plat 管堆、op-plat 管算、io-plat 管 I/O、VM 管执行、deepxctl 管编排），由 dxlang 类型系统统一契约。**
+> **deepx = Redis KV 空间 + 7 核协作（pysdk 写源码、heap-plat 管堆、op-plat 管算、io-plat 管 I/O、VM 管执行、deepxctl 管编排、deepx-core 统一类型契约），由 deepx-core 类型系统统一契约。**
 
 ## 组件职责
+
+### 公共核心库 (deepx-core)
+
+> **deepx-core** 是 deepx 所有 C++ 组件的统一公共库——提供跨平台的类型系统(dtype)、张量类型(Shape/Tensor)、共享内存(shmem)、注册接口(Registry)与工具类(stdutil)。不绑定任何特定硬件后端。
+
+| 组件 | 一句话职责 |
+|------|-----------|
+| **executor/deepx-core** | 平台无关的 C++ 静态库（libdeepx_core.a），统一 dtype/tensor/shmem/registry/stdutil，被所有 executor 依赖 |
 
 ### 语言层
 
@@ -10,24 +18,24 @@
 
 | 组件 | 一句话职责 |
 |------|-----------|
-| **executor/dxlang** | dxlang 语言的当前 C++ 参考实现（类型系统/协议对象），后续会重构或替换 |
-| **common-metal** | Metal 平台公共库：封装 POSIX shm 张量操作与 Metal 设备查询能力 |
+| **executor/dxlang** | ⚠️ 代码已迁移至 deepx-core，目录保留兼容（CMake target `deepxcore` 将被 `deepx_core` 替代） |
+| **executor/common-metal** | Metal HAL 库：封装 Metal 设备查询（`metal_device`）。shm_tensor/registry 已迁移至 deepx-core |
 
 ### 堆平面 (heap-plat)
 
 | 组件 | 一句话职责 |
 |------|-----------|
 | **heap-metal** | 进程维持 deepx 元程的堆在 Metal 设备平台的高可用——管理 tensor 的 shm 创建/引用/删除 |
+| **heap-cpu** | 进程维持 deepx 元程的堆在 CPU 平台的高可用——管理 tensor 的 shm 创建/引用/删除 |
 | **heap-cuda** | （待开发）进程维持 deepx 元程的堆在 CUDA 设备平台的高可用 |
 
-### 算子平面 (op-plat)
+### 扩展算子平面 (exop-plat)
 
 | 组件 | 一句话职责 |
 |------|-----------|
+| **exop-cpu** | 被动消费 `cmd:op-cpu:*`，在 CPU 上以 OpenMP + SIMD 执行张量运算 |
 | **op-metal** | 被动消费 `cmd:op-metal:*`，在 Apple GPU 上执行张量计算，完成后通知 `done:<vtid>` |
 | **op-cuda** | 被动消费 `cmd:op-cuda:*`，在 NVIDIA GPU 上执行张量计算，完成后通知 `done:<vtid>` |
-| **op-ompsimd** | 被动消费计算指令，在 CPU 上以 OpenMP SIMD 执行张量运算 |
-| **op-mem-ompsimd** | CPU 内存绑定场景的 SIMD 张量算子（如大矩阵运算的 cache 优化路径） |
 
 ### I/O 平面 (io-plat)
 
@@ -65,7 +73,39 @@
 
 | 组件 | 一句话职责 |
 |------|-----------|
-| **old-cppcommon** | 旧版 C++ Tensor/Shape 基础库，正被 dxlang + common-metal 逐步替代 |
+| **old-cppcommon** | 旧版 C++ Tensor/Shape/TF 框架，核心类型已迁移至 deepx-core，保留算子接口(tensorfunc)和 TF 框架供 exop-cpu 旧架构使用 |
+| **op-mem-ompsimd** | ⚠️ 已废弃，由 exop-cpu 替代 |
+
+## C++ 组件依赖关系
+
+```
+                    ┌─────────────────────────────────┐
+                    │         deepx-core (STATIC)       │
+                    │  dtype / tensor / shmem /         │
+                    │  registry / stdutil               │
+                    └──────┬──────────┬─────────────────┘
+                           │          │
+              ┌────────────┼──────────┼──────────────┐
+              │            │          │              │
+              ▼            ▼          ▼              ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │ exop-cpu │ │ op-cuda  │ │ op-metal │ │heap-metal│
+        │  (CPU)   │ │ (CUDA)  │ │ (Metal)  │ │ (Metal)  │
+        └──────────┘ └──────────┘ └────┬─────┘ └────┬─────┘
+                                       │            │
+                                       ▼            ▼
+                                ┌────────────────────────┐
+                                │ common-metal (HAL only) │
+                                │  metal_device           │
+                                └────────────────────────┘
+```
+
+**依赖说明**:
+- `deepx-core` — 所有 executor 的共同依赖（平台无关）
+- `common-metal` — 仅 op-metal / heap-metal 需要（Apple Metal HAL）
+- `exop-cpu` / `op-cuda` / `heap-cpu` — 仅依赖 deepx-core，无需 Metal
+- `old-cppcommon/tensorfunc` — 算子接口定义（Dispatcher 模式），多后端可复用
+- `old-cppcommon/tf` — TF 框架（仅 exop-cpu 旧架构依赖，逐步淘汰）
 
 ## 文档
 
@@ -76,8 +116,9 @@
 | `doc/dxlang/` | dxlang 语言设计（类型系统、控制流、编译器分析） | `README.md` `compiler-analysis-ssa-vs-arrow.md` `control-flow.md` |
 | `doc/heap-plat/` | 堆管理平面 (tensor 生命周期) | `README.md` `heap-metal.md` `heap-cuda.md` `heap-cpu.md` |
 | `doc/op-plat/` | 计算平面 (算子注册、GPU kernel) | `README.md` `op-metal.md` `op-cuda.md` `op-cpu.md` |
+| `doc/plans/` | 架构演进规划 | `cpp-core-libs-integration.md` |
 
-按任务查阅: 架构→`metaproc/` · dxlang→`dxlang/` · op开发→`op-plat/` · heap开发→`heap-plat/` · VM开发→`vm/`
+按任务查阅: 架构→`metaproc/` · dxlang→`dxlang/` · op开发→`op-plat/` · heap开发→`heap-plat/` · VM开发→`vm/` · 核心库→`deepx-core/`
 
 ## 术语
 
@@ -91,11 +132,14 @@
 
 | 命令 | 说明 |
 |------|------|
-| `make build-all` | 构建全部项目 (VM + deepxctl + op-metal + heap-metal + io-metal) |
+| `make build-all` | 构建全部项目 (VM + deepxctl + dashboard + op-metal + heap-metal + exop-cpu + heap-cpu + io-metal) |
 | `make build-vm` | 构建 VM + loader (Go) → `/tmp/deepx-vm/vm` `/tmp/deepx-vm/loader` |
-| `make build-deepxctl` | 构建 deepxctl CLI (Go) → `tool/deepxctl/deepxctl` |
+| `make build-deepxctl` | 构建 deepxctl CLI (Go) → `/tmp/deepx-vm/deepxctl` |
+| `make build-dashboard` | 构建 dashboard (Go+React) → `/tmp/deepx-dashboard/` |
 | `make build-op-metal` | 构建 Metal 计算平面 (C++/Metal cmake) → `/tmp/deepx/op-metal/build/deepx-op-metal` |
 | `make build-heap-metal` | 构建 Metal 堆管理平面 (C++ cmake) → `/tmp/deepx/heap-metal/build/deepx-heap-metal` |
+| `make build-exop-cpu` | 构建 CPU 扩展算子平面 (C++ cmake) → `/tmp/deepx/exop-cpu/build/deepx-exop-cpu` |
+| `make build-heap-cpu` | 构建 CPU 堆管理平面 (C++ cmake) → `/tmp/deepx/heap-cpu/build/deepx-heap-cpu` |
 | `make build-io-metal` | 构建 I/O 平面 (C++ cmake) → `/tmp/deepx/io-metal/build/deepx-io-metal` |
 
 ### 测试

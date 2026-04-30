@@ -17,9 +17,12 @@
 # ── Go 项目路径 ──
 VM_DIR          := executor/vm
 DEEPXCTL_DIR    := tool/deepxctl
+DASHBOARD_DIR   := tool/dashboard
 OP_METAL_DIR    := executor/op-metal
 HEAP_METAL_DIR  := executor/heap-metal
 IO_METAL_DIR    := executor/io-metal
+EXOP_CPU_DIR    := executor/exop-cpu
+HEAP_CPU_DIR    := executor/heap-cpu
 
 # ── Go 环境 ──
 GOROOT          ?= $(HOME)/sdk/go
@@ -33,12 +36,17 @@ VM_OUT          := /tmp/deepx-vm
 OP_METAL_OUT    := /tmp/deepx/op-metal/build
 HEAP_METAL_OUT  := /tmp/deepx/heap-metal/build
 IO_METAL_OUT    := /tmp/deepx/io-metal/build
+EXOP_CPU_OUT    := /tmp/deepx/exop-cpu/build
+HEAP_CPU_OUT    := /tmp/deepx/heap-cpu/build
+DASHBOARD_OUT   := /tmp/deepx-dashboard
 
 # ── Redis 配置 (用于联调) ──
 REDIS_ADDR      ?= 127.0.0.1:16379
 
 .PHONY: help \
-        build-all build-vm build-deepxctl build-op-metal build-heap-metal build-io-metal \
+        build-all build-vm build-deepxctl build-dashboard \
+        build-op-metal build-heap-metal build-io-metal \
+        build-exop-cpu build-heap-cpu \
         test-vm test-integration \
         start-services stop-services status \
         pipeline reset-redis \
@@ -83,7 +91,7 @@ help:
 # Build — All
 # ═══════════════════════════════════════════════════════════════
 
-build-all: build-vm build-deepxctl build-op-metal build-heap-metal build-io-metal
+build-all: build-vm build-deepxctl build-dashboard build-op-metal build-heap-metal build-io-metal build-exop-cpu build-heap-cpu
 	@echo "=== build-all complete ==="
 
 # ═══════════════════════════════════════════════════════════════
@@ -124,6 +132,14 @@ build-heap-metal:
 build-io-metal:
 	@echo "=== Building io-metal ==="
 	cd executor && $(MAKE) build-io
+
+build-exop-cpu:
+	@echo "=== Building exop-cpu ==="
+	cd executor && $(MAKE) build-exop-cpu
+
+build-heap-cpu:
+	@echo "=== Building heap-cpu ==="
+	cd executor && $(MAKE) build-heap-cpu
 
 # ═══════════════════════════════════════════════════════════════
 # Test
@@ -168,3 +184,6 @@ clean-all: clean
 	rm -rf $(OP_METAL_OUT)
 	rm -rf $(HEAP_METAL_OUT)
 	rm -rf $(IO_METAL_OUT)
+	rm -rf $(EXOP_CPU_OUT)
+	rm -rf $(HEAP_CPU_OUT)
+	rm -rf $(DASHBOARD_OUT)
