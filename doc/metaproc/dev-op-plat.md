@@ -1,6 +1,6 @@
 # op-plat 开发指南
 
-> 开发 op-metal (macOS Metal GPU)。op-cuda / op-cpu 暂不开发。
+> 开发 exop-metal (macOS Metal GPU)。op-cuda / op-cpu 暂不开发。
 > heap-plat 完成后，有内存分配能力了再开发此组件。
 
 ## 1. 角色与职责
@@ -9,17 +9,17 @@ op-plat 是执行张量计算指令的被动进程。
 
 | 能力 | 说明 |
 |------|------|
-| 指令消费 | 从 `cmd:op-metal:0` 队列 RPOP/BLPOP 消费指令 |
+| 指令消费 | 从 `cmd:exop-metal:0` 队列 RPOP/BLPOP 消费指令 |
 | 张量计算 | 执行 GPU kernel (elementwise, matmul, reduce, changeshape) |
 | 完成通知 | 计算完成后 LPUSH 到 `done:<vtid>` |
-| 算子注册 | 启动时向 `/op/op-metal/` 注册支持的算子 |
+| 算子注册 | 启动时向 `/op/exop-metal/` 注册支持的算子 |
 
 ## 2. 当前状态
 
 ```
-executor/op-metal/
+executor/exop-metal/
 ├── src/
-│   ├── client/main.mm             入口 (占位, 待改造)
+│   ├── client/main.cpp             入口 (占位, 待改造)
 │   ├── deepx/
 │   │   ├── metal_context.hpp/mm   Metal 设备管理
 │   │   ├── mem/mem_metal.hpp      内存管理 (shm 包装)
@@ -38,9 +38,9 @@ executor/op-metal/
 ## 3. 通信模型
 
 ```
-          VM                           op-metal
+          VM                           exop-metal
           ──                           ────────
-          PUSH cmd:op-metal:0  ───→   RPOP/BLPOP 消费
+          PUSH cmd:exop-metal:0  ───→   RPOP/BLPOP 消费
           │                             │
           │                         根据 key 从 Redis GET tensor 元信息
           │                         通过 shm_name 获取 GPU 指针
@@ -51,12 +51,12 @@ executor/op-metal/
 
 ## 4. 待开发任务
 
-### 任务 O1: Redis 命令消费循环 (main.mm)
+### 任务 O1: Redis 命令消费循环 (main.cpp)
 
 ```cpp
 // 伪代码
 while (true) {
-    auto cmd = redis.rpop("cmd:op-metal:0");
+    auto cmd = redis.rpop("cmd:exop-metal:0");
     if (!cmd) { usleep(100); continue; }
 
     auto req = json::parse(cmd);
@@ -144,33 +144,33 @@ redis.lpush("done:" + vtid, json{
 
 ### 任务 O4: 算子注册 (程序级)
 
-启动时向 `/op/op-metal/` 注册支持的算子:
+启动时向 `/op/exop-metal/` 注册支持的算子:
 
 ```
 启动时注册:
-  SET /op/op-metal/list = [
+  SET /op/exop-metal/list = [
       "add", "sub", "mul", "div",
       "relu", "sigmoid", "tanh", "gelu",
       "zeros", "ones", "arange"
   ]
 
-  SET /op/op-metal/add = {
+  SET /op/exop-metal/add = {
       "category": "elementwise",
       "dtype": ["f32", "f16", "i32"]
   }
 
-  SET /op/op-metal/relu = {
+  SET /op/exop-metal/relu = {
       "category": "activation",
       "dtype": ["f32", "f16"]
   }
 
-  SET /op/op-metal/matmul = {
+  SET /op/exop-metal/matmul = {
       "category": "matmul",
       "dtype": ["f32", "f16"],
       "max_shape": [8192, 8192, 8192]
   }
 
-  注意: 算子注册在 /op/op-metal/ (程序级)，与 /sys/op-plat/ (进程级) 分离
+  注意: 算子注册在 /op/exop-metal/ (程序级)，与 /sys/op-plat/ (进程级) 分离
 ```
 
 ### 任务 O5: 算子路由 (dispatch_kernel)
@@ -201,8 +201,8 @@ json dispatch_kernel(string opcode, vector<TensorRef> inputs,
 启动时注册到 `/sys/op-plat/`:
 
 ```
-SET /sys/op-plat/metal:0 = {
-    "program": "op-metal",
+SET /sys/op-plat/exop-metal:0 = {
+    "program": "deepx-exop-metal-{hostname}-{pid}",
     "device": "gpu0",
     "status": "running",
     "load": 0.0,
@@ -248,26 +248,26 @@ MPSMatrixMultiplication* matmul = [[MPSMatrixMultiplication alloc]
 brew install hiredis
 
 # 构建
-cd executor/op-metal
+cd executor/exop-metal
 mkdir -p build && cd build
 cmake .. && make
 
 # 运行
-./op_metal
+./deepx-exop-metal
 ```
 
 ## 7. 验证方法
 
 ```bash
-# 终端1: 启动 op-metal
-./op_metal
+# 终端1: 启动 exop-metal
+./deepx-exop-metal
 
 # 终端2: 通过 redis-cli 检查算子注册
-redis-cli GET /op/op-metal/list
+redis-cli GET /op/exop-metal/list
 # → ["add","sub","mul","div","relu","sigmoid","tanh","gelu","zeros","ones","arange"]
 
 # 发送测试指令 (需先通过 heap-plat 创建 tensor)
-redis-cli RPUSH cmd:op-metal:0 '{
+redis-cli RPUSH cmd:exop-metal:0 '{
   "vtid":"test1",
   "pc":"[0,0]",
   "opcode":"add",

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"deepx/executor/vm/internal/ir"
-	"deepx/executor/vm/internal/route"
+	"deepx/executor/vm/internal/platform"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -93,7 +93,7 @@ func TestDecodeFromCache(t *testing.T) {
 func TestRouteSelect_NoRedis(t *testing.T) {
 	rdb := redis.NewClient(&redis.Options{Addr: "127.0.0.1:9999"})
 	ctx := context.Background()
-	_, err := route.Select(ctx, rdb, "add")
+	_, err := platform.Select(ctx, rdb, "add")
 	if err == nil {
 		t.Error("expected error when Redis is not available")
 	}

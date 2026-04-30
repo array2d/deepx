@@ -159,7 +159,7 @@ vthread 栈内使用 `./` 前缀表示相对路径，解析为 `/vthread/<vtid>/
               │
               ▼ 编译器 (融合、拆分、设备标注)
   /op/op-cuda/func/forward            (CUDA 编译产物)
-  /op/op-metal/func/forward           (Metal 编译产物, 可能不同)
+  /op/exop-metal/func/forward           (Metal 编译产物, 可能不同)
               │
               ▼ VM CALL 时读取 + eager 翻译
   /vthread/<vtid>/[n,0]/[0,0]...     (执行层)
@@ -227,10 +227,10 @@ for(iterator) ->               ← 循环入口
      ↓ 编译器: 算子融合
 
 /op/op-cuda/func/gemm/0 = fused_matmul_mul_mul_add(A, B, alpha, C, beta) -> ./Y
-/op/op-metal/func/gemm/0 = matmul(A, B) -> ./tmp1
-/op/op-metal/func/gemm/1 = mul(./tmp1, alpha) -> ./tmp2
-/op/op-metal/func/gemm/2 = mul(C, beta) -> ./tmp3
-/op/op-metal/func/gemm/3 = add(./tmp2, ./tmp3) -> ./Y
+/op/exop-metal/func/gemm/0 = matmul(A, B) -> ./tmp1
+/op/exop-metal/func/gemm/1 = mul(./tmp1, alpha) -> ./tmp2
+/op/exop-metal/func/gemm/2 = mul(C, beta) -> ./tmp3
+/op/exop-metal/func/gemm/3 = add(./tmp2, ./tmp3) -> ./Y
 ```
 
 不同后端的编译产物可以不同（CUDA 融合了 4→1，Metal 保持 4 条）。
@@ -326,7 +326,7 @@ op-plat **程序**（如 op-cuda）定义了一套算子能力。该程序的多
 ```
 指令路由:
   GET /op/op-cuda/list → 含 "matmul"
-  GET /op/op-metal/list → 不含 "matmul"
+  GET /op/exop-metal/list → 不含 "matmul"
   → VM 将 matmul 路由到 op-cuda 的某个空闲实例
   → 实例选择基于 /sys/op-plat/cuda:* 的 load 信息
 ```
@@ -657,7 +657,7 @@ DONE:
 
 > 本部分将定义元程模型在 DeepX 中的具体实现，包括：
 > - Redis 作为 KV 空间的具体 key 路径约定
-> - op-cuda / op-metal 的具体协议
+> - op-cuda / exop-metal 的具体协议
 > - heap-cuda / heap-metal 的具体协议
 > - VM 进程的启动与调度实现
 > - pysdk 与编译器的接口

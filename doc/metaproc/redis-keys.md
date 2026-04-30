@@ -10,7 +10,7 @@
 ├── src/func/          函数源码层 (pysdk 写入, 人类可读)
 ├── op/                算子注册与编译产物
 │   ├── op-cuda/
-│   ├── op-metal/
+│   ├── exop-metal/
 │   └── op-cpu/
 ├── vthread/           vthread 执行状态 (栈)
 ├── sys/               系统信息
@@ -112,8 +112,8 @@ opcode(read_param_1, read_param_2, ...) -> write_param_1, write_param_2
 /op/op-cuda/relu                               = {"category":"activation", "dtype":["f32","f16","bf16"]}
 /op/op-cuda/fused_matmul_add_relu              = {"category":"fused", "dtype":["f32","f16"], "replaces":["matmul","add","relu"]}
 
-/op/op-metal/list                              = ["add", "sub", "mul", "div", "relu", "sigmoid", "tanh", "zeros", "ones"]
-/op/op-metal/add                               = {"category":"elementwise", "dtype":["f32","f16","i32"]}
+/op/exop-metal/list                              = ["add", "sub", "mul", "div", "relu", "sigmoid", "tanh", "zeros", "ones"]
+/op/exop-metal/add                               = {"category":"elementwise", "dtype":["f32","f16","i32"]}
 ```
 
 ---
@@ -257,7 +257,7 @@ addr0 是序列维整数，表示指令在栈帧内的顺序位置。
 ```
 /sys/op-plat/cuda:0    = {"program":"op-cuda", "device":"gpu0", "status":"running", "load":0.3, "pid":12345, "started_at":1714000000}
 /sys/op-plat/cuda:1    = {"program":"op-cuda", "device":"gpu1", "status":"running", "load":0.7, "pid":12346, "started_at":1714000001}
-/sys/op-plat/metal:0   = {"program":"op-metal", "device":"gpu0", "status":"running", "load":0.1, "pid":12347, "started_at":1714000002}
+/sys/op-plat/exop-metal:0   = {"program":"exop-metal", "device":"gpu0", "status":"running", "load":0.1, "pid":12347, "started_at":1714000002}
 /sys/heap-plat/metal:0 = {"program":"heap-metal", "device":"gpu0", "status":"running", "pid":12348, "started_at":1714000003}
 /sys/vm/0              = {"status":"running", "pid":12349, "started_at":1714000004}
 ```
@@ -275,7 +275,7 @@ addr0 是序列维整数，表示指令在栈帧内的顺序位置。
 | Key | 消费方 | 生产者 | 说明 |
 |-----|--------|--------|------|
 | `cmd:op-cuda:0` | op-cuda 实例 0 | VM | CUDA 计算指令 |
-| `cmd:op-metal:0` | op-metal 实例 0 | VM | Metal 计算指令 |
+| `cmd:exop-metal:0` | exop-metal 实例 0 | VM | Metal 计算指令 |
 | `cmd:op-cpu:0` | op-cpu 实例 0 | VM | CPU 计算指令 |
 
 **消息格式 (JSON):**

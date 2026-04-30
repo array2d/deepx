@@ -1,4 +1,4 @@
-package dispatch
+package termio
 
 import (
 	"context"
@@ -99,12 +99,44 @@ func (v nativeValue) asBool() bool {
 	}
 }
 
+func isRelative(param string) bool {
+	return len(param) >= 2 && param[:2] == "./"
+}
+
+func resolveWriteKey(vtid, param string) string {
+	if isRelative(param) {
+		return "/vthread/" + vtid + "/" + param[2:]
+	}
+	return param
+}
+// resolveTerm 通过 /vthread/<vtid>/term → /sys/term/${name}/${stream} 解析终端流配置。
+// /vthread/<vtid>/term 为空时返回零值 TermStream（无终端）。
+func resolveTerm(ctx context.Context, rdb *redis.Client, vtid, stream string) TermStream {
+	name, err := rdb.Get(ctx, "/vthread/"+vtid+"/term").Result()
+	if err != nil || name == "" {
+		return TermStream{}
+	}
+	key := "/sys/term/" + name + "/" + stream
+	results, err := rdb.HMGet(ctx, key, "type", "detail").Result()
+	if err != nil || len(results) < 2 {
+		return TermStream{}
+	}
+	var ts TermStream
+	if t, ok := results[0].(string); ok {
+		ts.Type = t
+	}
+	if d, ok := results[1].(string); ok {
+		ts.Detail = d
+	}
+	return ts
+}
+
 // Native 直接求值基础类型运算指令，不经过 op-plat。
 func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) error {
 	inputs := make([]nativeValue, 0, len(inst.Reads))
 	for _, r := range inst.Reads {
 		var raw string
-		if IsRelative(r) {
+		if isRelative(r) {
 			key := "/vthread/" + vtid + "/" + r[2:]
 			val, err := rdb.Get(ctx, key).Result()
 			if err != nil {
@@ -125,60 +157,50 @@ func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst
 		return err
 	}
 
-	// print → stdout, cerr → stderr (per-vthread WebSocket)
+	// print → stdout, cerr → stderr
 	if inst.Opcode == "print" || inst.Opcode == "cerr" {
 		stream := "stdout"
 		if inst.Opcode == "cerr" {
 			stream = "stderr"
 		}
-		// 检查 /vthread/<vtid>/stdout 或 /vthread/<vtid>/stderr
-		vkey := "/vthread/" + vtid + "/" + stream
-		wsURL, _ := rdb.Get(ctx, vkey).Result()
-		if wsURL == "" {
-			state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
-			return nil
-		}
+		ts := resolveTerm(ctx, rdb, vtid, stream)
 		parts := make([]string, len(inputs))
 		for i, v := range inputs {
 			parts[i] = v.String()
 		}
 		line := strings.Join(parts, " ")
 		logx.Debug("[%s] %s %s", vtid, strings.ToUpper(inst.Opcode), line)
-		writeWS(ctx, wsURL, line)
-
+		if !ts.IsZero() {
+			if err := WriteTerm(ctx, ts, line); err != nil {
+				logx.Warn("[%s] write %s: %v", vtid, stream, err)
+			}
+		}
 		state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 		return nil
 	}
-
-	// input → 从 /vthread/<vtid>/stdin 的 WebSocket 读取
+	// input → 从终端 stdin 读取
 	if inst.Opcode == "input" {
-		// prompt → stdout (if configured)
+		// prompt → stdout
 		if len(inputs) > 0 {
 			prompt := inputs[0].String()
-			outKey := "/vthread/" + vtid + "/stdout"
-			if outURL, _ := rdb.Get(ctx, outKey).Result(); outURL != "" {
-				writeWS(ctx, outURL, prompt)
+			outTS := resolveTerm(ctx, rdb, vtid, "stdout")
+			if !outTS.IsZero() {
+				WriteTerm(ctx, outTS, prompt)
 			}
 		}
-		// 检查 stdin reader key
-		inKey := "/vthread/" + vtid + "/stdin"
-		inURL, _ := rdb.Get(ctx, inKey).Result()
-		if inURL == "" {
-			// 无 stdin reader → 返回空
-			if len(inst.Writes) > 0 {
-				wKey := ResolveWriteKey(vtid, inst.Writes[0])
-				rdb.Set(ctx, wKey, "", 0)
+		// 从 stdin 读取
+		inTS := resolveTerm(ctx, rdb, vtid, "stdin")
+		var val string
+		if !inTS.IsZero() {
+			var inErr error
+			val, inErr = ReadTerm(ctx, inTS)
+			if inErr != nil {
+				state.SetError(ctx, rdb, vtid, pc, inErr.Error())
+				return inErr
 			}
-			state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
-			return nil
-		}
-		val, inErr := readWS(ctx, inURL)
-		if inErr != nil {
-			state.SetError(ctx, rdb, vtid, pc, inErr.Error())
-			return inErr
 		}
 		if len(inst.Writes) > 0 {
-			wKey := ResolveWriteKey(vtid, inst.Writes[0])
+			wKey := resolveWriteKey(vtid, inst.Writes[0])
 			if err := rdb.Set(ctx, wKey, val, 0).Err(); err != nil {
 				msg := fmt.Sprintf("native write %s: %v", wKey, err)
 				state.SetError(ctx, rdb, vtid, pc, msg)
@@ -191,7 +213,7 @@ func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst
 	}
 
 	if len(inst.Writes) > 0 {
-		outKey := ResolveWriteKey(vtid, inst.Writes[0])
+		outKey := resolveWriteKey(vtid, inst.Writes[0])
 		if err := rdb.Set(ctx, outKey, result.String(), 0).Err(); err != nil {
 			msg := fmt.Sprintf("native write %s: %v", outKey, err)
 			state.SetError(ctx, rdb, vtid, pc, msg)

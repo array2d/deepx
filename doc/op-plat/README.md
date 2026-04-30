@@ -150,16 +150,16 @@ op-plat **程序**的算子能力是静态的，所有**进程实例**共享：
 启动时注册——第一个实例负责写入 (SET NX)，后续实例只读取：
 
 ```
-SET /op/op-metal/list = ["add", "sub", "mul", "div", "relu", "sigmoid", ...]
+SET /op/exop-metal/list = ["add", "sub", "mul", "div", "relu", "sigmoid", ...]
 
-SET /op/op-metal/add = {
+SET /op/exop-metal/add = {
     "category": "elementwise",
     "dtype": ["f32", "f16", "i32"],
     "inputs": 2,
     "outputs": 1
 }
 
-SET /op/op-metal/matmul = {
+SET /op/exop-metal/matmul = {
     "category": "matmul",
     "dtype": ["f32", "f16", "bf16"],
     "max_shape": [8192, 8192, 8192],
@@ -185,8 +185,8 @@ SET /op/op-metal/matmul = {
 ### 2.7 进程注册
 
 ```
-/sys/op-plat/metal:0 = {
-    "program": "op-metal",
+/sys/op-plat/exop-metal:0 = {
+    "program": "deepx-exop-metal-{hostname}-{pid}",
     "device": "gpu0",
     "status": "running",
     "load": 0.3,
@@ -223,7 +223,7 @@ SET /op/op-metal/matmul = {
 
 | 实现 | 目录 | 状态 | GPU |
 |------|------|------|-----|
-| [op-metal](op-metal.md) | executor/op-metal/ | 待改造 (已有 1,325 行) | Metal (Apple Silicon) |
+| [exop-metal](exop-metal.md) | executor/exop-metal/ | 待改造 (已有 1,325 行) | Metal (Apple Silicon) |
 | [op-cuda](op-cuda.md) | executor/op-cuda/ | 已成熟 (47 文件) | CUDA (NVIDIA) |
 | [op-cpu](op-cpu.md) | executor/op-cpu/ | 待开发 | 纯 CPU |
 

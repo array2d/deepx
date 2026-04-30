@@ -5,8 +5,8 @@
 ## 前置条件
 
 - 本地有 Xcode + Metal 工具链
-- 已运行过 `/build-op-metal` 确认构建环境正常
-- 了解 op-metal 代码结构 (参考 `@dev-op-metal`)
+- 已运行过 `/build-exop-metal` 确认构建环境正常
+- 了解 exop-metal 代码结构 (参考 `@dev-exop-metal`)
 
 ## 工作流步骤
 
@@ -20,7 +20,7 @@
 
 ### 2. 写 Metal Shader
 
-编辑: `executor/op-metal/src/deepx/tensorfunc/elementwise_miaobyte.metal`
+编辑: `executor/exop-metal/src/deepx/tensorfunc/elementwise_miaobyte.metal`
 
 模板 (一元):
 ```metal
@@ -50,7 +50,7 @@ kernel void newop_f32(device const float* A [[buffer(0)]],
 
 ### 3. 写 Host 桥接函数
 
-编辑: `executor/op-metal/src/deepx/tensorfunc/elementwise_miaobyte.hpp`
+编辑: `executor/exop-metal/src/deepx/tensorfunc/elementwise_miaobyte.hpp`
 
 参考已有函数模式 (如 `add_f32` → `relu_f32`):
 - `extern bool newop_f32(const float* x, float* y, int64_t n);`
@@ -59,11 +59,11 @@ kernel void newop_f32(device const float* A [[buffer(0)]],
 
 ### 4. 注册算子 + 分派
 
-编辑: `executor/op-metal/src/client/main.mm`
+编辑: `executor/exop-metal/src/client/main.cpp`
 
 **注册**: 在 `register_instance()` 中:
 ```cpp
-redis_cmd(c, "RPUSH %s %s", "/op/op-metal/list", "newop");
+redis_cmd(c, "RPUSH %s %s", "/op/exop-metal/list", "newop");
 ```
 
 **分派**: 在 `execute_task()` 中增加分支:
@@ -85,7 +85,7 @@ if (opcode == "newop") {
 
 ### 5. TfFactory 注册 (可选，调度器用)
 
-编辑: `executor/op-metal/src/deepx/tf/register_miaobyte.hpp`
+编辑: `executor/exop-metal/src/deepx/tf/register_miaobyte.hpp`
 
 ```cpp
 factory.add_tf(std::make_shared<NewOp<Author>>(
@@ -96,11 +96,11 @@ factory.add_tf(std::make_shared<NewOp<Author>>(
 ### 6. 构建 + 验证
 
 ```bash
-/build-op-metal
+/build-exop-metal
 ```
 
 检查输出:
-- `[op-metal] registered all ops` 包含 newop
+- `[exop-metal] registered all ops` 包含 newop
 - 构建无 Metal shader 编译错误
 
 ### 7. 测试
@@ -120,7 +120,7 @@ deltensor(./b)
 
 - [ ] Metal shader 编译通过 (cmake 构建无错误)
 - [ ] 所有声明 dtype 都有 kernel
-- [ ] `/op/op-metal/list` 包含新算子
-- [ ] main.mm dispatch 路径可达（无 unreachable code）
+- [ ] `/op/exop-metal/list` 包含新算子
+- [ ] main.cpp dispatch 路径可达（无 unreachable code）
 - [ ] 错误路径正确释放 shm + notify_done
 - [ ] TfFactory 注册 (如适用)

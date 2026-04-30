@@ -60,7 +60,7 @@ MLIR:                              deepxir (类比):
   scf dialect  (结构化控制流)        if / for / while  ← 控制流层 (目标)
   cf dialect   (底层控制流)          br / jump / switch ← CFG 层 (目标)
   linalg dialect (线性代数)          matmul, add, conv  ← 计算层
-  gpu dialect  (GPU 抽象)            op-metal / op-cuda ← 后端调度 (隐性)
+  gpu dialect  (GPU 抽象)            exop-metal / op-cuda ← 后端调度 (隐性)
   memref dialect (内存抽象)           newtensor/deltensor ← 生命周期层
   arith dialect (算术)               + - * / % + 原生算子 ← 求值层
 ```

@@ -12,10 +12,10 @@
 ```
 redis-server --port 16379 &
 redis-cli -p 16379 FLUSHDB
-./executor/op-metal/build.sh
+./executor/exop-metal/build.sh
 ./executor/heap-metal/build.sh
 ./executor/vm/build.sh
-/tmp/deepx/op-metal/build/deepx-op-metal 127.0.0.1 16379 &
+/tmp/deepx/exop-metal/build/deepx-exop-metal 127.0.0.1 16379 &
 /tmp/deepx/heap-metal/build/deepx-heap-metal 127.0.0.1 16379 &
 VM_ID=0 /tmp/deepx-vm/vm 127.0.0.1:16379 &
 /tmp/deepx-vm/loader example/dxlang/tensor/lifecycle/compute.dx 127.0.0.1:16379
@@ -41,7 +41,7 @@ deepxctl run full.dx
 │
 ├─ [2/6] Build (按需)
 │         检测二进制是否存在:
-│           /tmp/deepx/op-metal/build/deepx-op-metal
+│           /tmp/deepx/exop-metal/build/deepx-exop-metal
 │           /tmp/deepx/heap-metal/build/deepx-heap-metal
 │           /tmp/deepx-vm/vm
 │           /tmp/deepx-vm/loader

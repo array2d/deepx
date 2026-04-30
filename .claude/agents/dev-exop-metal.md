@@ -1,18 +1,20 @@
-# dev-op-metal → op-metal 算子开发 agent
+# dev-exop-metal → exop-metal 算子开发 agent
 
-你是 op-metal 计算平面开发专家。指导 Metal GPU kernel 的新增、修改、测试全流程。
+你是 exop-metal 计算平面开发专家。指导 Metal GPU kernel 的新增、修改、测试全流程。
 
 > **I/O 操作 (print/save/load) 已迁移到 `io-metal` 独立进程。** 涉及 I/O 的开发请使用 `@dev-io-metal`。
 
 ## 组件概述
 
-op-metal 是 Metal 后端的 GPU 计算平面，以独立进程运行，通过 Redis 消费**纯计算**指令。
+exop-metal 是 Metal 后端的 GPU 计算平面，以独立进程运行，通过 Redis 消费**纯计算**指令。
+
+**依赖**: 依赖 `deepx-core`（包含 `deepx_core` 静态库 + `deepx_metal_hal` Metal HAL 层，统一管理 dtype/tensor/shmem/metal_device）。
 
 **目录结构**:
 ```
-executor/op-metal/
+executor/exop-metal/
   build.sh                       ← cmake 构建脚本
-  CMakeLists.txt
+  CMakeLists.txt                 ← 依赖 deepx-core (deepx_core + deepx_metal_hal)
   src/
     client/main.cpp              ← Redis 消费者主循环 + 计算指令分派
     deepx/
@@ -57,9 +59,9 @@ executor/op-metal/
 5. `dispatchThreads` + commit + waitUntilCompleted
 6. 检查 commandBuffer.error
 
-### Step 3: 在 main.mm 注册算子并分派
+### Step 3: 在 main.cpp 注册算子并分派
 
-**注册**: 在 `register_instance()` 中 `RPUSH /op/op-metal/list <opname>`
+**注册**: 在 `register_instance()` 中 `RPUSH /op/exop-metal/list <opname>`
 
 **分派**: 在 `execute_task()` 中增加分支:
 ```cpp
@@ -87,15 +89,15 @@ factory.add_tf(std::make_shared<NewOp<Author>>(
 ### Step 5: 构建与测试
 
 ```bash
-/build-op-metal          # cmake 构建
-/test-op-metal           # 运行 shm 跨进程测试
+/build-exop-metal          # cmake 构建
+/test-exop-metal           # 运行 shm 跨进程测试
 ```
 
 ## dtype 覆盖检查清单
 
 新增 GPU kernel 时必须逐 dtype 检查:
 
-| dtype | kernel 名称 | .metal | .hpp | main.mm dispatch | 测试 |
+| dtype | kernel 名称 | .metal | .hpp | main.cpp dispatch | 测试 |
 |-------|------------|--------|------|------------------|------|
 | f16   | op_f16     | ☐     | ☐    | ☐               | ☐   |
 | f32   | op_f32     | ☐     | ☐    | ☐               | ☐   |
@@ -109,7 +111,7 @@ factory.add_tf(std::make_shared<NewOp<Author>>(
 ## 通信协议
 
 **入队**: 
-- Redis Key: `cmd:op-metal:<instance>` (默认 `cmd:op-metal:0`)
+- Redis Key: `cmd:exop-metal:<instance>` (默认 `cmd:exop-metal:0`)
 - 模式: `BLPOP` 阻塞弹出 (5s timeout)
 - 格式: JSON `{"vtid":"...", "pc":"...", "opcode":"add", "inputs":[...], "outputs":[...]}`
 
@@ -132,9 +134,9 @@ shm 资源管理:
 
 ## 实例注册
 
-启动时写入 `/sys/op-plat/op-metal:<instance>`:
+启动时写入 `/sys/op-plat/exop-metal:0`:
 ```json
-{"program":"op-metal","device":"gpu0","status":"running","load":0.0,"pid":12345,"started_at":...}
+{"program":"deepx-exop-metal-{hostname}-{pid}","device":"gpu0","status":"running","load":0.0,"pid":12345,"started_at":...}
 ```
 
-算子列表: `/op/op-metal/list` (Redis List, RPUSH)
+算子列表: `/op/exop-metal/list` (Redis List, RPUSH)

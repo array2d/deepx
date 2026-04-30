@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"deepx/executor/vm/internal/engine"
+	"deepx/executor/vm/internal/parser"
+	"deepx/executor/vm/internal/state"
+	"deepx/executor/vm/internal/vm"
 	"deepx/executor/vm/internal/logx"
-	"deepx/executor/vm/testutil"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -30,12 +31,19 @@ func main() {
 
 	// 1. 加载 .dx
 	dxPath := filepath.Join(os.Getenv("PWD"), "test_print.dx")
-	fn, err := testutil.LoadDxFile(dxPath)
+	df, err := parser.ParseFile(dxPath)
+	if err != nil {
+		logx.Fatal("加载失败: %v", err)
+	}
+	if len(df.Funcs) == 0 {
+		logx.Fatal("文件中没有函数定义")
+	}
+	fn := &df.Funcs[0]
 	if err != nil {
 		logx.Fatal("加载失败: %v", err)
 	}
 	fn.Name = "print_demo"
-	if err := fn.RegisterFunc(ctx, rdb); err != nil {
+	if err := fn.Register(ctx, rdb); err != nil {
 		logx.Fatal("注册失败: %v", err)
 	}
 	logx.Info("✅ 已加载: %s (body %d 行)", fn.Name, len(fn.Body))
@@ -43,11 +51,11 @@ func main() {
 	// 2. 启动 VM
 	vmCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go engine.RunWorker(vmCtx, rdb, 0)
+	go vm.RunWorker(vmCtx, rdb, 0)
 	time.Sleep(100 * time.Millisecond)
 
 	// 3. 创建虚线程
-	vtid, err := testutil.CreateVThread(ctx, rdb, "print_demo",
+	vtid, err := state.CreateVThread(ctx, rdb, "print_demo",
 		[]string{"./a", "./b", "./c"}, []string{"./r"})
 	if err != nil {
 		logx.Fatal("创建 vthread 失败: %v", err)

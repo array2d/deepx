@@ -1,4 +1,4 @@
-# op-metal
+# exop-metal
 
 > macOS Metal GPU 的 op-plat 实现。Apple Silicon 上使用 Metal Shading Language。
 > 当前已有 1,325 行 C++/Metal 代码，需增加 Redis 命令循环和算子路由。
@@ -16,12 +16,12 @@
 ## 2. 代码位置
 
 ```
-executor/op-metal/
+executor/exop-metal/
 ├── CMakeLists.txt
 ├── src/
-│   ├── client/main.mm             入口 (占位, 待改造为 Redis 循环)
+│   ├── client/main.cpp             入口 (Redis 消费者 + 计算指令分派)
 │   ├── deepx/
-│   │   ├── metal_context.hpp/mm   Metal 设备管理 (MTLDevice, MTLCommandQueue)
+│   │   ├── metal_context.hpp/cpp   Metal 设备管理 (MTLDevice, MTLCommandQueue)
 │   │   ├── mem/mem_metal.hpp      内存 (shm → MTLBuffer 包装)
 │   │   ├── dtype_metal.hpp        数据类型映射 (f32↔MTLDataTypeFloat)
 │   │   └── tensorfunc/
@@ -32,9 +32,9 @@ executor/op-metal/
 │   │       └── metal_common.hpp            Metal 工具
 │   └── test/shm/                 跨进程 shm 已验证
 
-依赖 common-metal:
-  shm_tensor.h/.mm
-  metal_device.h/.mm
+依赖 deepx-core:
+  deepx_core 静态库 (dtype / tensor / shape / shmem / registry / stdutil)
+  deepx_metal_hal (metal_device.hpp / metal_device.cpp, 查询 Metal 设备)
 ```
 
 ## 3. 算子清单
@@ -68,7 +68,7 @@ executor/op-metal/
 启动时 (SET NX)：
 
 ```
-/op/op-metal/list = [
+/op/exop-metal/list = [
     "add", "sub", "mul", "div",
     "relu", "sigmoid", "tanh", "gelu",
     "zeros", "ones", "arange",
@@ -76,14 +76,14 @@ executor/op-metal/
     "reshape", "transpose", "concat", "slice"
 ]
 
-/op/op-metal/add = {
+/op/exop-metal/add = {
     "category": "elementwise",
     "dtype": ["f32", "f16", "i32"],
     "inputs": 2,
     "outputs": 1
 }
 
-/op/op-metal/matmul = {
+/op/exop-metal/matmul = {
     "category": "matmul",
     "dtype": ["f32", "f16"],
     "max_shape": [8192, 8192, 8192],
@@ -179,8 +179,8 @@ MPSMatrix* matC = [[MPSMatrix alloc] initWithBuffer:bufC descriptor:descC];
 ## 8. 进程注册
 
 ```
-/sys/op-plat/metal:0 = {
-    "program": "op-metal",
+/sys/op-plat/exop-metal:0 = {
+    "program": "deepx-exop-metal-{hostname}-{pid}",
     "device": "gpu0",
     "status": "running",
     "load": 0.0,
@@ -192,10 +192,13 @@ MPSMatrix* matC = [[MPSMatrix alloc] initWithBuffer:bufC descriptor:descC];
 ## 9. 编译与运行
 
 ```bash
+# 通过根 Makefile 统一构建
+make build-exop-metal    # → /tmp/deepx/exop-metal/build/deepx-exop-metal
+
+# 或手动 cmake
 brew install hiredis
-cd executor/op-metal && mkdir build && cd build
+cd executor/exop-metal && mkdir build && cd build
 cmake .. && make
-./op_metal
 ```
 
 ## 10. 开发量

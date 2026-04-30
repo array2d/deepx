@@ -57,7 +57,7 @@ mmap 返回的 CPU 指针在 Apple Silicon 上可直接被 GPU 使用，
 无需 `cudaMemcpy` 或显式数据传输。
 
 ```objc
-// op-metal 侧使用示例
+// exop-metal 侧使用示例
 void* cpu_ptr = mmap_result;
 id<MTLBuffer> gpu_buf = [device newBufferWithBytesNoCopy:cpu_ptr
                                                  length:byte_size

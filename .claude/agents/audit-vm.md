@@ -65,7 +65,7 @@
 | 组件 | 语言 | 目录 |
 |------|------|------|
 | VM | Go | `executor/vm/` |
-| op-metal | C++/ObjC++/Metal | `executor/op-metal/` |
+| op-metal | C++/ObjC++/Metal | `executor/exop-metal/` |
 | op-cuda | C++/CUDA | `executor/op-cuda/` |
 | heap-metal | C++/ObjC++ | `executor/heap-metal/` |
 | heap-cuda | C++/CUDA | `executor/heap-cuda/` |

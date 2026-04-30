@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"deepx/executor/vm/internal/engine"
+	"deepx/executor/vm/internal/vm"
 	"deepx/executor/vm/internal/ir"
 	"deepx/executor/vm/internal/logx"
 	"deepx/executor/vm/internal/state"
@@ -93,7 +93,7 @@ func main() {
 
 	// 启动 worker pool
 	for i := 0; i < workers; i++ {
-		go engine.RunWorker(ctx, rdb, i)
+		go vm.RunWorker(ctx, rdb, i)
 	}
 	logx.Info("VM-%s %d workers started", vmID, workers)
 
@@ -226,7 +226,7 @@ func singleRun(ctx context.Context, rdb *redis.Client, vtid string) {
 	}
 
 	logx.Info("[single] executing vthread %s", vtid)
-	engine.Execute(ctx, rdb, vtid)
+	vm.Execute(ctx, rdb, vtid)
 
 	// 等待异步任务完成
 	time.Sleep(3 * time.Second)

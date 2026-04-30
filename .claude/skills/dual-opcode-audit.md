@@ -7,7 +7,7 @@
 确保三层之间 opcode 命名一致:
 
 1. **VM 分派层**: `ir` 包中识别的 opcode (IsComputeOp / IsLifecycleOp / IsControlOp / IsNativeOp)
-2. **op-plat 注册层**: `/op/op-metal/list` + `/op/op-cuda/list` 中注册的算子
+2. **op-plat 注册层**: `/op/exop-metal/list` + `/op/op-cuda/list` 中注册的算子
 3. **测试层**: `testdata/` 中 `.dx` 文件使用的 opcode
 
 ## 审计步骤
@@ -25,19 +25,19 @@ grep -rhoP '^\s*\w+\(' executor/vm/testdata/ | sort -u | sed 's/($//'
 
 ```bash
 # 从 Redis 读取 (需 Redis 运行 + op-plat 已注册)
-redis-cli LRANGE "/op/op-metal/list" 0 -1
+redis-cli LRANGE "/op/exop-metal/list" 0 -1
 redis-cli LRANGE "/op/op-cuda/list" 0 -1
 ```
 
 或从源码静态收集:
 ```bash
-# op-metal main.mm 中 RPUSH 的算子
-grep -A1 'RPUSH.*list' executor/op-metal/src/client/main.mm | grep '"' | grep -oP '"\K[^"]+' | grep -v '/op/' | grep -v 'RPUSH'
+# exop-metal main.cpp 中 RPUSH 的算子
+grep -A1 'RPUSH.*list' executor/exop-metal/src/client/main.cpp | grep '"' | grep -oP '"\K[^"]+' | grep -v '/op/' | grep -v 'RPUSH'
 ```
 
 ### Step 3: 交叉比对
 
-| opcode | VM 使用 | op-metal 注册 | op-cuda 注册 | CPU fallback | 状态 |
+| opcode | VM 使用 | exop-metal 注册 | op-cuda 注册 | CPU fallback | 状态 |
 |--------|---------|---------------|--------------|--------------|------|
 | add    | ✅      | ✅            | ?            | —            | ✅   |
 | newop  | ✅      | ❌            | ❌            | —            | ❌   |
@@ -60,17 +60,17 @@ grep ':"' executor/vm/internal/ir/native.go | grep -oP '"\K[^"]+' | sort > /tmp/
 echo "=== VM test ops ==="
 grep -rhoP '^\s*\w+\(' executor/vm/testdata/ | sed 's/($//' | sort -u > /tmp/vm_test.txt
 
-echo "=== op-metal registered ==="
-# (需要从 Redis 或 main.mm 中提取)
-grep -A1 'RPUSH.*list' executor/op-metal/src/client/main.mm | \
+echo "=== exop-metal registered ==="
+# (需要从 Redis 或 main.cpp 中提取)
+grep -A1 'RPUSH.*list' executor/exop-metal/src/client/main.cpp | \
   grep '"[a-z]' | grep -oP '"\K[^"]+' | grep -v 'list' | sort > /tmp/op_metal.txt
 
-echo "=== Diff: VM test vs op-metal ==="
+echo "=== Diff: VM test vs exop-metal ==="
 comm -23 /tmp/vm_test.txt /tmp/op_metal.txt
-echo "(VM test ops NOT in op-metal)"
+echo "(VM test ops NOT in exop-metal)"
 
 comm -13 /tmp/vm_test.txt /tmp/op_metal.txt
-echo "(op-metal ops NOT in VM tests)"
+echo "(exop-metal ops NOT in VM tests)"
 ```
 
 ## 合规标准

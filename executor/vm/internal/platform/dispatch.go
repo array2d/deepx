@@ -1,31 +1,29 @@
-// Package dispatch 负责指令分发到 op-plat / heap-plat 或本地执行。
-package dispatch
+// Package platform 负责算子分发到 op-plat 和 heap-plat。
+package platform
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-		"deepx/executor/vm/internal/logx"
 	"strings"
 	"time"
 
 	"deepx/executor/vm/internal/ir"
-	"deepx/executor/vm/internal/route"
+	"deepx/executor/vm/internal/logx"
+	"deepx/executor/vm/internal/parser"
 	"deepx/executor/vm/internal/state"
 	"github.com/redis/go-redis/v9"
 )
 
-// OpTask 发送给 op-plat 的计算任务。
 type OpTask struct {
-	Vtid    string                   `json:"vtid"`
-	PC      string                   `json:"pc"`
-	Opcode  string                   `json:"opcode"`
-	Inputs  []ParamRef               `json:"inputs"`
-	Outputs []ParamRef               `json:"outputs"`
-	Params  map[string]interface{}   `json:"params,omitempty"`
+	Vtid    string                 `json:"vtid"`
+	PC      string                 `json:"pc"`
+	Opcode  string                 `json:"opcode"`
+	Inputs  []ParamRef             `json:"inputs"`
+	Outputs []ParamRef             `json:"outputs"`
+	Params  map[string]interface{} `json:"params,omitempty"`
 }
 
-// ParamRef 参数引用 (tensor 元信息)。
 type ParamRef struct {
 	Key     string                 `json:"key"`
 	Dtype   string                 `json:"dtype,omitempty"`
@@ -33,7 +31,6 @@ type ParamRef struct {
 	Address map[string]interface{} `json:"address,omitempty"`
 }
 
-// HeapTask 发送给 heap-plat 的生命周期任务。
 type HeapTask struct {
 	Vtid   string `json:"vtid"`
 	PC     string `json:"pc"`
@@ -46,49 +43,25 @@ type HeapTask struct {
 	Dst    string `json:"dst,omitempty"`
 }
 
-// IsRelative 判断是否为相对路径引用 (./ 前缀)。
 func IsRelative(param string) bool {
 	return len(param) >= 2 && param[:2] == "./"
 }
 
-// ResolveWriteKey 将相对路径解析为绝对 Redis key。
-func ResolveWriteKey(vtid, param string) string {
-	if IsRelative(param) {
-		return "/vthread/" + vtid + "/" + param[2:]
-	}
-	return param
-}
-
-func isLiteral(s string) bool {
-	if IsRelative(s) {
-		return false
-	}
-	if len(s) > 0 && s[0] == '/' {
-		return false
-	}
-	return true
-}
-
-// resolveParam 解析参数引用，返回完整的 tensor 元信息。
-func resolveParam(ctx context.Context, rdb *redis.Client, vtid string, param string) ParamRef {
+func resolveParam(ctx context.Context, rdb *redis.Client, vtid, param string) ParamRef {
 	ref := ParamRef{Key: param}
-
 	resolvedKey := param
 	if IsRelative(param) {
 		resolvedKey = "/vthread/" + vtid + "/" + param[2:]
 	}
 	ref.Key = resolvedKey
-
 	val, err := rdb.Get(ctx, resolvedKey).Result()
 	if err != nil {
 		return ref
 	}
-
 	var meta map[string]interface{}
-	if err := json.Unmarshal([]byte(val), &meta); err != nil {
+	if json.Unmarshal([]byte(val), &meta) != nil {
 		return ref
 	}
-
 	if dtype, ok := meta["dtype"].(string); ok {
 		ref.Dtype = dtype
 	}
@@ -102,23 +75,23 @@ func resolveParam(ctx context.Context, rdb *redis.Client, vtid string, param str
 	if addr, ok := meta["address"].(map[string]interface{}); ok {
 		ref.Address = addr
 	}
-
 	return ref
 }
 
-func buildOpTask(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) *OpTask {
-	task := &OpTask{
-		Vtid:   vtid,
-		PC:     pc,
-		Opcode: inst.Opcode,
-		Params: make(map[string]interface{}),
+func isLiteral(s string) bool {
+	if IsRelative(s) {
+		return false
 	}
+	if len(s) > 0 && s[0] == '/' {
+		return false
+	}
+	return true
+}
 
+func buildOpTask(ctx context.Context, rdb *redis.Client, vtid, pc string, inst *ir.Instruction) *OpTask {
+	task := &OpTask{Vtid: vtid, PC: pc, Opcode: inst.Opcode, Params: make(map[string]interface{})}
 	switch inst.Opcode {
 	case "save":
-		// save(tensor, filepath)
-		// Reads[0] = tensor → input
-		// Reads[1] = filepath → param
 		for i, r := range inst.Reads {
 			if i == 0 {
 				task.Inputs = append(task.Inputs, resolveParam(ctx, rdb, vtid, r))
@@ -126,25 +99,17 @@ func buildOpTask(ctx context.Context, rdb *redis.Client, vtid string, pc string,
 				task.Params[fmt.Sprintf("arg%d", len(task.Params))] = r
 			}
 		}
-
 	case "load":
-		// load(filepath) → output_tensor
-		// Reads[0] = filepath → param
-		// Writes[0] = output tensor → output
 		for _, r := range inst.Reads {
 			task.Params[fmt.Sprintf("arg%d", len(task.Params))] = r
 		}
 		for _, w := range inst.Writes {
 			task.Outputs = append(task.Outputs, resolveParam(ctx, rdb, vtid, w))
 		}
-
 	case "print":
-		// print(tensor) — all reads are tensor inputs, no outputs
 		for _, r := range inst.Reads {
 			task.Inputs = append(task.Inputs, resolveParam(ctx, rdb, vtid, r))
 		}
-		// no outputs
-
 	default:
 		for _, r := range inst.Reads {
 			if isLiteral(r) {
@@ -153,27 +118,17 @@ func buildOpTask(ctx context.Context, rdb *redis.Client, vtid string, pc string,
 				task.Inputs = append(task.Inputs, resolveParam(ctx, rdb, vtid, r))
 			}
 		}
-
 		for _, w := range inst.Writes {
 			task.Outputs = append(task.Outputs, resolveParam(ctx, rdb, vtid, w))
 		}
 	}
-
 	return task
 }
 
-func buildHeapTask(vtid string, pc string, inst *ir.Instruction) *HeapTask {
-	task := &HeapTask{
-		Vtid: vtid,
-		PC:   pc,
-		Op:   inst.Opcode,
-	}
-
+func buildHeapTask(vtid, pc string, inst *ir.Instruction) *HeapTask {
+	task := &HeapTask{Vtid: vtid, PC: pc, Op: inst.Opcode}
 	switch inst.Opcode {
 	case "newtensor":
-		// Writes[0] = tensor key (e.g., "/data/x")
-		// Reads[0] = dtype (e.g., "f32")
-		// Reads[1] = shape (e.g., "[10,10]" or "[100]")
 		if len(inst.Writes) > 0 {
 			task.Key = inst.Writes[0]
 		}
@@ -195,11 +150,9 @@ func buildHeapTask(vtid string, pc string, inst *ir.Instruction) *HeapTask {
 			task.Dst = inst.Writes[0]
 		}
 	}
-
 	return task
 }
 
-// parseShapeParam converts "[10,10]" or "[100]" to []int.
 func parseShapeParam(raw string) []int {
 	raw = strings.Trim(raw, "[] ")
 	if raw == "" {
@@ -219,107 +172,55 @@ func parseShapeParam(raw string) []int {
 }
 
 // Compute 分发张量计算指令到 op-plat。
-func Compute(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) error {
-	instance, err := route.Select(ctx, rdb, inst.Opcode)
+func Compute(ctx context.Context, rdb *redis.Client, vtid, pc string, inst *ir.Instruction) error {
+	instance, err := Select(ctx, rdb, inst.Opcode)
 	if err != nil {
 		return fmt.Errorf("route: %w", err)
 	}
-
 	task := buildOpTask(ctx, rdb, vtid, pc, inst)
 	cmdQueue := fmt.Sprintf("cmd:op-%s", instance)
-
-	taskJSON, err := json.Marshal(task)
-	if err != nil {
-		return fmt.Errorf("marshal task: %w", err)
-	}
-
+	taskJSON, _ := json.Marshal(task)
 	if err := rdb.RPush(ctx, cmdQueue, taskJSON).Err(); err != nil {
 		return fmt.Errorf("push task: %w", err)
 	}
-
 	logx.Debug("[%s] PUSH %s → %s", vtid, inst.Opcode, cmdQueue)
-
 	state.Set(ctx, rdb, vtid, pc, "wait")
 	done, err := state.WaitDone(ctx, rdb, vtid, 30*time.Second)
 	if err != nil {
 		state.SetError(ctx, rdb, vtid, pc, fmt.Sprintf("BLPOP timeout: %v", err))
 		return err
 	}
-
 	if status, ok := done["status"].(string); ok && status == "error" {
 		errInfo := fmt.Sprintf("%v", done["error"])
 		state.SetError(ctx, rdb, vtid, pc, errInfo)
 		return fmt.Errorf("op error: %s", errInfo)
 	}
-
 	logx.Debug("[%s] DONE %s", vtid, inst.Opcode)
 	state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 	return nil
 }
 
 // Lifecycle 分发生命周期指令到 heap-plat。
-func Lifecycle(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) error {
+func Lifecycle(ctx context.Context, rdb *redis.Client, vtid, pc string, inst *ir.Instruction) error {
 	task := buildHeapTask(vtid, pc, inst)
-	taskJSON, err := json.Marshal(task)
-	if err != nil {
-		return fmt.Errorf("marshal heap task: %w", err)
-	}
-
+	taskJSON, _ := json.Marshal(task)
 	if err := rdb.RPush(ctx, "cmd:heap-metal:0", taskJSON).Err(); err != nil {
 		return fmt.Errorf("push heap task: %w", err)
 	}
-
 	logx.Debug("[%s] PUSH %s → cmd:heap-metal:0", vtid, inst.Opcode)
-
 	done, err := state.WaitDone(ctx, rdb, vtid, 5*time.Second)
 	if err != nil {
 		state.SetError(ctx, rdb, vtid, pc, fmt.Sprintf("heap op timeout: %v", err))
 		return err
 	}
-
 	if status, ok := done["status"].(string); ok && status == "error" {
 		errInfo := fmt.Sprintf("%v", done["error"])
 		state.SetError(ctx, rdb, vtid, pc, errInfo)
-		return fmt.Errorf("heap op error: %s", errInfo)
+		return fmt.Errorf("heap error: %s", errInfo)
 	}
-
+	logx.Debug("[%s] HEAP %s done", vtid, inst.Opcode)
 	state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 	return nil
 }
 
-// If 处理 IF 条件分支。
-func If(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst *ir.Instruction) error {
-	if len(inst.Reads) == 0 {
-		return fmt.Errorf("if without condition")
-	}
-
-	condVal := inst.Reads[0]
-	if IsRelative(condVal) {
-		resolvedKey := "/vthread/" + vtid + "/" + condVal[2:]
-		val, err := rdb.Get(ctx, resolvedKey).Result()
-		if err == nil {
-			condVal = val
-		}
-	}
-
-	cond := isTruthy(condVal)
-	var branchPC string
-	if cond {
-		branchPC = pc + "/true/0"
-	} else {
-		branchPC = pc + "/false/0"
-	}
-
-	logx.Debug("[%s] IF %v → %s", vtid, cond, branchPC)
-	state.Set(ctx, rdb, vtid, branchPC, "running")
-	return nil
-}
-
-func isTruthy(val string) bool {
-	switch strings.ToLower(strings.TrimSpace(val)) {
-	case "true", "1", "yes":
-		return true
-	default:
-		return false
-	}
-}
+var _ = parser.ParseLine

@@ -153,7 +153,7 @@ deepxctl **绝对不能**读写的 key：
 deepxctl 将生命周期拆分为三个独立命令：
 
 ```
-deepxctl boot       → 构建 + 启动 op-metal、heap-metal、VM，写入 PID 文件
+deepxctl boot       → 构建 + 启动 exop-metal、heap-metal、VM，写入 PID 文件
 deepxctl run a.dx   → 检测 boot 状态 → 加载 dx → 创建 vthread → 轮询等待结果
 deepxctl shutdown   → 有序退出: plats → VM → 心跳验证 → 清理 PID 文件
 ```
@@ -218,7 +218,7 @@ deepxctl run a.dx && deepxctl shutdown && make reset-redis
 |---------|-----------|
 | 直接在 deepxctl 里解析 dxlang 找入口函数 | loader + VM 已有解析逻辑，deepxctl 不应重复实现语法解析 |
 | 直接 SET `/vthread/<vtid>/[0,1]` 等详细指令 | VM 的 CALL eager 翻译负责展开指令坐标，deepxctl 只负责最顶层的一个 CALL |
-| 直接 LPUSH `cmd:op-metal:0` | 命令队列由 VM 生产，deepxctl 绕过 VM 会破坏调度逻辑 |
+| 直接 LPUSH `cmd:exop-metal:0` | 命令队列由 VM 生产，deepxctl 绕过 VM 会破坏调度逻辑 |
 | 通过 `done:<vtid>` 轮询完成 | VM 消费 done 队列后更新 `/vthread/<vtid>` status，deepxctl 应该读 status 而非直接消费 done 队列 |
 | 读取 `/vthread/<vtid>/[*,*]` 指令 | 这是 VM 的内部数据格式，外部不应依赖 |
 | 给 VM 发自定义信号 | 所有通信必须走 Redis KV 空间 |

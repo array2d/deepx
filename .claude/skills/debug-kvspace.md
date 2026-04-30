@@ -65,7 +65,7 @@ redis-cli -p 16379 GET /vthread/<vtid>/<name> | jq .
 |--------|------|---------|
 | `init` | 已创建，待 VM 拾取 | 检查 VM 是否运行 |
 | `running` | 正在执行 | 正常 |
-| `wait` | 等待异步操作 | 检查 `cmd:op-metal:*` / `cmd:heap-metal:*` 队列 |
+| `wait` | 等待异步操作 | 检查 `cmd:exop-metal:*` / `cmd:heap-metal:*` 队列 |
 | `error` | 执行出错 | 查看 `error` 字段详情 |
 | `done` | 执行完毕 | 正常，可 GC |
 
@@ -141,7 +141,7 @@ redis-cli -p 16379 KEYS "/sys/*" | sort
 redis-cli -p 16379 GET /vthread/1 | jq '{pc,status}'
 
 # 3. 若 wait → 查命令队列堆积
-redis-cli -p 16379 LLEN cmd:op-metal:0
+redis-cli -p 16379 LLEN cmd:exop-metal:0
 redis-cli -p 16379 LLEN cmd:heap-metal:0
 	redis-cli -p 16379 LLEN cmd:io-metal:0
 

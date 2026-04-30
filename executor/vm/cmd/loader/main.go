@@ -24,8 +24,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"deepx/executor/vm/internal/parser"
 	"deepx/executor/vm/internal/logx"
-	"deepx/executor/vm/testutil"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -60,7 +60,7 @@ func main() {
 	loaded := 0
 	entryCreated := false
 	for _, f := range files {
-		df, err := testutil.ParseDxFile(f)
+		df, err := parser.ParseFile(f)
 		if err != nil {
 			logx.Warn("SKIP %s: %v", f, err)
 			continue
@@ -69,7 +69,7 @@ func main() {
 		// Register all function definitions
 		for i := range df.Funcs {
 			fn := &df.Funcs[i]
-			if err := fn.RegisterFunc(ctx, rdb); err != nil {
+			if err := fn.Register(ctx, rdb); err != nil {
 				logx.Error("FAIL %s: %v", f, err)
 				continue
 			}

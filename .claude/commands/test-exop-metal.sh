@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Build op-metal and run tests (shm cross-process tests)
+# Build exop-metal and run tests (shm cross-process tests)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-OP_DIR="$SCRIPT_DIR/../../executor/op-metal"
-BUILD_DIR="/tmp/deepx/op-metal/build"
+OP_DIR="$SCRIPT_DIR/../../executor/exop-metal"
+BUILD_DIR="/tmp/deepx/exop-metal/build"
 
-echo "=== Build op-metal ==="
+echo "=== Build exop-metal ==="
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 cmake "$OP_DIR"

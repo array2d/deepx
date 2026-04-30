@@ -29,7 +29,7 @@ redis-cli KEYS "/vthread/<vtid>/*"
 |--------|------|---------|
 | `init` | VM 未拾取 | 检查 VM worker 是否运行; 检查 picker 日志 |
 | `running` | 正在执行 | 正常 |
-| `wait` | 等待 op/head-plat | 检查 `cmd:op-metal:0` / `cmd:heap-metal:0` 队列 |
+| `wait` | 等待 op/head-plat | 检查 `cmd:exop-metal:0` / `cmd:heap-metal:0` 队列 |
 | `error` | 出错 | GET `/vthread/<vtid>` 查看 error 详情 |
 | `done` | 完成 | 正常 |
 
@@ -63,14 +63,14 @@ redis-cli KEYS "/vthread/<vtid>/<pc>/*" | while read k; do echo "$k: $(redis-cli
 op-plat / heap-plat 的异步通信:
 ```bash
 # 查看 op-plat 命令队列长度
-redis-cli LLEN "cmd:op-metal:0"
+redis-cli LLEN "cmd:exop-metal:0"
 
 # 查看 done 队列
 redis-cli KEYS "done:*"
 
 # 查看算子系统注册
-redis-cli LRANGE "/op/op-metal/list" 0 -1
-redis-cli GET "/sys/op-plat/op-metal:0"
+redis-cli LRANGE "/op/exop-metal/list" 0 -1
+redis-cli GET "/sys/op-plat/exop-metal:0"
 ```
 
 ### 5. 单步调试

@@ -3,7 +3,7 @@ package vm_test
 import (
 	"testing"
 
-	"deepx/executor/vm/internal/ir"
+	"deepx/executor/vm/internal/parser"
 )
 
 func TestParseDxlang_CstyleArrow(t *testing.T) {
@@ -32,7 +32,7 @@ func TestParseDxlang_CstyleArrow(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			inst, err := ir.ParseDxlang(tt.line)
+			inst, err := parser.ParseLine(tt.line)
 			if err != nil {
 				t.Fatalf("ParseDxlang(%q): %v", tt.line, err)
 			}
@@ -50,7 +50,7 @@ func TestParseDxlang_CstyleArrow(t *testing.T) {
 
 	// Ensure traditional -> still works with quoted keys
 	t.Run("traditional_still_works", func(t *testing.T) {
-		inst, err := ir.ParseDxlang("add(A, B) -> \"./C\"")
+		inst, err := parser.ParseLine("add(A, B) -> \"./C\"")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,7 +65,7 @@ func TestParseDxlang_CstyleArrow(t *testing.T) {
 	// Edge: <- embedded in comparison should not match
 	t.Run("less_than_with_neg", func(t *testing.T) {
 		// A < -B  should NOT be parsed as arrow
-		inst, err := ir.ParseDxlang("A < -B -> \"./C\"")
+		inst, err := parser.ParseLine("A < -B -> \"./C\"")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -81,7 +81,7 @@ func TestParseDxlang_CstyleArrow(t *testing.T) {
 
 	// Edge: <= should not match <-
 	t.Run("less_or_equal", func(t *testing.T) {
-		inst, err := ir.ParseDxlang("A <= B -> \"./C\"")
+		inst, err := parser.ParseLine("A <= B -> \"./C\"")
 		if err != nil {
 			t.Fatal(err)
 		}

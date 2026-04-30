@@ -11,10 +11,24 @@ import (
 	"testing"
 	"time"
 
-	"deepx/executor/vm/internal/engine"
-	"deepx/executor/vm/internal/ir"
-	"deepx/executor/vm/testutil"
+	"deepx/executor/vm/internal/ast"
+	"deepx/executor/vm/internal/parser"
+	"deepx/executor/vm/internal/state"
+	"deepx/executor/vm/internal/vm"
 )
+
+
+// loadFirstFunc parses a .dx file and returns its first function.
+func loadFirstFunc(path string) (*ast.Func, error) {
+	df, err := parser.ParseFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if len(df.Funcs) == 0 {
+		return nil, fmt.Errorf("no functions in %s", path)
+	}
+	return &df.Funcs[0], nil
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Phase 1: 所有 .dx 文件语法解析正确性 (零 Redis)
@@ -44,7 +58,7 @@ func TestAllDxFilesParse(t *testing.T) {
 	loaded := 0
 	lines := 0
 	for _, f := range files {
-		fn, err := testutil.LoadDxFile(f)
+		fn, err := loadFirstFunc(f)
 		if err != nil {
 			t.Errorf("LoadDxFile(%s): %v", f, err)
 			continue
@@ -60,7 +74,7 @@ func TestAllDxFilesParse(t *testing.T) {
 
 		// 验证每行指令可解析
 		for i, line := range fn.Body {
-			inst, err := ir.ParseDxlang(line)
+			inst, err := parser.ParseLine(line)
 			if err != nil {
 				t.Errorf("[%s] body[%d]=%q parse error: %v", f, i, line, err)
 				continue
@@ -102,7 +116,7 @@ func TestParse_ComplexExamples(t *testing.T) {
 	root := filepath.Join("..", "..", "example", "dxlang")
 	for _, tc := range cases {
 		t.Run(tc.funcName, func(t *testing.T) {
-			fn, err := testutil.LoadDxFile(filepath.Join(root, tc.file))
+			fn, err := loadFirstFunc(filepath.Join(root, tc.file))
 			if err != nil {
 				t.Fatalf("LoadDxFile: %v", err)
 			}
@@ -115,7 +129,7 @@ func TestParse_ComplexExamples(t *testing.T) {
 
 			// 验证每条指令的关键字
 			for i, line := range fn.Body {
-				inst, err := ir.ParseDxlang(line)
+				inst, err := parser.ParseLine(line)
 				if err != nil {
 					t.Errorf("body[%d] %q: %v", i, line, err)
 				}
@@ -141,7 +155,7 @@ func TestIntegration_NativeScalar(t *testing.T) {
 
 	vmCtx, vmCancel := context.WithCancel(ctx)
 	defer vmCancel()
-	go engine.RunWorker(vmCtx, rdb, 0)
+	go vm.RunWorker(vmCtx, rdb, 0)
 	time.Sleep(150 * time.Millisecond)
 
 	type testCase struct {
@@ -202,16 +216,16 @@ func TestIntegration_NativeScalar(t *testing.T) {
 			funcName := fmt.Sprintf("native_%s_%d", tc.name, i)
 			fp := filepath.Join(root, tc.dxFile)
 
-			fn, err := testutil.LoadDxFile(fp)
+			fn, err := loadFirstFunc(fp)
 			if err != nil {
 				t.Fatalf("LoadDxFile: %v", err)
 			}
 			fn.Name = funcName
-			if err := fn.RegisterFunc(ctx, rdb); err != nil {
+			if err := fn.Register(ctx, rdb); err != nil {
 				t.Fatalf("RegisterFunc: %v", err)
 			}
 
-			vtid, err := testutil.CreateVThread(ctx, rdb, funcName, tc.reads, tc.writes)
+			vtid, err := state.CreateVThread(ctx, rdb, funcName, tc.reads, tc.writes)
 			if err != nil {
 				t.Fatalf("CreateVThread: %v", err)
 			}
@@ -245,26 +259,26 @@ func TestIntegration_CrossCall(t *testing.T) {
 	root := filepath.Join("..", "..", "example", "dxlang")
 
 	// 加载 double, triple, diamond
-	double, _ := testutil.LoadDxFile(filepath.Join(root, "call/double.dx"))
+	double, _ := loadFirstFunc(filepath.Join(root, "call/double.dx"))
 	double.Name = "double"
-	double.RegisterFunc(ctx, rdb)
+	double.Register(ctx, rdb)
 
-	triple, _ := testutil.LoadDxFile(filepath.Join(root, "call/triple.dx"))
+	triple, _ := loadFirstFunc(filepath.Join(root, "call/triple.dx"))
 	triple.Name = "triple"
-	triple.RegisterFunc(ctx, rdb)
+	triple.Register(ctx, rdb)
 
-	diamond, _ := testutil.LoadDxFile(filepath.Join(root, "call/diamond.dx"))
+	diamond, _ := loadFirstFunc(filepath.Join(root, "call/diamond.dx"))
 	diamond.Name = "diamond"
-	diamond.RegisterFunc(ctx, rdb)
+	diamond.Register(ctx, rdb)
 
 	// Start VM worker
 	vmCtx, vmCancel := context.WithCancel(ctx)
 	defer vmCancel()
-	go engine.RunWorker(vmCtx, rdb, 0)
+	go vm.RunWorker(vmCtx, rdb, 0)
 	time.Sleep(150 * time.Millisecond)
 
 	// diamond(A=5) → double(5)=10, triple(5)=15, R=25
-	vtid, _ := testutil.CreateVThread(ctx, rdb, "diamond", []string{"./a"}, []string{"./r"})
+	vtid, _ := state.CreateVThread(ctx, rdb, "diamond", []string{"./a"}, []string{"./r"})
 	rdb.Set(ctx, "/vthread/"+vtid+"/a", "5", 0)
 	rdb.RPush(ctx, "notify:vm", `{"event":"new_vthread","vtid":"`+vtid+`"}`)
 
@@ -289,7 +303,7 @@ func TestIntegration_NativePrint(t *testing.T) {
 
 	vmCtx, vmCancel := context.WithCancel(ctx)
 	defer vmCancel()
-	go engine.RunWorker(vmCtx, rdb, 0)
+	go vm.RunWorker(vmCtx, rdb, 0)
 	time.Sleep(150 * time.Millisecond)
 
 	root := filepath.Join("..", "..", "example", "dxlang")
@@ -346,16 +360,16 @@ func TestIntegration_NativePrint(t *testing.T) {
 			funcName := fmt.Sprintf("print_%s_%d", tc.name, i)
 			fp := filepath.Join(root, tc.dxFile)
 
-			fn, err := testutil.LoadDxFile(fp)
+			fn, err := loadFirstFunc(fp)
 			if err != nil {
 				t.Fatalf("LoadDxFile: %v", err)
 			}
 			fn.Name = funcName
-			if err := fn.RegisterFunc(ctx, rdb); err != nil {
+			if err := fn.Register(ctx, rdb); err != nil {
 				t.Fatalf("RegisterFunc: %v", err)
 			}
 
-			vtid, err := testutil.CreateVThread(ctx, rdb, funcName, tc.reads, tc.writes)
+			vtid, err := state.CreateVThread(ctx, rdb, funcName, tc.reads, tc.writes)
 			if err != nil {
 				t.Fatalf("CreateVThread: %v", err)
 			}

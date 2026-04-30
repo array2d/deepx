@@ -1,13 +1,27 @@
 package vm_test
 
 import (
+	"fmt"
 	"testing"
 
-	"deepx/executor/vm/internal/ir"
-	"deepx/executor/vm/testutil"
+	"deepx/executor/vm/internal/parser"
+	"deepx/executor/vm/internal/ast"
 )
 
 // wantInst 定义期望的指令结构
+
+// loadFirstFunc parses a .dx file and returns its first function.
+func loadFirstFunc(path string) (*ast.Func, error) {
+	df, err := parser.ParseFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if len(df.Funcs) == 0 {
+		return nil, fmt.Errorf("no functions in %s", path)
+	}
+	return &df.Funcs[0], nil
+}
+
 type wantInst struct {
 	op     string
 	reads  []string
@@ -15,7 +29,7 @@ type wantInst struct {
 }
 
 // verifyInst 验证一条指令的解析结果
-func verifyInst(t *testing.T, dxFile string, lineIdx int, inst *ir.Instruction, want wantInst) {
+func verifyInst(t *testing.T, dxFile string, lineIdx int, inst *ast.Instruction, want wantInst) {
 	t.Helper()
 	if inst.Opcode != want.op {
 		t.Errorf("[%s] line[%d] opcode=%s, want %s", dxFile, lineIdx, inst.Opcode, want.op)
@@ -43,7 +57,7 @@ func verifyInst(t *testing.T, dxFile string, lineIdx int, inst *ir.Instruction, 
 // checkDx 加载 .dx 文件并逐行验证解析结果
 func checkDx(t *testing.T, dxFile string, wants []wantInst) {
 	t.Helper()
-	fn, err := testutil.LoadDxFile(dxFile)
+	fn, err := loadFirstFunc(dxFile)
 	if err != nil {
 		t.Fatalf("LoadDxFile(%s): %v", dxFile, err)
 	}
@@ -51,7 +65,7 @@ func checkDx(t *testing.T, dxFile string, wants []wantInst) {
 		t.Fatalf("[%s] body has %d lines, want %d:\n  got:  %v\n  want: %v", dxFile, len(fn.Body), len(wants), fn.Body, wants)
 	}
 	for i, w := range wants {
-		inst, err := ir.ParseDxlang(fn.Body[i])
+		inst, err := parser.ParseLine(fn.Body[i])
 		if err != nil {
 			t.Errorf("[%s] line[%d] parse error: %v", dxFile, i, err)
 			continue
@@ -161,7 +175,7 @@ func TestParse_NativeArith(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn, err := testutil.LoadDxFile(tt.file)
+			fn, err := loadFirstFunc(tt.file)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -170,7 +184,7 @@ func TestParse_NativeArith(t *testing.T) {
 			}
 			// 每个 buildin 示例现在都以 print 语句开头和结尾
 			// 首行应为 print (输入打印)
-			firstInst, err := ir.ParseDxlang(fn.Body[0])
+			firstInst, err := parser.ParseLine(fn.Body[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -179,7 +193,7 @@ func TestParse_NativeArith(t *testing.T) {
 			}
 			// 核心计算在倒数第二行 (最后一行是 print("./C"))
 			computeLine := fn.Body[len(fn.Body)-2]
-			inst, err := ir.ParseDxlang(computeLine)
+			inst, err := parser.ParseLine(computeLine)
 			if err != nil {
 				t.Fatal(err)
 			}
