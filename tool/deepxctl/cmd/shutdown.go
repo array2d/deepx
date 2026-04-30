@@ -303,19 +303,6 @@ func forceKill(state *BootState) error {
 	return nil
 }
 
-// pidFromState returns the PID for a named component from boot state.
-func pidFromState(state *BootState, name string) int {
-	switch name {
-	case "op-metal":
-		return state.OpMetal
-	case "heap-metal":
-		return state.HeapMetal
-	case "vm":
-		return state.VM
-	}
-	return -1
-}
-
 // waitPID polls until the process exits or timeout elapses.
 func waitPID(pid int, timeout time.Duration) bool {
 	deadline := time.Now().Add(timeout)

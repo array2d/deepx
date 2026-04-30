@@ -89,16 +89,6 @@ func WaitForInstance(rdb *goredis.Client, key string, timeout time.Duration) err
 	return fmt.Errorf("timeout waiting for %s to be running (%.0fs)", key, timeout.Seconds())
 }
 
-// AllocVtid atomically increments the vthread counter and returns the new ID.
-func AllocVtid(rdb *goredis.Client) (int64, error) {
-	ctx := context.Background()
-	id, err := rdb.Incr(ctx, "/sys/vtid_counter").Result()
-	if err != nil {
-		return 0, fmt.Errorf("INCR /sys/vtid_counter: %w", err)
-	}
-	return id, nil
-}
-
 // VThreadStatus represents the status of a vthread from Redis.
 type VThreadStatus struct {
 	PC     string `json:"pc"`
@@ -124,83 +114,3 @@ func GetVThreadStatus(rdb *goredis.Client, vtid int64) (*VThreadStatus, error) {
 	return &s, nil
 }
 
-// CreateVThread writes a vthread with a single top-level CALL instruction.
-//
-// Writes:
-//
-//	/vthread/<vtid>          = {"pc":"[0,0]","status":"init"}
-//	/vthread/<vtid>/[0,0]    = "<entryFunc>"
-//	/vthread/<vtid>/[0,1]    = "./ret"
-func CreateVThread(rdb *goredis.Client, vtid int64, entryFunc string) error {
-	ctx := context.Background()
-	base := fmt.Sprintf("/vthread/%d", vtid)
-
-	status := fmt.Sprintf(`{"pc":"[0,0]","status":"init"}`)
-
-	pipe := rdb.Pipeline()
-	pipe.Set(ctx, base, status, 0)
-	pipe.Set(ctx, base+"/[0,0]", entryFunc, 0)
-	pipe.Set(ctx, base+"/[0,1]", "./ret", 0)
-	if _, err := pipe.Exec(ctx); err != nil {
-		return fmt.Errorf("create vthread %d: %w", vtid, err)
-	}
-	logx.Debug("vthread created", "vtid", vtid, "entry", entryFunc)
-	return nil
-}
-
-// WakeVM pushes a new_vthread notification to the VM wake queue.
-func WakeVM(rdb *goredis.Client, vtid int64) error {
-	ctx := context.Background()
-	notify := map[string]interface{}{
-		"event": "new_vthread",
-		"vtid":  fmt.Sprintf("%d", vtid),
-	}
-	data, _ := json.Marshal(notify)
-	if err := rdb.LPush(ctx, "notify:vm", data).Err(); err != nil {
-		return fmt.Errorf("LPUSH notify:vm: %w", err)
-	}
-	logx.Debug("VM notified", "vtid", vtid)
-	return nil
-}
-
-// SrcFuncKeys returns all registered function names under /src/func/.
-func SrcFuncKeys(rdb *goredis.Client) ([]string, error) {
-	ctx := context.Background()
-	keys, err := rdb.Keys(ctx, "/src/func/*").Result()
-	if err != nil {
-		return nil, err
-	}
-	// Filter out sub-keys like /src/func/name/0, return unique names
-	seen := make(map[string]bool)
-	var names []string
-	for _, k := range keys {
-		// /src/func/name    → name
-		// /src/func/name/0  → name
-		name := k
-		if len(k) > 11 { // len("/src/func/")
-			rest := k[10:] // after "/src/func/"
-			// find first /
-			for i, c := range rest {
-				if c == '/' {
-					name = "/src/func/" + rest[:i]
-					break
-				}
-			}
-		}
-		if !seen[name] {
-			seen[name] = true
-			names = append(names, name[len("/src/func/"):])
-		}
-	}
-	return names, nil
-}
-
-// SrcFuncExists returns true if /src/func/<name> exists (non-empty).
-func SrcFuncExists(rdb *goredis.Client, name string) bool {
-	ctx := context.Background()
-	val, err := rdb.Get(ctx, "/src/func/"+name).Result()
-	if err != nil {
-		return false
-	}
-	return val != ""
-}
