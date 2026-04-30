@@ -2,9 +2,11 @@
 
 你是 op-metal 计算平面开发专家。指导 Metal GPU kernel 的新增、修改、测试全流程。
 
+> **I/O 操作 (print/save/load) 已迁移到 `io-metal` 独立进程。** 涉及 I/O 的开发请使用 `@dev-io-metal`。
+
 ## 组件概述
 
-op-metal 是 Metal 后端的 GPU 计算平面，以独立进程运行，通过 Redis 消费算子指令。
+op-metal 是 Metal 后端的 GPU 计算平面，以独立进程运行，通过 Redis 消费**纯计算**指令。
 
 **目录结构**:
 ```
@@ -12,17 +14,16 @@ executor/op-metal/
   build.sh                       ← cmake 构建脚本
   CMakeLists.txt
   src/
-    client/main.mm               ← Redis 消费者主循环 + 指令分派
+    client/main.cpp              ← Redis 消费者主循环 + 计算指令分派
     deepx/
-      metal_context.hpp/mm       ← Metal 设备/命令队列上下文
+      metal_context.hpp/cpp      ← Metal 设备/命令队列上下文
       mem/mem_metal.hpp          ← 统一内存缓存
       tensorfunc/
         elementwise_miaobyte.metal   ← Metal shader (GPU kernel)
         elementwise_miaobyte.hpp     ← host→device 桥接 (kernel 调用封装)
         elementwise_common.hpp      ← 共享 dispatch 模板
-        changeshape_miaobyte.hpp    ← reshape/transpose/concat 等 CPU 后端
-        reduce_miaobyte.hpp         ← sum/prod/max/min 规约 CPU 后端
-        io_miaobyte.hpp             ← print/save/load
+        changeshape_miaobyte.hpp    ← reshape/transpose/concat 等
+        reduce_miaobyte.hpp         ← sum/prod/max/min 规约
         init_miaobyte.hpp           ← constant/arange
       tf/
         register_miaobyte.hpp       ← TfFactory 算子注册 (调度器用)

@@ -12,6 +12,8 @@
 
 op-metal 是"无状态的 GPU 函数调用器"——它不关心数据从哪来、到哪去、含义是什么。
 
+> **I/O 操作 (print/save/load) 已迁移到 `io-metal` 独立进程。** op-metal 只处理纯 GPU 计算。
+
 ---
 
 ## 2. 允许做的事（白名单）
@@ -21,9 +23,10 @@ op-metal 是"无状态的 GPU 函数调用器"——它不关心数据从哪来�
 | BLPOP/RPOP `cmd:op-metal:*` | ✅ | 消费 VM 发来的计算指令 |
 | GET Redis 获取 tensor 元信息 | ✅ | 仅限 inputs/outputs 的 dtype/shape/shm_name/byte_size |
 | shm_open + mmap 映射 tensor 内存 | ✅ | 根据 shm_name 获取 CPU 指针 |
-| 执行 Metal GPU kernel | ✅ | add/sub/mul/div/relu/... |
+| 执行 Metal GPU kernel | ✅ | add/sub/mul/div/relu/... (不包含 I/O) |
 | newBufferWithBytes/newBufferWithLength | ✅ | 将 CPU 数据拷贝到 GPU buffer |
 | LPUSH `done:<vtid>` 通知完成 | ✅ | 格式: {pc, status:"ok"\|"error", error?} |
+| print/save/load 等 I/O 操作 | ❌ | 已迁移到 io-metal 进程 (`cmd:io-metal:*`) |
 | SET `/sys/op-plat/op-metal:0` | ✅ | 启动时注册进程状态 |
 | SET NX `/op/op-metal/*` | ✅ | 首次启动时注册算子列表 |
 | DELETE `/sys/op-plat/op-metal:0` | ✅ | 退出时注销 |

@@ -22,9 +22,12 @@
 
 using json = nlohmann::json;
 
-static const char *OP_QUEUE     = "cmd:op-metal:0";
-static const char *INSTANCE_KEY = "/sys/op-plat/op-metal:0";
+static const char *OP_QUEUE       = "cmd:op-metal:0";
+static const char *SYS_QUEUE      = "sys:cmd:op-metal:0";
+static const char *INSTANCE_KEY   = "/sys/op-plat/op-metal:0";
+static const char *HEARTBEAT_KEY  = "/sys/heartbeat/op-metal:0";
 static const int   BLOCK_TIMEOUT_SEC = 5;
+static const int   HEARTBEAT_INTERVAL_SEC = 2;
 
 // ═══════════════════════════════════════════════════════════
 // Redis helpers
@@ -58,6 +61,15 @@ static bool redis_set(redisContext *c, const std::string &key, const std::string
     return ok;
 }
 
+static void update_heartbeat(redisContext *c, const std::string &status) {
+    json hb;
+    hb["ts"] = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    hb["status"] = status;
+    hb["pid"] = getpid();
+    redis_set(c, HEARTBEAT_KEY, hb.dump());
+}
+
 static void register_instance(redisContext *c) {
     json reg;
     reg["program"]    = "op-metal";
@@ -78,16 +90,16 @@ static void register_instance(redisContext *c) {
               "/op/op-metal/list",
               "add", "sub", "mul", "div", "max", "min");
     // elementwise unary (Metal GPU)
-    redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s %s",
+    redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s %s %s",
               "/op/op-metal/list",
               "relu", "neg", "abs", "sqrt", "exp", "log", "sin", "cos", "tan");
     // elementwise scalar
-    redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s",
+    redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s %s",
               "/op/op-metal/list",
               "addscalar", "subscalar", "mulscalar", "divscalar",
               "maxscalar", "minscalar", "pow", "powscalar");
     // comparison
-    redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s",
+    redis_cmd(c, "RPUSH %s %s %s %s %s %s %s %s %s",
               "/op/op-metal/list",
               "equal", "notequal", "less", "greater",
               "equalscalar", "notequalscalar", "lessscalar", "greaterscalar");
@@ -96,19 +108,16 @@ static void register_instance(redisContext *c) {
               "/op/op-metal/list",
               "reshape", "transpose", "concat", "broadcastTo", "indexselect", "repeat");
     // reduce
-    redis_cmd(c, "RPUSH %s %s %s %s",
+    redis_cmd(c, "RPUSH %s %s %s %s %s",
               "/op/op-metal/list",
               "sum", "prod", "reducemax", "reducemin");
-    // io
-    redis_cmd(c, "RPUSH %s %s %s",
-              "/op/op-metal/list",
-              "print", "save", "load");
+    // io — migrated to io-metal (separate I/O plane)
     // init
-    redis_cmd(c, "RPUSH %s %s",
+    redis_cmd(c, "RPUSH %s %s %s",
               "/op/op-metal/list",
               "constant", "arange");
     // misc
-    redis_cmd(c, "RPUSH %s %s",
+    redis_cmd(c, "RPUSH %s %s %s",
               "/op/op-metal/list",
               "invert", "todtype");
 
@@ -388,35 +397,6 @@ template <typename T> struct type_tag { using type = T; };
     } while(0)
 
 // ═══════════════════════════════════════════════════════════
-// IO helpers: print tensor data to stdout
-// ═══════════════════════════════════════════════════════════
-
-template <typename T>
-static void io_print_data(const void *data, int64_t n, const std::string &format) {
-    const T *ptr = static_cast<const T*>(data);
-    std::cout << "[";
-    for (int64_t i = 0; i < n; ++i) {
-        if (i > 0) std::cout << " ";
-        if (format.empty()) {
-            std::cout << ptr[i];
-        } else {
-            printf(format.c_str(), ptr[i]);
-        }
-        if (i > 0 && i % 32 == 31 && i < n - 1) std::cout << "\n ";
-    }
-    std::cout << "]" << std::endl;
-}
-
-static void io_print(const std::string &dtype, const void *data, int64_t n, const std::string &format, std::string &error) {
-    auto fn = [&](auto tag) {
-        using T = typename decltype(tag)::type;
-        io_print_data<T>(data, n, format);
-        (void)tag;
-    };
-    DISPATCH_BY_DTYPE(dtype, fn);
-}
-
-// ═══════════════════════════════════════════════════════════
 // Task execution
 // ═══════════════════════════════════════════════════════════
 
@@ -434,14 +414,10 @@ static void execute_task(redisContext *redis, const json &task) {
     const auto &inputs  = task["inputs"];
     const auto &outputs = task["outputs"];
 
-    // IO ops (print, save) may have no outputs; load may have no inputs
-    bool is_io_op = (opcode == "print" || opcode == "save" || opcode == "load");
-    if (!is_io_op && (inputs.empty() || outputs.empty())) {
+    // IO ops (print/save/load) routed to io-metal — not handled here
+    // All remaining ops require both inputs and outputs
+    if (inputs.empty() || outputs.empty()) {
         notify_done(redis, vtid, pc, "error", "empty inputs/outputs for compute op");
-        return;
-    }
-    if (opcode != "load" && inputs.empty()) {
-        notify_done(redis, vtid, pc, "error", "missing inputs for " + opcode);
         return;
     }
 
@@ -491,7 +467,7 @@ static void execute_task(redisContext *redis, const json &task) {
         const auto &out = outputs[0];
         out_key = out.value("key", "");
         out_meta = fetch_tensor_meta(redis, out_key);
-        if (!out_meta.valid && opcode != "print" && opcode != "save") {
+        if (!out_meta.valid) {
             notify_done(redis, vtid, pc, "error", "output tensor not found: " + out_key);
             for (auto &s : input_shms) shm_close(s);
             return;
@@ -679,118 +655,9 @@ static void execute_task(redisContext *redis, const json &task) {
              opcode == "reducemax" || opcode == "reducemin") {
         error = "reduce ops not available (refactoring in progress)";
     }
-    // ── io: print (CPU) ──
-    else if (opcode == "print") {
-        std::string format = params.value("format", "");
-        int64_t nelem = element_count(input_metas[0].shape_data);
-        io_print(dtype, input_ptrs[0], nelem, format, error);
-        ok = true;
-    }
-    // ── io: save (CPU) ──
-    // args: save(tensor, path)
-    //   inputs[0] = tensor to save
-    //   params["arg0"] = file path (e.g., "/tmp/mytensor")
-    else if (opcode == "save" && !input_metas.empty()) {
-        std::string filepath = params.value("arg0", "");
-        if (filepath.empty()) {
-            error = "save: missing file path (arg0)";
-        } else {
-            // Write .shape as JSON
-            json shape_json;
-            shape_json["dtype"] = input_metas[0].dtype;
-            shape_json["shape"] = input_metas[0].shape_data;
-            shape_json["size"] = element_count(input_metas[0].shape_data);
-            std::string shape_str = shape_json.dump();
-            std::ofstream shape_fs(filepath + ".shape", std::ios::binary);
-            if (!shape_fs.is_open()) {
-                error = "save: cannot open " + filepath + ".shape";
-            } else {
-                shape_fs.write(shape_str.c_str(), shape_str.size());
-                shape_fs.close();
-                // Write .data as raw binary
-                std::ofstream data_fs(filepath + ".data", std::ios::binary);
-                if (!data_fs.is_open()) {
-                    error = "save: cannot open " + filepath + ".data";
-                } else {
-                    data_fs.write(static_cast<const char*>(input_ptrs[0]), input_metas[0].byte_size);
-                    data_fs.close();
-                    ok = true;
-                    std::cout << "[op-metal] saved tensor to " << filepath << " (dtype=" << input_metas[0].dtype
-                              << ", elems=" << element_count(input_metas[0].shape_data) << ")\n";
-                }
-            }
-        }
-    }
-    // ── io: load (CPU) ──
-    // args: load(path) -> tensor
-    //   params["arg0"] = file path (e.g., "/tmp/mytensor")
-    //   outputs[0] = destination tensor (pre-allocated via heap-plat)
-    else if (opcode == "load") {
-        std::string filepath = params.value("arg0", "");
-        if (filepath.empty()) {
-            error = "load: missing file path (arg0)";
-        } else {
-            // Read .shape
-            std::ifstream shape_fs(filepath + ".shape", std::ios::binary);
-            if (!shape_fs.is_open()) {
-                error = "load: cannot open " + filepath + ".shape";
-            } else {
-                std::string shape_str((std::istreambuf_iterator<char>(shape_fs)), std::istreambuf_iterator<char>());
-                shape_fs.close();
-                try {
-                    json shape_json = json::parse(shape_str);
-                    std::string loaded_dtype = shape_json.value("dtype", "");
-                    int64_t loaded_elems = shape_json.value("size", 0);
-                    int64_t loaded_bytes = 0;
-                    // Compute byte size from dtype
-                    if (loaded_dtype == "f32" || loaded_dtype == "float32" || loaded_dtype == "i32" || loaded_dtype == "int32")
-                        loaded_bytes = loaded_elems * 4;
-                    else if (loaded_dtype == "i64" || loaded_dtype == "int64" || loaded_dtype == "f64" || loaded_dtype == "float64")
-                        loaded_bytes = loaded_elems * 8;
-                    else if (loaded_dtype == "i16" || loaded_dtype == "int16" || loaded_dtype == "f16" || loaded_dtype == "float16")
-                        loaded_bytes = loaded_elems * 2;
-                    else if (loaded_dtype == "i8" || loaded_dtype == "int8" || loaded_dtype == "bool")
-                        loaded_bytes = loaded_elems * 1;
-                    else
-                        loaded_bytes = loaded_elems * 4; // default
-                    // Read .data into output SHM
-                    std::ifstream data_fs(filepath + ".data", std::ios::binary);
-                    if (!data_fs.is_open()) {
-                        error = "load: cannot open " + filepath + ".data";
-                    } else {
-                        size_t actual_read = loaded_bytes;
-                        if (loaded_bytes > out_meta.byte_size) {
-                            actual_read = out_meta.byte_size;
-                            std::cerr << "[op-metal] load: truncating " << loaded_bytes
-                                      << " → " << out_meta.byte_size << " bytes (output tensor smaller)\n";
-                        }
-                        data_fs.read(static_cast<char*>(out_shm.addr), actual_read);
-                        data_fs.close();
-                        // Update tensor metadata in Redis
-                        try {
-                            json updated_meta;
-                            updated_meta["dtype"] = loaded_dtype;
-                            updated_meta["shape"] = shape_json["shape"];
-                            updated_meta["byte_size"] = loaded_bytes;
-                            if (!out_meta.shm_name.empty()) {
-                                updated_meta["address"]["shm_name"] = out_meta.shm_name;
-                                updated_meta["address"]["node"] = "n1";
-                                updated_meta["address"]["type"] = "shm";
-                            }
-                            updated_meta["device"] = "gpu0";
-                            redis_set(redis, out_key, updated_meta.dump());
-                        } catch (...) {
-                            // metadata update is best-effort
-                        }
-                        ok = true;
-                        std::cout << "[op-metal] loaded tensor from " << filepath << " (dtype=" << loaded_dtype
-                                  << ", elems=" << loaded_elems << ", bytes=" << actual_read << ")\n";
-                    }
-                } catch (const std::exception &e) {
-                    error = std::string("load: shape JSON parse error: ") + e.what();
-                }
-            }
-        }
+    // ── io ops (print/save/load) — routed to io-metal plane ──
+    else if (opcode == "print" || opcode == "save" || opcode == "load") {
+        error = "io op routed to io-metal plane (cmd:io-metal:0) — not handled by op-metal";
     }
     // ── pow (CPU, binary) ──
     else if (opcode == "pow" && input_ptrs.size() == 2) {
@@ -869,11 +736,17 @@ int main(int argc, char **argv) {
     // 注册实例和算子
     register_instance(redis);
 
-    std::cout << "[op-metal] listening on " << OP_QUEUE << "\n";
+    std::cout << "[op-metal] listening on " << OP_QUEUE << " + " << SYS_QUEUE << "\n";
+    std::cout << "[op-metal] heartbeat → " << HEARTBEAT_KEY << " (every " << HEARTBEAT_INTERVAL_SEC << "s)\n";
 
-    // ── 消费循环 ──
-    while (true) {
-        redisReply *r = redis_cmd(redis, "BLPOP %s %d", OP_QUEUE, BLOCK_TIMEOUT_SEC);
+    // 初始心跳
+    update_heartbeat(redis, "running");
+
+    // ── 消费循环 (同时监听业务队列和系统命令队列) ──
+    std::atomic<bool> running{true};
+    auto last_heartbeat = std::chrono::steady_clock::now();
+    while (running) {
+        redisReply *r = redis_cmd(redis, "BLPOP %s %s %d", OP_QUEUE, SYS_QUEUE, BLOCK_TIMEOUT_SEC);
         if (!r) {
             // Redis 断连 → 无限重连（不自退，op-plat 由元程控制退出）
             std::cerr << "[op-metal] Redis disconnected, reconnecting...\n";
@@ -887,7 +760,16 @@ int main(int argc, char **argv) {
                 }
             }
             register_instance(redis);
+            last_heartbeat = std::chrono::steady_clock::now();
+            update_heartbeat(redis, "running");
             continue;
+        }
+
+        // ── 心跳上报 ──
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_heartbeat).count() >= HEARTBEAT_INTERVAL_SEC) {
+            update_heartbeat(redis, "running");
+            last_heartbeat = now;
         }
 
         if (r->type == REDIS_REPLY_NIL) {
@@ -900,9 +782,28 @@ int main(int argc, char **argv) {
             continue;
         }
 
+        std::string queue_name(r->element[0]->str);
         std::string payload(r->element[1]->str);
         REDIS_FREE(r);
 
+        // ── 系统命令处理 ──
+        if (queue_name == SYS_QUEUE) {
+            try {
+                json sys_cmd = json::parse(payload);
+                std::string cmd = sys_cmd.value("cmd", "");
+                if (cmd == "shutdown") {
+                    std::cout << "[op-metal] received sys shutdown command, exiting...\n";
+                    running = false;
+                } else {
+                    std::cerr << "[op-metal] unknown sys command: " << cmd << "\n";
+                }
+            } catch (const std::exception &e) {
+                std::cerr << "[op-metal] sys cmd JSON parse error: " << e.what() << "\n";
+            }
+            continue;
+        }
+
+        // ── 业务命令处理 ──
         // 解析任务
         json task;
         try {
@@ -924,7 +825,10 @@ int main(int argc, char **argv) {
         }
     }
 
+    // 上报 stopped 心跳，然后注销
     if (redis) {
+        update_heartbeat(redis, "stopped");
+        std::cout << "[op-metal] final heartbeat: stopped\n";
         redis_cmd(redis, "DEL %s", INSTANCE_KEY);
         redisFree(redis);
     }

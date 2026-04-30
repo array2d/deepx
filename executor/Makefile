@@ -7,22 +7,26 @@ REDIS_ADDR      ?= 127.0.0.1:16379
 REDIS_HOST      := $(word 1,$(subst :, ,$(REDIS_ADDR)))
 REDIS_PORT      := $(word 2,$(subst :, ,$(REDIS_ADDR)))
 
-BUILD_DIR       := build
-HEAP_BUILD_DIR  := build-heap
+BUILD_DIR       := /tmp/deepx/op-metal/build
+HEAP_BUILD_DIR  := /tmp/deepx/heap-metal/build
+IO_BUILD_DIR    := /tmp/deepx/io-metal/build
 OP_BIN          := $(BUILD_DIR)/deepx-op-metal
 HEAP_BIN        := $(HEAP_BUILD_DIR)/deepx-heap-metal
+IO_BIN          := $(IO_BUILD_DIR)/deepx-io-metal
 
 LOG_DIR         := /tmp/deepx-logs
 OP_LOG          := $(LOG_DIR)/op-metal.log
 HEAP_LOG        := $(LOG_DIR)/heap-metal.log
+IO_LOG          := $(LOG_DIR)/io-metal.log
 OP_PID_FILE     := $(LOG_DIR)/op-metal.pid
 HEAP_PID_FILE   := $(LOG_DIR)/heap-metal.pid
+IO_PID_FILE     := $(LOG_DIR)/io-metal.pid
 
-.PHONY: all build build-op build-heap \
-        start-services start-op start-heap \
-        stop-services stop-op stop-heap \
+.PHONY: all build build-op build-heap build-io \
+        start-services start-op start-heap start-io \
+        stop-services stop-op stop-heap stop-io \
         status check-services \
-        test-unit test-integration test-real \
+        test-unit test-integration \
         reset-redis clean clean-logs
 
 # ═══════════════════════════════════════════════════════════════
@@ -31,23 +35,28 @@ HEAP_PID_FILE   := $(LOG_DIR)/heap-metal.pid
 
 all: build
 
-build: build-op build-heap
+build: build-op build-heap build-io
 
 build-op:
 	@echo "=== Building op-metal ==="
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake ../op-metal && $(MAKE) -j$$(sysctl -n hw.ncpu 2>/dev/null || nproc)
+	bash op-metal/build.sh
 	@echo "  → $(OP_BIN)"
 
 build-heap:
 	@echo "=== Building heap-metal ==="
-	mkdir -p $(HEAP_BUILD_DIR) && cd $(HEAP_BUILD_DIR) && cmake ../heap-metal && $(MAKE) -j$$(sysctl -n hw.ncpu 2>/dev/null || nproc)
+	bash heap-metal/build.sh
 	@echo "  → $(HEAP_BIN)"
+
+build-io:
+	@echo "=== Building io-metal ==="
+	bash io-metal/build.sh
+	@echo "  → $(IO_BIN)"
 
 # ═══════════════════════════════════════════════════════════════
 # Service Lifecycle (daemon mode)
 # ═══════════════════════════════════════════════════════════════
 
-start-services: start-op start-heap
+start-services: start-op start-heap start-io
 	@echo "All services started."
 
 start-op: check-services
@@ -74,7 +83,7 @@ start-heap: check-services
 		echo "[heap-metal] started (pid=$$(cat $(HEAP_PID_FILE)))"; \
 	fi
 
-stop-services: stop-op stop-heap
+stop-services: stop-op stop-heap stop-io
 	@echo "All services stopped."
 
 stop-op:
@@ -107,6 +116,33 @@ stop-heap:
 		rm -f $(HEAP_PID_FILE); \
 	fi
 
+start-io: check-services
+	@if [ -f $(IO_PID_FILE) ] && kill -0 $$(cat $(IO_PID_FILE)) 2>/dev/null; then \
+		echo "[io-metal] already running (pid=$$(cat $(IO_PID_FILE)))"; \
+	else \
+		mkdir -p $(LOG_DIR); \
+		echo "Starting io-metal ($(REDIS_HOST):$(REDIS_PORT)) → $(IO_LOG)"; \
+		$(IO_BIN) $(REDIS_HOST) $(REDIS_PORT) > $(IO_LOG) 2>&1 & \
+		echo $$! > $(IO_PID_FILE); \
+		sleep 1; \
+		echo "[io-metal] started (pid=$$(cat $(IO_PID_FILE)))"; \
+	fi
+
+stop-io:
+	@if [ -f $(IO_PID_FILE) ]; then \
+		pid=$$(cat $(IO_PID_FILE)); \
+		if kill -0 $$pid 2>/dev/null; then \
+			echo "Stopping io-metal (pid=$$pid)"; \
+			kill $$pid 2>/dev/null || true; \
+			sleep 1; \
+			if kill -0 $$pid 2>/dev/null; then \
+				echo "Force killing io-metal"; \
+				kill -9 $$pid 2>/dev/null || true; \
+			fi; \
+		fi; \
+		rm -f $(IO_PID_FILE); \
+	fi
+
 # ── Status ──
 
 status:
@@ -123,6 +159,11 @@ status:
 		echo "heap-metal:  RUNNING (pid=$$(cat $(HEAP_PID_FILE)))"; \
 	else \
 		echo "heap-metal:  STOPPED"; \
+	fi
+	@if [ -f $(IO_PID_FILE) ] && kill -0 $$(cat $(IO_PID_FILE)) 2>/dev/null; then \
+		echo "io-metal:    RUNNING (pid=$$(cat $(IO_PID_FILE)))"; \
+	else \
+		echo "io-metal:    STOPPED"; \
 	fi
 
 check-services:
@@ -141,21 +182,12 @@ test-unit:
 test-integration:
 	cd vm && REDIS_ADDR=$(REDIS_ADDR) go test -tags=integration -count=1 -v -run 'TestIntegration' ./...
 
-# Real integration tests (Redis + heap-metal + op-metal binariess)
-# Prerequisites: start-services (or running plats), built binaries
-test-real:
-	cd vm && \
-		REDIS_ADDR=$(REDIS_ADDR) \
-		HEAP_METAL_BIN=$(realpath $(HEAP_BIN)) \
-		OP_METAL_BIN=$(realpath $(OP_BIN)) \
-		go test -tags=integration_real -count=1 -v -run 'TestIntegrationReal' ./...
-
 # ═══════════════════════════════════════════════════════════════
 # Full Pipeline
 # ═══════════════════════════════════════════════════════════════
 
-# all-in-one: build → start → reset → test → stop
-pipeline: build start-services reset-redis test-real stop-services
+# all-in-one: build → start → reset → stop
+pipeline: build start-services reset-redis stop-services
 	@echo "=== Pipeline complete ==="
 
 # ═══════════════════════════════════════════════════════════════
@@ -167,47 +199,52 @@ reset-redis:
 	redis-cli -h $(REDIS_HOST) -p $(REDIS_PORT) FLUSHDB
 
 clean:
-	rm -rf $(BUILD_DIR) $(HEAP_BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(HEAP_BUILD_DIR) $(IO_BUILD_DIR)
 	cd vm && go clean -testcache
 
 clean-logs:
 	rm -rf $(LOG_DIR)
 
-# Show op-metal / heap-metal logs
+# Show logs
 logs-op:
 	tail -f $(OP_LOG)
 
 logs-heap:
 	tail -f $(HEAP_LOG)
 
+logs-io:
+	tail -f $(IO_LOG)
+
 help:
 	@echo "deepx Executor Makefile"
 	@echo ""
 	@echo "BUILD:"
-	@echo "  make build            Build op-metal + heap-metal"
+	@echo "  make build            Build op-metal + heap-metal + io-metal"
 	@echo "  make build-op         Build op-metal only"
 	@echo "  make build-heap       Build heap-metal only"
+	@echo "  make build-io         Build io-metal only"
 	@echo ""
 	@echo "SERVICES (daemon):"
-	@echo "  make start-services   Start op-metal + heap-metal in background"
+	@echo "  make start-services   Start op-metal + heap-metal + io-metal in background"
 	@echo "  make stop-services    Stop all services"
 	@echo "  make status           Check service status"
 	@echo ""
 	@echo "TESTING:"
 	@echo "  make test-unit        Run VM unit tests (no Redis)"
 	@echo "  make test-integration Run VM integration tests (Redis, no plats)"
-	@echo "  make test-real        Run real integration tests (Redis + plats)"
 	@echo ""
 	@echo "PIPELINE:"
-	@echo "  make pipeline         Full cycle: build → start → reset → test → stop"
+	@echo "  make pipeline         Full cycle: build → start → reset → stop"
 	@echo ""
 	@echo "UTILS:"
 	@echo "  make reset-redis      FLUSHDB (clean test state)"
 	@echo "  make clean            Remove build artifacts"
 	@echo "  make logs-op          Tail op-metal logs"
 	@echo "  make logs-heap        Tail heap-metal logs"
+	@echo "  make logs-io          Tail io-metal logs"
 	@echo ""
 	@echo "Config via env:"
 	@echo "  REDIS_ADDR=$(REDIS_ADDR)"
 	@echo "  OP_BIN=$(OP_BIN)"
 	@echo "  HEAP_BIN=$(HEAP_BIN)"
+	@echo "  IO_BIN=$(IO_BIN)"

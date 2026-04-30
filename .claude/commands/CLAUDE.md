@@ -9,6 +9,7 @@
 | `/build-op-cuda` | op-plat (CUDA) | C++/CUDA | 构建 CUDA 计算平面 |
 | `/build-op-metal` | op-plat (Metal) | C++/ObjC++/Metal | → `make build-op-metal` |
 | `/build-heap-metal` | heap-plat (Metal) | C++/ObjC++ | → `make build-heap-metal` |
+| `/build-io-metal` | io-plat | C++ | → `make build-io-metal` |
 | `/build-vm` | VM | Go | → `make build-vm` |
 | `/build-all` | 全部 | C++/Go | → `make build-all` |
 
@@ -18,15 +19,15 @@
 |------|------|
 | `/test-vm` | 运行 VM 单元测试 → `make test-vm` |
 | `/test-integration` | 运行 VM 集成测试 → `make test-integration` |
-| `/test-real` | 运行真实联调测试 → `make test-real` |
 | `/test-op-metal` | 构建 op-metal 并运行 shm 跨进程测试 |
 
 ## 服务生命周期 (联调)
 
 | 命令 | 说明 |
 |------|------|
-| `/start-services` | 后台启动 heap-metal + op-metal → `make start-services` |
-| `/stop-services` | 停止 heap-metal + op-metal 进程 → `make stop-services` |
+| `/boot` | 构建并启动所有服务 (deepxctl boot) |
+| `/run <file.dx>` | 运行 .dx 文件 (deepxctl run) |
+| `/shutdown` | 停止所有 booted 服务 (deepxctl shutdown) |
 | `/status` | 查看所有服务状态 → `make status` |
 | `/pipeline` | 完整联调流水线 → `make pipeline` |
 
@@ -35,62 +36,71 @@
 | 命令 | 说明 |
 |------|------|
 | `/reset-redis` | 重置 Redis → `make reset-redis` |
+| `/kvspace <vtid>` | 检查 KV Space 联调状态 (堆 + 栈) → skill `debug-kvspace` |
 
 ## 联调命令详解
 
-### 完整流水线 (`/pipeline`)
+### 典型联调流程 (deepxctl)
+
 ```bash
-make pipeline REDIS_ADDR=127.0.0.1:16379
+# 1. 构建并启动所有服务 (一次性)
+deepxctl boot
+
+# 2. 运行 .dx 文件 (可多次重复)
+deepxctl run example/dxlang/native/arith/add.dx
+
+# 3. 停止所有服务
+deepxctl shutdown
 ```
-等价于依次执行:
-1. `make build-all`      — 编译所有项目
-2. `make start-services` — 后台启动两个二进制
-3. `make reset-redis`    — 清空 Redis
-4. `make test-real`      — 运行 Go 真实联调测试
-5. `make stop-services`  — 停止后台进程
 
-### 分步联调
+### 分步联调 (make)
 
 ```bash
-# 所有命令从项目根目录执行
+# 构建
+make build-all
 
-# 1. 构建
-make build-all REDIS_ADDR=127.0.0.1:16379
-
-# 2. 启动后台服务
+# 启动服务 (后台，通过 PID 文件管理)
 make start-services REDIS_ADDR=127.0.0.1:16379
-make status REDIS_ADDR=127.0.0.1:16379  # 检查状态
+make status REDIS_ADDR=127.0.0.1:16379
 
-# 3. 重置 Redis
+# 重置 Redis
 make reset-redis REDIS_ADDR=127.0.0.1:16379
 
-# 4. 运行联调测试
-make test-real REDIS_ADDR=127.0.0.1:16379
+# 加载 & 执行
+./tmp/deepx-vm/loader load example/dxlang/lifecycle/full.dx
+./tmp/deepx-vm/vm 127.0.0.1:16379  # 手动启动 VM
 
-# 5. 停止服务
+# 停止服务
 make stop-services
 
-# 查看日志 (通过 executor/Makefile)
-cd executor && make logs-op    # op-metal 日志
-cd executor && make logs-heap  # heap-metal 日志
+# 查看日志
+tail -f /tmp/deepx-logs/op-metal.log
+tail -f /tmp/deepx-logs/heap-metal.log
+tail -f /tmp/deepx-logs/io-metal.log
+tail -f /tmp/deepx-logs/vm.log
 ```
 
-### 进程架构
+### plats 管理
 
-```
-Go test (integration_real_test.go)
-  ├── exec: heap-metal (subprocess)  → 消费 cmd:heap-metal:0
-  │     └── 注册: /sys/heap-plat/heap-metal:0
-  ├── exec: op-metal   (subprocess)  → 消费 cmd:op-metal:0
-  │     └── 注册: /sys/op-plat/op-metal:0
-  └── goroutine: engine.RunWorker    → 消费 notify:vm, 推进 vthread
-```
+plats (op-metal / heap-metal / io-metal / VM) 由 deepxctl 通过 subprocess 管理生命周期，**所有通信严格通过 Redis**:
+- `deepxctl boot` 启动所有进程，写入 PID 到 `/tmp/deepx-boot.json`
+- `deepxctl run` 检测 boot 状态后加载并执行 .dx 文件
+- `deepxctl shutdown` **有序退出**: plats → VM → 心跳验证 → deepxctl 退出
 
-测试流程:
-1. `startPlat()` 启动二进制子进程，阻塞等待 Redis 注册
-2. `engine.RunWorker()` 在 goroutine 中消费 vthread
-3. 加载 dxlang 源码，创建 vthread，推送到 notify:vm
-4. VM → push cmd:heap-metal:0 / cmd:op-metal:0
-5. heap/op 执行完成 → push done:<vtid>
-6. `waitVthreadDone()` 轮询 vthread 状态，验证结果
-7. `t.Cleanup()` 自动 kill 子进程
+**Redis 队列分工**：
+| 队列 | 类型 | 用途 |
+|------|------|------|
+| `cmd:op-metal:0` | 业务 | GPU 计算指令 |
+| `cmd:heap-metal:0` | 业务 | 堆内存管理指令 |
+| `cmd:io-metal:0` | 业务 | I/O 指令 (print/save/load) |
+| `notify:vm` | 业务 | VThread 调度通知 |
+| `sys:cmd:op-metal:0` | 系统 | op-metal shutdown |
+| `sys:cmd:heap-metal:0` | 系统 | heap-metal shutdown |
+| `sys:cmd:io-metal:0` | 系统 | io-metal shutdown |
+| `sys:cmd:vm:0` | 系统 | VM shutdown |
+| `/sys/heartbeat/*` | **心跳** | 各组件每 2s 上报 `{"ts":...,"status":"running/stopped"}` |
+
+**退出顺序**: plats (op-metal, heap-metal, io-metal) 先退出 → VM 退出 → deepxctl 检查心跳确认全部 stopped → 清理 PID 文件
+OS SIGKILL 仅作为 Redis 不可达时 / 超时时的最后兜底。
+
+参见 `tool/deepxctl/internal/process/manager.go` (进程管理)、`tool/deepxctl/cmd/shutdown.go` (有序 shutdown + 心跳验证) 和各组件 main 文件 (心跳上报 + 系统指令监听)。

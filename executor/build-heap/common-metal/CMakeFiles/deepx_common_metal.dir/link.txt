@@ -1,2 +1,0 @@
-/usr/bin/ar qc libdeepx_common_metal.a CMakeFiles/deepx_common_metal.dir/src/shmem/shm_tensor.cpp.o CMakeFiles/deepx_common_metal.dir/src/metal_device.cpp.o
-/usr/bin/ranlib libdeepx_common_metal.a
