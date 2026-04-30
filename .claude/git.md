@@ -35,4 +35,18 @@ git rebase origin/main
 git stash pop
 ```
 
-> **如果 rebase 冲突太多不想处理**：`git reset --hard origin/main` 丢弃全部本地 commit，然后手动拣回未 push 的 commit。
+## 严禁的高风险命令
+
+以下命令**绝对禁止**执行，无论任何情况：
+
+| 禁止命令 | 后果 |
+|----------|------|
+| `git reset --hard` | 不可逆丢弃本地修改和 commit |
+| `git reset --hard origin/main` | 同上 |
+| `git push --force` / `git push -f` | 覆盖远程历史 |
+| `git clean -fd` / `git clean -fdx` | 删除未跟踪文件 |
+| `git checkout -- .` | 丢弃所有工作区修改 |
+| `git restore .` | 同上 |
+| `rm -rf .git` | 摧毁仓库 |
+
+> **rebase 冲突时**：必须先用 `git stash` 保存，再 `git rebase origin/main`，逐个冲突人工解决。绝不能用 `reset --hard` 跳过。
