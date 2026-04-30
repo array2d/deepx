@@ -67,8 +67,16 @@ func (s *Server) Handler() http.Handler {
 		handler.ServeTerminal(w, r)
 	})
 
-	mux.HandleFunc("/api/term/io", func(w http.ResponseWriter, r *http.Request) {
-		handler.ServeTermIO(w, r)
+	mux.HandleFunc("/api/term/stdout", func(w http.ResponseWriter, r *http.Request) {
+		handler.ServeTermStdout(w, r)
+	})
+
+	mux.HandleFunc("/api/term/stderr", func(w http.ResponseWriter, r *http.Request) {
+		handler.ServeTermStderr(w, r)
+	})
+
+	mux.HandleFunc("/api/term/stdin", func(w http.ResponseWriter, r *http.Request) {
+		handler.ServeTermStdin(w, r)
 	})
 
 	mux.HandleFunc("/api/ops/", func(w http.ResponseWriter, r *http.Request) {

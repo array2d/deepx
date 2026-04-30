@@ -3,14 +3,16 @@
 // Web terminal (xterm.js):
 //   - /api/terminal     → browser ←WebSocket→ dashboard → PTY → /bin/bash
 //
-// VM I/O relay:
-//   - /api/term/io      → VM ←WebSocket→ dashboard → broadcast → browser terminals
+// VM I/O relay (3 independent endpoints, raw data, no JSON):
+//   - /api/term/stdout  → VM writes stdout → dashboard → broadcast → browser terminals
+//   - /api/term/stderr  → VM writes stderr → dashboard → broadcast (ANSI red) → browser terminals
+//   - /api/term/stdin   → VM reads stdin  ← browser input ← dashboard
 //
 // KV space registration:
 //   - /sys/term/dashboard        → instance status
-//   - /sys/term/dashboard/stdout → HASH {type:"websocket", detail:"ws://addr/api/term/io"}
-//   - /sys/term/dashboard/stderr → HASH {type:"websocket", detail:"ws://addr/api/term/io"}
-//   - /sys/term/dashboard/stdin  → HASH {type:"websocket", detail:"ws://addr/api/term/io"}
+//   - /sys/term/dashboard/stdout → HASH {type:"websocket", detail:"ws://addr/api/term/stdout"}
+//   - /sys/term/dashboard/stderr → HASH {type:"websocket", detail:"ws://addr/api/term/stderr"}
+//   - /sys/term/dashboard/stdin  → HASH {type:"websocket", detail:"ws://addr/api/term/stdin"}
 //   - /sys/heartbeat/term:dashboard → heartbeat
 package handler
 
@@ -47,21 +49,16 @@ type TermIOChannel struct {
 	Detail string `json:"detail"`
 }
 
-// ── VM ↔ Browser relay hub ──
+// ── Broadcast hub ──
 
-// VM sends JSON messages over WebSocket:
-//   {"stream":"stdout","data":"line\n"}
-//   {"stream":"stderr","data":"error\n"}
-type VMMsg struct {
-	Stream string `json:"stream"`
-	Data   string `json:"data"`
-}
-
+// termHub fans out VM stdout/stderr to all connected browser terminals,
+// and fans in browser input to the VM stdin connection.
 type termHub struct {
-	mu       sync.RWMutex
-	clients  map[*websocket.Conn]chan []byte // browser connections
-	vmConn   *websocket.Conn                  // single VM connection
-	vmMu     sync.Mutex
+	mu      sync.RWMutex
+	clients map[*websocket.Conn]chan []byte // browser display channels
+
+	stdinConn *websocket.Conn // VM stdin connection (reverse: browser → VM)
+	stdinMu   sync.Mutex
 }
 
 var hub = &termHub{
@@ -85,6 +82,7 @@ func (h *termHub) removeBrowser(conn *websocket.Conn) {
 	}
 }
 
+// broadcast sends raw data to all browser terminals.
 func (h *termHub) broadcast(data []byte) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -93,6 +91,32 @@ func (h *termHub) broadcast(data []byte) {
 		case ch <- data:
 		default:
 		}
+	}
+}
+
+// setStdin registers a new VM stdin connection (closes previous if any).
+func (h *termHub) setStdin(conn *websocket.Conn) {
+	h.stdinMu.Lock()
+	defer h.stdinMu.Unlock()
+	if h.stdinConn != nil {
+		h.stdinConn.Close()
+	}
+	h.stdinConn = conn
+}
+
+// clearStdin removes the VM stdin connection.
+func (h *termHub) clearStdin() {
+	h.stdinMu.Lock()
+	defer h.stdinMu.Unlock()
+	h.stdinConn = nil
+}
+
+// sendStdin forwards browser input to the VM stdin connection.
+func (h *termHub) sendStdin(data []byte) {
+	h.stdinMu.Lock()
+	defer h.stdinMu.Unlock()
+	if h.stdinConn != nil {
+		h.stdinConn.WriteMessage(websocket.BinaryMessage, data)
 	}
 }
 
@@ -111,15 +135,21 @@ func RegisterTerminal(rdb *goredis.Client, listenAddr string) {
 	rdb.Set(ctx, "/sys/term/dashboard", string(data), 0)
 	log.Printf("[term] registered instance at /sys/term/dashboard")
 
-	// I/O channels: stdout, stderr, stdin — all point to same WebSocket endpoint
+	// I/O channels: stdout, stderr, stdin — each with its own WebSocket URL
 	host := listenAddr
 	if host[0] == ':' {
 		host = "127.0.0.1" + host
 	}
-	wsURL := "ws://" + host + "/api/term/io"
-	ch := TermIOChannel{Type: TermWriterType, Detail: wsURL}
-	for _, stream := range []string{"stdout", "stderr", "stdin"} {
+	base := "ws://" + host
+
+	streams := map[string]string{
+		"stdout": base + "/api/term/stdout",
+		"stderr": base + "/api/term/stderr",
+		"stdin":  base + "/api/term/stdin",
+	}
+	for stream, wsURL := range streams {
 		key := "/sys/term/dashboard/" + stream
+		ch := TermIOChannel{Type: TermWriterType, Detail: wsURL}
 		rdb.HSet(ctx, key, "type", ch.Type, "detail", ch.Detail)
 		log.Printf("[term] registered I/O %s → %s", key, wsURL)
 	}
@@ -161,7 +191,7 @@ func ServeTerminal(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[term] browser connected from %s", r.RemoteAddr)
 
-	// Register for VM output broadcast
+	// Register for VM output broadcast (stdout/stderr)
 	browserCh := hub.addBrowser(conn)
 	defer hub.removeBrowser(conn)
 
@@ -202,13 +232,13 @@ func ServeTerminal(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Browser input + VM broadcast → PTY stdin
+	// Browser input → PTY stdin  +  VM stdout/stderr display  +  forward to VM stdin
 	go func() {
 		defer wg.Done()
 		for {
 			select {
 			case vmData := <-browserCh:
-				tty.Write(vmData)
+				// Display VM stdout/stderr in terminal (stderr already wrapped in ANSI red)
 				conn.WriteMessage(websocket.TextMessage, vmData)
 				continue
 			default:
@@ -229,6 +259,8 @@ func ServeTerminal(w http.ResponseWriter, r *http.Request) {
 				fallthrough
 			case websocket.BinaryMessage:
 				tty.Write(msg)
+				// Forward to VM stdin if connected
+				hub.sendStdin(msg)
 			}
 		}
 	}()
@@ -241,57 +273,81 @@ func ServeTerminal(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[term] browser disconnected from %s", r.RemoteAddr)
 }
 
-// ServeTermIO handles VM stdout/stderr → broadcast to browser terminals.
-// GET /api/term/io
-//
-// VM connects via WebSocket and sends JSON:
-//   {"stream":"stdout","data":"hello\n"}
-//   {"stream":"stderr","data":"error\n"}
-//
-// Dashboard broadcasts to all connected browser terminals.
-func ServeTermIO(w http.ResponseWriter, r *http.Request) {
+// ── VM I/O endpoints (3 independent WebSocket paths, raw data, no JSON) ──
+
+// ServeTermStdout — VM stdout → broadcast to all browser terminals.
+// GET /api/term/stdout
+func ServeTermStdout(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("[term-io] ws upgrade failed: %v", err)
+		log.Printf("[term-stdout] ws upgrade failed: %v", err)
 		return
 	}
 	defer conn.Close()
 
-	hub.vmMu.Lock()
-	if hub.vmConn != nil {
-		hub.vmConn.Close()
-	}
-	hub.vmConn = conn
-	hub.vmMu.Unlock()
-
-	defer func() {
-		hub.vmMu.Lock()
-		hub.vmConn = nil
-		hub.vmMu.Unlock()
-	}()
-
-	log.Printf("[term-io] VM connected from %s", r.RemoteAddr)
+	log.Printf("[term-stdout] VM connected from %s", r.RemoteAddr)
 
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("[term-io] VM disconnected: %v", err)
+			log.Printf("[term-stdout] VM disconnected: %v", err)
 			return
 		}
+		hub.broadcast(msg)
+	}
+}
 
-		var vmMsg VMMsg
-		if json.Unmarshal(msg, &vmMsg) != nil {
-			continue
+// ServeTermStderr — VM stderr → broadcast with ANSI red prefix.
+// GET /api/term/stderr
+func ServeTermStderr(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("[term-stderr] ws upgrade failed: %v", err)
+		return
+	}
+	defer conn.Close()
+
+	log.Printf("[term-stderr] VM connected from %s", r.RemoteAddr)
+
+	redPrefix := []byte("\x1b[31m")
+	resetSuffix := []byte("\x1b[0m")
+
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("[term-stderr] VM disconnected: %v", err)
+			return
 		}
+		output := make([]byte, 0, len(redPrefix)+len(msg)+len(resetSuffix))
+		output = append(output, redPrefix...)
+		output = append(output, msg...)
+		output = append(output, resetSuffix...)
+		hub.broadcast(output)
+	}
+}
 
-		// Format for terminal display
-		prefix := ""
-		if vmMsg.Stream == "stderr" {
-			prefix = "\x1b[31m" // red
+// ServeTermStdin — VM stdin ← browser input (reverse direction).
+// VM connects and reads; dashboard forwards browser keystrokes to this connection.
+// GET /api/term/stdin
+func ServeTermStdin(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("[term-stdin] ws upgrade failed: %v", err)
+		return
+	}
+	defer conn.Close()
+
+	hub.setStdin(conn)
+	defer hub.clearStdin()
+
+	log.Printf("[term-stdin] VM connected from %s", r.RemoteAddr)
+
+	// Keep connection alive — VM reads, browsers write via hub.sendStdin()
+	for {
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("[term-stdin] VM disconnected: %v", err)
+			return
 		}
-		output := prefix + vmMsg.Data + "\x1b[0m"
-
-		// Broadcast to all browser terminals
-		hub.broadcast([]byte(output))
 	}
 }
