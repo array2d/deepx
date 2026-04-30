@@ -9,8 +9,12 @@
       "Bash(chmod +x /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/.claude/commands/build-heap-metal.sh)",
       "Bash(cat)",
       "Bash(chmod +x .claude/commands/*.sh)",
-      "Bash(rm -rf /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build/*)",
-      "Bash(cmake ../op-metal -DCMAKE_BUILD_TYPE=Debug)"
+      "Bash(rm -f /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/.git/index.lock)",
+      "Bash(git rebase *)",
+      "Bash(rm -f /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/.git/index)",
+      "Bash(git reset *)",
+      "Bash(rm -rf .git/rebase-merge .git/rebase-apply)",
+      "Bash(rm -f .git/index.lock)"
     ]
   }
 }

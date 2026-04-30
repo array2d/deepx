@@ -195,3 +195,13 @@ boot/run/shutdown 逻辑: `tool/deepxctl/cmd/{boot,run,shutdown}.go`
   8. Python 特定规则 (禁止裸 except)
   9. Go 特定规则 (禁止 panic, 禁止 _ 丢弃 error, if 显式求值)
 
+## Git
+
+> **上游 squash merge → origin 上 N 个 commit 变 1 个 → push 冲突。**
+>
+> **铁律：未提交修改 + 未 push 的 commit → 绝不丢弃。已 push 的 commit → 丢弃（上游已 squash）。**
+>
+> 解法：`git stash && git fetch origin && git rebase origin/main && git stash pop`
+>
+> 详见 `.claude/git.md`
+
