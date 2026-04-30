@@ -1,11 +1,9 @@
 package dispatch
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 
@@ -127,51 +125,67 @@ func Native(ctx context.Context, rdb *redis.Client, vtid string, pc string, inst
 		return err
 	}
 
-	// print → stdout io writer, cerr → stderr io writer
+	// print → stdout, cerr → stderr (per-vthread WebSocket)
 	if inst.Opcode == "print" || inst.Opcode == "cerr" {
+		stream := "stdout"
+		if inst.Opcode == "cerr" {
+			stream = "stderr"
+		}
+		// 检查 /vthread/<vtid>/stdout 或 /vthread/<vtid>/stderr
+		vkey := "/vthread/" + vtid + "/" + stream
+		wsURL, _ := rdb.Get(ctx, vkey).Result()
+		if wsURL == "" {
+			state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
+			return nil
+		}
 		parts := make([]string, len(inputs))
 		for i, v := range inputs {
 			parts[i] = v.String()
 		}
 		line := strings.Join(parts, " ")
 		logx.Debug("[%s] %s %s", vtid, strings.ToUpper(inst.Opcode), line)
-
-		var sysKey, baseDir, label string
-		if inst.Opcode == "print" {
-			sysKey = sysTermDefaultStdout
-			baseDir = stdoutWriterBase
-			label = "stdout"
-		} else {
-			sysKey = sysTermDefaultStderr
-			baseDir = stderrWriterBase
-			label = "stderr"
-		}
-		if err := writeToTerm(ctx, rdb, vtid, sysKey, baseDir, label, line); err != nil {
-			logx.Debug("[%s] %s write error: %v", vtid, strings.ToUpper(inst.Opcode), err)
-		}
-		// 同时通过 WebSocket 发送到 dashboard 终端
-		sendToTermWS(ctx, rdb, vtid, label, line)
+		writeWS(ctx, wsURL, line)
 
 		state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 		return nil
 	}
 
-	// input → 从 stdin io reader 读取
+	// input → 从 /vthread/<vtid>/stdin 的 WebSocket 读取
 	if inst.Opcode == "input" {
-		val, inErr := evalInput(ctx, rdb, vtid, inputs)
+		// prompt → stdout (if configured)
+		if len(inputs) > 0 {
+			prompt := inputs[0].String()
+			outKey := "/vthread/" + vtid + "/stdout"
+			if outURL, _ := rdb.Get(ctx, outKey).Result(); outURL != "" {
+				writeWS(ctx, outURL, prompt)
+			}
+		}
+		// 检查 stdin reader key
+		inKey := "/vthread/" + vtid + "/stdin"
+		inURL, _ := rdb.Get(ctx, inKey).Result()
+		if inURL == "" {
+			// 无 stdin reader → 返回空
+			if len(inst.Writes) > 0 {
+				wKey := ResolveWriteKey(vtid, inst.Writes[0])
+				rdb.Set(ctx, wKey, "", 0)
+			}
+			state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
+			return nil
+		}
+		val, inErr := readWS(ctx, inURL)
 		if inErr != nil {
 			state.SetError(ctx, rdb, vtid, pc, inErr.Error())
 			return inErr
 		}
 		if len(inst.Writes) > 0 {
-			outKey := ResolveWriteKey(vtid, inst.Writes[0])
-			if err := rdb.Set(ctx, outKey, val.String(), 0).Err(); err != nil {
-				msg := fmt.Sprintf("native write %s: %v", outKey, err)
+			wKey := ResolveWriteKey(vtid, inst.Writes[0])
+			if err := rdb.Set(ctx, wKey, val, 0).Err(); err != nil {
+				msg := fmt.Sprintf("native write %s: %v", wKey, err)
 				state.SetError(ctx, rdb, vtid, pc, msg)
 				return fmt.Errorf("%s", msg)
 			}
 		}
-		logx.Debug("[%s] INPUT = %s", vtid, val.String())
+		logx.Debug("[%s] INPUT = %s", vtid, val)
 		state.Set(ctx, rdb, vtid, ir.NextPC(pc), "running")
 		return nil
 	}
@@ -560,145 +574,4 @@ func evalPrint(inputs []nativeValue) (nativeValue, error) {
 	return nativeValue{kind: "string", raw: strings.Join(parts, " ")}, nil
 }
 
-// ── io writer/reader: print/cerr/input 的底层 I/O ──
 
-// sysTermDefaultStdout 系统级默认 stdout writer 注册 key。
-// sysTermDefaultStderr 系统级默认 stderr writer 注册 key。
-// sysTermDefaultStdin  系统级默认 stdin reader 注册 key。
-// Writer/Reader 类型: file://path 等。
-const (
-	sysTermDefaultStdout = "/sys/term/default/stdout"
-	sysTermDefaultStderr = "/sys/term/default/stderr"
-	sysTermDefaultStdin  = "/sys/term/default/stdin"
-)
-
-const (
-	stdoutWriterBase = "/tmp/deepx-stdout"
-	stderrWriterBase = "/tmp/deepx-stderr"
-	stdinReaderBase  = "/tmp/deepx-stdin"
-)
-
-// ensureTermWriter 获取或创建 term writer (stdout/stderr)。
-// writer 首次创建时截断文件；后续写入追加。
-func ensureTermWriter(ctx context.Context, rdb *redis.Client, sysKey, baseDir, defaultFilename string) (string, error) {
-	uri, err := rdb.Get(ctx, sysKey).Result()
-	if err == nil && uri != "" {
-		if strings.HasPrefix(uri, "file://") || strings.HasPrefix(uri, "tcp://") {
-			return uri, nil
-		}
-		logx.Warn("invalid term writer URI at %s: %s, recreating", sysKey, uri)
-		rdb.Del(ctx, sysKey)
-	} else if err != nil && err != redis.Nil {
-		logx.Warn("term writer error at %s: %v, recreating", sysKey, err)
-		rdb.Del(ctx, sysKey)
-	}
-
-	os.MkdirAll(baseDir, 0755)
-	filePath := baseDir + "/" + defaultFilename
-	uri = "file://" + filePath
-
-	// 首次创建时截断文件
-	os.WriteFile(filePath, nil, 0644)
-
-	rdb.Set(ctx, sysKey, uri, 0)
-	logx.Debug("registered term writer: %s → %s", sysKey, uri)
-
-	return uri, nil
-}
-
-// ensureTermReader 获取或创建 term reader (stdin)。
-// reader 不截断已有数据; 仅当文件不存在时才创建空文件。
-func ensureTermReader(ctx context.Context, rdb *redis.Client, sysKey, baseDir, defaultFilename string) (string, error) {
-	uri, err := rdb.Get(ctx, sysKey).Result()
-	if err == nil && uri != "" {
-		if strings.HasPrefix(uri, "file://") {
-			return uri, nil
-		}
-		logx.Warn("invalid term reader URI at %s: %s, recreating", sysKey, uri)
-		rdb.Del(ctx, sysKey)
-	} else if err != nil && err != redis.Nil {
-		logx.Warn("term reader error at %s: %v, recreating", sysKey, err)
-		rdb.Del(ctx, sysKey)
-	}
-
-	os.MkdirAll(baseDir, 0755)
-	filePath := baseDir + "/" + defaultFilename
-	uri = "file://" + filePath
-
-	// 仅当文件不存在时才创建空文件 (不截断已有数据)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		os.WriteFile(filePath, nil, 0644)
-	}
-
-	rdb.Set(ctx, sysKey, uri, 0)
-	logx.Debug("registered term reader: %s → %s", sysKey, uri)
-
-	return uri, nil
-}
-
-// writeToTerm 将一行输出追加写入 term writer。
-func writeToTerm(ctx context.Context, rdb *redis.Client, vtid string, sysKey, baseDir, label, line string) error {
-	uri, err := ensureTermWriter(ctx, rdb, sysKey, baseDir, "default.log")
-	if err != nil {
-		return fmt.Errorf("get %s writer: %w", label, err)
-	}
-
-	if !strings.HasPrefix(uri, "file://") {
-		return fmt.Errorf("unsupported %s writer: %s", label, uri)
-	}
-	filePath := strings.TrimPrefix(uri, "file://")
-
-	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("open %s file %s: %w", label, filePath, err)
-	}
-	defer f.Close()
-
-	if _, err := fmt.Fprintln(f, line); err != nil {
-		return fmt.Errorf("write %s file %s: %w", label, filePath, err)
-	}
-	return nil
-}
-
-// evalInput 从 stdin reader 读取一行输入。
-// 如果提供了 prompt 参数，会先写入 stdout。
-func evalInput(ctx context.Context, rdb *redis.Client, vtid string, inputs []nativeValue) (nativeValue, error) {
-	// prompt 写入 stdout
-	if len(inputs) > 0 {
-		prompt := inputs[0].String()
-		if err := writeToTerm(ctx, rdb, vtid, sysTermDefaultStdout, stdoutWriterBase, "stdout", prompt); err != nil {
-			logx.Debug("[%s] INPUT prompt write error: %v", vtid, err)
-		}
-		sendToTermWS(ctx, rdb, vtid, "stdout", prompt)
-	}
-
-	// 获取 stdin reader
-	uri, err := ensureTermReader(ctx, rdb, sysTermDefaultStdin, stdinReaderBase, "default.txt")
-	if err != nil {
-		return nativeValue{}, fmt.Errorf("get stdin reader: %w", err)
-	}
-
-	if !strings.HasPrefix(uri, "file://") {
-		return nativeValue{}, fmt.Errorf("unsupported stdin reader: %s", uri)
-	}
-	filePath := strings.TrimPrefix(uri, "file://")
-
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nativeValue{}, fmt.Errorf("open stdin file %s: %w", filePath, err)
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	if scanner.Scan() {
-		line := scanner.Text()
-		logx.Debug("[%s] INPUT read: %s", vtid, line)
-		return nativeValue{kind: "string", raw: line}, nil
-	}
-	if err := scanner.Err(); err != nil {
-		return nativeValue{}, fmt.Errorf("read stdin: %w", err)
-	}
-
-	// 无输入
-	return nativeValue{kind: "string", raw: ""}, nil
-}
