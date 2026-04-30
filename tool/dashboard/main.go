@@ -26,7 +26,7 @@ func main() {
 	defer rdb.Close()
 	log.Printf("Connected to Redis: %s", *redisAddr)
 
-	srv := server.New(rdb, *loaderBin, *redisAddr)
+	srv := server.New(rdb, *loaderBin, *redisAddr, *addr)
 	httpServer := &http.Server{Addr: *addr, Handler: srv.Handler()}
 
 	// Graceful shutdown

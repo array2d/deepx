@@ -16,18 +16,20 @@ type Server struct {
 	rdb       *goredis.Client
 	loaderBin string
 	redisAddr string
+	listenAddr string
 	statusHub *handler.StatusHub
 }
 
-func New(rdb *goredis.Client, loaderBin, redisAddr string) *Server {
+func New(rdb *goredis.Client, loaderBin, redisAddr, listenAddr string) *Server {
 	s := &Server{
-		rdb:       rdb,
-		loaderBin: loaderBin,
-		redisAddr: redisAddr,
-		statusHub: handler.NewStatusHub(rdb),
+		rdb:        rdb,
+		loaderBin:  loaderBin,
+		redisAddr:  redisAddr,
+		listenAddr: listenAddr,
+		statusHub:  handler.NewStatusHub(rdb),
 	}
 	go s.statusHub.Run()
-	handler.RegisterTerminal(rdb)
+	handler.RegisterTerminal(rdb, listenAddr)
 	return s
 }
 
@@ -63,6 +65,10 @@ func (s *Server) Handler() http.Handler {
 
 	mux.HandleFunc("/api/terminal", func(w http.ResponseWriter, r *http.Request) {
 		handler.ServeTerminal(w, r)
+	})
+
+	mux.HandleFunc("/api/term/io", func(w http.ResponseWriter, r *http.Request) {
+		handler.ServeTermIO(w, r)
 	})
 
 	mux.HandleFunc("/api/ops/", func(w http.ResponseWriter, r *http.Request) {
