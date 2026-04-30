@@ -27,25 +27,37 @@
 
 ## 构建 / 测试
 
+> **强制规则: 所有构建必须通过根目录 `make` 命令执行，禁止直接使用 `go build`、`cmake`、`./build.sh` 等裸命令。**
+>
+> 根目录 `Makefile` 是所有构建操作的唯一入口:
+> ```bash
+> make build-vm          # 构建 VM + loader (Go) → /tmp/deepx-vm/
+> make build-deepxctl    # 构建 deepxctl CLI (Go)  → tool/deepxctl/deepxctl
+> make build-op-metal    # 构建 Metal 计算平面 (C++/Metal)
+> make build-heap-metal  # 构建 Metal 堆管理平面 (C++/ObjC++)
+> make build-all         # 构建全部项目
+> ```
+
 ### 构建
 
 | 命令 | 说明 |
 |------|------|
-| `/build-op-metal` | 构建 Metal 计算平面 (cmake + Metal shader 编译) |
-| `/build-op-cuda` | 构建 CUDA 计算平面 |
-| `/build-heap-metal` | 构建 Metal 堆管理平面 |
-| `/build-vm` | 构建 VM + loader (Go compile + 单元测试) |
+| `make build-all` | 构建全部项目 (VM + deepxctl + op-metal + heap-metal) |
+| `make build-vm` | 构建 VM + loader (Go) → `/tmp/deepx-vm/vm` `/tmp/deepx-vm/loader` |
+| `make build-deepxctl` | 构建 deepxctl CLI (Go) → `tool/deepxctl/deepxctl` |
+| `make build-op-metal` | 构建 Metal 计算平面 (C++/Metal cmake) → `executor/build/deepx-op-metal` |
+| `make build-heap-metal` | 构建 Metal 堆管理平面 (C++/ObjC++ cmake) → `executor/build-heap/deepx-heap-metal` |
 
 ### 测试
 
 | 命令 | 说明 |
 |------|------|
-| `/test-vm` | 运行 VM 单元测试 |
-| `/test-integration` | 运行 VM 集成测试 (需要 Redis，纯 VM 算子) |
-| `/test-real` | 运行真实联调测试 (Redis + heap-metal + op-metal 子进程) |
-| `/test-op-metal` | 构建 op-metal 并运行 shm 跨进程测试 |
-| `/pipeline` | 完整联调流水线: build → start → reset → test-real → stop |
-| `/reset-redis` | 重置 Redis 测试环境 (FLUSHDB) |
+| `make test-vm` | 运行 VM 单元测试 |
+| `make test-integration` | 运行 VM 集成测试 (需要 Redis，纯 VM 算子) |
+| `make test-real` | 运行真实联调测试 (Redis + heap-metal + op-metal 子进程) |
+| `/test-op-metal` | 构建 op-metal 并运行 shm 跨进程测试 (C++ 独立测试) |
+| `make pipeline` | 完整联调流水线: build → start → reset-redis → test-real → stop |
+| `make reset-redis` | 重置 Redis 测试环境 (FLUSHDB) |
 
 ### 联调测试架构
 
@@ -57,14 +69,14 @@
 - `TestIntegrationReal_CrossCall`— VM 原生函数组合 (diamond)
 - `TestIntegrationReal_E2E`      — 端到端: 序列调用 + GPU/native 混合
 
-所有 `integration_real_test.go` 通过 `executor/Makefile` 管理:
+所有 `integration_real_test.go` 通过根目录 `Makefile` 管理:
 ```bash
-cd executor
+# 所有命令从项目根目录执行
 make pipeline REDIS_ADDR=127.0.0.1:16379  # 一键完整流程
 make test-real REDIS_ADDR=127.0.0.1:16379 # 仅运行测试 (需先 start-services)
-make start-services                        # 后台启动 plats
+make start-services REDIS_ADDR=127.0.0.1:16379  # 后台启动 plats
 make stop-services                         # 停止
-make status                                # 查看状态
+make status REDIS_ADDR=127.0.0.1:16379   # 查看状态
 ```
 
 ### 加载示例到 KV Space

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-exec ./executor/vm/build.sh "$@"
-# Builds: /tmp/deepx-vm/vm + /tmp/deepx-vm/loader
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+exec make -C "$PROJECT_ROOT" build-vm
