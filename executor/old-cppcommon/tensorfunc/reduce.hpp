@@ -1,8 +1,8 @@
 #ifndef DEEPX_TENSORFUNC_REDUCE_HPP
 #define DEEPX_TENSORFUNC_REDUCE_HPP
 
- #include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+ #include "../tensor.hpp"
+#include "authors.hpp"
 #include "stdutil/error.hpp"
 
 namespace deepx::tensorfunc

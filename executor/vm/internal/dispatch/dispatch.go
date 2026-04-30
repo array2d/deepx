@@ -114,16 +114,49 @@ func buildOpTask(ctx context.Context, rdb *redis.Client, vtid string, pc string,
 		Params: make(map[string]interface{}),
 	}
 
-	for _, r := range inst.Reads {
-		if isLiteral(r) {
+	switch inst.Opcode {
+	case "save":
+		// save(tensor, filepath)
+		// Reads[0] = tensor → input
+		// Reads[1] = filepath → param
+		for i, r := range inst.Reads {
+			if i == 0 {
+				task.Inputs = append(task.Inputs, resolveParam(ctx, rdb, vtid, r))
+			} else {
+				task.Params[fmt.Sprintf("arg%d", len(task.Params))] = r
+			}
+		}
+
+	case "load":
+		// load(filepath) → output_tensor
+		// Reads[0] = filepath → param
+		// Writes[0] = output tensor → output
+		for _, r := range inst.Reads {
 			task.Params[fmt.Sprintf("arg%d", len(task.Params))] = r
-		} else {
+		}
+		for _, w := range inst.Writes {
+			task.Outputs = append(task.Outputs, resolveParam(ctx, rdb, vtid, w))
+		}
+
+	case "print":
+		// print(tensor) — all reads are tensor inputs, no outputs
+		for _, r := range inst.Reads {
 			task.Inputs = append(task.Inputs, resolveParam(ctx, rdb, vtid, r))
 		}
-	}
+		// no outputs
 
-	for _, w := range inst.Writes {
-		task.Outputs = append(task.Outputs, resolveParam(ctx, rdb, vtid, w))
+	default:
+		for _, r := range inst.Reads {
+			if isLiteral(r) {
+				task.Params[fmt.Sprintf("arg%d", len(task.Params))] = r
+			} else {
+				task.Inputs = append(task.Inputs, resolveParam(ctx, rdb, vtid, r))
+			}
+		}
+
+		for _, w := range inst.Writes {
+			task.Outputs = append(task.Outputs, resolveParam(ctx, rdb, vtid, w))
+		}
 	}
 
 	return task

@@ -9,8 +9,8 @@
 #include <sstream>
 #include <chrono>
 
-#include "deepx/tensor.hpp"
-#include "deepx/mem/mem.hpp"
+#include "../tensor.hpp"
+#include "../mem/mem.hpp"
 #include "deepx/dtype/typespec.hpp"
 
 #include "stdutil/error.hpp"

@@ -1,0 +1,6 @@
+/Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build-heap/CMakeFiles/deepx-heap-metal.dir
+/Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build-heap/CMakeFiles/edit_cache.dir
+/Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build-heap/CMakeFiles/rebuild_cache.dir
+/Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build-heap/common-metal/CMakeFiles/deepx_common_metal.dir
+/Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build-heap/common-metal/CMakeFiles/edit_cache.dir
+/Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build-heap/common-metal/CMakeFiles/rebuild_cache.dir

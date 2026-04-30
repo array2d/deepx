@@ -1,0 +1,3 @@
+def native_arith(A:int, B:int) -> (C:int) {
+    A + B -> "./C"
+}

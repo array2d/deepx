@@ -1,7 +1,7 @@
 
 #include <type_traits>
 
-#include "deepx/dtype.hpp"
+#include "dtype.hpp"
 
 
 namespace deepx

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
-project(deepx-heap-metal LANGUAGES CXX OBJCXX)
+project(deepx-heap-metal LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -20,12 +20,7 @@ if(NOT TARGET deepx_common_metal)
     add_subdirectory(../common-metal common-metal)
 endif()
 
-file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.mm")
-
-find_library(FOUNDATION Foundation)
+file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE deepx_common_metal ${FOUNDATION} hiredis)
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
-)
+target_link_libraries(${PROJECT_NAME} PRIVATE deepx_common_metal hiredis)

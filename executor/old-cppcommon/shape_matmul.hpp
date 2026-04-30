@@ -1,7 +1,7 @@
 #ifndef DEEPX_SHAPE_MATMUL_HPP
 #define DEEPX_SHAPE_MATMUL_HPP
 
-#include "deepx/shape.hpp"
+#include "shape.hpp"
 
 namespace deepx
 {

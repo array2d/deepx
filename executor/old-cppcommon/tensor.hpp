@@ -6,9 +6,9 @@
 #include <fstream>
 #include <memory>
 
-#include "deepx/shape.hpp"
-#include "deepx/dtype.hpp"
-#include "deepx/tensorbase.hpp"
+#include "shape.hpp"
+#include "dtype.hpp"
+#include "tensorbase.hpp"
 
 namespace deepx
 {

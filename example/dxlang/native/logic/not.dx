@@ -1,0 +1,3 @@
+def native_not(A:bool) -> (C:bool) {
+    !A -> "./C"
+}

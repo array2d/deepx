@@ -4,8 +4,8 @@
 #include <string>
 #include <sstream>
 
-#include "deepx/tf/tffactory.hpp"
-#include "deepx/dtype.hpp"
+#include "tffactory.hpp"
+#include "../dtype.hpp"
 
 namespace deepx::tf
 {   

@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build-heap/cmake_install.cmake",
+		"/Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build-heap/common-metal/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

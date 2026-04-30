@@ -3,12 +3,12 @@
 
 #include <iostream>
 
-#include "deepx/tensor.hpp"
+#include "tensor.hpp"
 #include "stdutil/vector.hpp"
 #include "stdutil/print.hpp"
 #include "stdutil/fs.hpp"
-#include "deepx/tensorfunc/authors.hpp"
-#include "deepx/tensorfunc/io.hpp"
+#include "tensorfunc/authors.hpp"
+#include "tensorfunc/io.hpp"
 #include "deepx/tensorfunc/tensorlife_miaobyte.hpp"
 namespace deepx::tensorfunc
 {
@@ -37,6 +37,15 @@ namespace deepx::tensorfunc
     };
 
 
+    //save — persist tensor shape + data to disk
+    template <typename T>
+    void save(const std::string &tensor_name, const Tensor<T> &tensor, const std::string &dir = "")
+    {
+        std::string prefix = dir.empty() ? tensor_name : dir + "/" + tensor_name;
+        tensor.shape.saveShape(prefix);                          // e.g. tensor_a.yaml
+        tensor.saver(tensor.data, tensor.shape.size, prefix + ".data");
+    }
+
     //load
     template <typename T>
     pair<std::string,shared_ptr<Tensor<T>>> load(const std::string &path)
@@ -45,7 +54,7 @@ namespace deepx::tensorfunc
         pair<std::string,Shape> shape_name=Shape::loadShape(path);
         Shape shape=shape_name.second;
         std::string tensor_name=shape_name.first;
- 
+
 
         // 检查T 和 shape.dtype 是否匹配
         if (shape.dtype != precision<T>())
@@ -53,7 +62,7 @@ namespace deepx::tensorfunc
             throw std::runtime_error("调用load<" + precision_str(shape.dtype) + "> 不匹配: 需要 " + precision_str(shape.dtype) +
                                      " 类型，但文件为" + precision_str(precision<T>()) + " 类型");
         }
- 
+
         shared_ptr<Tensor<T>> tensor = make_shared<Tensor<T>>(New<T>(shape.shape));
         tensor->loader(path+".data",tensor->data,tensor->shape.size);
         return std::make_pair(tensor_name, tensor);

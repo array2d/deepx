@@ -6,6 +6,9 @@
 
 | Agent | 文件 | 职责 |
 |-------|------|------|
-| `audit-vm` | `audit-vm.md` | 审计 deepx **全组件**代码质量（VM/op-plat/heap-plat/pysdk），覆盖 Go/C++/Python，检查 10 条强制规则 |
+| `audit` | `audit-vm.md` | 审计 deepx **全组件**代码质量（VM/op-plat/heap-plat/pysdk），覆盖 Go/C++/Python，检查 10 条强制规则 |
+| `dev-op-metal` | `dev-op-metal.md` | op-metal Metal GPU 算子开发专家。指导新增 kernel、dtype 覆盖、dispatch 流程 |
+| `dev-heap-metal` | `dev-heap-metal.md` | heap-plat 张量生命周期开发专家。指导 newtensor/deltensor/clonetensor、引用计数、shm 管理 |
+| `dev-vm` | `dev-vm.md` | VM 核心开发专家。指导原生算子新增、CALL 翻译、状态机、并发安全 |
 
-使用方式：对话中输入 `@audit-vm 审计` 即可触发全项目代码审计。
+使用方式：对话中输入 `@dev-op-metal 新增 gelu 算子` 即可触发对应开发流程指引。

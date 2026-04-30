@@ -1,0 +1,221 @@
+#ifndef DEEPX_TF_CHANGESHAPE_HPP
+#define DEEPX_TF_CHANGESHAPE_HPP
+
+#include <vector>
+#include "deepx/tf/tf.hpp"
+#include "deepx/tensorfunc/changeshape_miaobyte.hpp"
+#include "deepx/tensorfunc/authors.hpp"
+
+namespace deepx::tf
+{
+    using namespace deepx::tensorfunc;
+    using namespace std;
+
+    // reshape
+    template <typename Author>
+    class Reshape : public TF
+    {
+    public:
+        Reshape(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "reshape";
+            this->metadata.author = Author::name();
+            this->tftype = "changeshape";
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override { return "T1.reshape(shape)->T2"; }
+        shared_ptr<TF> clone() const override { return make_shared<Reshape<Author>>(*this); }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            vector<int> shape = this->getvector<int>(1, true);
+            switch (input_type) {
+            case Precision::Float64: reshape<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), shape, *mem->gettensor<double>(this->returns[0].textvalue)); break;
+            case Precision::Float32: reshape<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), shape, *mem->gettensor<float>(this->returns[0].textvalue)); break;
+            case Precision::Int64:   reshape<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), shape, *mem->gettensor<int64_t>(this->returns[0].textvalue)); break;
+            case Precision::Int32:   reshape<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), shape, *mem->gettensor<int32_t>(this->returns[0].textvalue)); break;
+            case Precision::Int16:   reshape<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), shape, *mem->gettensor<int16_t>(this->returns[0].textvalue)); break;
+            case Precision::Int8:    reshape<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), shape, *mem->gettensor<int8_t>(this->returns[0].textvalue)); break;
+            case Precision::Bool:    reshape<Author, bool>(*mem->gettensor<bool>(this->args[0].textvalue), shape, *mem->gettensor<bool>(this->returns[0].textvalue)); break;
+            default: error = "Unsupported type: " + precision_str(input_type); return 1;
+            }
+            return 0;
+        }
+    };
+
+    // transpose
+    template <typename Author>
+    class Transpose : public TF
+    {
+    public:
+        Transpose(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "transpose";
+            this->metadata.author = Author::name();
+            this->tftype = "changeshape";
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override { return "T2 = T1.transpose(dimorder)"; }
+        shared_ptr<TF> clone() const override { return make_shared<Transpose<Author>>(*this); }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            vector<int> dim_order = this->getvector<int>(1, true);
+            switch (input_type) {
+            case Precision::Float64: transpose<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), dim_order, *mem->gettensor<double>(this->returns[0].textvalue)); break;
+            case Precision::Float32: transpose<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), dim_order, *mem->gettensor<float>(this->returns[0].textvalue)); break;
+            case Precision::Int64:   transpose<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), dim_order, *mem->gettensor<int64_t>(this->returns[0].textvalue)); break;
+            case Precision::Int32:   transpose<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), dim_order, *mem->gettensor<int32_t>(this->returns[0].textvalue)); break;
+            case Precision::Int16:   transpose<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), dim_order, *mem->gettensor<int16_t>(this->returns[0].textvalue)); break;
+            case Precision::Int8:    transpose<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), dim_order, *mem->gettensor<int8_t>(this->returns[0].textvalue)); break;
+            case Precision::Bool:    transpose<Author, bool>(*mem->gettensor<bool>(this->args[0].textvalue), dim_order, *mem->gettensor<bool>(this->returns[0].textvalue)); break;
+            default: error = "Unsupported type: " + precision_str(input_type); return 1;
+            }
+            return 0;
+        }
+    };
+
+    // concat
+    template <typename Author>
+    class Concat : public TF
+    {
+    public:
+        Concat(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "concat";
+            this->metadata.author = Author::name();
+            this->tftype = "changeshape";
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override { return "Tresult = concat([T1, T2...], axis)"; }
+        shared_ptr<TF> clone() const override { return make_shared<Concat>(*this); }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            if (!checktensors({this->returns[0].textvalue}, mem, error) != 0) return 1;
+            vector<string> tensor_names = this->getvector<string>(0, true);
+            if (!checktensors(tensor_names, mem, error) != 0) return 1;
+            Precision input_type = mem->gettensor(tensor_names[0]).get()->shape.dtype;
+            int axis = this->getvar<int>(1, mem, true);
+            switch (input_type) {
+            case Precision::Float64:{ std::vector<Tensor<double>*> input; for (size_t i=0;i<tensor_names.size();++i) input.push_back(mem->gettensor<double>(tensor_names[i]).get()); concat<Author, double>(input, axis, *mem->gettensor<double>(this->returns[0].textvalue).get()); break; }
+            case Precision::Float32:{ std::vector<Tensor<float>*> input; for (size_t i=0;i<tensor_names.size();++i) input.push_back(mem->gettensor<float>(tensor_names[i]).get()); concat<Author, float>(input, axis, *mem->gettensor<float>(this->returns[0].textvalue).get()); break; }
+            case Precision::Int64:  { std::vector<Tensor<int64_t>*> input; for (size_t i=0;i<tensor_names.size();++i) input.push_back(mem->gettensor<int64_t>(tensor_names[i]).get()); concat<Author, int64_t>(input, axis, *mem->gettensor<int64_t>(this->returns[0].textvalue).get()); break; }
+            case Precision::Int32:  { std::vector<Tensor<int32_t>*> input; for (size_t i=0;i<tensor_names.size();++i) input.push_back(mem->gettensor<int32_t>(tensor_names[i]).get()); concat<Author, int32_t>(input, axis, *mem->gettensor<int32_t>(this->returns[0].textvalue).get()); break; }
+            case Precision::Int16:  { std::vector<Tensor<int16_t>*> input; for (size_t i=0;i<tensor_names.size();++i) input.push_back(mem->gettensor<int16_t>(tensor_names[i]).get()); concat<Author, int16_t>(input, axis, *mem->gettensor<int16_t>(this->returns[0].textvalue).get()); break; }
+            case Precision::Int8:   { std::vector<Tensor<int8_t>*> input; for (size_t i=0;i<tensor_names.size();++i) input.push_back(mem->gettensor<int8_t>(tensor_names[i]).get()); concat<Author, int8_t>(input, axis, *mem->gettensor<int8_t>(this->returns[0].textvalue).get()); break; }
+            case Precision::Bool:   { std::vector<Tensor<bool>*> input; for (size_t i=0;i<tensor_names.size();++i) input.push_back(mem->gettensor<bool>(tensor_names[i]).get()); concat<Author, bool>(input, axis, *mem->gettensor<bool>(this->returns[0].textvalue).get()); break; }
+            default: error = "Unsupported type: " + precision_str(input_type); return 1;
+            }
+            return 0;
+        }
+    };
+
+    // broadcastTo
+    template <typename Author>
+    class BroadcastTo : public TF
+    {
+    public:
+        BroadcastTo(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "broadcastTo";
+            this->metadata.author = Author::name();
+            this->tftype = "changeshape";
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override { return "T2 = T1.broadcastTo(new_shape)"; }
+        shared_ptr<TF> clone() const override { return make_shared<BroadcastTo<Author>>(*this); }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            vector<int> new_shape = this->getvector<int>(1, true);
+            switch (input_type) {
+            case Precision::Float64: broadcastTo<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), new_shape, *mem->gettensor<double>(this->returns[0].textvalue)); break;
+            case Precision::Float32: broadcastTo<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), new_shape, *mem->gettensor<float>(this->returns[0].textvalue)); break;
+            case Precision::Int64:   broadcastTo<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), new_shape, *mem->gettensor<int64_t>(this->returns[0].textvalue)); break;
+            case Precision::Int32:   broadcastTo<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), new_shape, *mem->gettensor<int32_t>(this->returns[0].textvalue)); break;
+            case Precision::Int16:   broadcastTo<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), new_shape, *mem->gettensor<int16_t>(this->returns[0].textvalue)); break;
+            case Precision::Int8:    broadcastTo<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), new_shape, *mem->gettensor<int8_t>(this->returns[0].textvalue)); break;
+            case Precision::Bool:    broadcastTo<Author, bool>(*mem->gettensor<bool>(this->args[0].textvalue), new_shape, *mem->gettensor<bool>(this->returns[0].textvalue)); break;
+            default: error = "Unsupported type: " + precision_str(input_type); return 1;
+            }
+            return 0;
+        }
+    };
+
+    // indexselect
+    template <typename Author>
+    class IndexSelect : public TF
+    {
+    public:
+        IndexSelect(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "indexselect";
+            this->metadata.author = Author::name();
+            this->tftype = "changeshape";
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override { return "T2 = T1.indexselect(index, axis)"; }
+        shared_ptr<TF> clone() const override { return make_shared<IndexSelect<Author>>(*this); }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            int axis = this->getvar<int>(2, mem, true);
+            Precision index_type = mem->gettensor(this->args[1].textvalue).get()->shape.dtype;
+            if (index_type != Precision::Int64 && index_type != Precision::Int32) {
+                error = "index_type only supports Int64 or Int32"; return 1;
+            }
+            switch (input_type) {
+            case Precision::Float64:{ if(index_type==Precision::Int64) indexselect<Author,double,int64_t>(*mem->gettensor<double>(this->args[0].textvalue),*mem->gettensor<int64_t>(this->args[1].textvalue),axis,*mem->gettensor<double>(this->returns[0].textvalue)); else indexselect<Author,double,int32_t>(*mem->gettensor<double>(this->args[0].textvalue),*mem->gettensor<int32_t>(this->args[1].textvalue),axis,*mem->gettensor<double>(this->returns[0].textvalue)); break; }
+            case Precision::Float32:{ if(index_type==Precision::Int64) indexselect<Author,float,int64_t>(*mem->gettensor<float>(this->args[0].textvalue),*mem->gettensor<int64_t>(this->args[1].textvalue),axis,*mem->gettensor<float>(this->returns[0].textvalue)); else indexselect<Author,float,int32_t>(*mem->gettensor<float>(this->args[0].textvalue),*mem->gettensor<int32_t>(this->args[1].textvalue),axis,*mem->gettensor<float>(this->returns[0].textvalue)); break; }
+            case Precision::Int64:  { if(index_type==Precision::Int64) indexselect<Author,int64_t,int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue),*mem->gettensor<int64_t>(this->args[1].textvalue),axis,*mem->gettensor<int64_t>(this->returns[0].textvalue)); else indexselect<Author,int64_t,int32_t>(*mem->gettensor<int64_t>(this->args[0].textvalue),*mem->gettensor<int32_t>(this->args[1].textvalue),axis,*mem->gettensor<int64_t>(this->returns[0].textvalue)); break; }
+            case Precision::Int32:  { if(index_type==Precision::Int64) indexselect<Author,int32_t,int64_t>(*mem->gettensor<int32_t>(this->args[0].textvalue),*mem->gettensor<int64_t>(this->args[1].textvalue),axis,*mem->gettensor<int32_t>(this->returns[0].textvalue)); else indexselect<Author,int32_t,int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue),*mem->gettensor<int32_t>(this->args[1].textvalue),axis,*mem->gettensor<int32_t>(this->returns[0].textvalue)); break; }
+            case Precision::Int16:  { if(index_type==Precision::Int64) indexselect<Author,int16_t,int64_t>(*mem->gettensor<int16_t>(this->args[0].textvalue),*mem->gettensor<int64_t>(this->args[1].textvalue),axis,*mem->gettensor<int16_t>(this->returns[0].textvalue)); else indexselect<Author,int16_t,int32_t>(*mem->gettensor<int16_t>(this->args[0].textvalue),*mem->gettensor<int32_t>(this->args[1].textvalue),axis,*mem->gettensor<int16_t>(this->returns[0].textvalue)); break; }
+            case Precision::Int8:   { if(index_type==Precision::Int64) indexselect<Author,int8_t,int64_t>(*mem->gettensor<int8_t>(this->args[0].textvalue),*mem->gettensor<int64_t>(this->args[1].textvalue),axis,*mem->gettensor<int8_t>(this->returns[0].textvalue)); else indexselect<Author,int8_t,int32_t>(*mem->gettensor<int8_t>(this->args[0].textvalue),*mem->gettensor<int32_t>(this->args[1].textvalue),axis,*mem->gettensor<int8_t>(this->returns[0].textvalue)); break; }
+            case Precision::Bool:   { if(index_type==Precision::Int64) indexselect<Author,bool,int64_t>(*mem->gettensor<bool>(this->args[0].textvalue),*mem->gettensor<int64_t>(this->args[1].textvalue),axis,*mem->gettensor<bool>(this->returns[0].textvalue)); else indexselect<Author,bool,int32_t>(*mem->gettensor<bool>(this->args[0].textvalue),*mem->gettensor<int32_t>(this->args[1].textvalue),axis,*mem->gettensor<bool>(this->returns[0].textvalue)); break; }
+            default: error = "Unsupported type: " + precision_str(input_type); return 1;
+            }
+            return 0;
+        }
+    };
+
+    // repeat
+    template <typename Author>
+    class Repeat : public TF
+    {
+    public:
+        Repeat(const vector<Param> &args, const vector<Param> &returns)
+        {
+            this->name = "repeat";
+            this->metadata.author = Author::name();
+            this->tftype = "changeshape";
+            this->args = args;
+            this->returns = returns;
+        }
+        string math_formula() const override { return "T2 = T1.repeat(repeats)"; }
+        shared_ptr<TF> clone() const override { return make_shared<Repeat<Author>>(*this); }
+        int run(shared_ptr<MemBase> mem, string &error) override
+        {
+            Precision input_type = mem->gettensor(this->args[0].textvalue).get()->shape.dtype;
+            vector<int> repeats = this->getvector<int>(1);
+            switch (input_type) {
+            case Precision::Float64: repeat<Author, double>(*mem->gettensor<double>(this->args[0].textvalue), repeats, *mem->gettensor<double>(this->returns[0].textvalue)); break;
+            case Precision::Float32: repeat<Author, float>(*mem->gettensor<float>(this->args[0].textvalue), repeats, *mem->gettensor<float>(this->returns[0].textvalue)); break;
+            case Precision::Int64:   repeat<Author, int64_t>(*mem->gettensor<int64_t>(this->args[0].textvalue), repeats, *mem->gettensor<int64_t>(this->returns[0].textvalue)); break;
+            case Precision::Int32:   repeat<Author, int32_t>(*mem->gettensor<int32_t>(this->args[0].textvalue), repeats, *mem->gettensor<int32_t>(this->returns[0].textvalue)); break;
+            case Precision::Int16:   repeat<Author, int16_t>(*mem->gettensor<int16_t>(this->args[0].textvalue), repeats, *mem->gettensor<int16_t>(this->returns[0].textvalue)); break;
+            case Precision::Int8:    repeat<Author, int8_t>(*mem->gettensor<int8_t>(this->args[0].textvalue), repeats, *mem->gettensor<int8_t>(this->returns[0].textvalue)); break;
+            case Precision::Bool:    repeat<Author, bool>(*mem->gettensor<bool>(this->args[0].textvalue), repeats, *mem->gettensor<bool>(this->returns[0].textvalue)); break;
+            default: error = "Unsupported type: " + precision_str(input_type); return 1;
+            }
+            return 0;
+        }
+    };
+
+} // namespace deepx::tf
+
+#endif // DEEPX_TF_CHANGESHAPE_HPP

@@ -1,63 +1,53 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/array2d/deepx/tool/deepxctl/cmd/tensor"
+	"git.array2d.com/ai/deepx/tool/deepxctl/cmd"
+	"git.array2d.com/ai/deepx/tool/deepxctl/cmd/tensor"
 )
 
-var version = "0.1.0"
+var version = "0.2.0"
 
 func printUsage() {
 	execName := filepath.Base(os.Args[0])
-	fmt.Printf("用法: %s [命令] [参数]\n\n", execName)
-	fmt.Println("可用命令:")
-	fmt.Println("  tensor    张量操作相关命令")
-	fmt.Println("  version   显示版本信息")
-	fmt.Println("  help      显示帮助信息")
-	fmt.Println("\n使用 '%s help [命令]' 获取命令的详细信息", execName)
+	fmt.Printf("Usage: %s [command] [arguments]\n\n", execName)
+	fmt.Println("Commands:")
+	fmt.Println("  run        Run a .dx file (one-shot: Redis → build → launch → load → exec)")
+	fmt.Println("  tensor     Tensor file operations (print)")
+	fmt.Println("  version    Show version")
+	fmt.Println("  help       Show this help")
+	fmt.Println()
+	fmt.Printf("Run '%s run --help' for run flags.\n", execName)
 }
 
 func main() {
-	flag.Usage = printUsage
-
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(0)
 	}
 
-	// 获取子命令
-	cmd := os.Args[1]
+	subcmd := os.Args[1]
 
-	// 根据子命令执行相应操作
-	switch cmd {
+	switch subcmd {
+	case "run":
+		os.Args = os.Args[1:] // strip "deepxctl", keep "run ..."
+		cmd.Execute(os.Args[1:])
+
 	case "tensor":
-		// 移除子命令，让子命令处理剩余的参数
-		os.Args = os.Args[2:]
+		os.Args = os.Args[1:]
 		tensor.Execute()
 
 	case "version":
-		fmt.Printf("deepxctl 版本 %s\n", version)
+		fmt.Printf("deepxctl version %s\n", version)
 
-	case "help":
-		if len(os.Args) > 2 {
-			helpCmd := os.Args[2]
-			switch helpCmd {
-			case "tensor":
-				tensor.PrintUsage()
-			default:
-				fmt.Printf("未知命令: %s\n", helpCmd)
-				printUsage()
-			}
-		} else {
-			printUsage()
-		}
+	case "help", "-h", "--help":
+		printUsage()
 
 	default:
-		fmt.Printf("未知命令: %s\n", cmd)
+		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", subcmd)
 		printUsage()
 		os.Exit(1)
 	}

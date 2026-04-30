@@ -9,7 +9,7 @@
 
 #include "stdutil/fs.hpp"
 #include "deepx/dtype/precision.hpp"
-#include "deepx/dtype.hpp"
+#include "dtype.hpp"
 namespace deepx
 {
     // omp内线程局部变量

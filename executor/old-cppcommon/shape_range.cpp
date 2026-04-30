@@ -4,7 +4,7 @@
 #include <any>
 #include <thread>
 
-#include "deepx/shape.hpp"
+#include "shape.hpp"
 namespace deepx
 {
     static int checkdim(int dimCount, int dim)

@@ -14,20 +14,20 @@ func TestParseDxlang_CstyleArrow(t *testing.T) {
 		reads  []string
 		writes []string
 	}{
-		// C-style infix
-		{"infix_add", "./C <- A + B", "+", []string{"A", "B"}, []string{"./C"}},
-		{"infix_sub", "./out <- X - Y", "-", []string{"X", "Y"}, []string{"./out"}},
-		{"infix_mul", "./R <- P * Q", "*", []string{"P", "Q"}, []string{"./R"}},
+		// C-style infix (keys must be quoted)
+		{"infix_add", "\"./C\" <- A + B", "+", []string{"A", "B"}, []string{"./C"}},
+		{"infix_sub", "\"./out\" <- X - Y", "-", []string{"X", "Y"}, []string{"./out"}},
+		{"infix_mul", "\"./R\" <- P * Q", "*", []string{"P", "Q"}, []string{"./R"}},
 		// C-style prefix (function call)
-		{"prefix_call", "./C <- add(A, B)", "add", []string{"A", "B"}, []string{"./C"}},
-		{"prefix_relu", "./Y <- relu(X)", "relu", []string{"X"}, []string{"./Y"}},
+		{"prefix_call", "\"./C\" <- add(A, B)", "add", []string{"A", "B"}, []string{"./C"}},
+		{"prefix_relu", "\"./Y\" <- relu(X)", "relu", []string{"X"}, []string{"./Y"}},
 		// C-style unary
-		{"unary_neg", "./C <- -A", "-", []string{"A"}, []string{"./C"}},
-		{"unary_not", "./C <- !A", "!", []string{"A"}, []string{"./C"}},
+		{"unary_neg", "\"./C\" <- -A", "-", []string{"A"}, []string{"./C"}},
+		{"unary_not", "\"./C\" <- !A", "!", []string{"A"}, []string{"./C"}},
 		// C-style with absolute paths and literals
-		{"newtensor", "/data/x <- newtensor(\"f32\", \"[4]\")", "newtensor", []string{"f32", "[4]"}, []string{"/data/x"}},
+		{"newtensor", "\"/data/x\" <- newtensor(\"f32\", \"[4]\")", "newtensor", []string{"f32", "[4]"}, []string{"/data/x"}},
 		// Multi-write (parens) — less common but legal
-		{"multi_write", "(./a, ./b) <- split(X)", "split", []string{"X"}, []string{"./a", "./b"}},
+		{"multi_write", "(\"./a\", \"./b\") <- split(X)", "split", []string{"X"}, []string{"./a", "./b"}},
 	}
 
 	for _, tt := range tests {
@@ -48,9 +48,9 @@ func TestParseDxlang_CstyleArrow(t *testing.T) {
 		})
 	}
 
-	// Ensure traditional -> still works
+	// Ensure traditional -> still works with quoted keys
 	t.Run("traditional_still_works", func(t *testing.T) {
-		inst, err := ir.ParseDxlang("add(A, B) -> ./C")
+		inst, err := ir.ParseDxlang("add(A, B) -> \"./C\"")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,7 +65,7 @@ func TestParseDxlang_CstyleArrow(t *testing.T) {
 	// Edge: <- embedded in comparison should not match
 	t.Run("less_than_with_neg", func(t *testing.T) {
 		// A < -B  should NOT be parsed as arrow
-		inst, err := ir.ParseDxlang("A < -B -> ./C")
+		inst, err := ir.ParseDxlang("A < -B -> \"./C\"")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -81,7 +81,7 @@ func TestParseDxlang_CstyleArrow(t *testing.T) {
 
 	// Edge: <= should not match <-
 	t.Run("less_or_equal", func(t *testing.T) {
-		inst, err := ir.ParseDxlang("A <= B -> ./C")
+		inst, err := ir.ParseDxlang("A <= B -> \"./C\"")
 		if err != nil {
 			t.Fatal(err)
 		}

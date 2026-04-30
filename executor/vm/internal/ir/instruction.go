@@ -153,6 +153,8 @@ func extractAddr0(coord string) int {
 //	                  !A -> ./C
 //	C风格 (左箭头):   ./C <- A + B
 //	                  ./C <- add(A, B)
+//
+// 严格要求: 所有 key 引用 (以 / 或 ./ 开头的路径) 必须用双引号包裹。
 func ParseDxlang(line string) (*Instruction, error) {
 	line = strings.TrimSpace(line)
 	if line == "" {
@@ -164,19 +166,25 @@ func ParseDxlang(line string) (*Instruction, error) {
 	// 1. 分离输出 (支持 -> 和 <- 两种箭头)
 	var expr string
 	if larrow := findArrow(line, "<-"); larrow >= 0 {
-		// C风格: ./C <- A + B  → 输出在左, 表达式在右
+		// C风格: "./C" <- A + B  → 输出在左, 表达式在右
 		writesStr := strings.TrimSpace(line[:larrow])
 		expr = strings.TrimSpace(line[larrow+2:])
 		if strings.HasPrefix(writesStr, "(") && strings.HasSuffix(writesStr, ")") {
 			writesStr = writesStr[1 : len(writesStr)-1]
 		}
+		if err := validateKeys(parseParamListRaw(writesStr), writesStr, "write"); err != nil {
+			return nil, err
+		}
 		inst.Writes = parseParamList(writesStr)
 	} else if arrow := strings.Index(line, "->"); arrow >= 0 {
-		// 传统风格: add(A, B) -> ./C  → 表达式在左, 输出在右
+		// 传统风格: add(A, B) -> "./C"  → 表达式在左, 输出在右
 		expr = strings.TrimSpace(line[:arrow])
 		writesStr := strings.TrimSpace(line[arrow+2:])
 		if strings.HasPrefix(writesStr, "(") && strings.HasSuffix(writesStr, ")") {
 			writesStr = writesStr[1 : len(writesStr)-1]
+		}
+		if err := validateKeys(parseParamListRaw(writesStr), writesStr, "write"); err != nil {
+			return nil, err
 		}
 		inst.Writes = parseParamList(writesStr)
 	} else {
@@ -187,9 +195,20 @@ func ParseDxlang(line string) (*Instruction, error) {
 	if op, left, right, ok := parseInfix(expr); ok {
 		inst.Opcode = op
 		if left != "" {
+			// 剥离引号后再验证 key 引用
+			rawLeft := left
+			left = stripQuotes(left)
+			if isKeyRef(left) && !isQuoted(rawLeft) {
+				return nil, fmt.Errorf("read %q must be quoted (e.g. %q) in: %s", left, "\""+left+"\"", line)
+			}
 			inst.Reads = append(inst.Reads, left)
 		}
 		if right != "" {
+			rawRight := right
+			right = stripQuotes(right)
+			if isKeyRef(right) && !isQuoted(rawRight) {
+				return nil, fmt.Errorf("read %q must be quoted (e.g. %q) in: %s", right, "\""+right+"\"", line)
+			}
 			inst.Reads = append(inst.Reads, right)
 		}
 		return inst, nil
@@ -217,7 +236,11 @@ func ParseDxlang(line string) (*Instruction, error) {
 			return nil, fmt.Errorf("unmatched paren in: %s", line)
 		}
 
-		inst.Reads = parseParamList(rest[:closeIdx])
+		readsStr := rest[:closeIdx]
+		if err := validateKeys(parseParamListRaw(readsStr), readsStr, "read"); err != nil {
+			return nil, err
+		}
+		inst.Reads = parseParamList(readsStr)
 	}
 
 	return inst, nil
@@ -289,11 +312,19 @@ func parseParamList(s string) []string {
 	if s == "" {
 		return nil
 	}
-	// Bracket-aware split: respect nested [], (), {}
+	// Bracket-aware & quote-aware split: respect nested [], (), {} and "..." strings
 	var params []string
 	depth := 0
+	inQuote := false
 	start := 0
 	for i := 0; i < len(s); i++ {
+		if s[i] == '"' {
+			inQuote = !inQuote
+			continue
+		}
+		if inQuote {
+			continue
+		}
 		switch s[i] {
 		case '[', '(', '{':
 			depth++
@@ -321,10 +352,79 @@ func parseParamList(s string) []string {
 	return params
 }
 
+// parseParamListRaw 与 parseParamList 相同但不剥离引号，用于 key 引用验证。
+func parseParamListRaw(s string) []string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	var params []string
+	depth := 0
+	inQuote := false
+	start := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == '"' {
+			inQuote = !inQuote
+			continue
+		}
+		if inQuote {
+			continue
+		}
+		switch s[i] {
+		case '[', '(', '{':
+			depth++
+		case ']', ')', '}':
+			if depth > 0 {
+				depth--
+			}
+		case ',':
+			if depth == 0 {
+				p := strings.TrimSpace(s[start:i])
+				if p != "" {
+					params = append(params, p)
+				}
+				start = i + 1
+			}
+		}
+	}
+	if start < len(s) {
+		p := strings.TrimSpace(s[start:])
+		if p != "" {
+			params = append(params, p)
+		}
+	}
+	return params
+}
+
 // stripQuotes removes surrounding double quotes.
 func stripQuotes(s string) string {
 	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
 		return s[1 : len(s)-1]
 	}
 	return s
+}
+
+// validateKeys 验证所有 key (以 / 或 ./ 开头的参数) 必须用双引号包裹。
+// rawParams 是 parseParamListRaw 返回的未剥离引号的参数。
+func validateKeys(rawParams []string, rawExpr string, role string) error {
+	for _, raw := range rawParams {
+		if isQuoted(raw) {
+			continue // 已加引号, 合法
+		}
+		if isKeyRef(raw) {
+			quoted := `"` + raw + `"`
+			return fmt.Errorf("%s %q must be quoted (e.g. %s) in: %s", role, raw, quoted, rawExpr)
+		}
+	}
+	return nil
+}
+
+// isKeyRef 判断参数是否为 key 引用 (tensor 路径、文件路径等)。
+func isKeyRef(s string) bool {
+	return strings.HasPrefix(s, "/") || strings.HasPrefix(s, "./")
+}
+
+// isQuoted 判断参数是否被双引号包裹。
+func isQuoted(s string) bool {
+	return len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"'
 }

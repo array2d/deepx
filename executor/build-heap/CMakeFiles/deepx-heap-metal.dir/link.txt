@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names "CMakeFiles/deepx-heap-metal.dir/src/lifecycle/lifecycle.cpp.o" "CMakeFiles/deepx-heap-metal.dir/src/main.cpp.o" -o deepx-heap-metal   -L/opt/homebrew/opt/hiredis/lib  -Wl,-rpath,/opt/homebrew/opt/hiredis/lib common-metal/libdeepx_common_metal.a -lhiredis -framework Metal -framework Foundation

@@ -1,7 +1,7 @@
 #ifndef DEEPX_TENSORBASE_HPP
 #define DEEPX_TENSORBASE_HPP
 
-#include "deepx/shape.hpp"
+#include "shape.hpp"
 
 namespace deepx
 {

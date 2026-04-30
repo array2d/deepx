@@ -34,12 +34,21 @@ echo ""
 echo "[3/4] Running testutil tests..."
 go test ./testutil/ -v -count=1 2>&1 || echo "(testutil tests skipped or failed - continuing)"
 
-# 构建
+# 构建 VM
 echo ""
-echo "[4/4] Building VM binary..."
+echo "[4/6] Building VM binary..."
 go build -ldflags="-s -w" -o "$OUTPUT_DIR/vm" ./cmd/vm/
+
+# 构建 loader
+echo ""
+echo "[5/6] Building loader binary..."
+go build -ldflags="-s -w" -o "$OUTPUT_DIR/loader" ./cmd/loader/
+
+echo ""
+echo "[6/6] Running 'go vet'..."
+go vet ./...
 
 echo ""
 echo "=== Build Complete ==="
-echo "Binary: $OUTPUT_DIR/vm"
-ls -lh "$OUTPUT_DIR/vm"
+echo "Binaries:"
+ls -lh "$OUTPUT_DIR/vm" "$OUTPUT_DIR/loader" 2>/dev/null || ls -lh "$OUTPUT_DIR/vm"

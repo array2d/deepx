@@ -8,7 +8,9 @@
       "Bash(printf '#!/usr/bin/env bash\\\\nset -euo pipefail\\\\nexec ./executor/heap-metal/build.sh \"$@\"\\\\n')",
       "Bash(chmod +x /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/.claude/commands/build-heap-metal.sh)",
       "Bash(cat)",
-      "Bash(chmod +x .claude/commands/*.sh)"
+      "Bash(chmod +x .claude/commands/*.sh)",
+      "Bash(rm -rf /Users/lipeng/miaobyte-1252231640/git.array2d.com/ai/deepx/executor/build/*)",
+      "Bash(cmake ../op-metal -DCMAKE_BUILD_TYPE=Debug)"
     ]
   }
 }

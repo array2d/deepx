@@ -1,7 +1,7 @@
 #ifndef DEEPX_SHAPE_SUM_HPP
 #define DEEPX_SHAPE_SUM_HPP
 
-#include "deepx/shape.hpp"
+#include "shape.hpp"
 
 namespace deepx
 {

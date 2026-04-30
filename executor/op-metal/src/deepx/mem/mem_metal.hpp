@@ -5,8 +5,8 @@
 #include <memory>
 #include <stdexcept>
 
-#include "deepx/tensor.hpp"
-#include "deepx/mem/mem.hpp"
+#include "tensor.hpp"
+#include "mem/mem.hpp"
 #include "deepx/shmem/shm_tensor.h"
 
 namespace deepx::mem {

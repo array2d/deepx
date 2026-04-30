@@ -7,7 +7,7 @@ import (
 )
 
 func TestLoadDxFile(t *testing.T) {
-	dxPath := filepath.Join("..", "testdata", "call", "add_test.dx")
+	dxPath := filepath.Join("..", "..", "..", "example", "dxlang", "call", "add_test.dx")
 
 	fn, err := LoadDxFile(dxPath)
 	if err != nil {
@@ -23,8 +23,8 @@ func TestLoadDxFile(t *testing.T) {
 	if len(fn.Body) != 1 {
 		t.Fatalf("Body len = %d, want 1", len(fn.Body))
 	}
-	if fn.Body[0] != "add(A, B) -> ./C" {
-		t.Errorf("Body[0] = %q, want 'add(A, B) -> ./C'", fn.Body[0])
+	if fn.Body[0] != `add(A, B) -> "./C"` {
+		t.Errorf("Body[0] = %q, want `add(A, B) -> \"./C\"`", fn.Body[0])
 	}
 }
 
@@ -71,7 +71,7 @@ func TestLoadDxFile_Errors(t *testing.T) {
 
 	// No def prefix
 	noDef := filepath.Join(tmpDir, "nodef.dx")
-	os.WriteFile(noDef, []byte("(foo(A) -> (B))\nadd(A) -> ./B\n"), 0644)
+	os.WriteFile(noDef, []byte("(foo(A) -> (B))\nadd(A) -> \"./B\"\n"), 0644)
 	_, err = LoadDxFile(noDef)
 	if err == nil {
 		t.Error("expected error for file without 'def' prefix")

@@ -5,8 +5,8 @@
 #include <numeric>
 #include <algorithm>
 #include <stdexcept>
-#include "deepx/tensor.hpp"
-#include "deepx/shape.hpp"
+#include "tensor.hpp"
+#include "shape.hpp"
 #include "stdutil/error.hpp"
 
 namespace deepx

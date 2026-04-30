@@ -1,0 +1,9 @@
+# lifecycle_full: create tensors, compute, then cleanup
+def lifecycle_full() -> ("/data/c") {
+    newtensor("f32", "[4]") -> "/data/a"
+    newtensor("f32", "[4]") -> "/data/b"
+    newtensor("f32", "[4]") -> "/data/c"
+    add("/data/a", "/data/b") -> "/data/c"
+    deltensor("/data/a")
+    deltensor("/data/b")
+}

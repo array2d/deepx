@@ -5,9 +5,9 @@
 #include <string>
 
 #include "stdutil/fs.hpp"
-#include "deepx/tensor.hpp"
+#include "tensor.hpp"
 #include "deepx/dtype_metal.hpp"
-#include "deepx/tensorfunc/tensorlife.hpp"
+#include "tensorfunc/tensorlife.hpp"
 
 namespace deepx::tensorfunc
 {

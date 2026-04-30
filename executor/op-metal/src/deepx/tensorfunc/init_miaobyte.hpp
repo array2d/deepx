@@ -3,9 +3,9 @@
 
 #include <algorithm>
 
-#include "deepx/tensor.hpp"
-#include "deepx/tensorfunc/init.hpp"
-#include "deepx/tensorfunc/authors.hpp"
+#include "tensor.hpp"
+#include "tensorfunc/init.hpp"
+#include "tensorfunc/authors.hpp"
 
 namespace deepx::tensorfunc
 {

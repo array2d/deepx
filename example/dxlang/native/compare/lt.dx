@@ -1,0 +1,3 @@
+def native_lt(A:int, B:int) -> (C:bool) {
+    A < B -> "./C"
+}

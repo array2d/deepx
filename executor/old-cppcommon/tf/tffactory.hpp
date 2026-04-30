@@ -1,7 +1,7 @@
 #ifndef DEEPX_TF_TFFACTORY_HPP
 #define DEEPX_TF_TFFACTORY_HPP
 
-#include "deepx/tf/tf.hpp"
+#include "tf.hpp"
 
 namespace deepx::tf
 {

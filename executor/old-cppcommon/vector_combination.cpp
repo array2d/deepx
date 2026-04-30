@@ -1,6 +1,6 @@
 #include <functional>
 
-#include "deepx/vector_combination.hpp"
+#include "vector_combination.hpp"
 
 namespace deepx
 {
