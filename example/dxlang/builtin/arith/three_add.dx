@@ -9,5 +9,7 @@ def three_add(A:int, B:int, C:int) -> (R:int) {
     print('./R')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: three_add(2, 3, 4) -> './out'
 three_add(2, 3, 4) -> './out'

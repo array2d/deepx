@@ -19,5 +19,7 @@ def dist2() -> ('/data/dist2') {
     deltensor('/data/diff')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: dist2() -> '/data/dist2'
 dist2() -> '/data/dist2'

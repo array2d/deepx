@@ -122,7 +122,7 @@ func boot(flags BootFlags) error {
 		return err
 	}
 	fmt.Print("  op-plat .....................")
-	if err := redis.WaitForInstance(rdb, "/sys/op-plat/op-metal:0", 30*time.Second); err != nil {
+	if err := redis.WaitForInstance(rdb, "/sys/op-plat/exop-metal:0", 30*time.Second); err != nil {
 		errorX("op-plat not ready: %v", err)
 		mgr.StopAll(5 * time.Second)
 		return err

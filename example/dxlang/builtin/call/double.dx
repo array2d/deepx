@@ -3,5 +3,7 @@ def double(X:int) -> (Y:int) {
     X * 2 -> './Y'
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: double(5) -> './out'
 double(5) -> './out'

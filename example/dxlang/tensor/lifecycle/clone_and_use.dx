@@ -21,5 +21,7 @@ def clone_and_use() -> ('/data/merged') {
     deltensor('/data/doubled')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: clone_and_use() -> '/data/merged'
 clone_and_use() -> '/data/merged'

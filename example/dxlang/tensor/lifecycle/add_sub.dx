@@ -15,5 +15,7 @@ def add_sub() -> ('/data/sum', '/data/diff') {
     deltensor('/data/b')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: add_sub() -> ('./out_sum', './out_diff')
 add_sub() -> ('./out_sum', './out_diff')

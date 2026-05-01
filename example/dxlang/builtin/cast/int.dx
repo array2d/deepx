@@ -4,5 +4,7 @@ def native_int(A:float) -> (C:int) {
     print('./C')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_int(3.7) -> './out'
 native_int(3.7) -> './out'

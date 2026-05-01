@@ -3,5 +3,7 @@ def print_bool(A:int) -> (C:bool) {
     print('./C')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: print_bool(1) -> './out'
 print_bool(1) -> './out'

@@ -7,5 +7,7 @@ def double_op(A:int, B:int) -> (S:int, D:int) {
     print('./D')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: double_op(10, 3) -> ('./sum', './diff')
 double_op(10, 3) -> ('./sum', './diff')

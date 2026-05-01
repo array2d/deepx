@@ -84,6 +84,10 @@ func handleControl(ctx context.Context, rdb *redis.Client, vtid, pc string, inst
 	switch inst.Opcode {
 	case "call":
 		substackPC := codegen.HandleCall(ctx, rdb, vtid, pc, inst)
+		if substackPC == pc {
+			// HandleCall already set error state (func not found, parse failure, etc.)
+			return fmt.Errorf("call %s failed", inst.Reads[0])
+		}
 		state.Set(ctx, rdb, vtid, substackPC, "running")
 		logx.Debug("[%s] CALL → %s", vtid, substackPC)
 		return nil

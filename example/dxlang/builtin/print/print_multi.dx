@@ -8,5 +8,7 @@ def print_multi(A:int, B:int, C:int) -> (R:int) {
     print('./R')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: print_multi(1, 2, 3) -> './out'
 print_multi(1, 2, 3) -> './out'

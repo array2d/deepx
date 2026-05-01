@@ -138,7 +138,7 @@ func run(flags RunFlags) error {
 	defer rdb.Close()
 
 	services := map[string]string{
-		"op-plat":   "/sys/op-plat/op-metal:0",
+		"op-plat":   "/sys/op-plat/exop-metal:0",
 		"heap-plat": "/sys/heap-plat/heap-metal:0",
 		"vm":        "/sys/vm/0",
 	}

@@ -2,5 +2,7 @@ def native_lt(A:int, B:int) -> (C:bool) {
     A < B -> './C'
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_lt(3, 7) -> './out'
 native_lt(3, 7) -> './out'

@@ -29,5 +29,7 @@ def batch_ops() -> ('/data/final') {
     deltensor('/data/d')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: batch_ops() -> '/data/final'
 batch_ops() -> '/data/final'

@@ -4,5 +4,7 @@ def lifecycle_del() -> () {
     deltensor('/data/tmp')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: lifecycle_del() -> ()
 lifecycle_del() -> ()

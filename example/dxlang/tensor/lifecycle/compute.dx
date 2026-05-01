@@ -10,5 +10,7 @@ def compute() -> ('/data/c') {
     deltensor('/data/b')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: compute() -> '/data/c'
 compute() -> '/data/c'

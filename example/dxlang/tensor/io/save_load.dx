@@ -10,5 +10,7 @@ def save_load() -> ('/data/loaded') {
     deltensor('/data/src')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: save_load() -> '/data/loaded'
 save_load() -> '/data/loaded'

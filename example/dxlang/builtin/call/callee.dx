@@ -3,5 +3,7 @@ def callee(X:int, Y:int) -> (Z:int) {
     X + Y -> './Z'
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: callee(2, 3) -> './out'
 callee(2, 3) -> './out'

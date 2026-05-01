@@ -5,5 +5,7 @@ def native_sub(A:int, B:int) -> (C:int) {
     print('./C')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_sub(10, 3) -> './out'
 native_sub(10, 3) -> './out'

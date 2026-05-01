@@ -5,5 +5,7 @@ def native_div(A:int, B:int) -> (C:float) {
     print('./C')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_div(15, 2) -> './out'
 native_div(15, 2) -> './out'

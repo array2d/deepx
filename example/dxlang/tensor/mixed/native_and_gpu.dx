@@ -22,5 +22,7 @@ def native_and_gpu(N:int) -> ('/data/final') {
     deltensor('/data/y')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_and_gpu(8) -> '/data/final'
 native_and_gpu(8) -> '/data/final'

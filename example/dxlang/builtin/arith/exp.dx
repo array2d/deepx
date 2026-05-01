@@ -4,5 +4,7 @@ def native_exp(A:int) -> (C:float) {
     print('./C')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_exp(2) -> './out'
 native_exp(2) -> './out'

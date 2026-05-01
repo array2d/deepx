@@ -7,5 +7,7 @@ def print_chain(A:int, B:int, C:int) -> (D:int) {
     print('./D')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: print_chain(2, 3, 4) -> './out'
 print_chain(2, 3, 4) -> './out'

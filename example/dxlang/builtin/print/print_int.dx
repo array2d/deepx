@@ -4,5 +4,7 @@ def print_int(X:int) -> (R:int) {
     print('./R')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: print_int(42) -> './out'
 print_int(42) -> './out'

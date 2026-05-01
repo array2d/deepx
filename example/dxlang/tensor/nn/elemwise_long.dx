@@ -28,5 +28,7 @@ def elemwise_long() -> ('/data/out') {
     deltensor('/data/s5')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: elemwise_long() -> '/data/out'
 elemwise_long() -> '/data/out'

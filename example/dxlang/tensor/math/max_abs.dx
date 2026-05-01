@@ -20,5 +20,7 @@ def max_abs() -> ('/data/result') {
     deltensor('/data/abs_b')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: max_abs() -> '/data/result'
 max_abs() -> '/data/result'

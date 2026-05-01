@@ -22,5 +22,7 @@ def hadamard3() -> ('/data/result') {
     deltensor('/data/temp')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: hadamard3() -> '/data/result'
 hadamard3() -> '/data/result'

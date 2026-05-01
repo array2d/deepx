@@ -3,5 +3,7 @@ def deep3(X:int) -> (Y:int) {
     middle(X) -> './Y'
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: deep3(5) -> './out' (3-level call chain)
 deep3(5) -> './out'

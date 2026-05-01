@@ -2,5 +2,7 @@ def native_max(A:int, B:int) -> (C:int) {
     max(A, B) -> './C'
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_max(7,3) -> './out'
 native_max(7,3) -> './out'

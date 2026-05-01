@@ -5,6 +5,8 @@ def analyze(A:int, B:int) -> (S:int, D:int, P:int) {
     './P' <- A * B
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: analyze(7, 3) -> ('./sum', './diff', './prod')
 analyze(7, 3) -> ('./sum', './diff', './prod')
 # Expected: sum=10, diff=4, prod=21

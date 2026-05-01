@@ -21,5 +21,7 @@ def io_pipeline() -> ('/data/final') {
     deltensor('/data/temp')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: io_pipeline() -> '/data/final'
 io_pipeline() -> '/data/final'

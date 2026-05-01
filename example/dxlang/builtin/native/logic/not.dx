@@ -2,5 +2,7 @@ def native_not(A:bool) -> (C:bool) {
     !A -> './C'
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_not(true) -> './out'
 native_not(true) -> './out'

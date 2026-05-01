@@ -35,5 +35,7 @@ def polynomial() -> ('/data/result') {
     deltensor('/data/c')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: polynomial() -> '/data/result'
 polynomial() -> '/data/result'

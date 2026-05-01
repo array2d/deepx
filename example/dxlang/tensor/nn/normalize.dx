@@ -19,5 +19,7 @@ def normalize() -> ('/data/norm') {
     deltensor('/data/centered')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: normalize() -> '/data/norm'
 normalize() -> '/data/norm'

@@ -5,5 +5,7 @@ def native_arith(A:int, B:int) -> (C:int) {
     print('./C')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_arith(2,3) -> './out'
 native_arith(2,3) -> './out'

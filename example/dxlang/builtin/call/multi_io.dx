@@ -11,6 +11,8 @@ def compute(A:int, B:int, C:int) -> (D:int) {
     './D' <- './sum' * 2
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: compute(2, 3, 4) -> './out'
 compute(2, 3, 4) -> './out'
 # Expected: (2+3+4) * 2 = 18

@@ -12,5 +12,7 @@ def poly3(A:int, X:int, B:int, C:int) -> (Y:int) {
     print('./Y')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: poly3(2, 3, 4, 5) → 2*9 + 4*3 + 5 = 35
 poly3(2, 3, 4, 5) -> './out'

@@ -4,4 +4,6 @@ def test_input() -> (R:string) {
     print('./name')
 }
 
+str.set("deepxctlrun") -> './term'
+
 test_input() -> './out'

@@ -4,5 +4,7 @@ def native_neg(A:int) -> (C:int) {
     print('./C')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_neg(5) -> './out'
 native_neg(5) -> './out'

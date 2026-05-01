@@ -36,5 +36,7 @@ def consumer() -> () {
     deltensor('/data/final')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: consumer() -> ()  (full pipeline: producer→stage1→stage2→consumer)
 consumer() -> ()

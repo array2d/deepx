@@ -3,5 +3,7 @@ def lifecycle_newtensor() -> ('/data/x') {
     newtensor("f32", "[16]") -> '/data/x'
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: lifecycle_newtensor() -> '/data/x'
 lifecycle_newtensor() -> '/data/x'

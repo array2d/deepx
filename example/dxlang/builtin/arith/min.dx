@@ -5,5 +5,7 @@ def native_min(A:int, B:int) -> (C:int) {
     print('./C')
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: native_min(-2, 5) -> './out'
 native_min(-2, 5) -> './out'

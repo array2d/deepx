@@ -4,5 +4,7 @@ def middle(X:int) -> (Y:int) {
     './tmp' + 1 -> './Y'
 }
 
+str.set("deepxctlrun") -> './term'
+
 # Top-level call: middle(5) -> './out' (calls leaf→double internally)
 middle(5) -> './out'
