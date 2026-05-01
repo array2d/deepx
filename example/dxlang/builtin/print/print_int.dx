@@ -1,7 +1,7 @@
 def print_int(X:int) -> (R:int) {
-    print(X)
+    print("X =", X)
     X + 0 -> './R'
-    print('./R')
+    print("R =", './R')
 }
 
 str.set("deepxctlrun") -> './term'

@@ -6,7 +6,7 @@ def save_load() -> ('/data/loaded') {
     save('/data/src', '/tmp/test_save_load')
     newtensor("f32", "[10]") -> '/data/loaded'
     load('/tmp/test_save_load') -> '/data/loaded'
-    print('/data/loaded')
+    print("loaded =", '/data/loaded')
     deltensor('/data/src')
 }
 

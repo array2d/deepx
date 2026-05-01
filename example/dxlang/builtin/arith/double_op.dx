@@ -1,10 +1,10 @@
 def double_op(A:int, B:int) -> (S:int, D:int) {
-    print(A)
-    print(B)
+    print("A =", A)
+    print("B =", B)
     A + B -> './S'
-    print('./S')
+    print("S =", './S')
     A - B -> './D'
-    print('./D')
+    print("D =", './D')
 }
 
 str.set("deepxctlrun") -> './term'

@@ -1,7 +1,7 @@
 def native_neg(A:int) -> (C:int) {
-    print(A)
+    print("A =", A)
     neg(A) -> './C'
-    print('./C')
+    print("C =", './C')
 }
 
 str.set("deepxctlrun") -> './term'

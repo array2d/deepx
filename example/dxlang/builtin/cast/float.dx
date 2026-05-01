@@ -1,7 +1,7 @@
 def native_float(A:int) -> (C:float) {
-    print(A)
+    print("A =", A)
     float(A) -> './C'
-    print('./C')
+    print("C =", './C')
 }
 
 str.set("deepxctlrun") -> './term'

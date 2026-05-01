@@ -1,8 +1,8 @@
 def native_pow(A:int, B:int) -> (C:float) {
-    print(A)
-    print(B)
+    print("A =", A)
+    print("B =", B)
     pow(A, B) -> './C'
-    print('./C')
+    print("C =", './C')
 }
 
 str.set("deepxctlrun") -> './term'

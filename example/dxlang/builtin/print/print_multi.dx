@@ -1,11 +1,11 @@
 def print_multi(A:int, B:int, C:int) -> (R:int) {
-    print(A)
-    print(B)
-    print(C)
+    print("A =", A)
+    print("B =", B)
+    print("C =", C)
     A + B -> './t'
-    print('./t')
+    print("t =", './t')
     './t' + C -> './R'
-    print('./R')
+    print("R =", './R')
 }
 
 str.set("deepxctlrun") -> './term'

@@ -32,7 +32,7 @@ def stage2() -> ('/data/s2') {
 # ── 最外层: 调用 stage2 并打印结果，最后清理 ──
 def consumer() -> () {
     stage2() -> '/data/final'
-    print('/data/final')
+    print("final =", '/data/final')
     deltensor('/data/final')
 }
 

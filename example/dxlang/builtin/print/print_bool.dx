@@ -1,6 +1,6 @@
 def print_bool(A:int) -> (C:bool) {
     bool(A) -> './C'
-    print('./C')
+    print("C =", './C')
 }
 
 str.set("deepxctlrun") -> './term'

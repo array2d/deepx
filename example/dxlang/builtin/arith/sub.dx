@@ -1,8 +1,8 @@
 def native_sub(A:int, B:int) -> (C:int) {
-    print(A)
-    print(B)
+    print("A =", A)
+    print("B =", B)
     './C' <- A - B
-    print('./C')
+    print("C =", './C')
 }
 
 str.set("deepxctlrun") -> './term'

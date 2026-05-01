@@ -1,8 +1,8 @@
 def test_cerr(A:int, B:int) -> (R:int) {
-    print(A)
+    print("A =", A)
     cerr("ERROR: value is", A)
     A + B -> './R'
-    print('./R')
+    print("R =", './R')
 }
 
 str.set("deepxctlrun") -> './term'

@@ -1,8 +1,8 @@
 def native_div(A:int, B:int) -> (C:float) {
-    print(A)
-    print(B)
+    print("A =", A)
+    print("B =", B)
     './C' <- A / B
-    print('./C')
+    print("C =", './C')
 }
 
 str.set("deepxctlrun") -> './term'

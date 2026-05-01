@@ -10,11 +10,11 @@ def io_pipeline() -> ('/data/final') {
     zeros() -> '/data/z'
     add('/data/x', '/data/y') -> '/data/temp'
     mul('/data/temp', '/data/z') -> '/data/z'
-    print('/data/z')
+    print("z =", '/data/z')
     save('/data/z', '/tmp/io_pipeline_z')
     newtensor("f32", "[64]") -> '/data/final'
     load('/tmp/io_pipeline_z') -> '/data/final'
-    print('/data/final')
+    print("final =", '/data/final')
     deltensor('/data/x')
     deltensor('/data/y')
     deltensor('/data/z')

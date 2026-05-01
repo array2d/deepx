@@ -1,7 +1,7 @@
 def native_abs(A:int) -> (C:int) {
-    print(A)
+    print("A =", A)
     abs(A) -> './C'
-    print('./C')
+    print("C =", './C')
 }
 
 # Top-level call: native_abs(-5) -> './out'

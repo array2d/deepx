@@ -1,12 +1,12 @@
 # three_add: add three numbers — demonstrates multi-read (3 inputs → 1 output)
 def three_add(A:int, B:int, C:int) -> (R:int) {
-    print(A)
-    print(B)
+    print("A =", A)
+    print("B =", B)
     A + B -> './t'
-    print('./t')
-    print(C)
+    print("t =", './t')
+    print("C =", C)
     './t' + C -> './R'
-    print('./R')
+    print("R =", './R')
 }
 
 str.set("deepxctlrun") -> './term'

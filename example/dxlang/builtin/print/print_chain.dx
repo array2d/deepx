@@ -1,10 +1,10 @@
 def print_chain(A:int, B:int, C:int) -> (D:int) {
-    print(A)
+    print("A =", A)
     A + B -> './tmp'
-    print('./tmp')
-    print(C)
+    print("tmp =", './tmp')
+    print("C =", C)
     './tmp' * C -> './D'
-    print('./D')
+    print("D =", './D')
 }
 
 str.set("deepxctlrun") -> './term'
